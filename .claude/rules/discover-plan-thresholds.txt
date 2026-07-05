@@ -21,6 +21,13 @@ hard_cap.fabricated_citation = 49
 hard_cap.empty_corner = 49
 
 # Verdict bands
+# Pipe format below is what run_discover_plan_score.py::_parse_thresholds actually
+# consumes (splits on '|'); the KEY = VALUE variants are kept for documentation.
+# See issue usetheodev/theokit-tui#1.
+SHIPPABLE | 90
+SHIPPABLE_WITH_CAVEATS | 70
+NON_SHIPPABLE | 50
+INVALID | 0
 band.shippable = 90
 band.shippable_with_caveats = 70
 band.needs_revision = 50
