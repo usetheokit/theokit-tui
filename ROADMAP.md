@@ -192,8 +192,8 @@ rendering in a terminal, built + tested + snapshot-covered.
 
 ## State-of-the-art references
 
-Cloned under `knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
-`knowledge-base/references/_catalog.md`.
+Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
+`.claude/knowledge-base/references/_catalog.md`.
 
 | Peer | License | Why it's here | Supports milestone(s) |
 |---|---|---|---|
@@ -214,4 +214,4 @@ Cloned under `knowledge-base/references/` (shallow, blob-filter). Full catalog +
 
 ## Unresolved at inception
 
-(none — all 7 grill dimensions were answered; see `knowledge-base/grills/theokit-tui-roadmap-grill.md`.)
+(none — all 7 grill dimensions were answered; see `.claude/knowledge-base/grills/theokit-tui-roadmap-grill.md`.)
