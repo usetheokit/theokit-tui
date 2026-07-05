@@ -7,3 +7,6 @@ dist/
 # Python caches from the installed kit
 .claude/**/__pycache__/
 .claude/**/*.pyc
+
+# halt-loop runtime checkpoints (session-local)
+.claude/knowledge-base/**/.progress-*.json
