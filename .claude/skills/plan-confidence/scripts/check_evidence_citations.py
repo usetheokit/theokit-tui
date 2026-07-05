@@ -190,20 +190,22 @@ def _resolve_rule_file(filename: str, project_root: Path) -> Path | None:
         project_root / "rules" / filename,
         project_root / ".claude" / "rules" / filename,
         project_root / "knowledge-base" / filename,
+        project_root / ".claude" / "knowledge-base" / filename,
         project_root / filename,  # e.g. CHANGELOG.md, CLAUDE.md
     ]
     for c in candidates:
         if c.exists() and c.is_file():
             return c
     # Last-resort: shallow search inside knowledge-base/ (handles ADRs etc.).
-    kb = project_root / "knowledge-base"
-    if kb.exists():
-        try:
-            for p in kb.rglob(filename):
-                if p.is_file():
-                    return p
-        except OSError:
-            pass
+    # Plugin-layout projects keep it under .claude/ (see usetheodev/theokit-tui#2).
+    for kb in (project_root / "knowledge-base", project_root / ".claude" / "knowledge-base"):
+        if kb.exists():
+            try:
+                for p in kb.rglob(filename):
+                    if p.is_file():
+                        return p
+            except OSError:
+                pass
     return None
 
 
@@ -241,7 +243,10 @@ def _scan_blueprint_refs(
     prose: str, line_index: list[int], project_root: Path
 ) -> list[tuple[Citation, bool]]:
     out: list[tuple[Citation, bool]] = []
+    # Plugin-layout fallback: .claude/knowledge-base (see usetheodev/theokit-tui#2).
     blueprints_dir = project_root / "knowledge-base" / "discoveries" / "blueprints"
+    if not blueprints_dir.exists():
+        blueprints_dir = project_root / ".claude" / "knowledge-base" / "discoveries" / "blueprints"
     available = []
     if blueprints_dir.exists():
         try:
