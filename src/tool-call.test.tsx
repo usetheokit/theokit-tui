@@ -94,7 +94,9 @@ describe("ToolCallCard — header + indented body (T1.2)", () => {
   });
 
   it("card_without_children_equals_row", async () => {
-    const rowFrame = await renderFrame(<ToolCall name="grep" status="success" />);
+    const rowFrame = await renderFrame(
+      <ToolCall name="grep" status="success" />,
+    );
     const cardFrame = await renderFrame(
       <ToolCallCard name="grep" status="success" />,
     );
