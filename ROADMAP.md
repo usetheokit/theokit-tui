@@ -101,7 +101,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** — (project inception)
 **Risks:** 1. Ink 5 + React 19 + ESM interop quirks in the build. 2. Snapshot flakiness from ANSI/width.
 
-### M1 — [ ] Chat surface core
+### M1 — [x] Chat surface core
 
 **Objective:** Ship the chat primitives with token-by-token streaming render.
 **Definition of done:**
