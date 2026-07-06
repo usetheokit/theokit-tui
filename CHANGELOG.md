@@ -15,3 +15,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Five-gate toolchain — format (prettier) → lint (eslint flat + typescript-eslint,
   complexity ≤ 10) → typecheck (strict tsc) → test (vitest, deterministic color env) →
   build (tsup ESM + dts) — plus the `src/index.ts` public entry (m0-walking-skeleton T0.2)
+- Theme stub: flat semantic tokens (`role`, `status`), `<TheoTUIProvider>` with leaf-level
+  partial override, `useTheoTheme()` with default fallback, `defaultTheme` export
+  (m0-walking-skeleton T1.1)
