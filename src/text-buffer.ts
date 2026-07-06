@@ -81,14 +81,20 @@ function moveLeft(state: TextBufferState): TextBufferState {
   if (state.cursorOffset === 0) {
     return state;
   }
-  return { ...state, cursorOffset: prevBoundary(state.text, state.cursorOffset) };
+  return {
+    ...state,
+    cursorOffset: prevBoundary(state.text, state.cursorOffset),
+  };
 }
 
 function moveRight(state: TextBufferState): TextBufferState {
   if (state.cursorOffset >= state.text.length) {
     return state;
   }
-  return { ...state, cursorOffset: nextBoundary(state.text, state.cursorOffset) };
+  return {
+    ...state,
+    cursorOffset: nextBoundary(state.text, state.cursorOffset),
+  };
 }
 
 function moveHome(state: TextBufferState): TextBufferState {
