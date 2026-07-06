@@ -1,0 +1,56 @@
+{
+  "benchmark": "chat-message-render",
+  "date": "2026-07-06T11:08:36.294Z",
+  "node_version": "v22.22.2",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cores": 12
+  },
+  "workload": {
+    "messages": 100,
+    "streamed_tokens": 300
+  },
+  "protocol": {
+    "warmup_runs": 1,
+    "measured_runs": 5
+  },
+  "runs": [
+    {
+      "frames": 300,
+      "mean_ms_per_frame": 21.504,
+      "peak_ms_per_frame": 44.476
+    },
+    {
+      "frames": 300,
+      "mean_ms_per_frame": 16.488,
+      "peak_ms_per_frame": 45.166
+    },
+    {
+      "frames": 300,
+      "mean_ms_per_frame": 22.429,
+      "peak_ms_per_frame": 45.435
+    },
+    {
+      "frames": 300,
+      "mean_ms_per_frame": 22.745,
+      "peak_ms_per_frame": 45.175
+    },
+    {
+      "frames": 300,
+      "mean_ms_per_frame": 21.579,
+      "peak_ms_per_frame": 42.593
+    }
+  ],
+  "aggregate": {
+    "frames_mean": 300,
+    "mean_ms_per_frame": {
+      "mean": 20.949,
+      "std_dev": 2.281
+    },
+    "peak_ms_per_frame": {
+      "mean": 44.569,
+      "std_dev": 1.038
+    }
+  },
+  "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); FORCE_COLOR inherited from the invoking shell; 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."
+}

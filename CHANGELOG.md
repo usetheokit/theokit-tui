@@ -21,3 +21,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ChatMessage` primitive (user/assistant) with role glyph prefix + themed colors,
   per-role snapshots, typed invalid-role error, narrow-width wrap and NO_COLOR degraded
   render coverage (m0-walking-skeleton T2.1)
+- Render benchmark harness (`pnpm bench`, `--smoke` mode) with committed baseline —
+  100-message thread + 300-token streaming: mean 20.949 ± 2.281 ms/frame,
+  peak 44.569 ± 1.038 ms over 5 runs (`docs/benchmarks/m0-chat-message-baseline.json`)
+  (m0-walking-skeleton T3.1)
