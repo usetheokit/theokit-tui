@@ -25,3 +25,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   100-message thread + 300-token streaming: mean 20.949 ± 2.281 ms/frame,
   peak 44.569 ± 1.038 ms over 5 runs (`docs/benchmarks/m0-chat-message-baseline.json`)
   (m0-walking-skeleton T3.1)
+- Runnable example (`pnpm example`) — provider + user/assistant exchange; degrades
+  cleanly when piped/non-TTY (m0-walking-skeleton T3.2)
