@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.2.0] - 2026-07-06
+
+### Added
+
 - `system` role for `ChatMessage` — `· ` gray glyph tokens (`defaultTheme.role.system`,
   overridable), exported `ChatRole` union (m1-chat-surface T1.1)
 - `ChatThread` — ordered chat surface with windowed `<Static>` history (frozen
@@ -36,14 +50,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   overlapping-stream interval handling
 - Invalid-role error message now names the three-role union
   (`"user" | "assistant" | "system"`) (m1-chat-surface T1.1)
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.1.0] - 2026-07-06
 
