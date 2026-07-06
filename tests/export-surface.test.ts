@@ -15,4 +15,9 @@ describe("public entry surface (T0.2)", () => {
     expect(mod.defaultTheme.role.user.glyph).toBe("> ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("✦ ");
   });
+
+  it("public_entry_exposes_chat_message", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.ChatMessage).toBe("function");
+  });
 });

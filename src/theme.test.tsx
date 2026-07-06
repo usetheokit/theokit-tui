@@ -1,13 +1,9 @@
 import { Text } from "ink";
-import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
+import { renderFrame } from "../tests/helpers.js";
 import { TheoTUIProvider, defaultTheme, useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
-
-// T1.1 local one-tick helper — tests/helpers.tsx only lands at T2.1 (SEPA
-// resolution 5: documented temporary duplication, extracted in T2.1 REFACTOR).
-const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 
 let captured: TheoTheme | undefined;
 
@@ -25,32 +21,29 @@ function Probe() {
 describe("theme stub (T1.1)", () => {
   it("use_theo_theme_returns_default_tokens_without_provider", async () => {
     resetCaptured();
-    const { lastFrame } = render(<Probe />);
-    await tick();
+    const frame = await renderFrame(<Probe />);
     // Ink trims trailing whitespace per line — assert the visible glyph char.
-    expect(lastFrame()).toContain(defaultTheme.role.user.glyph.trim());
+    expect(frame).toContain(defaultTheme.role.user.glyph.trim());
     expect(captured).toEqual(defaultTheme);
   });
 
   it("provider_passes_custom_theme_to_consumers", async () => {
     resetCaptured();
-    render(
+    await renderFrame(
       <TheoTUIProvider theme={{ role: { assistant: { glyph: "◆ " } } }}>
         <Probe />
       </TheoTUIProvider>,
     );
-    await tick();
     expect(captured?.role.assistant.glyph).toBe("◆ ");
   });
 
   it("partial_override_preserves_untouched_token_groups", async () => {
     resetCaptured();
-    render(
+    await renderFrame(
       <TheoTUIProvider theme={{ role: { user: { glyph: "$ " } } }}>
         <Probe />
       </TheoTUIProvider>,
     );
-    await tick();
     expect(captured?.role.user.glyph).toBe("$ ");
     // Leaf-level merge proof: overriding one leaf preserves the sibling leaves.
     expect(captured?.role.user.prefix).toBe(defaultTheme.role.user.prefix);
@@ -60,12 +53,11 @@ describe("theme stub (T1.1)", () => {
 
   it("empty_theme_override_yields_default_tokens", async () => {
     resetCaptured();
-    render(
+    await renderFrame(
       <TheoTUIProvider theme={{}}>
         <Probe />
       </TheoTUIProvider>,
     );
-    await tick();
     expect(captured).toEqual(defaultTheme);
   });
 });

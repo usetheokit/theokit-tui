@@ -18,3 +18,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Theme stub: flat semantic tokens (`role`, `status`), `<TheoTUIProvider>` with leaf-level
   partial override, `useTheoTheme()` with default fallback, `defaultTheme` export
   (m0-walking-skeleton T1.1)
+- `ChatMessage` primitive (user/assistant) with role glyph prefix + themed colors,
+  per-role snapshots, typed invalid-role error, narrow-width wrap and NO_COLOR degraded
+  render coverage (m0-walking-skeleton T2.1)

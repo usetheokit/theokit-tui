@@ -1,0 +1,123 @@
+import { execFileSync } from "node:child_process";
+
+import { Box } from "ink";
+import { describe, expect, it } from "vitest";
+
+import { renderFrame } from "../tests/helpers.js";
+import { ChatMessage } from "./chat-message.js";
+import { TheoTUIProvider } from "./theme.js";
+
+describe("ChatMessage (T2.1)", () => {
+  it("renders_user_message_with_glyph_prefix", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="user">hello</ChatMessage>,
+    );
+    expect(frame).toContain(">");
+    expect(frame).toContain("hello");
+  });
+
+  it("renders_assistant_message_with_glyph_prefix", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant">hi there</ChatMessage>,
+    );
+    expect(frame).toContain("✦");
+    expect(frame).toContain("hi there");
+  });
+
+  it("user_frame_matches_snapshot_under_forced_color", async () => {
+    const frame = await renderFrame(
+      <Box width={40}>
+        <ChatMessage role="user">What is Theo?</ChatMessage>
+      </Box>,
+    );
+    expect(frame).toMatchSnapshot("chat-message-user");
+  });
+
+  it("assistant_frame_matches_snapshot_under_forced_color", async () => {
+    const frame = await renderFrame(
+      <Box width={40}>
+        <ChatMessage role="assistant">Theo is an AI toolkit.</ChatMessage>
+      </Box>,
+    );
+    expect(frame).toMatchSnapshot("chat-message-assistant");
+  });
+
+  it("forced_color_canary_ansi_escapes_present", async () => {
+    // Canary (SEPA iteration-2): proves FORCE_COLOR=1 held in the worker -
+    // catches any future regression of the vitest env pin (ADR D2).
+    const frame = await renderFrame(
+      <ChatMessage role="user">canary</ChatMessage>,
+    );
+    expect(frame).toContain("\u001b[");
+  });
+
+  it("respects_custom_theme_glyph_via_provider", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider theme={{ role: { assistant: { glyph: "◆ " } } }}>
+        <ChatMessage role="assistant">custom</ChatMessage>
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("◆");
+    expect(frame).toContain("custom");
+  });
+
+  it("invalid_role_throws_typed_error_with_clear_message", () => {
+    // EC-1 (negative case): the guard is the FIRST statement of ChatMessage —
+    // direct invocation fires it before any hook runs (SEPA resolution 1).
+    expect(() =>
+      ChatMessage({
+        // @ts-expect-error — deliberately invalid role (EC-1 negative case)
+        role: "system",
+        children: "x",
+      }),
+    ).toThrow(TypeError);
+    expect(() =>
+      ChatMessage({
+        // @ts-expect-error — deliberately invalid role (EC-1 negative case)
+        role: "system",
+        children: "x",
+      }),
+    ).toThrow(
+      'ChatMessage: invalid role "system" — expected "user" | "assistant"',
+    );
+  });
+
+  it("long_content_wraps_inside_narrow_box_without_crash", async () => {
+    // EC-3 (edge case): 120 chars of spaced words inside a 20-col box.
+    const long = Array.from({ length: 20 }, (_, i) => `word${i}`).join(" ");
+    const frame = await renderFrame(
+      <Box width={20}>
+        <ChatMessage role="user">{long}</ChatMessage>
+      </Box>,
+    );
+    expect(frame.length > 0).toBe(true);
+    expect(frame).toContain("word0");
+  });
+
+  it("no_color_render_contains_text_without_ansi_escapes", () => {
+    // Fresh subprocess with NO_COLOR set BEFORE module load (chalk pins its
+    // color level at import time — in-process stubEnv cannot degrade it).
+    const out = execFileSync(
+      "pnpm",
+      ["exec", "tsx", "tests/fixtures/no-color-probe.tsx"],
+      {
+        encoding: "utf8",
+        env: {
+          PATH: process.env["PATH"] ?? "",
+          HOME: process.env["HOME"] ?? "",
+          NO_COLOR: "1",
+        },
+      },
+    );
+    expect(out).not.toContain("\u001b[");
+    expect(out).toContain(">");
+    expect(out).toContain("plain text probe");
+  });
+
+  it("renders_glyph_only_for_empty_children", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="user">{""}</ChatMessage>,
+    );
+    expect(frame).toContain(">");
+  });
+});
