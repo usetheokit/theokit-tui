@@ -148,3 +148,92 @@ describe("ToolResult — plain content (T2.1)", () => {
     expect(frame).toMatchSnapshot("tool-result-truncated");
   });
 });
+
+describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
+  it("shell_renders_stdout_plain", async () => {
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "total 42", stderr: "", exitCode: 0 }} />,
+    );
+    expect(frame).toContain("total 42");
+  });
+
+  it("shell_labels_stderr_block", async () => {
+    const frame = await renderFrame(
+      <ToolResult
+        shell={{ stdout: "ok", stderr: "permission denied", exitCode: 0 }}
+      />,
+    );
+    expect(frame).toContain("stderr:");
+    expect(frame).toContain("permission denied");
+  });
+
+  it("nonzero_exit_renders_badge", async () => {
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "", stderr: "boom", exitCode: 2 }} />,
+    );
+    expect(frame).toContain("exited 2");
+  });
+
+  it("zero_exit_renders_no_badge", async () => {
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "done", stderr: "", exitCode: 0 }} />,
+    );
+    expect(frame).not.toContain("exited");
+  });
+
+  it("empty_streams_render_placeholder", async () => {
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "", stderr: "", exitCode: 0 }} />,
+    );
+    expect(frame).toContain("(no output)");
+  });
+
+  it("shell_truncation_covers_combined_streams", async () => {
+    const stdout = numbered(30).join("\n");
+    const stderr = ["e-0", "e-1", "e-2", "e-3", "e-4"].join("\n");
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout, stderr, exitCode: 1 }} maxLines={10} />,
+    );
+    expect(frame).toContain("… +");
+    // Badge survives truncation (appended AFTER the line budget).
+    expect(frame).toContain("exited 1");
+  });
+
+  it("shell_without_exit_code_renders_no_badge", async () => {
+    // EC-3: a mid-stream envelope must NOT render "exited undefined".
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "x-stream", stderr: "" }} />,
+    );
+    expect(frame).not.toContain("exited");
+  });
+
+  it("exit_code_renders_verbatim", async () => {
+    // EC-12: signals/negative values pass through, no mapping.
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "", stderr: "killed", exitCode: 137 }} />,
+    );
+    expect(frame).toContain("exited 137");
+  });
+
+  it("trailing_newline_does_not_add_blank_line", async () => {
+    // EC-7: "one\ntwo\n" is 2 lines — no phantom row before the badge.
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout: "one\ntwo\n", stderr: "", exitCode: 2 }} />,
+    );
+    const rows = frame.split("\n");
+    const badgeIndex = rows.findIndex((row) => row.includes("exited 2"));
+    expect(badgeIndex).toBeGreaterThan(0);
+    expect(rows[badgeIndex - 1]).toContain("two");
+  });
+
+  it("shell_conflicts_with_children_throw", async () => {
+    // EC-2 shell-side.
+    const call = () =>
+      ToolResult({
+        shell: { stdout: "", stderr: "", exitCode: 0 },
+        children: "x",
+      });
+    expect(call).toThrow(TypeError);
+    expect(call).toThrow("provide exactly one");
+  });
+});
