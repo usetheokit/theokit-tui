@@ -1,8 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { render } from "ink-testing-library";
+import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import type { AgentEvent, AgentMessageEvent } from "./agent-event.js";
-import { AgentTimeline } from "./agent-timeline.js";
+
+// Row-render spy (M1 idiom): wrap the real ChatMessage so repaint-scope
+// assertions can count message-row renders (plan T1.2, D2).
+const rowRenders = vi.hoisted(() => ({ count: 0 }));
+vi.mock("./chat-message.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./chat-message.js")>();
+  return {
+    ...actual,
+    ChatMessage: (props: Parameters<typeof actual.ChatMessage>[0]) => {
+      rowRenders.count += 1;
+      return actual.ChatMessage(props);
+    },
+  };
+});
+
+const { AgentTimeline } = await import("./agent-timeline.js");
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const message = (id: string, text: string): AgentMessageEvent => ({
   id,
@@ -167,5 +185,137 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     const events: AgentEvent[] = [enriched];
     const frame = await renderFrame(<AgentTimeline events={events} />);
     expect(frame).toContain("enriched");
+  });
+});
+
+describe("AgentTimeline — windowed Static history (T1.2)", () => {
+  const events = (n: number): AgentEvent[] =>
+    Array.from({ length: n }, (_, i) => message(`e${i}`, `event-${i} body`));
+
+  it("only_tail_rows_repaint_on_identity_replace", async () => {
+    let list = events(20);
+    const instance = render(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    rowRenders.count = 0;
+    const last = list[list.length - 1] as AgentMessageEvent;
+    list = [...list.slice(0, -1), { ...last, text: last.text + "!" }];
+    instance.rerender(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    instance.unmount();
+    expect(rowRenders.count).toBe(1);
+  });
+
+  it("static_prefix_is_frozen_after_graduation", async () => {
+    let list = events(20);
+    const instance = render(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    // Mutate a GRADUATED event (index 0) via a new object, same id.
+    const first = list[0] as AgentMessageEvent;
+    list = [{ ...first, text: "MUTATED" }, ...list.slice(1)];
+    instance.rerender(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(frame).not.toContain("MUTATED");
+  });
+
+  it("same_array_rerender_repaints_nothing", async () => {
+    const list = events(20);
+    const instance = render(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    rowRenders.count = 0;
+    instance.rerender(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    instance.unmount();
+    expect(rowRenders.count).toBe(0);
+  });
+
+  it("window_size_zero_graduates_everything", async () => {
+    let list = events(3);
+    const instance = render(
+      <AgentTimeline events={list} windowSize={0} windowOverscan={0} />,
+    );
+    await tick();
+    const before = instance.lastFrame() ?? "";
+    expect(before).toContain("event-0 body");
+    expect(before).toContain("event-2 body");
+    rowRenders.count = 0;
+    list = [...list, message("e3", "event-3 body")];
+    instance.rerender(
+      <AgentTimeline events={list} windowSize={0} windowOverscan={0} />,
+    );
+    await tick();
+    instance.unmount();
+    // Only the appended event renders live (then graduates) — never the
+    // whole history again.
+    expect(rowRenders.count).toBe(1);
+  });
+
+  it("heterogeneous_graduation_keeps_output_ordered", async () => {
+    const list: AgentEvent[] = [
+      ...events(5),
+      {
+        id: "tool-mid",
+        kind: "tool",
+        name: "build",
+        status: "success",
+        output: "compiled 40 modules\nwrote dist/",
+      },
+      ...Array.from({ length: 5 }, (_, i) =>
+        message(`late${i}`, `late-${i} body`),
+      ),
+    ];
+    const frame = await renderFrame(
+      <AgentTimeline events={list} windowSize={2} windowOverscan={0} />,
+    );
+    const cardIndex = frame.indexOf("compiled 40 modules");
+    const earlyIndex = frame.indexOf("event-4 body");
+    const lateIndex = frame.indexOf("late-0 body");
+    expect(cardIndex).toBeGreaterThan(earlyIndex);
+    expect(lateIndex).toBeGreaterThan(cardIndex);
+  });
+
+  it("negative_window_knobs_clamp_to_zero", async () => {
+    // EC-6: M1 clamp parity — negative knobs behave exactly like 0/0.
+    const frame = await renderFrame(
+      <AgentTimeline events={events(3)} windowSize={-3} windowOverscan={-1} />,
+    );
+    expect(frame).toContain("event-0 body");
+    expect(frame).toContain("event-1 body");
+    expect(frame).toContain("event-2 body");
+  });
+
+  it("in_place_push_on_same_array_pins_hybrid_behavior", async () => {
+    // EC-8: same-ref push — pinned behavior, NOT a supported pattern
+    // (JSDoc says always pass a new array).
+    const list = events(3);
+    const instance = render(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    rowRenders.count = 0;
+    list.push(message("pushed", "pushed body"));
+    instance.rerender(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    // Same reference: React sees equal props per row (memo hits), but the
+    // length change re-runs the component — the pushed row renders.
+    expect(frame).toContain("pushed body");
+    expect(rowRenders.count).toBe(1);
   });
 });

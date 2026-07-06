@@ -1,4 +1,5 @@
-import { Box, Text } from "ink";
+import { Box, Static, Text } from "ink";
+import { memo, useMemo } from "react";
 
 import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
 import type { AgentEvent } from "./agent-event.js";
@@ -14,9 +15,20 @@ export interface AgentTimelineProps {
    * Ordered agent events. ORDERING CONTRACT (plan ADR D2): caller-ordered
    * array; unique ids (duplicates throw); graduated events are IMMUTABLE —
    * replace the TAIL event with a new object to stream (rows are memoized by
-   * object identity). Always pass a NEW array on update.
+   * object identity). Always pass a NEW array on update (in-place mutation of
+   * the same reference has pinned-but-unsupported hybrid behavior — EC-8).
    */
   events: AgentEvent[];
+  /**
+   * Events beyond `windowSize + windowOverscan` graduate into Ink `<Static>`
+   * (terminal scrollback) and are FROZEN. Mount-time tuning knobs: INCREASING
+   * them after events have graduated pulls scrollback rows back into the live
+   * tail, visibly duplicating history (M1 window-growth hazard — same wording
+   * as ChatThread; D2 occurrence #2 of the windowing knowledge, Rule-of-3
+   * extraction deferred until a third windowed surface exists).
+   */
+  windowSize?: number;
+  windowOverscan?: number;
 }
 
 /**
@@ -114,22 +126,44 @@ function eventRow(event: AgentEvent) {
   }
 }
 
+const Row = memo(
+  ({ event }: { event: AgentEvent }) => eventRow(event),
+  (prev, next) => prev.event === next.event,
+);
+Row.displayName = "AgentTimeline.Row";
+
 /**
  * Ordered agent-turn timeline mixing messages, thinking and tool events
- * (plan ADR D2 — sibling of ChatThread with its own kind dispatch).
+ * (plan ADR D2 — sibling of ChatThread: windowed `<Static>` history +
+ * identity-memoized rows + its own kind dispatch).
  */
-export function AgentTimeline({ events }: AgentTimelineProps) {
+export function AgentTimeline({
+  events,
+  windowSize = 8,
+  windowOverscan = 4,
+}: AgentTimelineProps) {
   // Boundary validation FIRST, before any hook (F10 — tests invoke this as a
   // plain function; Ink swallows render-time throws).
   assertValidEvents(events);
-  if (events.length === 0) {
-    return null;
-  }
+  const tailStart = Math.max(
+    0,
+    events.length - Math.max(0, windowSize) - Math.max(0, windowOverscan),
+  );
+  const prefix = useMemo(() => events.slice(0, tailStart), [events, tailStart]);
+  const tail = events.slice(tailStart);
+
   return (
-    <Box flexDirection="column">
-      {events.map((event) => (
-        <Box key={event.id}>{eventRow(event)}</Box>
-      ))}
-    </Box>
+    <>
+      {prefix.length > 0 && (
+        <Static items={prefix}>
+          {(event) => <Row key={event.id} event={event} />}
+        </Static>
+      )}
+      <Box flexDirection="column">
+        {tail.map((event) => (
+          <Row key={event.id} event={event} />
+        ))}
+      </Box>
+    </>
   );
 }
