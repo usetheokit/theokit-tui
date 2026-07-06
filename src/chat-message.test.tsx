@@ -140,6 +140,10 @@ describe("ChatMessage (T2.1)", () => {
     expect(out).not.toContain("\u001b[");
     expect(out).toContain(">");
     expect(out).toContain("plain text probe");
+    // M1 (T4.2): all three role glyphs distinguishable without color.
+    expect(out).toContain("·");
+    expect(out).toContain("✦");
+    expect(out).toContain("degraded but readable");
   });
 
   it("renders_glyph_only_for_empty_children", async () => {

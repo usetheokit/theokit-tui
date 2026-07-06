@@ -22,6 +22,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Thread benchmark with plain-vs-windowed mode matrix — committed baseline shows
   windowed history ~64× faster per frame under streaming+append load
   (`docs/benchmarks/m1-chat-thread-baseline.json`) (m1-chat-surface T4.1)
+- Interactive chat example (`pnpm example:chat`) — thread + composer + fake
+  streaming; degrades to a scripted demo when piped/non-TTY (m1-chat-surface T4.2)
 
 ### Changed
 
