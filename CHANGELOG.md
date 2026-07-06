@@ -14,6 +14,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ChatThread` — ordered chat surface with windowed `<Static>` history (frozen
   append-only prefix in terminal scrollback), identity-memoized live rows for
   flicker-free streaming, duplicate-id fail-fast guard (m1-chat-surface T2.1)
+- Grapheme-aware text-buffer reducer (`Intl.Segmenter` — cursor ops never split
+  emoji), pure and TTY-free (m1-chat-surface T3.1)
 
 ### Changed
 
