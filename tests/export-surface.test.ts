@@ -64,6 +64,7 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_diff_model", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.parseUnifiedDiff).toBe("function");
+    expect(typeof mod.DiffViewer).toBe("function");
   });
 
   it("public_entry_exposes_agent_surface", async () => {

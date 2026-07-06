@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DiffViewer — unified renderer (T1.2) > diff_snapshot_added_removed_context > diff-viewer-basic 1`] = `
+"[1mbasic.ts[22m[32m +1[31m -1[39m
+[2m1 [22m  line one
+[2m2 [22m[31m- old two[39m
+[2m2 [22m[32m+ new two[39m
+[2m3 [22m  line three"
+`;
