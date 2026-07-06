@@ -235,3 +235,78 @@ describe("benchmark baseline M2 (T3.2)", () => {
     expect(baseline.methodology.length > 0).toBe(true);
   });
 });
+
+interface M3Baseline {
+  benchmark: string;
+  modes: M1Mode[];
+  workload: {
+    events: number;
+    event_mix: Record<string, number>;
+    long_output_lines: number;
+    max_lines_bounded: number;
+  };
+  protocol: { warmup_runs: number; measured_runs: number };
+  node_version: string;
+  hardware: { cpu: string; cores: number };
+  color_env: { FORCE_COLOR: string };
+  methodology: string;
+}
+
+describe("benchmark baseline M3 (T3.2)", () => {
+  it("m3_agent_timeline_baseline_exists_with_mode_matrix", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m3-agent-timeline-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as M3Baseline;
+
+    expect(baseline.modes.map((m) => m.mode).sort()).toEqual([
+      "bounded",
+      "unbounded",
+    ]);
+    expect(baseline.protocol.warmup_runs).toBeGreaterThanOrEqual(1);
+    expect(baseline.color_env.FORCE_COLOR).toBe("1");
+    expect(baseline.node_version.length > 0).toBe(true);
+    expect(baseline.hardware.cores).toBeGreaterThan(0);
+    for (const mode of baseline.modes) {
+      expect(mode.runs.length).toBe(baseline.protocol.measured_runs);
+      expect(mode.runs.length).toBeGreaterThanOrEqual(3);
+      for (const run of mode.runs) {
+        expect(run.frames).toBeGreaterThan(0);
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+        expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
+      }
+      const recomputedFrames =
+        mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
+      expect(
+        Math.abs(recomputedFrames - mode.aggregate.frames_mean),
+      ).toBeLessThan(0.01);
+      for (const metric of [
+        "mean_ms_per_frame",
+        "peak_ms_per_frame",
+      ] as const) {
+        expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
+        expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
+        const recomputed =
+          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
+          0.01,
+        );
+      }
+    }
+    expect(baseline.workload.events).toBeGreaterThan(0);
+    expect(baseline.workload.long_output_lines).toBeGreaterThan(0);
+    expect(baseline.workload.max_lines_bounded).toBeGreaterThan(0);
+    expect(Object.keys(baseline.workload.event_mix).sort()).toEqual([
+      "message",
+      "thinking",
+      "tool",
+    ]);
+    // The heterogeneous-heights metric MUST be named (plan D7).
+    expect(baseline.methodology).toContain("peak_ms_per_frame");
+  });
+});

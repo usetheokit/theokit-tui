@@ -242,7 +242,9 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         events={[{ id: "t1", kind: "thinking", text: "styled thought" }]}
       />,
     );
+    // eslint-disable-next-line no-control-regex
     expect(frame).toMatch(/\u001B\[2m/); // dim
+    // eslint-disable-next-line no-control-regex
     expect(frame).toMatch(/\u001B\[3m/); // italic
   });
 

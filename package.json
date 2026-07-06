@@ -37,6 +37,7 @@
     "example": "tsx examples/basic.tsx",
     "example:chat": "tsx examples/chat.tsx",
     "example:tools": "tsx examples/tools.tsx",
+    "example:agent": "tsx examples/agent.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {

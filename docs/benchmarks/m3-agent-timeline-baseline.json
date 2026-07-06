@@ -1,0 +1,113 @@
+{
+  "benchmark": "agent-timeline-render",
+  "date": "2026-07-06T21:54:16.594Z",
+  "node_version": "v22.22.2",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cores": 12
+  },
+  "color_env": {
+    "FORCE_COLOR": "1"
+  },
+  "workload": {
+    "events": 300,
+    "steps": 150,
+    "event_mix": {
+      "message": 0.5,
+      "tool": 0.3,
+      "thinking": 0.2
+    },
+    "long_output_lines": 500,
+    "max_lines_bounded": 10,
+    "window": "8+4"
+  },
+  "protocol": {
+    "warmup_runs": 1,
+    "measured_runs": 5
+  },
+  "modes": [
+    {
+      "mode": "bounded",
+      "runs": [
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 4.288,
+          "peak_ms_per_frame": 7.337
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 4.261,
+          "peak_ms_per_frame": 10.123
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 4.854,
+          "peak_ms_per_frame": 9.568
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 4.783,
+          "peak_ms_per_frame": 17.236
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 4.992,
+          "peak_ms_per_frame": 22.277
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 300.6,
+        "mean_ms_per_frame": {
+          "mean": 4.636,
+          "std_dev": 0.303
+        },
+        "peak_ms_per_frame": {
+          "mean": 13.308,
+          "std_dev": 5.58
+        }
+      }
+    },
+    {
+      "mode": "unbounded",
+      "runs": [
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 4.072,
+          "peak_ms_per_frame": 10.862
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 4.897,
+          "peak_ms_per_frame": 15.485
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 6.031,
+          "peak_ms_per_frame": 19.061
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 4.592,
+          "peak_ms_per_frame": 7.991
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 4.929,
+          "peak_ms_per_frame": 10.784
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 300.8,
+        "mean_ms_per_frame": {
+          "mean": 4.904,
+          "std_dev": 0.642
+        },
+        "peak_ms_per_frame": {
+          "mean": 12.837,
+          "std_dev": 3.933
+        }
+      }
+    }
+  ],
+  "methodology": "ink-testing-library render + rerender loop; mount = 300 mixed events (≈50% 1-line messages, ≈30% tool cards incl. one 500-line output, ≈20% 2-line thinking) under windowSize 8+4; each step identity-replaces the tail event (token append / status transition, alternating) AND appends one event, graduating one event per step into <Static>; modes: bounded = tool maxLines 10, unbounded = maxLines > output height — the delta quantifies the tall-item graduation cost, and peak_ms_per_frame is the heterogeneous-heights metric (the graduation spike that mean averages away); per-frame ms = wall time across stdout.frames deltas (includes tick overhead); EC-15 guard asserts each run's total stdout frames exceed its own mount count (per mode); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs per mode; population std dev."
+}

@@ -45,6 +45,39 @@ export interface AgentTimelineProps {
  * FIELD TYPES are TypeScript's job (not re-checked at runtime — SEPA F5
  * scope note). Extra/unknown properties are tolerated (EC-12).
  */
+function validateMessageEvent(
+  event: Extract<AgentEvent, { kind: "message" }>,
+): void {
+  if (!CHAT_ROLES.includes(event.role)) {
+    throw new TypeError(
+      `AgentTimeline: message event "${event.id}" — invalid role "${String(event.role)}" — expected ${unionMessage(CHAT_ROLES)}`,
+    );
+  }
+}
+
+function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
+  if (!TOOL_CALL_STATUSES.includes(event.status)) {
+    throw new TypeError(
+      `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
+    );
+  }
+  if (event.output !== undefined && event.shell !== undefined) {
+    throw new TypeError(
+      `AgentTimeline: tool event "${event.id}" — provide only one of output | shell`,
+    );
+  }
+  // SEPA F1: ToolResult's own maxLines guard would fire mid-render
+  // (swallowed, wrong component name) — mirror it at THIS boundary.
+  if (
+    event.maxLines !== undefined &&
+    (!Number.isInteger(event.maxLines) || event.maxLines < 1)
+  ) {
+    throw new TypeError(
+      `AgentTimeline: tool event "${event.id}" — maxLines must be an integer >= 1 — got ${String(event.maxLines)}`,
+    );
+  }
+}
+
 function assertValidEvents(events: AgentEvent[]): void {
   const seen = new Set<string>();
   for (const event of events) {
@@ -57,32 +90,11 @@ function assertValidEvents(events: AgentEvent[]): void {
       throw new TypeError(`AgentTimeline: duplicate event id "${event.id}"`);
     }
     seen.add(event.id);
-    if (event.kind === "message" && !CHAT_ROLES.includes(event.role)) {
-      throw new TypeError(
-        `AgentTimeline: message event "${event.id}" — invalid role "${String(event.role)}" — expected ${unionMessage(CHAT_ROLES)}`,
-      );
+    if (event.kind === "message") {
+      validateMessageEvent(event);
     }
     if (event.kind === "tool") {
-      if (!TOOL_CALL_STATUSES.includes(event.status)) {
-        throw new TypeError(
-          `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
-        );
-      }
-      if (event.output !== undefined && event.shell !== undefined) {
-        throw new TypeError(
-          `AgentTimeline: tool event "${event.id}" — provide only one of output | shell`,
-        );
-      }
-      // SEPA F1: ToolResult's own maxLines guard would fire mid-render
-      // (swallowed, wrong component name) — mirror it at THIS boundary.
-      if (
-        event.maxLines !== undefined &&
-        (!Number.isInteger(event.maxLines) || event.maxLines < 1)
-      ) {
-        throw new TypeError(
-          `AgentTimeline: tool event "${event.id}" — maxLines must be an integer >= 1 — got ${String(event.maxLines)}`,
-        );
-      }
+      validateToolEvent(event);
     }
   }
 }
