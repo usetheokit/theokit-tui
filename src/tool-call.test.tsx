@@ -1,8 +1,8 @@
-import { Box } from "ink";
+import { Box, Text } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
-import { ToolCall } from "./tool-call.js";
+import { ToolCall, ToolCallCard } from "./tool-call.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
 const DOTS_FRAME_0 = "⠋";
@@ -78,5 +78,59 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     );
     expect(frame.split("\n")).toHaveLength(1);
     expect(frame).toContain("rm -rf");
+  });
+});
+
+describe("ToolCallCard — header + indented body (T1.2)", () => {
+  it("card_renders_header_and_indented_body", async () => {
+    const frame = await renderFrame(
+      <ToolCallCard name="grep" status="success">
+        <Text>12 matches</Text>
+      </ToolCallCard>,
+    );
+    expect(frame).toContain("✓");
+    expect(frame).toContain("12 matches");
+    expect(frame.split("\n")[1]).toMatch(/^\s{3}/);
+  });
+
+  it("card_without_children_equals_row", async () => {
+    const rowFrame = await renderFrame(<ToolCall name="grep" status="success" />);
+    const cardFrame = await renderFrame(
+      <ToolCallCard name="grep" status="success" />,
+    );
+    expect(cardFrame).toBe(rowFrame);
+  });
+
+  it("card_frame_matches_snapshot", async () => {
+    const frame = await renderFrame(
+      <Box width={40}>
+        <ToolCallCard name="grep" status="failed" summary="src/**">
+          <Text>no matches found</Text>
+        </ToolCallCard>
+      </Box>,
+    );
+    expect(frame).toMatchSnapshot("tool-call-card");
+  });
+
+  it("card_with_string_children_renders_body", async () => {
+    // EC-4: a raw string inside Ink's <Box> throws — the most natural consumer
+    // call must not crash; string children are auto-wrapped in <Text>.
+    const frame = await renderFrame(
+      <ToolCallCard name="ls" status="success">
+        {"12 matches"}
+      </ToolCallCard>,
+    );
+    expect(frame).toContain("12 matches");
+  });
+
+  it("card_with_empty_string_children_equals_row", async () => {
+    // EC-4: empty-string child is content-less — collapses to the bare row.
+    const rowFrame = await renderFrame(<ToolCall name="ls" status="success" />);
+    const cardFrame = await renderFrame(
+      <ToolCallCard name="ls" status="success">
+        {""}
+      </ToolCallCard>,
+    );
+    expect(cardFrame).toBe(rowFrame);
   });
 });

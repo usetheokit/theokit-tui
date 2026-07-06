@@ -36,6 +36,7 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_tool_call_surface", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ToolCall).toBe("function");
+    expect(typeof mod.ToolCallCard).toBe("function");
     expect(mod.STATUS_INDICATOR_WIDTH).toBe(3);
   });
 

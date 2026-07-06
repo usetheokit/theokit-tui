@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
+import type { ReactNode } from "react";
 
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
@@ -82,6 +83,32 @@ export function ToolCall({ name, status, summary }: ToolCallProps) {
       </Box>
       <Text bold>{singleLine(name)}</Text>
       {summary !== undefined && <Text dimColor> {singleLine(summary)}</Text>}
+    </Box>
+  );
+}
+
+export interface ToolCallCardProps extends ToolCallProps {
+  /**
+   * Card body, indented under the name (no borders at M2 — ADR D3).
+   * Plain STRING children are auto-wrapped in `<Text>` (a raw string inside
+   * Ink's `<Box>` throws — EC-4); an empty string collapses to the bare row.
+   */
+  children?: ReactNode;
+}
+
+/**
+ * Tool-call card: `ToolCall` header + body indented by the indicator width.
+ * Without children (or with an empty string) it renders exactly the row.
+ */
+export function ToolCallCard({ children, ...row }: ToolCallCardProps) {
+  const body =
+    typeof children === "string" ? <Text>{children}</Text> : children;
+  const hasBody =
+    children !== undefined && children !== null && children !== "";
+  return (
+    <Box flexDirection="column">
+      <ToolCall {...row} />
+      {hasBody && <Box paddingLeft={STATUS_INDICATOR_WIDTH}>{body}</Box>}
     </Box>
   );
 }

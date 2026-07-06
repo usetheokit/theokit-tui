@@ -9,8 +9,12 @@ export type { ChatMessageProps, ChatRole } from "./chat-message.js";
 export { ChatThread } from "./chat-thread.js";
 export type { ChatThreadMessage, ChatThreadProps } from "./chat-thread.js";
 
-export { STATUS_INDICATOR_WIDTH, ToolCall } from "./tool-call.js";
-export type { ToolCallProps, ToolCallStatus } from "./tool-call.js";
+export { STATUS_INDICATOR_WIDTH, ToolCall, ToolCallCard } from "./tool-call.js";
+export type {
+  ToolCallCardProps,
+  ToolCallProps,
+  ToolCallStatus,
+} from "./tool-call.js";
 
 export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";
