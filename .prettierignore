@@ -1,0 +1,9 @@
+dist/
+coverage/
+pnpm-lock.yaml
+docs/benchmarks/*.json
+.claude/
+LICENSE
+NOTICE
+CLAUDE.md
+ROADMAP.md

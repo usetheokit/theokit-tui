@@ -2,5 +2,14 @@ node_modules/
 dist/
 *.log
 .DS_Store
-# SOTA reference clones — reproducible from knowledge-base/references/_catalog.md; not versioned (large)
-knowledge-base/references/*/
+# SOTA reference clones — reproducible from .claude/knowledge-base/references/_catalog.md; not versioned (large)
+.claude/knowledge-base/references/*/
+# Python caches from the installed kit
+.claude/**/__pycache__/
+.claude/**/*.pyc
+
+# halt-loop runtime checkpoints (session-local)
+.claude/knowledge-base/**/.progress-*.json
+.claude/halt-loop-prompts/
+.claude/ralph-loop.local.md
+coverage/

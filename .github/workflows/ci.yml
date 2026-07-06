@@ -1,0 +1,52 @@
+# M0 gate chain (plan T4.1): each gate is its own step so CI reports exactly
+# which stage failed (ADR D7 — observable exit codes, fail-fast fail-clear).
+# Node matrix proves the engines floor (20) and the dev target (22).
+name: ci
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        # pnpm version resolved from package.json "packageManager" (corepack).
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: format
+        run: pnpm format:check
+
+      - name: lint
+        run: pnpm lint
+
+      - name: typecheck
+        run: pnpm typecheck
+
+      - name: test
+        run: pnpm test
+
+      - name: coverage
+        run: pnpm test:coverage
+
+      - name: build
+        run: pnpm build
+
+      - name: bench smoke
+        run: pnpm bench --smoke

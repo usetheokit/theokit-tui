@@ -1,0 +1,127 @@
+agent: review-m0-walking-skeleton-tests
+review_target: 0f59a5c..HEAD (develop) for plan m0-walking-skeleton — NOTE, no local `main` branch exists (pre-first-release repo); effective base is the last pre-implementation commit 0f59a5c
+plan: .claude/knowledge-base/plans/m0-walking-skeleton-plan.md
+verdict_input: 25/25 tests green, verified twice consecutively (snapshot stability proven, run 1 = 2.00s, run 2 = 1.66s); no .skip/.only/xit/commented-out tests anywhere (grep hits were `process.exit(` false positives)
+test_pyramid:
+  unit_added: 22  # src/theme.test.tsx (5) + src/chat-message.test.tsx (11) + tests/package-manifest.test.ts (3) + tests/export-surface.test.ts (3)
+  integration_added: 2  # tests/public-api.integration.test.tsx — imports ONLY via src/index.js (wiring pillar b); project convention is tests/*.integration.test.tsx, not tests/integration/ (agent-contract Postgres/pgvector references are template artifacts, not applicable to this Ink library)
+  e2e_added: 0  # none planned at M0; examples/basic.tsx is a manual non-TTY smoke per plan T3.2
+  artifact_contract_added: 1  # tests/bench-baseline.test.ts (schema of committed benchmark JSON)
+  total: 25
+  balance: healthy — pyramid not inverted; ratio matches plan intent
+edge_cases_from_plan:
+  covered:
+    - "EC-1 invalid role → typed TypeError with message naming component, value, and accepted union (src/chat-message.test.tsx:64)"
+    - "EC-2 NaN-is-typeof-number → Number.isFinite oracle on every baseline stat (tests/bench-baseline.test.ts:43-60)"
+    - "EC-3 120-char content in 20-col Box wraps without crash (src/chat-message.test.tsx:85)"
+    - "EC-4 empty theme override {} yields defaultTheme (src/theme.test.tsx:64)"
+    - "EC-5 color-detection env pins FORCE_COLOR=1 / NO_COLOR='' / CI='' at vitest config root (vitest.config.ts) + ANSI-canary test guarding the pin (src/chat-message.test.tsx:45)"
+    - "NO_COLOR smoke in fresh subprocess (chalk pins color level at import — correct isolation technique) asserting zero ESC sequences + visible text (src/chat-message.test.tsx:108, tests/fixtures/no-color-probe.tsx)"
+    - "empty children renders glyph only (src/chat-message.test.tsx:128)"
+    - "partial override preserves sibling leaves + untouched groups (src/theme.test.tsx:40)"
+    - "provider without theme prop yields defaults (src/theme.test.tsx:54)"
+    - "both roles nested under one provider, custom + default glyph coexist (tests/public-api.integration.test.tsx:10)"
+    - "hook fallback without provider via public entry (tests/public-api.integration.test.tsx:26)"
+  covered_count: 11
+  missing:
+    - "T1.1 Deep Dives: 'provider with theme={undefined} === no override' — explicit undefined is a legal call (src/theme.tsx:69 types theme?: TheoThemeOverride | undefined) but only absent-prop and {} are tested"
+    - "T2.1 Deep Dives: 'empty children (renders glyph only — snapshot)' — covered by toContain only, no snapshot as the deep dive specified"
+  missing_count: 2
+tdd_order_note: >
+  Test-before-implementation is NOT verifiable from git history: every task lands as one
+  atomic RED+GREEN commit (e.g., ba938f0 contains chat-message.test.tsx + chat-message.tsx),
+  which is the documented COMMIT contract of cycle-implement (one commit per task). Same for
+  T2.2's mandated "RED via intentionally-wrong import first" — process-only, leaves no artifact.
+  Not flagged as a violation; evidence lives in the implement audit trail (2c20402), not the DAG.
+aaa_and_naming: >
+  All 25 tests are behavior-named snake_case matching the plan's TDD literals
+  (renders_user_message_with_glyph_prefix, partial_override_preserves_untouched_token_groups, ...);
+  no "and" in names; AAA phases are compact but clearly ordered (arrange render → act frame →
+  assert) in every block. No violations to flag.
+findings:
+  - id: F-tests-1
+    severity: MEDIUM
+    file: src/chat-message.test.tsx
+    line: 64
+    plan_ref: T2.1 TDD — invalid_role_throws_typed_error_with_clear_message (EC-1 MUST FIX)
+    summary: EC-1 guard tested by direct function invocation `ChatMessage({...})`, not through a render — plan said "render with role='system'"; test is refactor-fragile and skips the consumer-visible failure path
+    evidence: |
+      src/chat-message.test.tsx:67-73 calls ChatMessage(props) as a plain function.
+      Comment documents the rationale (SEPA resolution 1: guard is the first statement,
+      fires before hooks). But: (a) it asserts implementation structure — if M1 wraps the
+      component in React.memo/forwardRef (plan D4: "M1 may split internals"), direct
+      invocation breaks even though behavior is intact (rules/testing.md § 6: tests
+      asserting internal structure break on every refactor); (b) how the TypeError
+      surfaces to a real consumer inside an Ink render tree is never exercised.
+    recommended_action: Keep the direct-call assertion for message content, add one render-path case (e.g., renderFrame with invalid role + assert rejection/throw) so the consumer-visible failure mode is pinned; or document the gap as accepted in the implementation log.
+  - id: F-tests-2
+    severity: LOW
+    file: src/theme.test.tsx
+    line: 54
+    plan_ref: T1.1 Deep Dives — "provider with theme={undefined} === no override"
+    summary: Plan edge case `theme={undefined}` (explicit undefined, distinct from absent prop under exactOptionalPropertyTypes) has no test despite being a legal call per the prop type
+    evidence: |
+      src/theme.tsx:69 — `theme?: TheoThemeOverride | undefined` (explicit undefined admitted).
+      src/theme.test.tsx covers absent prop (line 54) and `{}` (line 64); grep for
+      'theme={undefined}' in src/ tests/ -> 0 matches.
+    recommended_action: Add one-liner test `provider_with_explicit_undefined_theme_yields_default_tokens` rendering `<TheoTUIProvider theme={undefined}>` — trivially cheap, closes the plan's literal edge case.
+  - id: F-tests-3
+    severity: LOW
+    file: src/chat-message.test.tsx
+    line: 128
+    plan_ref: T2.1 Deep Dives — "empty children (renders glyph only — snapshot)"
+    summary: Empty-children edge is asserted only via toContain(">"), not the snapshot the plan's deep dive specified — the assertion cannot detect stray content after the glyph
+    evidence: |
+      src/chat-message.test.tsx:128-133 — expect(frame).toContain(">") only.
+      src/__snapshots__/chat-message.test.tsx.snap has exactly 2 snapshots (user/assistant
+      role frames); no empty-children snapshot.
+    recommended_action: Add `expect(frame).toMatchSnapshot("chat-message-empty")` (inside <Box width={40}> per the width discipline) or an exact-frame assertion proving glyph-only output.
+  - id: F-tests-4
+    severity: LOW
+    file: src/theme.test.tsx
+    line: 8
+    plan_ref: rules/testing.md § 3 — "no shared mutable state"
+    summary: Module-level mutable `captured` shared across the 5 theme tests — mitigated (every test calls resetCaptured() first, vitest runs in-file tests sequentially) but it is the exact shape § 3 warns against
+    evidence: |
+      src/theme.test.tsx:8 `let captured: TheoTheme | undefined;` + Probe() writes it at
+      line 17; each test resets at its first line, so order-independence currently holds.
+    recommended_action: Optional hardening — return the captured theme from a per-test factory (or use a local ref per test) so no test can forget the reset; at minimum move resetCaptured() into beforeEach.
+  - id: F-tests-5
+    severity: INFO
+    file: src/chat-message.test.tsx
+    line: 108
+    plan_ref: T2.1 — NO_COLOR smoke; § 7 runtime sanity
+    summary: NO_COLOR subprocess test costs ~1.1s (68% of suite runtime) and depends on `pnpm` + `tsx` resolvable from a minimal env (PATH/HOME/NO_COLOR only) — deterministic here and in CI, but the most environment-coupled test in the suite
+    evidence: |
+      Run 1: "no_color_render_contains_text_without_ansi_escapes 1135ms"; suite total 2.00s.
+      env passed: { PATH, HOME, NO_COLOR: "1" } — any runner needing extra vars to resolve
+      pnpm/tsx (e.g., corepack shims via env) would fail with a confusing spawn error.
+    recommended_action: None required at M0 (well under the 30s warn threshold; the subprocess isolation is the CORRECT technique for chalk's import-time color pinning). Consider spawning `node --import tsx` directly to drop the pnpm indirection if CI ever flakes.
+  - id: F-tests-6
+    severity: INFO
+    file: vitest.config.ts
+    line: 9
+    plan_ref: T0.2 — EC-5 env pins (ADR D2)
+    summary: "Pinning NO_COLOR='' alongside FORCE_COLOR=1 makes Node print 'NO_COLOR env is ignored due to FORCE_COLOR' warnings repeatedly in every test run — cosmetic noise that could mask real warnings in CI logs"
+    evidence: |
+      pnpm test stderr: "(node:1742140) Warning: The 'NO_COLOR' env is ignored due to the
+      'FORCE_COLOR' env being set." ×3+ per run (one per worker).
+      Behavior is still correct (FORCE_COLOR wins — the ANSI canary test proves it).
+    recommended_action: Accept as-is (the pin is intentional per EC-5), or delete the NO_COLOR key from vitest env — FORCE_COLOR=1 alone already neutralizes an inherited NO_COLOR per chalk/Node precedence, which the canary would keep enforced.
+  - id: F-tests-7
+    severity: INFO
+    file: src/chat-message.test.tsx
+    line: 27
+    plan_ref: ADR D2 — "every behavior asserted BOTH via toMatchSnapshot() and ≥ 1 plain-text toContain"
+    summary: ADR D2's double-assertion wording is only literally satisfied for the two role frames; other behaviors (custom glyph, text color, wrap) are toContain-only — the plan's own T2.1 TDD section (the concrete contract) only requires snapshots per role, so this is a wording drift, not a violation
+    evidence: |
+      src/__snapshots__/chat-message.test.tsx.snap: exactly 2 snapshots.
+      Plan T2.1 TDD RED list assigns toMatchSnapshot only to user_and_assistant_frames_match_snapshot_under_forced_color.
+    recommended_action: None — record that the T2.1 TDD section, not ADR D2's prose, is the operative contract; snapshots per role committed, byte-stable across 2 consecutive runs (T2.1 AC verified).
+positive_notes:
+  - "Plan TDD sections fully implemented: T0.1 3/3, T0.2 1/1 (+2 growth), T1.1 4/4 (+1), T2.1 7/7 (+4 including ANSI canary and color-branch closure from 6e58100), T2.2 1/1 (+1), T3.1 1/1 — 17 planned RED tests, 25 shipped"
+  - "Both negative-case tests assert the SPECIFIC typed error and message (TypeError + full contract string), exactly per rules/testing.md § 4.1 — not merely 'it throws'"
+  - "bench-baseline test is stronger than the plan asked: also cross-checks runs.length === protocol.measured_runs, per-run finiteness, warmup >= 1, hardware/workload metadata"
+  - "Snapshot hygiene: 2 committed snapshots, 0 obsolete, named keys, stable across consecutive runs under the pinned env"
+  - "renderFrame helper is the single determinism point and is imported by every frame-asserting file (Drawbacks row 3 review-checklist item satisfied)"
+  - "No fake timers needed anywhere — no time/randomness in any test (bench randomness lives outside the vitest suite by design, ADR D9)"

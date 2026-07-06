@@ -1,0 +1,139 @@
+agent: review-m0-walking-skeleton-cross-validation
+review_target: fee8df7..HEAD (88e1756) for plan m0-walking-skeleton
+plan: .claude/knowledge-base/plans/m0-walking-skeleton-plan.md
+plan_tasks_summary:
+  total_tasks: 9  # T0.1 T0.2 T1.1 T2.1 T2.2 T3.1 T3.2 T4.1 + Final Phase
+  fully_implemented: 9
+  partial: 0
+  missing: 0
+  diverged: 0
+per_task_implementation:
+  - task: T0.1
+    status: fully
+    commits: [75273a0]
+    evidence: manifest matches all D8 invariants (type=module, types-first single-dot exports, files=[dist], sideEffects=false, engines>=20, react only peer, Apache-2.0, no private); 3 manifest-contract tests green; LICENSE full Apache-2.0 text; NOTICE names project; CHANGELOG [Unreleased] slug-referenced; pnpm-lock.yaml committed
+  - task: T0.2
+    status: fully
+    commits: [2436ea5]
+    evidence: all 8 declared files present; vitest env pins FORCE_COLOR=1 + NO_COLOR="" + CI="" (EC-5); passWithNoTests=false; five gates individually + `pnpm gates` aggregate re-run 2026-07-06 exit 0; dist/index.js + dist/index.d.ts produced. Logged deviation VERIFIED — +@types/node +@eslint/js devDeps beyond plan dep table (SEPA iteration-2 pre-commit log)
+  - task: T1.1
+    status: fully
+    commits: [0624cdd, 6e58100]
+    evidence: theme.tsx implements TheoTheme/defaultTheme/provider/hook; useTheoTheme total (never undefined); 5 theme tests green (4 planned + provider_without_theme_prop added in final phase, logged in 6e58100). Logged deviation VERIFIED — merge is leaf-level per role/status group vs plan pseudocode "shallow per top-level group"; documented in code comment (theme.tsx:26-29) + CHANGELOG T1.1 entry; strictly finer-grained, plan's partial_override test passes
+  - task: T2.1
+    status: fully
+    commits: [ba938f0, 6e58100]
+    evidence: 11 chat-message tests green (7 planned — combined snapshot split into per-role pair, one-behavior-per-test — + ANSI canary + custom-text-color + glyph-only-empty-children, additions logged); EC-1 role guard is first statement, TypeError names ChatMessage + invalid value + accepted union; snapshots (2) committed, stable across two consecutive runs. Logged deviation VERIFIED — NO_COLOR test executes subprocess (tests/fixtures/no-color-probe.tsx via tsx, chalk pins color level at import; in-process stubEnv cannot degrade) instead of plan's spawn-free stubEnv; SEPA initial brief logs the relocation; assertions match plan oracle (no ESC[, text present)
+  - task: T2.2
+    status: fully
+    commits: [2d04734]
+    evidence: tests/public-api.integration.test.tsx imports ONLY from ../src/index.js; both roles + custom override + sibling stacking asserted; exactly the declared file changed (zero scope creep)
+  - task: T3.1
+    status: fully
+    commits: [a94cb5a, 6b5840c]
+    evidence: harness = 100-message thread + 300-token streaming append, 1 warmup + 5 measured runs (≥3 floor), zero-frame guard (EC-2); committed baseline JSON has full schema (protocol, runs[5], aggregate mean±std_dev, node v22.22.2, hardware cpu/cores, methodology); tests/bench-baseline.test.ts green; --smoke wired in CI; baseline refreshed after final-phase full run (6b5840c, per SEPA resolution 7)
+  - task: T3.2
+    status: fully
+    commits: [e208c2b]
+    evidence: examples/basic.tsx imports from ../src/index.js; `pnpm example | cat` re-run 2026-07-06 exits 0 with both glyphs ("> " and "✦ ") in output (non-TTY smoke)
+  - task: T4.1
+    status: fully
+    commits: [03042cb, 1b5503a]
+    evidence: ci.yml runs six steps (format→lint→typecheck→test→build→bench --smoke) as separate steps (ADR D7), node matrix [20.x, 22.x], push develop + PR main/develop triggers; CI verified green for HEAD 88e1756 via gh (run 28787848976: gates(20.x)=success, gates(22.x)=success); typescript ENABLED in code-quality-languages.txt and consumed by /code-quality (audit PASS 100). Note: plan's literal oracle `grep -x typescript` superseded by piped format — see F-xval-3
+  - task: Final Phase (Integration Validation)
+    status: fully
+    commits: [6e58100, 6b5840c, 1b5503a]
+    evidence: gates exit 0; coverage 100/100/100/100 on src/** (≥90 gate, thresholds now enforced in vitest.config); bench-baseline test green; non-TTY smoke green; failure scenarios declared "(none — no external I/O touched)"; run_validation report PARTIAL (0 FAIL, 1 SKIP test_obligations, WARN = human-evidence criteria which this review verified)
+acceptance_criteria_summary:
+  total: 31
+  satisfied: 31
+  unverified: 0
+  false_claims: 0
+  note: T4.1 AC-2 semantic intent ("typescript active") satisfied; its declared verification command (`grep -x typescript`) no longer passes because the kit parser requires piped columns (F-xval-3)
+coverage_matrix:
+  declared: 9
+  verified_resolved: 9
+adr_compliance:
+  total_adrs: 9  # D1-D9
+  respected: 9
+  diverged_without_new_adr: 0
+  notes: |
+    D1 ✓ (ink ^5.2.0 dep, react ^18||^19 only peer, engines >=20). D2 ✓ (vitest env root pin,
+    Box-width snapshots, renderFrame helper shared by all 3 render-test files, snapshot+toContain
+    double assertion). D3 ✓ (tsup ESM+dts). D4 ✓ (single ChatMessage, explicit role prop).
+    D5 ✓ with logged refinement (leaf-level merge, finer than pseudocode's top-level-group —
+    documented in code + CHANGELOG, plan's own override tests pass). D6/D9 ✓ (5 runs ≥ 3,
+    mean±std_dev, JSON committed, data-only no threshold, --smoke in CI). D7 ✓ (5 separate
+    scripts + gates aggregate, eslint flat + typescript-eslint + prettier, complexity 10 rule).
+    D8 ✓ (manifest contract test, 3 assertions).
+logged_deviations_verified:
+  - "+@types/node +@eslint/js devDeps — logged in SEPA iteration-2 pre-commit audit trail; VERIFIED benign (types + flat-config plumbing)"
+  - "NO_COLOR test relocated to subprocess-in-file (tests/fixtures/no-color-probe.tsx spawned from src/chat-message.test.tsx) — logged in SEPA initial brief; VERIFIED, plan oracle assertions preserved"
+  - "leaf-level theme merge — logged in theme.tsx doc comment + CHANGELOG T1.1 entry; VERIFIED, satisfies plan's partial-override tests"
+  - "test count growth 4→5 theme / 7→11 chat-message — final-phase coverage-branch additions, logged in 6e58100 commit message; VERIFIED all additive, no planned test dropped"
+  - "baseline refresh commit 6b5840c — pre-declared as SEPA resolution 7 in the implementation contract; VERIFIED"
+plan_drift:
+  plan_edited_after_implement: true
+  details: |
+    Commit 2c20402 (audit trail, 2026-07-06) contains 34 changed lines (17+/17-) in the plan —
+    exclusively inside `#### TDD` fenced blocks, rewriting prose test descriptions into
+    executable expect() assertion shapes (e.g. "asserts type=module" → `expect(pkg.type).toBe("module")`)
+    to satisfy the pre-loop `check_tdd_shape.py` hard gate (8/8 all_pass recorded in the
+    pre-condition audit). No test name, acceptance criterion, task, file list, ADR, or semantic
+    contract changed. The edit is openly declared in the commit message ("plan TDD blocks
+    upgraded to executable assertion shapes (shape gate 8/8)"). Downgraded from the contract's
+    default BLOCKER because the diff is provably non-semantic and self-logged — but flagged
+    (F-xval-1) as a process deviation: the plan-frozen invariant was technically violated.
+findings:
+  - id: F-xval-1
+    severity: MEDIUM
+    file: .claude/knowledge-base/plans/m0-walking-skeleton-plan.md
+    plan_ref: cycle-review.md plan-frozen invariant (Step G)
+    summary: Plan TDD blocks edited after /implement start (committed in 2c20402) — non-semantic assertion-shape rewrite, openly logged, but the frozen-plan invariant was technically violated
+    evidence: |
+      git show 2c20402 -- plan file: 34 lines, all inside TDD fences; prose → expect() shapes.
+      Commit message declares it. Test names + semantics unchanged; plan header (v1.2
+      "executable criteria oracles") already anticipated the shape.
+    recommended_action: For future runs, run the TDD-shape upgrade through /plan-improve and commit the plan bump BEFORE the halt-loop's first task commit, so the plan on disk at loop start equals the plan in git history.
+  - id: F-xval-2
+    severity: LOW
+    file: CHANGELOG.md
+    plan_ref: "T3.1 / Unbreakable Rule 6 (write for the consumer)"
+    summary: "[Unreleased] T3.1 entry cites stale benchmark numbers (mean 20.949 ± 2.281, peak 44.569 ± 1.038 ms) — the committed baseline was refreshed in 6b5840c to mean 11.714 ± 0.335 ms/frame"
+    evidence: |
+      CHANGELOG.md T3.1 bullet vs docs/benchmarks/m0-chat-message-baseline.json aggregate.
+      6b5840c rewrote the JSON but not the changelog numbers.
+    recommended_action: Update the [Unreleased] entry to the refreshed numbers (or drop exact figures and point at the JSON) — Unreleased entries are editable; released ones are not.
+  - id: F-xval-3
+    severity: LOW
+    file: .claude/rules/code-quality-languages.txt
+    plan_ref: "T4.1 Acceptance Criteria item 2 (oracle: grep -x typescript)"
+    summary: AC verification oracle superseded — 1b5503a rewrote the line into the piped format (`typescript | package.json | ENABLED | …`) required by the kit parser, so the plan's literal `grep -x typescript` fails; the file's own header comment ("one language identifier per line") also contradicts the parser's required format
+    evidence: |
+      _shared.py load_languages_config raises ValueError on a bare `typescript` line
+      (requires >= 3 pipe-separated parts) — the plan's oracle and the file header were the
+      stale artifacts, not the fix. /code-quality ran PASS 100 with typescript enabled.
+    recommended_action: Fix the header comment in code-quality-languages.txt to document the piped format; note the oracle supersession in the review record (semantic AC holds).
+  - id: F-xval-4
+    severity: LOW
+    file: .claude/knowledge-base/implementations/m0-walking-skeleton-implementation.md
+    plan_ref: cycle-implement.md § Output ("final summary with wiring triad checklist per task")
+    summary: Implementation summary was never finalized — its task table still shows every task `pending` with no commit SHAs or wiring checklist; authoritative state lives only in .progress-m0-walking-skeleton.json + git history
+    evidence: |
+      File is 61 lines (working contract only); table statuses all "pending" while the
+      checkpoint JSON records all 8 tasks committed with SHAs (checkpoint_consistency PASS).
+    recommended_action: Backfill the summary table (status/wiring/SHA per task) before /release, or record an ADR that the .progress JSON is the canonical final artifact.
+  - id: F-xval-5
+    severity: INFO
+    file: .claude/skills/implement/scripts/check_acceptance_criteria.py
+    plan_ref: "(out-of-plan scope — kit maintenance)"
+    summary: Validation-fix commit 1b5503a edits a kit script (size-budget exemption for lockfiles/LICENSE/NOTICE) inside the feature slice — logged with issue ref (usetheodev/theokit-tui#3) and correct in substance, but kit changes bundled with product commits dilute slice atomicity
+    evidence: git show 1b5503a — product files (package.json, vitest.config.ts) + kit script in one commit.
+    recommended_action: None blocking; prefer separate chore(kit) commits for kit-script fixes in future slices.
+verification_run_2026_07_06:
+  gates: "pnpm gates exit 0 (format:check, lint, typecheck, test 25/25 in 6 files, build dist/index.js + dist/index.d.ts)"
+  coverage: "100% statements/branches/functions/lines on src/** (threshold 90 enforced)"
+  ci: "gh run 28787848976 on HEAD 88e1756: gates(20.x) success, gates(22.x) success"
+  example: "pnpm example | cat exit 0, both glyphs present"
+  bench_baseline: "5 measured runs, finite std_dev, node/hardware/methodology present"
+verdict_input: NO BLOCKER, 1 MEDIUM (logged plan-shape drift), 3 LOW, 1 INFO — plan implemented fully and faithfully; all declared deviations verified as properly logged
