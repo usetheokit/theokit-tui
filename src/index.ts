@@ -20,6 +20,15 @@ export type {
 export { MAX_RESULT_CHARS, ToolResult } from "./tool-result.js";
 export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";
 
+export { parseUnifiedDiff } from "./diff-model.js";
+export type {
+  DiffFile,
+  DiffFold,
+  DiffLine,
+  DiffLineKind,
+  DiffRow,
+} from "./diff-model.js";
+
 export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {
   AgentEvent,

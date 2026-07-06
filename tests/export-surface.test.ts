@@ -56,8 +56,14 @@ describe("public entry surface (T0.2)", () => {
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
       "ink",
       "ink-spinner",
+      "parse-diff",
     ]);
     expect(Object.keys(pkg.peerDependencies)).toEqual(["react"]);
+  });
+
+  it("public_entry_exposes_diff_model", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.parseUnifiedDiff).toBe("function");
   });
 
   it("public_entry_exposes_agent_surface", async () => {
