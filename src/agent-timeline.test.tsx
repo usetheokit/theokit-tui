@@ -248,6 +248,27 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(frame).toMatch(/\u001B\[3m/); // italic
   });
 
+  it("tool_event_max_lines_flows_into_truncation", async () => {
+    const output = Array.from({ length: 8 }, (_, i) => `row-${i}`).join("\n");
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "x1",
+            kind: "tool",
+            name: "cat",
+            status: "success",
+            output,
+            maxLines: 3,
+          },
+        ]}
+      />,
+    );
+    expect(frame).toContain("… +6 lines hidden");
+    expect(frame).toContain("row-7");
+    expect(frame).not.toContain("row-0");
+  });
+
   it("extra_event_properties_are_tolerated", async () => {
     // EC-12: M7 adapters forward enriched objects — unknown extras pass.
     const enriched: AgentMessageEvent & { timestamp: number } = {

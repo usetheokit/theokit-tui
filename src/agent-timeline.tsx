@@ -154,7 +154,7 @@ function eventRow(event: AgentEvent) {
     default: {
       // Unreachable through the public API — assertValidEvents screens kinds
       // at the boundary (D8); kept for compile-time exhaustiveness (D3).
-      /* v8 ignore next 4 */
+      /* v8 ignore next 6 */
       const exhaustive: never = event;
       throw new TypeError(
         `AgentTimeline: unknown event kind "${String((exhaustive as AgentEvent).kind)}" — expected ${KIND_UNION_MESSAGE}`,
