@@ -1,7 +1,8 @@
 # Languages enabled for /code-quality and post-edit-check.sh.
 #
-# Format: one language identifier per line. Lines starting with '#' are comments.
-# Identifiers match the file extensions handled by hooks/post-edit-check.sh.
+# Format (required by skills/code-quality _shared.py parser — see issue #4):
+#   LANGUAGE | MANIFEST-MARKER | STATUS [| NOTES]     STATUS ∈ ENABLED/DISABLED/DEFER
+# Lines starting with '#' are comments.
 #
 # Default policy: empty file = no language-specific quality checks run. Each
 # project enables the languages it actually uses. Adding a language here is a

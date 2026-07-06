@@ -1,4 +1,5 @@
 import eslint from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -7,6 +8,7 @@ export default tseslint.config(
   { ignores: ["dist/", "coverage/", "docs/benchmarks/", ".claude/"] },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  reactHooks.configs["recommended-latest"],
   {
     rules: {
       // Plan T0.2 acceptance criterion oracle — without the explicit rule the

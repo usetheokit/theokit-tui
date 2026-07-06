@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // Public-entry surface contract (plan T0.2, grows with T1.1/T2.1).
@@ -5,7 +6,12 @@ import { describe, expect, it } from "vitest";
 describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_version_constant", async () => {
     const mod = await import("../src/index.js");
-    expect(mod.VERSION).toBe("0.0.0");
+    // Single source of truth: the exported VERSION must track the manifest
+    // (review F-wire-3 — prevents silent drift at the first release bump).
+    const pkg = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as { version: string };
+    expect(mod.VERSION).toBe(pkg.version);
   });
 
   it("public_entry_exposes_theme_surface", async () => {

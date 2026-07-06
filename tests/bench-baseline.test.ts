@@ -59,6 +59,21 @@ describe("benchmark baseline (T3.1)", () => {
       true,
     );
 
+    // Self-consistency (review F-dom-2): the aggregate must be derivable
+    // from the runs — a finite-but-impossible hand-edit stays red.
+    const runMeans = baseline.runs.map((r) => r.mean_ms_per_frame);
+    const recomputedMean =
+      runMeans.reduce((a, b) => a + b, 0) / runMeans.length;
+    expect(
+      Math.abs(recomputedMean - baseline.aggregate.mean_ms_per_frame.mean),
+    ).toBeLessThan(0.01);
+    expect(baseline.aggregate.mean_ms_per_frame.std_dev).toBeGreaterThanOrEqual(
+      0,
+    );
+    expect(baseline.aggregate.peak_ms_per_frame.std_dev).toBeGreaterThanOrEqual(
+      0,
+    );
+
     expect(baseline.methodology.length > 0).toBe(true);
     expect(baseline.node_version.length > 0).toBe(true);
     expect(baseline.hardware.cores).toBeGreaterThan(0);

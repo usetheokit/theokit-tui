@@ -1,0 +1,102 @@
+agent: review-m0-walking-skeleton-wiring
+review_target: fee8df7..HEAD (develop) for plan m0-walking-skeleton — note, no local/remote `main` exists yet (first release not cut); baseline = last pre-plan commit fee8df7
+plan: .claude/knowledge-base/plans/m0-walking-skeleton-plan.md
+triad_revalidation:
+  total_new_symbols: 10          # 5 value exports (VERSION, TheoTUIProvider, useTheoTheme, defaultTheme, ChatMessage) + 4 type-only (RoleTokens, TheoTheme, TheoThemeOverride, ChatMessageProps) + 1 test-infra (renderFrame)
+  pillar_a_honest_pass: 5 / 5    # deep-checked by direct grep excluding .claude/; every caller read and confirmed functionally necessary (no no-op/dead-branch callers)
+  pillar_b_honest_pass: 5 / 5    # tests/public-api.integration.test.tsx renders ChatMessage+TheoTUIProvider+defaultTheme in the Act phase via src/index.js only; useTheoTheme exercised through ChatMessage + directly in src/theme.test.tsx; VERSION asserted in tests/export-surface.test.ts (constant — integration N/A)
+  pillar_c_observed: 1 / 1       # plan declares NO runtime counters; the runtime-evidence artifact docs/benchmarks/m0-chat-message-baseline.json verified honest (see evidence_notes)
+evidence_notes: |
+  Pillar (a) samples re-run via check_wiring.py on 5 symbols (ChatMessage, TheoTUIProvider,
+  useTheoTheme, defaultTheme, VERSION) + independent grep. Real production-shaped callers:
+  examples/basic.tsx (real ink render(), wired as `pnpm example`), benchmarks/chat-message.bench.tsx
+  (100-message thread + 300 rerenders, wired as `pnpm bench` + CI "bench smoke" step),
+  src/chat-message.tsx:25 (useTheoTheme — the DIP seam), src/theme.tsx (defaultTheme fallback).
+  Pillar (c) magnitude sanity: 300 frames/run == 300 streamed-token rerenders (expected 1:1);
+  5 measured runs >= 3 floor; real variance across runs (mean 11.42-12.37ms, peak 19.8-28.1ms —
+  not fabricated flat numbers); JSON date 2026-07-06T11:15:11Z matches commit 6b5840c timestamp
+  (Jul 6 08:15:11 -0300) to the second; baseline is gate-enforced by tests/bench-baseline.test.ts
+  (Number.isFinite oracles, runs in default `pnpm test`).
+  Integration-with-existing-flows: library entry point = package `exports` -> src/index.ts
+  (composition root); both production modules (theme.tsx, chat-message.tsx) reachable from it;
+  no orphan module in the diff. Dead exports: none — every export is either re-exported via
+  src/index.ts or has an in-project caller (renderFrame used by 3 test files; internal
+  ThemeContext correctly NOT exported).
+  Boundary spot-check (template tiers src/core|local|cloud do not exist in this repo — adapted to
+  the plan's M0 boundaries): src/theme.tsx imports react only (renderer-agnostic domain — no ink
+  import), src/chat-message.tsx consumes tokens ONLY via useTheoTheme() (DIP respected),
+  src/index.ts is the sole public surface. PASS.
+  Concurrency: no shared external resources (no DB/queue/fs races in production code); plan
+  declares "(none — single-threaded)" per task. N/A — consistent with the code.
+  Test suite re-run during review: 6 files, 25 tests, all green.
+findings:
+  - id: F-wire-1
+    severity: LOW
+    file: .claude/skills/implement/scripts/check_wiring.py
+    line: null
+    plan_ref: T2.2 (wiring pillar b) + rules/testing.md § 5
+    summary: check_wiring.py pillar (b) raw check FAILs for EVERY symbol (expects a tests/integration/ directory) while the project's real integration test lives at tests/public-api.integration.test.tsx — convention undocumented, so automated pillar-b verification is silently inert
+    evidence: |
+      check_wiring.py --symbol ChatMessage (and all 4 other symbols):
+        "pillar": "b_integration_test", "status": "FAIL",
+        "reason": "No tests/integration/ directory found in project"
+      run_validation wiring summary only independently re-verified pillar (a)
+      ("Pillar (a) fails: 0" — m0-walking-skeleton-implement-validate-2026-07-06.md).
+      Substance is honest: tests/public-api.integration.test.tsx:10-32 renders the symbols in
+      the Act phase through src/index.js. But the progress checkpoint's b:"pass" claims for
+      T1.1/T2.1/T2.2 were never machine-verified and never can be until the convention is known.
+    recommended_action: Document the `tests/*.integration.test.tsx` convention in rules/testing.md § 5 (the file explicitly asks for this) and/or teach check_wiring.py the pattern, so pillar (b) verification stops degrading silently in M1+
+  - id: F-wire-2
+    severity: LOW
+    file: .claude/skills/implement/scripts/check_wiring.py
+    line: null
+    plan_ref: cycle-implement.md § Wiring triad (pillar a)
+    summary: check_wiring.py pillar (a) caller search includes .claude/knowledge-base/references/ SOTA clones — for common symbol names (defaultTheme, VERSION) the callers_sample was 100% third-party reference files, so pillar (a) PASS can be satisfied by code that is not this project's
+    evidence: |
+      check_wiring.py --symbol defaultTheme -> callers_sample:
+        [".claude/knowledge-base/references/ink-ui/examples/theming/custom-component.tsx", ...]
+        (zero in-project entries in the sample)
+      check_wiring.py --symbol VERSION -> callers_sample:
+        [".claude/knowledge-base/references/gemini-cli/scripts/download-ripgrep-binaries.ts", ...]
+      For THIS branch, direct grep (excluding .claude/) confirms real in-project callers exist
+      for both symbols — no gaming occurred; the finding is a false-positive RISK for future
+      milestones where a genuinely uncalled symbol shares a name with reference-clone code.
+    recommended_action: Exclude .claude/knowledge-base/references/ (and .claude/ generally) from the pillar (a) caller search path in check_wiring.py
+  - id: F-wire-3
+    severity: LOW
+    file: src/index.ts
+    line: 1
+    plan_ref: T0.2 (VERSION placeholder) + cycle-release.md (semver bump)
+    summary: VERSION="0.0.0" is hand-maintained and duplicates package.json version with no sync mechanism — at the first /release bump, the exported VERSION will silently drift from the manifest while every gate stays green (tests/export-surface.test.ts:8 pins the same literal, so it cannot catch the drift)
+    evidence: |
+      src/index.ts:1: export const VERSION = "0.0.0";
+      package.json:3: "version": "0.0.0"   (will be bumped by /release; src constant will not)
+      tests/export-surface.test.ts:8: expect(mod.VERSION).toBe("0.0.0")  — asserts the stale
+      literal, not equality with the manifest.
+    recommended_action: Make the test assert VERSION === package.json version (readFileSync, single source of truth), or generate VERSION at build time — before the first release cut
+  - id: F-wire-4
+    severity: INFO
+    file: tests/public-api.integration.test.tsx
+    line: 6
+    plan_ref: T2.2 Acceptance Criteria ("imports resolve ONLY via src/index.js")
+    summary: the "consumer-shaped" integration test imports src/index.js, not the built dist artifact — packaging resolution (exports-map path correctness against real emitted files) is proven only indirectly (manifest string assertions + `pnpm build` exit 0 in CI)
+    evidence: |
+      tests/public-api.integration.test.tsx:6: import ... from "../src/index.js";
+      Compensating controls verified: tests/package-manifest.test.ts asserts the exact exports
+      map; CI build step produces dist/. Residual risk is small and the plan explicitly locked
+      the src entry for M0; publint is roadmap-scheduled for M8.
+    recommended_action: No action for M0; at M8 (publint) add one smoke test importing the packed artifact (npm pack + import) to close the dist-resolution gap
+  - id: F-wire-5
+    severity: INFO
+    file: vitest.config.ts
+    line: 11
+    plan_ref: T0.2 (EC-5 color-detection pins) / ADR D2
+    summary: pinning NO_COLOR to empty string still counts as "set" for Node, emitting a benign warning in every vitest worker ("The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set") — log noise in CI, no functional impact (FORCE_COLOR correctly wins; forced-color canary test passes)
+    evidence: |
+      pnpm test stderr (multiple worker pids): "Warning: The 'NO_COLOR' env is ignored due to
+      the 'FORCE_COLOR' env being set."
+      src/chat-message.test.tsx:45-52 forced_color_canary confirms ANSI escapes present, and the
+      NO_COLOR probe subprocess (fresh env, tests/fixtures/no-color-probe.tsx) confirms the
+      degraded path — both determinism directions hold.
+    recommended_action: Optional cosmetic fix — delete the NO_COLOR key from worker env instead of setting "" (e.g., leave it unset and keep only FORCE_COLOR + CI pins)
+verdict_input: no BLOCKER, no HIGH, no MEDIUM — triad is honest and deep (5/5 pillar-a callers functionally necessary; integration test exercises symbols in Act phase; benchmark artifact provenance verified against git history); 3 LOW are kit-tooling/forward-drift hardening, 2 INFO advisory

@@ -2,4 +2,6 @@
 
 exports[`ChatMessage (T2.1) > assistant_frame_matches_snapshot_under_forced_color > chat-message-assistant 1`] = `"[35m✦ [39mTheo is an AI toolkit."`;
 
+exports[`ChatMessage (T2.1) > renders_glyph_only_for_empty_children > chat-message-empty 1`] = `"[36m> [39m"`;
+
 exports[`ChatMessage (T2.1) > user_frame_matches_snapshot_under_forced_color > chat-message-user 1`] = `"[36m> [39mWhat is Theo?"`;

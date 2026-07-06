@@ -10,11 +10,14 @@ interface PackageManifest {
   license: string;
   sideEffects: boolean;
   private?: unknown;
+  main: string;
+  types: string;
   exports: Record<string, Record<string, string> | undefined>;
   files: string[];
   engines: Record<string, string>;
   peerDependencies: Record<string, string>;
   dependencies: Record<string, string>;
+  scripts: Record<string, string>;
 }
 
 const pkg = JSON.parse(
@@ -31,6 +34,25 @@ describe("package manifest contract (T0.1)", () => {
     expect(dot["types"]).toBe("./dist/index.d.ts");
     expect(dot["default"]).toBe("./dist/index.js");
     expect(pkg.files).toEqual(["dist"]);
+    // Legacy resolution fields must point at the same ESM artifacts
+    // (review F-arch-3 — a stale "main" passes exports-only assertions).
+    expect(pkg.main).toBe("./dist/index.js");
+    expect(pkg.types).toBe("./dist/index.d.ts");
+  });
+
+  it("package_manifest_declares_the_gate_chain_scripts_ci_depends_on", () => {
+    // ci.yml invokes these script keys (review F-arch-4).
+    for (const key of [
+      "format:check",
+      "lint",
+      "typecheck",
+      "test",
+      "test:coverage",
+      "build",
+      "bench",
+    ]) {
+      expect(typeof pkg.scripts[key]).toBe("string");
+    }
   });
 
   it("package_manifest_declares_react_as_only_peer_and_ink_as_dependency", () => {

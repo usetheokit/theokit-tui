@@ -22,10 +22,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   per-role snapshots, typed invalid-role error, narrow-width wrap and NO_COLOR degraded
   render coverage (m0-walking-skeleton T2.1)
 - Render benchmark harness (`pnpm bench`, `--smoke` mode) with committed baseline —
-  100-message thread + 300-token streaming: mean 20.949 ± 2.281 ms/frame,
-  peak 44.569 ± 1.038 ms over 5 runs (`docs/benchmarks/m0-chat-message-baseline.json`)
+  100-message thread + 300-token streaming, 5 measured runs + warmup, mean ± std dev;
+  authoritative numbers live in `docs/benchmarks/m0-chat-message-baseline.json`
   (m0-walking-skeleton T3.1)
 - Runnable example (`pnpm example`) — provider + user/assistant exchange; degrades
   cleanly when piped/non-TTY (m0-walking-skeleton T3.2)
 - GitHub Actions CI: gate chain (format → lint → typecheck → test → build → bench smoke)
-  on Node 20 + 22 for pushes to `develop` and PRs (m0-walking-skeleton T4.1)
+  on Node 20 + 22 for pushes to `develop` and PRs, including a coverage gate step
+  (m0-walking-skeleton T4.1)
+
+### Changed
+
+- Review-batch hardening (m0-walking-skeleton review 2026-07-06): theme context value
+  memoized (stable identity for consumers), `defaultTheme` deep-frozen, nested-provider
+  reset semantics documented + pinned by test, exported `VERSION` now contract-tested
+  against `package.json`, benchmark runner pins the color env (baseline regenerated),
+  `eslint-plugin-react-hooks` enabled

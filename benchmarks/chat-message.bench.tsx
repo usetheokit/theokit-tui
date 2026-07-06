@@ -142,6 +142,7 @@ if (!smoke) {
       cores: cpus().length,
     },
     workload: { messages: N_MESSAGES, streamed_tokens: N_TOKENS },
+    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
     protocol: { warmup_runs: WARMUP_RUNS, measured_runs: measured },
     runs,
     aggregate,
@@ -149,8 +150,8 @@ if (!smoke) {
       "ink-testing-library render + rerender loop (one event-loop tick between " +
       "rerenders so Ink flushes); per-frame ms = wall time distributed evenly " +
       "across stdout.frames deltas (react-ink heuristic — includes tick " +
-      "overhead, not true per-frame instrumentation); FORCE_COLOR inherited " +
-      "from the invoking shell; 1 discarded warmup + N measured runs; " +
+      "overhead, not true per-frame instrumentation); color env pinned by " +
+      "benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; " +
       "std_dev is population std dev over run-level means.",
   };
   const outPath = join(

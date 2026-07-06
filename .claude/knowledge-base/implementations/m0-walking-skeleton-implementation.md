@@ -29,14 +29,14 @@
 
 | # | Plan ref | Status | Wiring (a) | Wiring (b) | Wiring (c) | Commit SHA |
 |---|---|---|---|---|---|---|
-| T0.1 | Phase 0 / T0.1 | pending | — | — | — | — |
-| T0.2 | Phase 0 / T0.2 | pending | — | — | — | — |
-| T1.1 | Phase 1 / T1.1 | pending | — | — | — | — |
-| T2.1 | Phase 2 / T2.1 | pending | — | — | — | — |
-| T2.2 | Phase 2 / T2.2 | pending | — | — | — | — |
-| T3.1 | Phase 3 / T3.1 | pending | — | — | — | — |
-| T3.2 | Phase 3 / T3.2 | pending | — | — | — | — |
-| T4.1 | Phase 4 / T4.1 | pending | — | — | — | — |
+| T0.1 | Phase 0 / T0.1 | committed | defer | n/a | n/a | 75273a0 |
+| T0.2 | Phase 0 / T0.2 | committed | pass | n/a | n/a | 2436ea5 |
+| T1.1 | Phase 1 / T1.1 | committed | pass | pass | n/a | 0624cdd |
+| T2.1 | Phase 2 / T2.1 | committed | pass | pass | n/a | ba938f0 |
+| T2.2 | Phase 2 / T2.2 | committed | pass | pass | n/a | 2d04734 |
+| T3.1 | Phase 3 / T3.1 | committed | pass | pass | pass | a94cb5a |
+| T3.2 | Phase 3 / T3.2 | committed | pass | pass | n/a | e208c2b |
+| T4.1 | Phase 4 / T4.1 | committed | pass | n/a | pass | 03042cb |
 
 Status legend: `pending` / `red` / `green` / `refactor` / `wired` / `committed` / `blocked` / `done`
 
@@ -59,3 +59,16 @@ minimal → REFACTOR (SOLID/Clean Code/DRY) → WIRING (`check_wiring.py`) → a
 (`feat(scope): … (T{N.M})`) → `.progress-m0-walking-skeleton.json` update → phase-boundary
 mini review when a phase closes. TDD/AC/DoD details live in the plan §Phase 0–4 — the plan is
 the contract; this file tracks execution state only.
+
+
+## Final state (backfilled post-halt-loop — review F-xval-4)
+
+- Halt-loop: 8/8 tasks committed, 1 iteration each; promise IMPLEMENTATION_COMPLETE emitted 2026-07-06.
+- Step 5 validation: PARTIAL exit 0 (all gates PASS; 1 LOW human-evidence WARN) — report
+  `reviews/m0-walking-skeleton-implement-validate-2026-07-06.md`.
+- Wiring triad: pillar (a) independently re-verified by run_validation (57/61 symbols, 0 fails);
+  pillar (b) via tests/public-api.integration.test.tsx (+ per-symbol audit by /review wiring agent 5/5);
+  pillar (c) = committed benchmark baseline (docs/benchmarks/m0-chat-message-baseline.json).
+- Coverage: 100% stmts/branch/funcs/lines on src/** (thresholds >=90 enforced in vitest config + CI step).
+- Phase mini-reviews: phases 0-4 all PHASE_REVIEW_PASS.
+- Wiring legend for config tasks: T0.1 a=defer (no code symbol — manifest contract test is the caller).

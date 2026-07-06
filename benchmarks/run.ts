@@ -21,6 +21,9 @@ for (const file of files) {
     ["exec", "tsx", join(benchDir, file), ...args],
     {
       stdio: "inherit",
+      // Pin the color-detection inputs (same contract as vitest.config.ts —
+      // review F-dom-1/testing): frame payload must not vary with the shell.
+      env: { ...process.env, FORCE_COLOR: "1", NO_COLOR: "", CI: "" },
     },
   );
   if (result.error) {

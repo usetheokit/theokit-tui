@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 
 export interface RoleTokens {
@@ -36,13 +36,17 @@ export interface TheoThemeOverride {
   status?: Partial<TheoTheme["status"]>;
 }
 
-export const defaultTheme: TheoTheme = {
-  role: {
-    user: { glyph: "> ", prefix: "cyan", text: undefined },
-    assistant: { glyph: "✦ ", prefix: "magenta", text: undefined },
-  },
-  status: { error: "red", success: "green", warning: "yellow" },
-};
+export const defaultTheme: TheoTheme = Object.freeze({
+  role: Object.freeze({
+    user: Object.freeze({ glyph: "> ", prefix: "cyan", text: undefined }),
+    assistant: Object.freeze({
+      glyph: "✦ ",
+      prefix: "magenta",
+      text: undefined,
+    }),
+  }),
+  status: Object.freeze({ error: "red", success: "green", warning: "yellow" }),
+});
 
 const ThemeContext = createContext<TheoTheme>(defaultTheme);
 
@@ -62,6 +66,11 @@ function mergeTheme(override: TheoThemeOverride | undefined): TheoTheme {
   };
 }
 
+/**
+ * Nesting note (M0 semantics): a nested provider RESETS to
+ * `defaultTheme + own override` — it does not compose with ancestor
+ * providers. Composition arrives with the M6 theme system.
+ */
 export function TheoTUIProvider({
   theme,
   children,
@@ -69,10 +78,11 @@ export function TheoTUIProvider({
   theme?: TheoThemeOverride | undefined;
   children: ReactNode;
 }) {
+  // Referentially stable context value — a fresh object per render would
+  // re-render every consumer on each provider render (review F-dom-1).
+  const value = useMemo(() => mergeTheme(theme), [theme]);
   return (
-    <ThemeContext.Provider value={mergeTheme(theme)}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 

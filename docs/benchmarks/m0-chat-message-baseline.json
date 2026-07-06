@@ -1,6 +1,6 @@
 {
   "benchmark": "chat-message-render",
-  "date": "2026-07-06T11:15:11.057Z",
+  "date": "2026-07-06T11:33:02.009Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
@@ -10,6 +10,9 @@
     "messages": 100,
     "streamed_tokens": 300
   },
+  "color_env": {
+    "FORCE_COLOR": "1"
+  },
   "protocol": {
     "warmup_runs": 1,
     "measured_runs": 5
@@ -17,40 +20,40 @@
   "runs": [
     {
       "frames": 300,
-      "mean_ms_per_frame": 11.421,
-      "peak_ms_per_frame": 24.555
+      "mean_ms_per_frame": 11.539,
+      "peak_ms_per_frame": 25.273
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 11.559,
-      "peak_ms_per_frame": 19.817
+      "mean_ms_per_frame": 11.171,
+      "peak_ms_per_frame": 25.347
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 11.617,
-      "peak_ms_per_frame": 25.348
+      "mean_ms_per_frame": 11.717,
+      "peak_ms_per_frame": 37.607
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 11.604,
-      "peak_ms_per_frame": 23.381
+      "mean_ms_per_frame": 10.689,
+      "peak_ms_per_frame": 28.677
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 12.37,
-      "peak_ms_per_frame": 28.137
+      "mean_ms_per_frame": 11.115,
+      "peak_ms_per_frame": 33.007
     }
   ],
   "aggregate": {
     "frames_mean": 300,
     "mean_ms_per_frame": {
-      "mean": 11.714,
-      "std_dev": 0.335
+      "mean": 11.246,
+      "std_dev": 0.358
     },
     "peak_ms_per_frame": {
-      "mean": 24.248,
-      "std_dev": 2.713
+      "mean": 29.982,
+      "std_dev": 4.747
     }
   },
-  "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); FORCE_COLOR inherited from the invoking shell; 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."
+  "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."
 }

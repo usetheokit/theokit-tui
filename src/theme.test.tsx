@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import { TheoTUIProvider, defaultTheme, useTheoTheme } from "./theme.js";
@@ -19,8 +19,11 @@ function Probe() {
 }
 
 describe("theme stub (T1.1)", () => {
-  it("use_theo_theme_returns_default_tokens_without_provider", async () => {
+  beforeEach(() => {
     resetCaptured();
+  });
+
+  it("use_theo_theme_returns_default_tokens_without_provider", async () => {
     const frame = await renderFrame(<Probe />);
     // Ink trims trailing whitespace per line — assert the visible glyph char.
     expect(frame).toContain(defaultTheme.role.user.glyph.trim());
@@ -28,7 +31,6 @@ describe("theme stub (T1.1)", () => {
   });
 
   it("provider_passes_custom_theme_to_consumers", async () => {
-    resetCaptured();
     await renderFrame(
       <TheoTUIProvider theme={{ role: { assistant: { glyph: "◆ " } } }}>
         <Probe />
@@ -38,7 +40,6 @@ describe("theme stub (T1.1)", () => {
   });
 
   it("partial_override_preserves_untouched_token_groups", async () => {
-    resetCaptured();
     await renderFrame(
       <TheoTUIProvider theme={{ role: { user: { glyph: "$ " } } }}>
         <Probe />
@@ -52,7 +53,6 @@ describe("theme stub (T1.1)", () => {
   });
 
   it("provider_without_theme_prop_yields_default_tokens", async () => {
-    resetCaptured();
     await renderFrame(
       <TheoTUIProvider>
         <Probe />
@@ -61,8 +61,31 @@ describe("theme stub (T1.1)", () => {
     expect(captured).toEqual(defaultTheme);
   });
 
+  it("provider_with_explicit_undefined_theme_yields_default_tokens", async () => {
+    await renderFrame(
+      <TheoTUIProvider theme={undefined}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured).toEqual(defaultTheme);
+  });
+
+  it("nested_provider_resets_to_default_plus_own_override", async () => {
+    // Pins the documented M0 nesting semantics: inner provider does NOT
+    // compose with the outer one (review F-dom-3; composition lands at M6).
+    await renderFrame(
+      <TheoTUIProvider theme={{ role: { user: { glyph: "$ " } } }}>
+        <TheoTUIProvider theme={{ role: { assistant: { glyph: "◆ " } } }}>
+          <Probe />
+        </TheoTUIProvider>
+      </TheoTUIProvider>,
+    );
+    expect(captured?.role.assistant.glyph).toBe("◆ ");
+    // Outer override is discarded — user resets to the default glyph.
+    expect(captured?.role.user.glyph).toBe(defaultTheme.role.user.glyph);
+  });
+
   it("empty_theme_override_yields_default_tokens", async () => {
-    resetCaptured();
     await renderFrame(
       <TheoTUIProvider theme={{}}>
         <Probe />

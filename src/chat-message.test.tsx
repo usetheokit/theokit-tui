@@ -127,8 +127,12 @@ describe("ChatMessage (T2.1)", () => {
 
   it("renders_glyph_only_for_empty_children", async () => {
     const frame = await renderFrame(
-      <ChatMessage role="user">{""}</ChatMessage>,
+      <Box width={40}>
+        <ChatMessage role="user">{""}</ChatMessage>
+      </Box>,
     );
     expect(frame).toContain(">");
+    // Snapshot proves glyph-only output — no stray content (review F-tests-3).
+    expect(frame).toMatchSnapshot("chat-message-empty");
   });
 });

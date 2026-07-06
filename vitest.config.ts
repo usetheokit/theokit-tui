@@ -6,6 +6,9 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     // Determinism root (plan ADR D2 + EC-5): pin the color-detection inputs so
     // local terminals and CI runners produce byte-identical frames.
+    // NO_COLOR=""/CI="" rely on the modern "non-empty" reading of the specs +
+    // FORCE_COLOR precedence; the forced-color canary test turns any future
+    // upgrade regression of this pin into a red test (review F-dom-3/testing).
     env: {
       FORCE_COLOR: "1",
       NO_COLOR: "",
