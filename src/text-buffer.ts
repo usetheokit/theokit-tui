@@ -55,55 +55,76 @@ function insertAt(state: TextBufferState, insertion: string): TextBufferState {
   };
 }
 
+function deleteBackward(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset === 0) {
+    return state;
+  }
+  const start = prevBoundary(state.text, state.cursorOffset);
+  return {
+    text: state.text.slice(0, start) + state.text.slice(state.cursorOffset),
+    cursorOffset: start,
+  };
+}
+
+function deleteForward(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset >= state.text.length) {
+    return state;
+  }
+  const end = nextBoundary(state.text, state.cursorOffset);
+  return {
+    text: state.text.slice(0, state.cursorOffset) + state.text.slice(end),
+    cursorOffset: state.cursorOffset,
+  };
+}
+
+function moveLeft(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset === 0) {
+    return state;
+  }
+  return { ...state, cursorOffset: prevBoundary(state.text, state.cursorOffset) };
+}
+
+function moveRight(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset >= state.text.length) {
+    return state;
+  }
+  return { ...state, cursorOffset: nextBoundary(state.text, state.cursorOffset) };
+}
+
+function moveHome(state: TextBufferState): TextBufferState {
+  const lineStart = state.text.lastIndexOf("\n", state.cursorOffset - 1) + 1;
+  return { ...state, cursorOffset: lineStart };
+}
+
+function moveEnd(state: TextBufferState): TextBufferState {
+  const nextNewline = state.text.indexOf("\n", state.cursorOffset);
+  return {
+    ...state,
+    cursorOffset: nextNewline === -1 ? state.text.length : nextNewline,
+  };
+}
+
 export function textBufferReducer(
   state: TextBufferState,
   action: TextBufferAction,
 ): TextBufferState {
-  const { text, cursorOffset } = state;
   switch (action.type) {
     case "insert":
       return insertAt(state, action.text);
     case "newline":
       return insertAt(state, "\n");
-    case "delete-backward": {
-      if (cursorOffset === 0) {
-        return state;
-      }
-      const start = prevBoundary(text, cursorOffset);
-      return {
-        text: text.slice(0, start) + text.slice(cursorOffset),
-        cursorOffset: start,
-      };
-    }
-    case "delete-forward": {
-      if (cursorOffset >= text.length) {
-        return state;
-      }
-      const end = nextBoundary(text, cursorOffset);
-      return {
-        text: text.slice(0, cursorOffset) + text.slice(end),
-        cursorOffset,
-      };
-    }
+    case "delete-backward":
+      return deleteBackward(state);
+    case "delete-forward":
+      return deleteForward(state);
     case "move-left":
-      return cursorOffset === 0
-        ? state
-        : { text, cursorOffset: prevBoundary(text, cursorOffset) };
+      return moveLeft(state);
     case "move-right":
-      return cursorOffset >= text.length
-        ? state
-        : { text, cursorOffset: nextBoundary(text, cursorOffset) };
-    case "move-home": {
-      const lineStart = text.lastIndexOf("\n", cursorOffset - 1) + 1;
-      return { text, cursorOffset: lineStart };
-    }
-    case "move-end": {
-      const nextNewline = text.indexOf("\n", cursorOffset);
-      return {
-        text,
-        cursorOffset: nextNewline === -1 ? text.length : nextNewline,
-      };
-    }
+      return moveRight(state);
+    case "move-home":
+      return moveHome(state);
+    case "move-end":
+      return moveEnd(state);
     case "clear":
       return initialTextBuffer;
   }
