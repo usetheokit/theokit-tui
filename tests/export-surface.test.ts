@@ -33,6 +33,28 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ChatThread).toBe("function");
   });
 
+  it("public_entry_exposes_tool_call_surface", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.ToolCall).toBe("function");
+    expect(mod.STATUS_INDICATOR_WIDTH).toBe(3);
+  });
+
+  it("manifest_declares_only_ink_and_ink_spinner_runtime_deps", () => {
+    // T1.1 dependency contract: ink-spinner is the FIRST new runtime dep
+    // since M0 (plan ADR D2); peers stay react-only.
+    const pkg = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as {
+      dependencies: Record<string, string>;
+      peerDependencies: Record<string, string>;
+    };
+    expect(Object.keys(pkg.dependencies).sort()).toEqual([
+      "ink",
+      "ink-spinner",
+    ]);
+    expect(Object.keys(pkg.peerDependencies)).toEqual(["react"]);
+  });
+
   it("public_entry_exposes_chat_composer_and_text_buffer", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ChatComposer).toBe("function");
