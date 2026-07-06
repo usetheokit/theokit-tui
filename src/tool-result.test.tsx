@@ -44,10 +44,12 @@ describe("truncateLines — pure helper (T2.1, ADR D7)", () => {
 
   it("helper_rejects_negative_max_lines", () => {
     expect(() => truncateLines(["a"], -2)).toThrow(TypeError);
+    expect(() => truncateLines(["a"], -2)).toThrow("got -2");
   });
 
   it("helper_rejects_non_integer_max_lines", () => {
     expect(() => truncateLines(["a"], 2.5)).toThrow(TypeError);
+    expect(() => truncateLines(["a"], 2.5)).toThrow("got 2.5");
   });
 
   it("helper_counts_blank_lines", () => {
@@ -81,6 +83,7 @@ describe("ToolResult — plain content (T2.1)", () => {
     const frame = await renderFrame(
       <ToolResult lines={numbered(10)} maxLines={10} />,
     );
+    expect(frame).toContain("line-9"); // presence pairing (review tests-4)
     expect(frame).not.toContain("hidden");
   });
 
@@ -94,6 +97,7 @@ describe("ToolResult — plain content (T2.1)", () => {
     const frame = await renderFrame(
       <ToolResult lines={["y".repeat(20000)]} expanded />,
     );
+    expect(frame).toContain("y"); // presence pairing (review tests-5)
     expect(frame).not.toContain("capped");
   });
 
@@ -240,6 +244,10 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
       <ToolResult shell={{ stdout: "", stderr: "killed", exitCode: 137 }} />,
     );
     expect(frame).toContain("exited 137");
+    const negative = await renderFrame(
+      <ToolResult shell={{ stdout: "", stderr: "killed", exitCode: -1 }} />,
+    );
+    expect(negative).toContain("exited -1");
   });
 
   it("trailing_newline_does_not_add_blank_line", async () => {
@@ -253,19 +261,36 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
     expect(rows[badgeIndex - 1]).toContain("two");
   });
 
-  it("truncation_past_stderr_label_pins_current_behavior", async () => {
-    // SEPA phase-2 F6: when the budget cuts INTO the stderr block the label
-    // row is truncated away — stderr tail stays visible, no marker. Pinned
-    // as CURRENT behavior; promoting the label to badge-like persistence is
-    // a logged M3+ follow-up (deviations.md).
+  it("truncation_past_stderr_label_keeps_pinned_label", async () => {
+    // DV-3 resolved (review dom-frontend-1): when the budget cuts INTO the
+    // stderr block, the label re-renders PINNED outside the budget (like the
+    // exit badge) so EC-13's color-independent marker survives NO_COLOR.
     const stdout = numbered(30).join("\n");
     const stderr = ["e-0", "e-1", "e-2", "e-3", "e-4"].join("\n");
     const frame = await renderFrame(
       <ToolResult shell={{ stdout, stderr, exitCode: 0 }} maxLines={3} />,
     );
     expect(frame).toContain("e-4");
-    expect(frame).not.toContain("stderr:");
+    expect(frame).toContain("stderr:");
     expect(frame).toContain("… +34 lines hidden");
+    // The pinned label precedes the visible tail rows.
+    const rows = frame.split("\n");
+    expect(rows.findIndex((r) => r.includes("stderr:"))).toBeLessThan(
+      rows.findIndex((r) => r.includes("e-4")),
+    );
+  });
+
+  it("stderr_fully_capped_renders_capped_label", async () => {
+    // Review arch-4: stdout consuming the whole combined 20k budget leaves
+    // stderr with zero chars — the label says so instead of promising rows.
+    const frame = await renderFrame(
+      <ToolResult
+        shell={{ stdout: "y".repeat(20000), stderr: "tail-error", exitCode: 1 }}
+        maxLines={5}
+      />,
+    );
+    expect(frame).toContain("stderr: (capped)");
+    expect(frame).not.toContain("tail-error");
   });
 
   it("shell_char_cap_budget_is_combined_across_streams", async () => {

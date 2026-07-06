@@ -64,7 +64,7 @@ function App({ statuses }: { statuses: ToolCallStatus[] }) {
             shell={{
               stdout: i === 0 ? longOutput : `result ${i}`,
               stderr: status === "failed" ? `error ${i}` : "",
-              ...(status === "failed" ? { exitCode: 1 } : { exitCode: 0 }),
+              exitCode: status === "failed" ? 1 : 0,
             }}
             maxLines={MAX_LINES}
           />
@@ -82,7 +82,9 @@ async function runOnce(): Promise<RunMetrics> {
   const instance = render(<App statuses={statuses} />);
   await tick();
   const sampler = frameSampler(() => instance.frames.length);
-  const framesAtMount = sampler.frameCount();
+  // Review dom-testing-1/wire-1: measure STDOUT frames at mount — the
+  // sampler's own count is always 0 here and can never detect swallowing.
+  const stdoutFramesAtMount = instance.frames.length;
 
   for (let t = 0; t < N_TRANSITIONS; t++) {
     // Transition one card per step: running → success/failed, then the next
@@ -105,18 +107,19 @@ async function runOnce(): Promise<RunMetrics> {
     await tick();
     sampler.sample();
   }
+  const stdoutFramesAfterTransitions = instance.frames.length;
   instance.unmount();
 
-  const metrics = sampler.finish();
   // EC-15: memoization must never silently swallow the measured work — the
-  // transition loop itself has to produce frames beyond the mount.
-  if (metrics.frames <= framesAtMount) {
-    console.error(
+  // transition loop has to flush stdout frames beyond the mount. (End-of-run
+  // total, not per-step: Ink throttles stdout, so individual steps may batch
+  // — logged as DV-4.)
+  if (stdoutFramesAfterTransitions <= stdoutFramesAtMount) {
+    throw new Error(
       "bench: transitions produced no frames — memoization swallowed the workload (EC-15 guard)",
     );
-    process.exit(1);
   }
-  return metrics;
+  return sampler.finish();
 }
 
 console.log(
@@ -172,7 +175,8 @@ if (!smoke) {
       "transitions one running card to success/failed and promotes one " +
       "pending card to running, then rerenders; per-frame ms = wall time " +
       "distributed across stdout.frames deltas (includes tick overhead); " +
-      "EC-15 guard asserts transitions produce frames beyond the mount; " +
+      "EC-15 guard asserts the run's total stdout frames exceed the " +
+      "mount-time count (end-of-run check — Ink throttling batches steps); " +
       "color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded " +
       "warmup + N measured runs; population std dev.",
   };

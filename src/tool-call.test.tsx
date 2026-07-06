@@ -212,27 +212,19 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
     "same_status_rerender_does_not_reset_spinner",
     { timeout: 5000 },
     async () => {
-      // EC-10: identical props must not remount/reset the interval.
+      // EC-10: identical props must not remount/reset the interval — the
+      // spinner cell immediately after the same-props rerender must be the
+      // MID-CYCLE cell it was before, not frame[0] again (review tests-2).
       const instance = render(<ToolCall name="fetch" status="running" />);
       const half = Math.ceil(spinners.dots.frames.length / 2);
-      await delay(half * spinners.dots.interval);
+      await delay(half * spinners.dots.interval + 20);
+      const cellBefore = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
       instance.rerender(<ToolCall name="fetch" status="running" />);
-      const seen: string[] = [];
-      const budget = spinners.dots.frames.length * spinners.dots.interval + 50;
-      for (
-        let elapsed = 0;
-        elapsed < budget;
-        elapsed += spinners.dots.interval
-      ) {
-        await delay(spinners.dots.interval);
-        seen.push(instance.lastFrame() ?? "");
-      }
+      const cellAfter = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
+      expect(cellBefore).toBeDefined();
+      expect(cellAfter).toBe(cellBefore);
+      expect(cellAfter).not.toBe(spinners.dots.frames[0]);
       instance.unmount();
-      const cells = uniqueSpinnerCells(seen);
-      expect(cells.length).toBeGreaterThan(1);
-      for (const cell of cells) {
-        expect(spinners.dots.frames).toContain(cell);
-      }
     },
   );
 });

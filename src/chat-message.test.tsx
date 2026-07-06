@@ -135,6 +135,9 @@ describe("ChatMessage (T2.1)", () => {
         ["exec", "tsx", "tests/fixtures/no-color-probe.tsx"],
         {
           encoding: "utf8",
+          // Kills the child at the deadline — the it-level timeout cannot
+          // interrupt a synchronous execFileSync (review tests-3).
+          timeout: 20000,
           env: {
             PATH: process.env["PATH"] ?? "",
             HOME: process.env["HOME"] ?? "",
@@ -153,6 +156,11 @@ describe("ChatMessage (T2.1)", () => {
       // the stderr LABEL is the color-independence mechanism (EC-13).
       expect(out).toContain("✓");
       expect(out).toContain("ok-tool");
+      // Line-anchored (review tests-1/wire-3): bare toContain("o"/"x") is
+      // vacuous — "o" lives in "ok-tool", "x" in "exit path".
+      expect(out).toMatch(/^o\s+queued-tool/m);
+      expect(out).toMatch(/^x\s+broken-tool/m);
+      expect(out).toMatch(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s+running-tool/mu);
       expect(out).toContain("stderr:");
       expect(out).toContain("exited 2");
     },

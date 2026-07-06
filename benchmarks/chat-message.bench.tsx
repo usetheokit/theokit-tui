@@ -1,13 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { dirname, join } from "node:path";
-import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
 import { Box } from "ink";
 import { render } from "ink-testing-library";
 
 import { ChatMessage, TheoTUIProvider } from "../src/index.js";
+import { fmt, frameSampler, round, stats, tick } from "./sampling.js";
+import type { RunMetrics } from "./sampling.js";
 
 // M0 render benchmark (plan T3.1, ADR D6/D9 — data-only, no threshold gate).
 // Workload: 100-message static thread + 300-token streaming append into the
@@ -19,17 +20,6 @@ const WARMUP_RUNS = 1;
 const MEASURED_RUNS = 5;
 
 const smoke = process.argv.includes("--smoke");
-
-const tick = async (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 0));
-
-const round = (n: number): number => Math.round(n * 1000) / 1000;
-
-interface RunMetrics {
-  frames: number;
-  mean_ms_per_frame: number;
-  peak_ms_per_frame: number;
-}
 
 function App({ streamed }: { streamed: string }) {
   const history = Array.from({ length: N_MESSAGES }, (_, i) => (
@@ -48,58 +38,22 @@ function App({ streamed }: { streamed: string }) {
 }
 
 async function runOnce(): Promise<RunMetrics> {
-  const frameTimes: number[] = [];
+  // Sampling via shared helpers (review arch-1/dom-testing-2 migration) —
+  // identical frame-delta heuristic as the original inline loop.
   const instance = render(<App streamed="" />);
   await tick();
-  let lastSeen = instance.frames.length;
-  let lastTime = performance.now();
+  const sampler = frameSampler(() => instance.frames.length);
   let text = "";
 
   for (let i = 0; i < N_TOKENS; i++) {
     text += "tok ";
     instance.rerender(<App streamed={text} />);
     await tick();
-    const now = performance.now();
-    const newFrames = instance.frames.length - lastSeen;
-    if (newFrames > 0) {
-      // Wall time distributed evenly across the frames flushed since the last
-      // sample — same honest heuristic as the react-ink prior art.
-      const perFrame = (now - lastTime) / newFrames;
-      for (let k = 0; k < newFrames; k++) {
-        frameTimes.push(perFrame);
-      }
-      lastTime = now;
-      lastSeen = instance.frames.length;
-    }
+    sampler.sample();
   }
   instance.unmount();
-
-  const frames = frameTimes.length;
-  if (frames === 0) {
-    // EC-2: never serialize NaN/Infinity aggregates from an empty sample.
-    console.error("bench: 0 frames captured — aborting (EC-2 guard)");
-    process.exit(1);
-  }
-  const mean = frameTimes.reduce((a, b) => a + b, 0) / frames;
-  const peak = Math.max(...frameTimes);
-  return {
-    frames,
-    mean_ms_per_frame: round(mean),
-    peak_ms_per_frame: round(peak),
-  };
+  return sampler.finish();
 }
-
-const stats = (values: number[]): { mean: number; std_dev: number } => {
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const variance =
-    values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
-  return { mean: round(mean), std_dev: round(Math.sqrt(variance)) };
-};
-
-const fmt = (label: string, r: RunMetrics): string =>
-  `${label.padEnd(12)} frames=${String(r.frames).padStart(4)}  mean=${r.mean_ms_per_frame
-    .toFixed(3)
-    .padStart(8)}ms  peak=${r.peak_ms_per_frame.toFixed(3).padStart(8)}ms`;
 
 console.log(
   `chat-message bench — ${N_MESSAGES} messages + ${N_TOKENS} streamed tokens` +

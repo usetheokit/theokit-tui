@@ -1,7 +1,8 @@
 import { performance } from "node:perf_hooks";
 
-// Shared bench sampling/stat helpers (rule of three — M0/M1/M2 benches;
-// plan T3.2 REFACTOR). Methodology stays in each bench's baseline JSON.
+// Shared bench sampling/stat helpers (rule of three — consumed by the
+// M0/M1/M2 benches; plan T3.2 REFACTOR). Methodology stays in each bench's
+// baseline JSON.
 
 export const tick = async (): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, 0));
@@ -50,8 +51,9 @@ export function frameSampler(readFrameCount: () => number) {
     },
     finish(): RunMetrics {
       if (frameTimes.length === 0) {
-        console.error("bench: 0 frames captured — aborting (EC-2 guard)");
-        process.exit(1);
+        // EC-2 guard — thrown (not exited) so the bench ENTRYPOINT owns the
+        // process boundary (review arch-5); top-level rejection exits 1.
+        throw new Error("bench: 0 frames captured (EC-2 guard)");
       }
       const mean = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
       return {

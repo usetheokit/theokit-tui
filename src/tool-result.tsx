@@ -104,7 +104,13 @@ function resolveShell(shell: ShellEnvelope): ResolvedContent {
   let stderrLabelIndex: number | undefined;
   if (shell.stderr !== "") {
     stderrLabelIndex = rows.length;
-    rows.push("stderr:", ...splitContent(stderrText));
+    const stderrRows = splitContent(stderrText);
+    // Review arch-4: when the combined budget capped stderr away entirely,
+    // say so on the label instead of promising content that never renders.
+    rows.push(
+      stderrRows.length > 0 ? "stderr:" : "stderr: (capped)",
+      ...stderrRows,
+    );
   }
   return {
     rows,
@@ -185,6 +191,7 @@ interface ResultView {
   indicator: string | undefined;
   showExit: boolean;
   showPlaceholder: boolean;
+  showPinnedStderrLabel: boolean;
   hasAnything: boolean;
 }
 
@@ -192,17 +199,31 @@ function resultView(
   isShell: boolean,
   content: ResolvedContent,
   hidden: number,
+  visibleCount: number,
 ): ResultView {
   const indicator = indicatorText(hidden, content.capped);
   const showExit =
     typeof content.exitCode === "number" && content.exitCode !== 0;
   const showPlaceholder = isShell && content.rows.length === 0;
+  // Review dom-frontend-1 (DV-3 resolution): when truncation cuts INTO the
+  // stderr block the label row is the FIRST thing tail-retention drops —
+  // pin it outside the budget (like the exit badge) so the color-independent
+  // stderr marker (EC-13) survives on NO_COLOR terminals.
+  const start = content.rows.length - visibleCount;
+  const showPinnedStderrLabel =
+    content.stderrLabelIndex !== undefined && content.stderrLabelIndex < start;
   const hasAnything =
     content.rows.length > 0 ||
     showExit ||
     showPlaceholder ||
     indicator !== undefined;
-  return { indicator, showExit, showPlaceholder, hasAnything };
+  return {
+    indicator,
+    showExit,
+    showPlaceholder,
+    showPinnedStderrLabel,
+    hasAnything,
+  };
 }
 
 /**
@@ -214,7 +235,9 @@ export function ToolResult(props: ToolResultProps) {
   const { maxLines = 10, expanded = false } = props;
   // Boundary guards precede the hook (ChatMessage EC-1 idiom): source
   // exclusivity (EC-2) and maxLines validity — the latter UNCONDITIONALLY,
-  // prop validity must not depend on `expanded` (SEPA phase-2 F3).
+  // prop validity must not depend on `expanded` (SEPA phase-2 F3). Guards
+  // MUST stay above the first hook: tests invoke this component as a plain
+  // function (Ink's error boundary swallows render throws — F10).
   const content = resolveContent(props);
   const lineTruncation = truncateLines(content.rows, maxLines);
   const theme = useTheoTheme();
@@ -226,6 +249,7 @@ export function ToolResult(props: ToolResultProps) {
     props.shell !== undefined,
     content,
     truncation.hidden,
+    truncation.visible.length,
   );
   if (!view.hasAnything) {
     return null;
@@ -233,7 +257,12 @@ export function ToolResult(props: ToolResultProps) {
 
   return (
     <Box flexDirection="column">
-      {view.indicator !== undefined && <Text dimColor>{view.indicator}</Text>}
+      {view.indicator !== undefined && (
+        <Text dimColor wrap="truncate-end">
+          {view.indicator}
+        </Text>
+      )}
+      {view.showPinnedStderrLabel && <Text dimColor>stderr:</Text>}
       {contentRows(content, truncation.visible.length, theme)}
       {view.showPlaceholder && <Text dimColor>(no output)</Text>}
       {view.showExit && (

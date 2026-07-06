@@ -18,12 +18,17 @@ const STATUS_UNION_MESSAGE = VALID_STATUSES.map((s) => `"${s}"`).join(" | ");
 /** Fixed indicator column width aligning card headers (gemini-cli idiom). */
 export const STATUS_INDICATOR_WIDTH = 3;
 
-// Module-local glyph constants (documented M6 theming candidates — ADR D1).
-// Record<Exclude<...>> keeps this compile-time complete vs the union.
-const STATUS_GLYPHS: Record<Exclude<ToolCallStatus, "running">, string> = {
-  pending: "o",
-  success: "✓",
-  failed: "x",
+// Module-local status visuals (documented M6 theming candidates — ADR D1).
+// ONE map per static status (review arch-2): an M3 additive status touches
+// VALID_STATUSES + this map (or the spinner branch) — nothing else.
+// Record<Exclude<...>> keeps it compile-time complete vs the union.
+const STATUS_VISUALS: Record<
+  Exclude<ToolCallStatus, "running">,
+  { glyph: string; color: (theme: TheoTheme) => string; bold: boolean }
+> = {
+  pending: { glyph: "o", color: (t) => t.role.system.prefix, bold: false },
+  success: { glyph: "✓", color: (t) => t.status.success, bold: false },
+  failed: { glyph: "x", color: (t) => t.status.error, bold: true },
 };
 
 export interface ToolCallProps {
@@ -58,14 +63,10 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
       </Text>
     );
   }
-  const colors: Record<Exclude<ToolCallStatus, "running">, string> = {
-    pending: theme.role.system.prefix,
-    success: theme.status.success,
-    failed: theme.status.error,
-  };
+  const visual = STATUS_VISUALS[status];
   return (
-    <Text color={colors[status]} bold={status === "failed"}>
-      {STATUS_GLYPHS[status]}
+    <Text color={visual.color(theme)} bold={visual.bold}>
+      {visual.glyph}
     </Text>
   );
 }
@@ -77,19 +78,31 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
 export function ToolCall({ name, status, summary }: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
   // error BEFORE any hook — JS consumers get the contract, not a crash.
+  // Guards MUST stay above the first hook: tests invoke this component as a
+  // plain function (Ink's error boundary swallows render throws — F10).
   if (!VALID_STATUSES.includes(status)) {
     throw new TypeError(
       `ToolCall: invalid status "${String(status)}" — expected ${STATUS_UNION_MESSAGE}`,
     );
   }
   const theme = useTheoTheme();
+  // wrap="truncate-end" keeps the header genuinely one line at ANY terminal
+  // width (review dom-frontend-3 — gemini-cli ToolGroupDisplay idiom); a
+  // wrapping row of sibling Texts misrenders as parallel columns.
   return (
     <Box>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>
         {statusIndicator(status, theme)}
       </Box>
-      <Text bold>{singleLine(name)}</Text>
-      {summary !== undefined && <Text dimColor> {singleLine(summary)}</Text>}
+      <Text bold wrap="truncate-end">
+        {singleLine(name)}
+      </Text>
+      {summary !== undefined && (
+        <Text dimColor wrap="truncate-end">
+          {" "}
+          {singleLine(summary)}
+        </Text>
+      )}
     </Box>
   );
 }

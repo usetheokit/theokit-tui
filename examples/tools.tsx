@@ -12,20 +12,31 @@ import type { ToolCallStatus } from "../src/index.js";
 
 // Tool-cards demo (plan T3.2 — TTFATT caller): an agent turn with a queued
 // tool, a scripted running→success transition, and a failed shell card with
-// truncated output. Non-TTY-safe by design (no composer) — `pnpm
-// example:tools | cat` renders the full scene and exits cleanly.
+// truncated output. On a TTY the transition animates (~1.2s spinner →
+// check); when piped/non-TTY (review dom-frontend-2) the demo renders the
+// FINAL scene statically — Ink re-flushes every spinner tick even without a
+// TTY, which would spray erase sequences into logs/pagers.
+const isInteractive = process.stdout.isTTY === true;
+const TRANSITION_MS = 1200;
+const EXIT_MS = 2500;
+
 const longOutput = Array.from(
   { length: 40 },
   (_, i) => `installed package-${i}`,
 ).join("\n");
 
 function Demo() {
-  const [buildStatus, setBuildStatus] = useState<ToolCallStatus>("running");
+  const [buildStatus, setBuildStatus] = useState<ToolCallStatus>(
+    isInteractive ? "running" : "success",
+  );
 
   useEffect(() => {
+    if (!isInteractive) {
+      return;
+    }
     const handle = setTimeout(() => {
       setBuildStatus("success");
-    }, 300);
+    }, TRANSITION_MS);
     return () => {
       clearTimeout(handle);
     };
@@ -56,6 +67,9 @@ function Demo() {
 }
 
 const instance = render(<Demo />);
-setTimeout(() => {
-  instance.unmount();
-}, 600);
+setTimeout(
+  () => {
+    instance.unmount();
+  },
+  isInteractive ? EXIT_MS : 0,
+);

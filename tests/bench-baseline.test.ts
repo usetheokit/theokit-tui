@@ -174,6 +174,7 @@ interface M2Baseline {
     cards: number;
     transitions: number;
     long_output_lines: number;
+    max_lines: number;
   };
   protocol: { warmup_runs: number; measured_runs: number };
   node_version: string;
@@ -224,6 +225,13 @@ describe("benchmark baseline M2 (T3.2)", () => {
     expect(baseline.workload.cards).toBeGreaterThan(0);
     expect(baseline.workload.transitions).toBeGreaterThan(0);
     expect(baseline.workload.long_output_lines).toBeGreaterThan(0);
+    expect(baseline.workload.max_lines).toBeGreaterThan(0);
+    // frames_mean recompute (review wire-5) — a hand-edit stays red.
+    const recomputedFrames =
+      baseline.runs.reduce((a, r) => a + r.frames, 0) / baseline.runs.length;
+    expect(
+      Math.abs(recomputedFrames - baseline.aggregate.frames_mean),
+    ).toBeLessThan(0.01);
     expect(baseline.methodology.length > 0).toBe(true);
   });
 });

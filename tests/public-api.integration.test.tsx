@@ -15,6 +15,7 @@ import {
   ToolResult,
   defaultTheme,
 } from "../src/index.js";
+// (M1↔M2 composition asserted below — review wire-4.)
 import { renderFrame } from "./helpers.js";
 
 describe("public API integration (T2.2)", () => {
@@ -113,5 +114,30 @@ describe("public API integration (M2 T3.1 — tool scene)", () => {
     expect(frame).toContain("deprecation warning");
     expect(frame).not.toContain("exited 0");
     expect(frame).toContain("exited 1");
+  });
+
+  it("public_entry_composes_thread_with_tool_cards", async () => {
+    // M1↔M2 composition inside the test gate (review wire-4): a thread and a
+    // tool card in one scene — the agent-turn shape the bench exercises.
+    const frame = await renderFrame(
+      <TheoTUIProvider>
+        <Box flexDirection="column">
+          <ChatThread
+            messages={[
+              { id: "u1", role: "user", content: "run the tests" },
+              { id: "a1", role: "assistant", content: "on it" },
+            ]}
+          />
+          <ToolCallCard name="vitest" status="success" summary="141 passed">
+            <ToolResult lines={["all suites green"]} />
+          </ToolCallCard>
+        </Box>
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("run the tests");
+    expect(frame).toContain("on it");
+    expect(frame).toContain("✓");
+    expect(frame).toContain("vitest");
+    expect(frame).toContain("all suites green");
   });
 });

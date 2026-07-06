@@ -9,7 +9,15 @@ it(
   () => {
     const out = execFileSync("pnpm", ["exec", "tsx", "examples/tools.tsx"], {
       encoding: "utf8",
-      env: { ...process.env, FORCE_COLOR: "1", CI: "" },
+      // Kills the child at the deadline — the it-level timeout cannot
+      // interrupt a synchronous execFileSync (review tests-3). Minimal env
+      // mirrors the example-chat smoke (review dom-testing-3).
+      timeout: 30000,
+      env: {
+        PATH: process.env["PATH"] ?? "",
+        HOME: process.env["HOME"] ?? "",
+        FORCE_COLOR: "1",
+      },
     });
     expect(out).toContain("✓");
     expect(out).toContain("… +");

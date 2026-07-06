@@ -9,7 +9,7 @@
 | T1.1 ToolCall + status + ink-spinner | 3665d32 | (a) example/bench/probe callers · (b) export-surface + snapshots · (c) baseline JSON |
 | T1.2 ToolCallCard | d27ee6e (+7b80e78 style) | (a) example/bench · (b) card suite + integration scene · (c) baseline |
 | T2.1 truncateLines + ToolResult | d71c8b7 (+bd6f136 SEPA p1 batch) | (a) example/bench · (b) 19-test suite · (c) baseline |
-| T2.2 shell envelope | 975bb4f (+537747c SEPA p2 batch) | (a) example/probe · (b) 15-test shell suite · (c) baseline |
+| T2.2 shell envelope | 975bb4f (+537747c SEPA p2 batch) | (a) example/probe · (b) 12-test shell describe (14 added across the task) · (c) baseline |
 | T3.1 animation/transition/integration/NO_COLOR | be48595 | integration closure |
 | T3.2 bench + baseline + example | e1303c9 | pillar (a)+(c) closure |
 

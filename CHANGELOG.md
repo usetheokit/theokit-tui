@@ -19,6 +19,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Review-batch hardening (m2-tool-surface review 2026-07-06): `stderr:` label now PINNED
+  outside the truncation budget (color-independent marker survives tight `maxLines`;
+  fully-capped stderr renders `stderr: (capped)`); tool-card header Texts use
+  `wrap="truncate-end"` (one-line contract holds at any terminal width); truncation
+  indicator no longer wraps past its reserved row; `pnpm example:tools` renders the final
+  scene statically when piped (no ANSI erase noise in logs) and animates ~1.2s on a TTY;
+  tool-cards bench EC-15 guard now actually fires (stdout-frame check — the original was
+  dead code) and M0/M1 benches migrated to the shared `benchmarks/sampling.ts` helpers;
+  NO_COLOR probe gains line-anchored `o`/`x`/spinner asserts; subprocess tests kill hung
+  children at their deadline (`execFileSync timeout`)
+
 ### Deprecated
 
 ### Removed
@@ -26,6 +37,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 ### Security
+
+- Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
+  Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
+  `pnpm audit` clean
 
 ## [0.2.0] - 2026-07-06
 
