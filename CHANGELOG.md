@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0] - 2026-07-06
+
+### Added
+
 - Publishable package scaffold: ESM-only manifest (types-first `exports`, react-only peer,
   `ink ^5` dependency, Node ≥ 20), Apache-2.0 LICENSE + NOTICE, protected by an executable
   manifest-contract test (m0-walking-skeleton T0.1)
