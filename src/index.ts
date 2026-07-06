@@ -16,6 +16,13 @@ export type {
   ToolCallStatus,
 } from "./tool-call.js";
 
+export { MAX_RESULT_CHARS, ToolResult, truncateLines } from "./tool-result.js";
+export type {
+  ShellEnvelope,
+  ToolResultProps,
+  TruncationResult,
+} from "./tool-result.js";
+
 export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";
 export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";

@@ -37,7 +37,10 @@ describe("public entry surface (T0.2)", () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ToolCall).toBe("function");
     expect(typeof mod.ToolCallCard).toBe("function");
+    expect(typeof mod.ToolResult).toBe("function");
+    expect(typeof mod.truncateLines).toBe("function");
     expect(mod.STATUS_INDICATOR_WIDTH).toBe(3);
+    expect(mod.MAX_RESULT_CHARS).toBe(20000);
   });
 
   it("manifest_declares_only_ink_and_ink_spinner_runtime_deps", () => {
