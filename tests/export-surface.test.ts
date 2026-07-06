@@ -72,6 +72,9 @@ describe("public entry surface (T0.2)", () => {
       "success",
       "failed",
     ]);
+    expect(typeof mod.AgentStreaming).toBe("function");
+    // Module-internal by plan decision (EC-10, ADR D7 precedent):
+    expect(mod).not.toHaveProperty("formatElapsed");
   });
 
   it("public_entry_exposes_chat_composer_and_text_buffer", async () => {

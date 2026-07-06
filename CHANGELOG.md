@@ -11,6 +11,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `AgentEvent` union (`kind: "message" | "thinking" | "tool"`, caller-provided ids) + `AgentTimeline` — ordered agent-turn timeline dispatching to `ChatMessage`/thinking rows/`ToolCallCard`+`ToolResult`, with full boundary validation (duplicate id, unknown kind, invalid role/status, `output`⊕`shell` exclusivity → typed `AgentTimeline:` errors) (m3-agent-surface T1.1)
 - `AgentTimeline` windowed `<Static>` history — events beyond `windowSize + windowOverscan` graduate into frozen terminal scrollback; identity-memoized rows keep streaming repaints scoped to the tail (M1 windowing contract, sibling implementation) (m3-agent-surface T1.2)
+- `AgentStreaming` — dumb one-line live indicator (spinner + italic thought with `Thinking…` fallback + optional dim `(esc to cancel, 2m 5s)` suffix); elapsed arrives as a prop, ticking is the caller's concern (m3-agent-surface T2.1)
 - `CHAT_ROLES` and `TOOL_CALL_STATUSES` runtime union arrays exported (single-source derivation of the existing `ChatRole`/`ToolCallStatus` types) (m3-agent-surface T1.1)
 - `ToolCall` inline row with 4-state status lifecycle (`pending | running | success | failed`) — glyph indicator + running spinner via new runtime dependency `ink-spinner ^5.0.0` (m2-tool-surface T1.1)
 - `ToolCallCard` — `ToolCall` header + body indented under the name; plain-string children auto-wrapped (m2-tool-surface T1.2)

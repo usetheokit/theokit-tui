@@ -30,6 +30,9 @@ export type {
 } from "./agent-event.js";
 export { AgentTimeline } from "./agent-timeline.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
+// formatElapsed stays module-internal (EC-10 — D7 precedent).
+export { AgentStreaming } from "./agent-streaming.js";
+export type { AgentStreamingProps } from "./agent-streaming.js";
 
 export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";
