@@ -1,0 +1,169 @@
+// Pure text-buffer domain logic for terminal input (plan T3.1, blueprint D3).
+// NO ink/react imports — unit-testable without a TTY (rules/architecture.md § 1).
+// Grapheme discipline via Intl.Segmenter: cursor ops never split emoji or
+// combining marks (borrowed from the react-ink useTextBuffer analog).
+
+export interface TextBufferState {
+  text: string;
+  /** Cursor position as a code-unit offset into `text`. */
+  cursorOffset: number;
+}
+
+export type TextBufferAction =
+  | { type: "insert"; text: string }
+  | { type: "delete-backward" }
+  | { type: "delete-forward" }
+  | { type: "move-left" }
+  | { type: "move-right" }
+  | { type: "move-home" }
+  | { type: "move-end" }
+  | { type: "newline" }
+  | { type: "clear" };
+
+export const initialTextBuffer: TextBufferState = { text: "", cursorOffset: 0 };
+
+const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
+/** Offset of the grapheme boundary immediately BEFORE `offset` (0 at start). */
+function prevBoundary(text: string, offset: number): number {
+  let prev = 0;
+  for (const seg of segmenter.segment(text)) {
+    if (seg.index >= offset) {
+      break;
+    }
+    prev = seg.index;
+  }
+  return prev;
+}
+
+/** Offset of the grapheme boundary immediately AFTER `offset` (length at end). */
+function nextBoundary(text: string, offset: number): number {
+  for (const seg of segmenter.segment(text)) {
+    const end = seg.index + seg.segment.length;
+    if (end > offset) {
+      return end;
+    }
+  }
+  // Defensive fall-through: every public caller guards offset >= text.length
+  // before reaching here (unreachable via the API).
+  /* v8 ignore next 2 */
+  return text.length;
+}
+
+/** The full grapheme starting at `offset` ("" at end of text). */
+export function graphemeAt(text: string, offset: number): string {
+  if (offset >= text.length) {
+    return "";
+  }
+  return text.slice(offset, nextBoundary(text, offset));
+}
+
+function insertAt(state: TextBufferState, insertion: string): TextBufferState {
+  const { text, cursorOffset } = state;
+  return {
+    text: text.slice(0, cursorOffset) + insertion + text.slice(cursorOffset),
+    cursorOffset: cursorOffset + insertion.length,
+  };
+}
+
+function deleteBackward(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset === 0) {
+    return state;
+  }
+  const start = prevBoundary(state.text, state.cursorOffset);
+  return {
+    text: state.text.slice(0, start) + state.text.slice(state.cursorOffset),
+    cursorOffset: start,
+  };
+}
+
+function deleteForward(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset >= state.text.length) {
+    return state;
+  }
+  const end = nextBoundary(state.text, state.cursorOffset);
+  return {
+    text: state.text.slice(0, state.cursorOffset) + state.text.slice(end),
+    cursorOffset: state.cursorOffset,
+  };
+}
+
+function moveLeft(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset === 0) {
+    return state;
+  }
+  return {
+    ...state,
+    cursorOffset: prevBoundary(state.text, state.cursorOffset),
+  };
+}
+
+function moveRight(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset >= state.text.length) {
+    return state;
+  }
+  return {
+    ...state,
+    cursorOffset: nextBoundary(state.text, state.cursorOffset),
+  };
+}
+
+function moveHome(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset === 0) {
+    // lastIndexOf("\n", -1) clamps to 0 and would match a LEADING newline,
+    // moving the cursor forward (SEPA iteration-5 finding 2).
+    return state;
+  }
+  const lineStart = state.text.lastIndexOf("\n", state.cursorOffset - 1) + 1;
+  return { ...state, cursorOffset: lineStart };
+}
+
+function moveEnd(state: TextBufferState): TextBufferState {
+  const nextNewline = state.text.indexOf("\n", state.cursorOffset);
+  return {
+    ...state,
+    cursorOffset: nextNewline === -1 ? state.text.length : nextNewline,
+  };
+}
+
+/**
+ * Pure reducer over the buffer state. PUBLIC API safety (review F-arch-4):
+ * a caller-supplied out-of-range `cursorOffset` is clamped to [0, text.length]
+ * at entry — malformed state degrades safely instead of corrupting text.
+ */
+function clampCursor(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset >= 0 && state.cursorOffset <= state.text.length) {
+    return state;
+  }
+  return {
+    text: state.text,
+    cursorOffset: Math.min(Math.max(0, state.cursorOffset), state.text.length),
+  };
+}
+
+export function textBufferReducer(
+  state: TextBufferState,
+  action: TextBufferAction,
+): TextBufferState {
+  state = clampCursor(state);
+  switch (action.type) {
+    case "insert":
+      return insertAt(state, action.text);
+    case "newline":
+      return insertAt(state, "\n");
+    case "delete-backward":
+      return deleteBackward(state);
+    case "delete-forward":
+      return deleteForward(state);
+    case "move-left":
+      return moveLeft(state);
+    case "move-right":
+      return moveRight(state);
+    case "move-home":
+      return moveHome(state);
+    case "move-end":
+      return moveEnd(state);
+    case "clear":
+      return initialTextBuffer;
+  }
+}

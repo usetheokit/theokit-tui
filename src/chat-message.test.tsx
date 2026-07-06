@@ -24,6 +24,23 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("hi there");
   });
 
+  it("renders_system_message_with_glyph_prefix", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="system">context note</ChatMessage>,
+    );
+    expect(frame).toContain("·");
+    expect(frame).toContain("context note");
+  });
+
+  it("system_frame_matches_snapshot_under_forced_color", async () => {
+    const frame = await renderFrame(
+      <Box width={40}>
+        <ChatMessage role="system">Session started.</ChatMessage>
+      </Box>,
+    );
+    expect(frame).toMatchSnapshot("chat-message-system");
+  });
+
   it("user_frame_matches_snapshot_under_forced_color", async () => {
     const frame = await renderFrame(
       <Box width={40}>
@@ -67,18 +84,18 @@ describe("ChatMessage (T2.1)", () => {
     expect(() =>
       ChatMessage({
         // @ts-expect-error — deliberately invalid role (EC-1 negative case)
-        role: "system",
+        role: "model",
         children: "x",
       }),
     ).toThrow(TypeError);
     expect(() =>
       ChatMessage({
         // @ts-expect-error — deliberately invalid role (EC-1 negative case)
-        role: "system",
+        role: "model",
         children: "x",
       }),
     ).toThrow(
-      'ChatMessage: invalid role "system" — expected "user" | "assistant"',
+      'ChatMessage: invalid role "model" — expected "user" | "assistant" | "system"',
     );
   });
 
@@ -105,25 +122,35 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("[32mtinted");
   });
 
-  it("no_color_render_contains_text_without_ansi_escapes", () => {
-    // Fresh subprocess with NO_COLOR set BEFORE module load (chalk pins its
-    // color level at import time — in-process stubEnv cannot degrade it).
-    const out = execFileSync(
-      "pnpm",
-      ["exec", "tsx", "tests/fixtures/no-color-probe.tsx"],
-      {
-        encoding: "utf8",
-        env: {
-          PATH: process.env["PATH"] ?? "",
-          HOME: process.env["HOME"] ?? "",
-          NO_COLOR: "1",
+  // Subprocess spawn (~1-2s; slower under coverage instrumentation) — explicit
+  // timeout keeps the test deterministic under load (M0 review F-tests-5).
+  it(
+    "no_color_render_contains_text_without_ansi_escapes",
+    { timeout: 20000 },
+    () => {
+      // Fresh subprocess with NO_COLOR set BEFORE module load (chalk pins its
+      // color level at import time — in-process stubEnv cannot degrade it).
+      const out = execFileSync(
+        "pnpm",
+        ["exec", "tsx", "tests/fixtures/no-color-probe.tsx"],
+        {
+          encoding: "utf8",
+          env: {
+            PATH: process.env["PATH"] ?? "",
+            HOME: process.env["HOME"] ?? "",
+            NO_COLOR: "1",
+          },
         },
-      },
-    );
-    expect(out).not.toContain("\u001b[");
-    expect(out).toContain(">");
-    expect(out).toContain("plain text probe");
-  });
+      );
+      expect(out).not.toContain("\u001b[");
+      expect(out).toContain(">");
+      expect(out).toContain("plain text probe");
+      // M1 (T4.2): all three role glyphs distinguishable without color.
+      expect(out).toContain("·");
+      expect(out).toContain("✦");
+      expect(out).toContain("degraded but readable");
+    },
+  );
 
   it("renders_glyph_only_for_empty_children", async () => {
     const frame = await renderFrame(

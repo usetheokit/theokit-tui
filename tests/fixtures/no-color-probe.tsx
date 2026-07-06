@@ -1,13 +1,19 @@
 import { render } from "ink-testing-library";
 
-import { ChatMessage } from "../../src/chat-message.js";
+import { ChatThread } from "../../src/chat-thread.js";
 
-// NO_COLOR probe (plan T2.1 / SEPA resolutions 2 + pre-commit audit):
-// chalk fixes its color level at module load, so a degraded render can only
-// be produced in a FRESH process whose env carries NO_COLOR before imports.
-// This fixture renders one message and prints the raw frame to stdout.
+// NO_COLOR probe (M0 T2.1 + M1 T4.2): chalk fixes its color level at module
+// load, so the degraded render can only be produced in a FRESH process whose
+// env carries NO_COLOR before imports. Renders a 3-role thread and prints the
+// raw frame — role glyphs must stay distinguishable without color.
 const instance = render(
-  <ChatMessage role="user">plain text probe</ChatMessage>,
+  <ChatThread
+    messages={[
+      { id: "s", role: "system", content: "session context" },
+      { id: "u", role: "user", content: "plain text probe" },
+      { id: "a", role: "assistant", content: "degraded but readable" },
+    ]}
+  />,
 );
 await new Promise((resolve) => setTimeout(resolve, 0));
 process.stdout.write(instance.lastFrame() ?? "");

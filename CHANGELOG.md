@@ -19,6 +19,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.2.0] - 2026-07-06
+
+### Added
+
+- `system` role for `ChatMessage` — `· ` gray glyph tokens (`defaultTheme.role.system`,
+  overridable), exported `ChatRole` union (m1-chat-surface T1.1)
+- `ChatThread` — ordered chat surface with windowed `<Static>` history (frozen
+  append-only prefix in terminal scrollback), identity-memoized live rows for
+  flicker-free streaming, duplicate-id fail-fast guard (m1-chat-surface T2.1)
+- Grapheme-aware text-buffer reducer (`Intl.Segmenter` — cursor ops never split
+  emoji), pure and TTY-free (m1-chat-surface T3.1)
+- `ChatComposer` — multi-line terminal input (Enter submits, Ctrl+J newline —
+  Shift+Enter honored on kitty-protocol terminals), inverse-video cursor, dimmed
+  placeholder, whitespace-only submit guard (m1-chat-surface T3.2)
+- Thread benchmark with plain-vs-windowed mode matrix — committed baseline shows
+  windowed history ~64× faster per frame under streaming+append load
+  (`docs/benchmarks/m1-chat-thread-baseline.json`) (m1-chat-surface T4.1)
+- Interactive chat example (`pnpm example:chat`) — thread + composer + fake
+  streaming; degrades to a scripted demo when piped/non-TTY (m1-chat-surface T4.2)
+
+### Changed
+
+- Review-batch hardening (m1-chat-surface review 2026-07-06): composer scene added to
+  the public-API integration suite; `onSubmit` now runs BEFORE the buffer clears (a
+  throwing handler preserves the draft); cursor cell renders only while focused;
+  `textBufferReducer` clamps out-of-range cursor state at the public boundary; Delete
+  key erases backward at M1 (forward-delete is reducer-only — kitty/ink 5 conflation);
+  M1 benchmark baselines regenerated under the pinned color env; example demo fixes
+  overlapping-stream interval handling
+- Invalid-role error message now names the three-role union
+  (`"user" | "assistant" | "system"`) (m1-chat-surface T1.1)
+
 ## [0.1.0] - 2026-07-06
 
 ### Added

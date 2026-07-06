@@ -1,0 +1,315 @@
+agent: review-m1-chat-surface-architecture
+review_target: 811cd95..HEAD (develop) for plan m1-chat-surface
+plan: .claude/knowledge-base/plans/m1-chat-surface-plan.md
+pre_read:
+  - .claude/knowledge-base/plans/m1-chat-surface-plan.md
+  - .claude/rules/architecture.md
+  - .claude/rules/error-handling.md
+  - git diff 811cd95..HEAD (product files)
+  - patterns skills: none registered (plan § Prior Art confirms "(none exist)")
+findings:
+  - id: F-arch-1
+    severity: MEDIUM
+    file: examples/chat.tsx
+    line: 32
+    plan_ref: T4.2 / ADR D8; Drawbacks row "dangling interval"
+    summary: Single shared `timer.current` ref across overlapping streams — a second submit while a reply is streaming makes the first interval clear the WRONG handle (kills the in-flight second reply mid-stream) and leaks the first interval forever
+    evidence: |
+      ```tsx
+      const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+      ...
+      timer.current = setInterval(() => {          // line 42: overwrites any in-flight handle
+        ...
+        if (index >= tokens.length && timer.current !== undefined) {
+          clearInterval(timer.current);            // line 54: clears whatever ref holds NOW,
+          timer.current = undefined;               // not this stream's own interval
+      ```
+      Interactive repro: submit msg 1 → interval A (timer.current = A); submit msg 2
+      before A completes → timer.current = B (handle A lost). When A's counter
+      finishes, it calls clearInterval(B) — the second assistant reply freezes
+      incomplete — then sets the ref undefined, so A itself is never cleared
+      (unmount cleanup at line 62-68 checks timer.current, now undefined) and
+      fires as a silent no-op every 60ms until process exit. The plan's risk
+      mitigation ("clear interval on completion") only holds for the single
+      scripted non-TTY stream; the TTY path — the demo's whole point — breaks it.
+    recommended_action: Hold the interval handle in a per-stream closure variable inside `stream()` (each completion clears its OWN handle) and track live handles in a Set for the unmount cleanup; or guard `onSubmit` to ignore submits while a stream is in flight. State shared across concurrent operations must not live in one mutable ref.
+
+  - id: F-arch-2
+    severity: LOW
+    file: src/chat-thread.tsx
+    line: 23
+    plan_ref: ADR D1 (frozen append-only prefix contract)
+    summary: Prefix-shrink dynamics are unguarded and undocumented — increasing `windowSize`/`windowOverscan` at runtime (or removing messages) shrinks the Static items array below its watermark, so rows already printed to scrollback re-render live, visibly DUPLICATED in the terminal
+    evidence: |
+      ```tsx
+      windowSize?: number;   // JSDoc documents graduation as FROZEN (ADR D1)
+      ...
+      const tailStart = Math.max(0,
+        messages.length - Math.max(0, windowSize) - Math.max(0, windowOverscan));
+      const prefix = useMemo(() => messages.slice(0, tailStart), [messages, tailStart]);
+      ```
+      Ink `<Static>` only renders items past its internal watermark (the contract
+      the plan cites at references/ink/src/components/Static.tsx:21-58). Nothing
+      throws or warns, so the silent-corruption class D7 guards against for
+      duplicate ids has an unguarded sibling for window-prop dynamics. The JSDoc
+      documents message graduation but not "window props must not grow / messages
+      must not be removed once graduated".
+    recommended_action: Extend the ChatThreadProps JSDoc contract with the constraint (window props stable-or-shrinking; graduated messages never removed), matching how D1's freeze is already documented and tested. A dev-time warn is optional; documentation is the minimum.
+
+  - id: F-arch-3
+    severity: LOW
+    file: src/chat-composer.tsx
+    line: 143
+    plan_ref: ADR D3 (keymap)
+    summary: The Shift+Enter-newline vs Enter-submit decision is encoded twice — the submit guard in the useInput handler and `newlineAction` must stay mutually consistent by hand (DRY on one keymap business rule)
+    evidence: |
+      ```tsx
+      // handler (line 143):
+      if (key.return && !(key.shift && multiLine)) { ...submit... return; }
+      // newlineAction (line 52):
+      const wantsNewline = input === "\n" || (key.return && key.shift);
+      return multiLine && wantsNewline ? { type: "newline" } : undefined;
+      ```
+      Today the two predicates are complementary (a `key.return` event is
+      submit XOR newline). But the knowledge "shift+return means newline when
+      multiLine" lives in two places with different boolean shapes; editing one
+      without the other makes Shift+Enter either submit AND insert or do
+      neither, and the gap is untestable on legacy stdin (the /* v8 ignore */
+      lines acknowledge the path is unexercisable in tests).
+    recommended_action: Derive both branches from one predicate, e.g. `const isNewlineChord = multiLine && (input === "\n" || (key.return && key.shift))` computed once in the handler; submit becomes `key.return && !isNewlineChord`. Single source for the rule, same behavior.
+
+  - id: F-arch-4
+    severity: LOW
+    file: src/text-buffer.ts
+    line: 129
+    plan_ref: ADR D3 ("Reducer is exported"); rules/error-handling.md § 2 (validate at the boundary)
+    summary: "`textBufferReducer` is on the PUBLIC surface (src/index.ts:14) but performs no boundary validation of caller-supplied state — an out-of-range or mid-grapheme `cursorOffset` is accepted silently and can produce split-grapheme text"
+    evidence: |
+      ```ts
+      function insertAt(state: TextBufferState, insertion: string): TextBufferState {
+        const { text, cursorOffset } = state;
+        return {
+          text: text.slice(0, cursorOffset) + insertion + text.slice(cursorOffset),
+          cursorOffset: cursorOffset + insertion.length,
+        };
+      }
+      ```
+      Internal use (ChatComposer's useReducer seeded with initialTextBuffer)
+      always preserves the invariant, and the module honestly documents
+      cursorOffset as a code-unit offset. But the public export makes external
+      state a trust-boundary input: `{ text: "a👍", cursorOffset: 2 }` (mid
+      surrogate pair) + insert yields corrupted text with no typed error —
+      the same silent-corruption class D7 rejects in ChatThread. Degradation is
+      crash-free but violates the fail-fast posture applied everywhere else in
+      this slice.
+    recommended_action: Either clamp/validate cursorOffset at the reducer entry (typed TypeError naming the offset, mirroring the D7 idiom) or narrow the public surface — if external consumers only need read-model types, stop re-exporting the reducer from src/index.ts until a validated API exists. Document the chosen contract in JSDoc either way.
+
+  - id: F-arch-5
+    severity: INFO
+    file: src/theme.tsx
+    line: 49
+    plan_ref: T1.1 / ADR D4
+    summary: "no issues found — system tokens added additively (union, defaultTheme, override type, leaf-merge all extended in sync); deep-freeze and memoized context value preserved; DIP seam (useTheoTheme) unchanged"
+    evidence: |
+      ```tsx
+      system: Object.freeze({ glyph: "· ", prefix: "gray", text: undefined }),
+      ...
+      system: { ...defaultTheme.role.system, ...override.role?.system },
+      ```
+    recommended_action: None.
+
+  - id: F-arch-6
+    severity: INFO
+    file: src/chat-message.tsx
+    line: 23
+    plan_ref: T1.1 / ADR D4
+    summary: "no issues found — guard stays the FIRST statement (before any hook, M0 EC-1 invariant preserved), typed TypeError names the 3-role union, tokens still consumed only via useTheoTheme"
+    evidence: |
+      ```tsx
+      if (role !== "user" && role !== "assistant" && role !== "system") {
+        throw new TypeError(
+          `ChatMessage: invalid role "${String(role)}" — expected "user" | "assistant" | "system"`,
+      ```
+    recommended_action: None.
+
+  - id: F-arch-7
+    severity: INFO
+    file: src/index.ts
+    line: 9
+    plan_ref: Baseline Context § Architecture boundaries (composition root = only public surface)
+    summary: "no issues found — composition root grows additively (ChatThread, ChatComposer, text-buffer reducer + types); existing v0.1.0 exports untouched; internal helper `graphemeAt` deliberately NOT re-exported (has an internal caller in chat-composer, not public API)"
+    evidence: |
+      ```ts
+      export { ChatThread } from "./chat-thread.js";
+      export { ChatComposer } from "./chat-composer.js";
+      export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
+      ```
+    recommended_action: None (see F-arch-4 for the one contract question raised by the reducer export itself).
+
+  - id: F-arch-8
+    severity: INFO
+    file: src/chat-thread.tsx
+    line: 30
+    plan_ref: ADR D1/D2/D7
+    summary: "structure is otherwise clean — memo Row with identity comparator matches D2 canonically; D7 duplicate-id guard runs before hooks-with-side-effects; component composes ChatMessage without importing theme (DIP preserved, rows delegate); no circular deps (chat-thread → chat-message → theme)"
+    evidence: |
+      ```tsx
+      const Row = memo(..., (prev, next) => prev.message === next.message);
+      ```
+    recommended_action: None beyond F-arch-2.
+
+  - id: F-arch-9
+    severity: INFO
+    file: src/chat-composer.tsx
+    line: 30
+    plan_ref: ADR D3; rules/architecture.md § 2-3
+    summary: "structure is otherwise clean — key handling decomposed into small pure functions (newlineAction/motionAction/insertAction/cursorSlices) keeping the useInput closure under complexity budget; `ComposerKey` is a consumer-defined role interface over ink's Key (ISP-conformant, structurally checked at the call site); grapheme-safe cursor slicing delegates to the domain module"
+    evidence: |
+      ```tsx
+      interface ComposerKey { return: boolean; shift: boolean; ... }  // 8 of ink Key's fields — consumer view
+      ```
+    recommended_action: None beyond F-arch-3.
+
+  - id: F-arch-10
+    severity: INFO
+    file: src/text-buffer.ts
+    line: 1
+    plan_ref: T3.1 AC ("imports NOTHING from ink/react")
+    summary: "domain purity verified — zero ink/react imports (grep confirms); per-action handlers keep the reducer switch trivially exhaustive (discriminated union, no default needed); grapheme helpers shared by move/delete per the plan's REFACTOR step"
+    evidence: |
+      ```ts
+      // NO ink/react imports — unit-testable without a TTY (rules/architecture.md § 1).
+      ```
+    recommended_action: None beyond F-arch-4.
+
+  - id: F-arch-11
+    severity: INFO
+    file: benchmarks/chat-thread.bench.tsx
+    line: 9
+    plan_ref: T4.1 / ADR D6
+    summary: "no issues found — imports exclusively via ../src/index.js (composition-root discipline, same as M0 bench); EC-1 dual workload (replace-last + append) and EC-2 zero-frame guard implemented; console output is legitimate for a dev script (not a production path); plain-mode window sized against FINAL length so no mid-run graduation skews the comparison"
+    evidence: |
+      ```tsx
+      import { ChatThread, TheoTUIProvider } from "../src/index.js";
+      const FINAL_LENGTH = N_MESSAGES + N_TOKENS;
+      ```
+    recommended_action: None.
+
+  - id: F-arch-12
+    severity: INFO
+    file: examples/chat.tsx
+    line: 4
+    plan_ref: T4.2 / ADR D8
+    summary: "apart from F-arch-1, the example is architecturally sound — consumes the package only through ../src/index.js as an honest consumer; TTY detection gates the composer mount (D8); streaming follows the D2 replace-last contract explicitly"
+    evidence: |
+      ```tsx
+      import { ChatComposer, ChatThread, TheoTUIProvider } from "../src/index.js";
+      ```
+    recommended_action: See F-arch-1.
+
+  - id: F-arch-13
+    severity: INFO
+    file: package.json
+    line: 38
+    plan_ref: T4.2 Files to edit
+    summary: "no issues found — single additive `example:chat` script; manifest shape otherwise untouched (contract test unaffected, matching the plan's Baseline note)"
+    evidence: |
+      ```json
+      "example:chat": "tsx examples/chat.tsx",
+      ```
+    recommended_action: None.
+
+  - id: F-arch-14
+    severity: INFO
+    file: src/chat-thread.test.tsx
+    line: 9
+    plan_ref: T2.1/T2.2 TDD
+    summary: "no issues found — row-render spy wraps the real ChatMessage via vi.mock without touching the public API; repaint-scope, frozen-prefix, duplicate-id, clamp, and empty-frame contracts all asserted behaviorally (not structurally)"
+    recommended_action: None.
+
+  - id: F-arch-15
+    severity: INFO
+    file: src/chat-composer.test.tsx
+    line: 8
+    plan_ref: T3.2 TDD / ADR D5
+    summary: "no issues found — real-stdin byte sequences (authoritative from ink's suite), settle discipline documented against Ink's flush throttle, grapheme and newline-cursor branches exercised; 11 tests exceed the plan's 8"
+    recommended_action: None.
+
+  - id: F-arch-16
+    severity: INFO
+    file: src/text-buffer.test.ts
+    line: 15
+    plan_ref: T3.1 TDD
+    summary: "no issues found — 17 TTY-free unit tests (plan asked 10) covering every action plus emoji boundaries, no-op negatives, and the leading-newline move-home regression (SEPA finding 2)"
+    recommended_action: None.
+
+  - id: F-arch-17
+    severity: INFO
+    file: src/theme.test.tsx
+    line: 85
+    plan_ref: T1.1 TDD
+    summary: "no issues found — additive system-token assertions (presence + leaf-preserving override) extend the M0 suite without touching existing cases"
+    recommended_action: None.
+
+  - id: F-arch-18
+    severity: INFO
+    file: src/chat-message.test.tsx
+    line: 27
+    plan_ref: T1.1/T4.2 TDD
+    summary: "no issues found — invalid-role probe correctly migrated from \"system\" (now valid) to \"model\"; NO_COLOR subprocess assertion extended to all three glyphs with an explicit timeout; snapshot added for the system role"
+    recommended_action: None.
+
+  - id: F-arch-19
+    severity: INFO
+    file: src/__snapshots__/chat-message.test.tsx.snap
+    line: 7
+    plan_ref: T1.1 TDD (system snapshot)
+    summary: "no issues found — one additive snapshot entry (gray-prefixed system glyph under forced color); existing entries byte-identical"
+    recommended_action: None.
+
+  - id: F-arch-20
+    severity: INFO
+    file: tests/export-surface.test.ts
+    line: 30
+    plan_ref: T1.1/T2.1/T3.2 Files to edit
+    summary: "no issues found — surface contract grows in lockstep with src/index.ts (system glyph, ChatThread, ChatComposer, reducer + initial state all asserted through the composition root)"
+    recommended_action: None.
+
+  - id: F-arch-21
+    severity: INFO
+    file: tests/public-api.integration.test.tsx
+    line: 40
+    plan_ref: T2.2 (wiring pillar b)
+    summary: "no issues found — thread scene composes provider override + all three roles strictly through ../src/index.js, exactly the consumer path"
+    recommended_action: None.
+
+  - id: F-arch-22
+    severity: INFO
+    file: tests/fixtures/no-color-probe.tsx
+    line: 3
+    plan_ref: T4.2 (NO_COLOR scene extension)
+    summary: "no issues found — probe upgraded from a single ChatMessage to a 3-role ChatThread; direct module import (bypassing index) is acceptable for a subprocess fixture and matches the M0 precedent"
+    recommended_action: None.
+
+  - id: F-arch-23
+    severity: INFO
+    file: tests/bench-baseline.test.ts
+    line: 76
+    plan_ref: T4.1 TDD
+    summary: "no issues found — M1 mode-matrix schema oracle added alongside the untouched M0 block (separate baseline file preserves the regression anchor per D6); finiteness + self-consistency asserted per mode"
+    recommended_action: None.
+
+hygiene_sweep:
+  no_any_in_diff: true            # only grep hit is the word "any" in a comment
+  no_console_in_src: true         # console.* confined to benchmarks/ (dev script)
+  esm_only: true                  # no require() in the diff
+  file_naming: kebab-case throughout; PascalCase components; camelCase functions; UPPER_SNAKE_CASE bench constants
+  circular_dependencies: none (index → {chat-thread, chat-composer, chat-message, theme, text-buffer}; chat-thread → chat-message → theme; chat-composer → {text-buffer, theme})
+  dip_boundaries: text-buffer.ts pure (0 ink/react imports, verified); components consume theme only via useTheoTheme; examples/benchmarks import only via src/index.js
+
+verdict_input:
+  blockers: 0
+  high: 0
+  medium: 1
+  low: 3
+  info: 19

@@ -1,6 +1,6 @@
 {
   "name": "@theokit/tui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TUI component library for AI-agent surfaces \u2014 Ink primitives for chat, tool-calls, agent timelines, diffs and metrics.",
   "license": "Apache-2.0",
   "repository": {
@@ -35,6 +35,7 @@
     "format:check": "prettier --check .",
     "bench": "tsx benchmarks/run.ts",
     "example": "tsx examples/basic.tsx",
+    "example:chat": "tsx examples/chat.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {

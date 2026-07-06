@@ -3,9 +3,12 @@ import type { ReactNode } from "react";
 
 import { useTheoTheme } from "./theme.js";
 
+/** Message author roles supported by the chat surface (M1: three roles). */
+export type ChatRole = "user" | "assistant" | "system";
+
 export interface ChatMessageProps {
   /** Message author — selects the glyph prefix and role colors. */
-  role: "user" | "assistant";
+  role: ChatRole;
   /** Message content (text-only at M0). */
   children: ReactNode;
 }
@@ -17,9 +20,9 @@ export interface ChatMessageProps {
 export function ChatMessage({ role, children }: ChatMessageProps) {
   // Boundary validation (EC-1, rules/error-handling.md § 2): fail fast with a
   // typed error BEFORE any hook — JS consumers get the contract, not a crash.
-  if (role !== "user" && role !== "assistant") {
+  if (role !== "user" && role !== "assistant" && role !== "system") {
     throw new TypeError(
-      `ChatMessage: invalid role "${String(role)}" — expected "user" | "assistant"`,
+      `ChatMessage: invalid role "${String(role)}" — expected "user" | "assistant" | "system"`,
     );
   }
   const tokens = useTheoTheme().role[role];

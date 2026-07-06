@@ -88,7 +88,7 @@ using ONLY `@theokit/tui` primitives, with:
 
 ## Milestones
 
-### M0 — [ ] Walking skeleton
+### M0 — [x] Walking skeleton
 
 **Objective:** Prove the whole toolchain end-to-end with the thinnest vertical slice: one primitive
 rendering in a terminal, built + tested + snapshot-covered.

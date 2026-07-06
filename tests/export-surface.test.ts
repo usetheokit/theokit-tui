@@ -20,10 +20,23 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.useTheoTheme).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("> ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("✦ ");
+    expect(mod.defaultTheme.role.system.glyph).toBe("· ");
   });
 
   it("public_entry_exposes_chat_message", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ChatMessage).toBe("function");
+  });
+
+  it("public_entry_exposes_chat_thread", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.ChatThread).toBe("function");
+  });
+
+  it("public_entry_exposes_chat_composer_and_text_buffer", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.ChatComposer).toBe("function");
+    expect(typeof mod.textBufferReducer).toBe("function");
+    expect(mod.initialTextBuffer).toEqual({ text: "", cursorOffset: 0 });
   });
 });
