@@ -5,25 +5,26 @@ import type { ReactNode } from "react";
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
 
+// Single source for the status union (SEPA phase-1 F6): the type, the runtime
+// guard, and the error message all derive from this array — an M3 additive
+// status touches it (plus a glyph/spinner branch) exactly once.
+const VALID_STATUSES = ["pending", "running", "success", "failed"] as const;
+
 /** Tool-call lifecycle states (M2 — plan ADR D1; M3 may extend additively). */
-export type ToolCallStatus = "pending" | "running" | "success" | "failed";
+export type ToolCallStatus = (typeof VALID_STATUSES)[number];
+
+const STATUS_UNION_MESSAGE = VALID_STATUSES.map((s) => `"${s}"`).join(" | ");
 
 /** Fixed indicator column width aligning card headers (gemini-cli idiom). */
 export const STATUS_INDICATOR_WIDTH = 3;
 
 // Module-local glyph constants (documented M6 theming candidates — ADR D1).
+// Record<Exclude<...>> keeps this compile-time complete vs the union.
 const STATUS_GLYPHS: Record<Exclude<ToolCallStatus, "running">, string> = {
   pending: "o",
   success: "✓",
   failed: "x",
 };
-
-const VALID_STATUSES: readonly ToolCallStatus[] = [
-  "pending",
-  "running",
-  "success",
-  "failed",
-];
 
 export interface ToolCallProps {
   /**
@@ -34,7 +35,13 @@ export interface ToolCallProps {
   name: string;
   /** Lifecycle state — selects glyph/spinner + status color (ADR D1). */
   status: ToolCallStatus;
-  /** Optional dim one-line summary after the name (newlines sanitized). */
+  /**
+   * Optional dim one-line summary after the name (newlines sanitized).
+   * KNOWN RENDER TRADE-OFF (SEPA phase-1 F9): Ink's SGR merger does not close
+   * the name's bold before opening dim (`[1m…[2m…[22m`), so bold-capable
+   * terminals render the summary bold+faint — faint dominates visually; same
+   * output shape as the gemini-cli header. Revisit with the M6 theme system.
+   */
   summary?: string;
 }
 
@@ -72,7 +79,7 @@ export function ToolCall({ name, status, summary }: ToolCallProps) {
   // error BEFORE any hook — JS consumers get the contract, not a crash.
   if (!VALID_STATUSES.includes(status)) {
     throw new TypeError(
-      `ToolCall: invalid status "${String(status)}" — expected "pending" | "running" | "success" | "failed"`,
+      `ToolCall: invalid status "${String(status)}" — expected ${STATUS_UNION_MESSAGE}`,
     );
   }
   const theme = useTheoTheme();
@@ -101,10 +108,19 @@ export interface ToolCallCardProps extends ToolCallProps {
  * Without children (or with an empty string) it renders exactly the row.
  */
 export function ToolCallCard({ children, ...row }: ToolCallCardProps) {
+  // SEPA phase-1 F5: numbers crash Ink like strings do (auto-wrap both);
+  // booleans are the `{cond && <X/>}` idiom's residue — no body.
   const body =
-    typeof children === "string" ? <Text>{children}</Text> : children;
+    typeof children === "string" || typeof children === "number" ? (
+      <Text>{children}</Text>
+    ) : (
+      children
+    );
   const hasBody =
-    children !== undefined && children !== null && children !== "";
+    children !== undefined &&
+    children !== null &&
+    children !== "" &&
+    typeof children !== "boolean";
   return (
     <Box flexDirection="column">
       <ToolCall {...row} />

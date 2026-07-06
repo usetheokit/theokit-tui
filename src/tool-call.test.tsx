@@ -7,12 +7,18 @@ import { ToolCall, ToolCallCard } from "./tool-call.js";
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
 const DOTS_FRAME_0 = "⠋";
 
+/** Compound-SGR-safe strip (SEPA phase-1 F7). */
+// eslint-disable-next-line no-control-regex
+const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
+
 describe("ToolCall — status lifecycle (T1.1)", () => {
   it("renders_pending_with_circle_glyph", async () => {
     const frame = await renderFrame(
       <ToolCall name="search" status="pending" />,
     );
-    expect(frame).toContain("o");
+    // Positional oracle (SEPA phase-1 F3): "o" must be the INDICATOR, not a
+    // char inside the name.
+    expect(stripAnsi(frame).startsWith("o")).toBe(true);
     expect(frame).toContain("search");
   });
 
@@ -25,7 +31,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
 
   it("renders_failed_with_x_glyph", async () => {
     const frame = await renderFrame(<ToolCall name="search" status="failed" />);
-    expect(frame).toContain("x");
+    expect(stripAnsi(frame).startsWith("x")).toBe(true);
   });
 
   it("running_shows_spinner_first_frame", async () => {
@@ -67,8 +73,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     // EC-9: empty-but-valid name is legal — indicator still renders.
     // Frames carry ANSI (FORCE_COLOR=1 pin) — strip before the exact-equality.
     const frame = await renderFrame(<ToolCall name="" status="success" />);
-    // eslint-disable-next-line no-control-regex
-    expect(frame.replace(/\u001B\[\d+m/g, "").trim()).toBe("✓");
+    expect(stripAnsi(frame).trim()).toBe("✓");
   });
 
   it("name_with_newline_renders_single_header_line", async () => {
@@ -78,6 +83,15 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     );
     expect(frame.split("\n")).toHaveLength(1);
     expect(frame).toContain("rm -rf");
+  });
+
+  it("summary_with_newline_renders_single_header_line", async () => {
+    // EC-8 summary path (SEPA phase-1 F4) — mutation-visible without this.
+    const frame = await renderFrame(
+      <ToolCall name="grep" status="success" summary={"a\nb"} />,
+    );
+    expect(frame.split("\n")).toHaveLength(1);
+    expect(frame).toContain("a b");
   });
 });
 
@@ -90,7 +104,7 @@ describe("ToolCallCard — header + indented body (T1.2)", () => {
     );
     expect(frame).toContain("✓");
     expect(frame).toContain("12 matches");
-    expect(frame.split("\n")[1]).toMatch(/^\s{3}/);
+    expect(frame.split("\n")[1]).toMatch(/^ {3}\S/); // exactly the indicator width (F8)
   });
 
   it("card_without_children_equals_row", async () => {

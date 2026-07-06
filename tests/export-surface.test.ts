@@ -39,7 +39,8 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ToolCallCard).toBe("function");
     expect(typeof mod.ToolResult).toBe("function");
     expect(typeof mod.truncateLines).toBe("function");
-    expect(mod.STATUS_INDICATOR_WIDTH).toBe(3);
+    // STATUS_INDICATOR_WIDTH stays module-internal (ADR D1 — SEPA phase-1 F2).
+    expect(mod).not.toHaveProperty("STATUS_INDICATOR_WIDTH");
     expect(mod.MAX_RESULT_CHARS).toBe(20000);
   });
 

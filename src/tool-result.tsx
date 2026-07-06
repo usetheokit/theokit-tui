@@ -169,6 +169,30 @@ function contentRows(
   });
 }
 
+interface ResultView {
+  indicator: string | undefined;
+  showExit: boolean;
+  showPlaceholder: boolean;
+  hasAnything: boolean;
+}
+
+function resultView(
+  isShell: boolean,
+  content: ResolvedContent,
+  hidden: number,
+): ResultView {
+  const indicator = indicatorText(hidden, content.capped);
+  const showExit =
+    typeof content.exitCode === "number" && content.exitCode !== 0;
+  const showPlaceholder = isShell && content.rows.length === 0;
+  const hasAnything =
+    content.rows.length > 0 ||
+    showExit ||
+    showPlaceholder ||
+    indicator !== undefined;
+  return { indicator, showExit, showPlaceholder, hasAnything };
+}
+
 /**
  * Tool output block (ADR D4/D5): tail-retention truncation with a dim
  * `… +N lines hidden` indicator, optional shell envelope (labeled stderr,
@@ -179,30 +203,24 @@ export function ToolResult(props: ToolResultProps) {
   const content = resolveContent(props);
   const theme = useTheoTheme();
 
-  const isShell = props.shell !== undefined;
   const truncation = expanded
     ? { visible: content.rows, hidden: 0 }
     : truncateLines(content.rows, maxLines);
-  const indicator = indicatorText(truncation.hidden, content.capped);
-  const showExit =
-    typeof content.exitCode === "number" && content.exitCode !== 0;
-  const showPlaceholder = isShell && content.rows.length === 0;
-
-  if (
-    content.rows.length === 0 &&
-    !showExit &&
-    !showPlaceholder &&
-    indicator === undefined
-  ) {
+  const view = resultView(
+    props.shell !== undefined,
+    content,
+    truncation.hidden,
+  );
+  if (!view.hasAnything) {
     return null;
   }
 
   return (
     <Box flexDirection="column">
-      {indicator !== undefined && <Text dimColor>{indicator}</Text>}
+      {view.indicator !== undefined && <Text dimColor>{view.indicator}</Text>}
       {contentRows(content, truncation.visible.length, theme)}
-      {showPlaceholder && <Text dimColor>(no output)</Text>}
-      {showExit && (
+      {view.showPlaceholder && <Text dimColor>(no output)</Text>}
+      {view.showExit && (
         <Text color={theme.status.error} bold>
           exited {content.exitCode}
         </Text>
