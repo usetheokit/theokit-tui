@@ -1,0 +1,106 @@
+{
+  "benchmark": "chat-thread-render",
+  "date": "2026-07-06T18:45:02.666Z",
+  "node_version": "v22.22.2",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cores": 12
+  },
+  "color_env": {
+    "FORCE_COLOR": "unset"
+  },
+  "workload": {
+    "messages": 500,
+    "streamed_tokens": 300,
+    "window": "8+4"
+  },
+  "protocol": {
+    "warmup_runs": 1,
+    "measured_runs": 5
+  },
+  "modes": [
+    {
+      "mode": "plain",
+      "runs": [
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 138.326,
+          "peak_ms_per_frame": 449.312
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 200.994,
+          "peak_ms_per_frame": 347.976
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 63.825,
+          "peak_ms_per_frame": 101.896
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 55.236,
+          "peak_ms_per_frame": 107.351
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 54.125,
+          "peak_ms_per_frame": 92.778
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 300,
+        "mean_ms_per_frame": {
+          "mean": 102.501,
+          "std_dev": 58.403
+        },
+        "peak_ms_per_frame": {
+          "mean": 219.863,
+          "std_dev": 149.523
+        }
+      }
+    },
+    {
+      "mode": "windowed",
+      "runs": [
+        {
+          "frames": 600,
+          "mean_ms_per_frame": 1.537,
+          "peak_ms_per_frame": 5.224
+        },
+        {
+          "frames": 600,
+          "mean_ms_per_frame": 1.582,
+          "peak_ms_per_frame": 2.556
+        },
+        {
+          "frames": 600,
+          "mean_ms_per_frame": 1.735,
+          "peak_ms_per_frame": 3.796
+        },
+        {
+          "frames": 600,
+          "mean_ms_per_frame": 1.614,
+          "peak_ms_per_frame": 3.406
+        },
+        {
+          "frames": 600,
+          "mean_ms_per_frame": 1.587,
+          "peak_ms_per_frame": 3.733
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 600,
+        "mean_ms_per_frame": {
+          "mean": 1.611,
+          "std_dev": 0.067
+        },
+        "peak_ms_per_frame": {
+          "mean": 3.743,
+          "std_dev": 0.862
+        }
+      }
+    }
+  ],
+  "methodology": "ink-testing-library render + rerender loop; each step replaces the last message (+1 char) AND appends a new message (EC-1 — streaming repaint + append churn/Static graduation measured together); plain mode windowSize = final length so nothing graduates; per-frame ms = wall time distributed across stdout.frames deltas (includes tick overhead); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs per mode; population std dev."
+}

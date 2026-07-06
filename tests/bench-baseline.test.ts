@@ -81,3 +81,66 @@ describe("benchmark baseline (T3.1)", () => {
     expect(baseline.workload.streamed_tokens).toBeGreaterThan(0);
   });
 });
+
+interface M1Mode {
+  mode: string;
+  runs: {
+    frames: number;
+    mean_ms_per_frame: number;
+    peak_ms_per_frame: number;
+  }[];
+  aggregate: {
+    frames_mean: number;
+    mean_ms_per_frame: { mean: number; std_dev: number };
+    peak_ms_per_frame: { mean: number; std_dev: number };
+  };
+}
+
+interface M1Baseline {
+  benchmark: string;
+  modes: M1Mode[];
+  workload: { messages: number; streamed_tokens: number; window: string };
+  protocol: { warmup_runs: number; measured_runs: number };
+  node_version: string;
+  methodology: string;
+}
+
+describe("benchmark baseline M1 (T4.1)", () => {
+  it("m1_thread_baseline_exists_with_mode_matrix", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m1-chat-thread-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as M1Baseline;
+
+    expect(baseline.modes.length).toBe(2);
+    const modeNames = baseline.modes.map((m) => m.mode).sort();
+    expect(modeNames).toEqual(["plain", "windowed"]);
+    for (const mode of baseline.modes) {
+      expect(mode.runs.length).toBeGreaterThanOrEqual(3);
+      for (const run of mode.runs) {
+        expect(run.frames).toBeGreaterThan(0);
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+      }
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.std_dev)).toBe(
+        true,
+      );
+      expect(mode.aggregate.mean_ms_per_frame.std_dev).toBeGreaterThanOrEqual(
+        0,
+      );
+      const recomputed =
+        mode.runs.reduce((a, r) => a + r.mean_ms_per_frame, 0) /
+        mode.runs.length;
+      expect(
+        Math.abs(recomputed - mode.aggregate.mean_ms_per_frame.mean),
+      ).toBeLessThan(0.01);
+    }
+    expect(baseline.workload.messages).toBeGreaterThan(0);
+    expect(baseline.workload.streamed_tokens).toBeGreaterThan(0);
+    expect(baseline.methodology.length > 0).toBe(true);
+  });
+});

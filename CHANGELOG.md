@@ -19,6 +19,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ChatComposer` — multi-line terminal input (Enter submits, Ctrl+J newline —
   Shift+Enter honored on kitty-protocol terminals), inverse-video cursor, dimmed
   placeholder, whitespace-only submit guard (m1-chat-surface T3.2)
+- Thread benchmark with plain-vs-windowed mode matrix — committed baseline shows
+  windowed history ~64× faster per frame under streaming+append load
+  (`docs/benchmarks/m1-chat-thread-baseline.json`) (m1-chat-surface T4.1)
 
 ### Changed
 
