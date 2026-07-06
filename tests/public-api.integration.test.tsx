@@ -11,6 +11,8 @@ import {
   ChatMessage,
   ChatThread,
   TheoTUIProvider,
+  ToolCallCard,
+  ToolResult,
   defaultTheme,
 } from "../src/index.js";
 import { renderFrame } from "./helpers.js";
@@ -78,5 +80,38 @@ describe("public API integration (T3.2 — composer scene)", () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(onSubmit).toHaveBeenCalledWith("hey");
     instance.unmount();
+  });
+});
+
+describe("public API integration (M2 T3.1 — tool scene)", () => {
+  it("public_entry_composes_tool_card_with_result", async () => {
+    // Wiring pillar (b) for the M2 surface: card + shell result through the
+    // composition root, exactly as a consumer would import them.
+    const frame = await renderFrame(
+      <TheoTUIProvider>
+        <Box flexDirection="column">
+          <ToolCallCard name="pnpm test" status="success" summary="exit 0">
+            <ToolResult
+              shell={{
+                stdout: "130 passed",
+                stderr: "deprecation warning",
+                exitCode: 0,
+              }}
+            />
+          </ToolCallCard>
+          <ToolCallCard name="pnpm lint" status="failed">
+            <ToolResult
+              shell={{ stdout: "", stderr: "1 error", exitCode: 1 }}
+            />
+          </ToolCallCard>
+        </Box>
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("✓");
+    expect(frame).toContain("130 passed");
+    expect(frame).toContain("stderr:");
+    expect(frame).toContain("deprecation warning");
+    expect(frame).not.toContain("exited 0");
+    expect(frame).toContain("exited 1");
   });
 });

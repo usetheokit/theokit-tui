@@ -1,4 +1,6 @@
 import { Box, Text } from "ink";
+import { render } from "ink-testing-library";
+import spinners from "cli-spinners";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
@@ -149,4 +151,88 @@ describe("ToolCallCard — header + indented body (T1.2)", () => {
     );
     expect(cardFrame).toBe(rowFrame);
   });
+});
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Unique spinner cells rendered so far (ink-ui exhaust+dedup idiom). */
+const uniqueSpinnerCells = (frames: readonly string[]): string[] => {
+  const cells = new Set<string>();
+  for (const frame of frames) {
+    for (const candidate of spinners.dots.frames) {
+      if (frame.includes(candidate)) {
+        cells.add(candidate);
+      }
+    }
+  }
+  return [...cells];
+};
+
+describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
+  it("spinner_animates_through_dots_frames", { timeout: 5000 }, async () => {
+    // Real timers — the ONLY animation test (gemini mocks; ink-ui exhausts).
+    const instance = render(<ToolCall name="fetch" status="running" />);
+    const seen: string[] = [];
+    const budget = spinners.dots.frames.length * spinners.dots.interval + 50;
+    const step = spinners.dots.interval;
+    for (let elapsed = 0; elapsed < budget; elapsed += step) {
+      await delay(step);
+      seen.push(instance.lastFrame() ?? "");
+    }
+    instance.unmount();
+    const cells = uniqueSpinnerCells(seen);
+    expect(cells.length).toBeGreaterThan(1);
+    for (const cell of cells) {
+      expect(spinners.dots.frames).toContain(cell);
+    }
+  });
+
+  it("transition_running_to_success_swaps_indicator", async () => {
+    const instance = render(<ToolCall name="build" status="running" />);
+    await delay(0);
+    instance.rerender(<ToolCall name="build" status="success" />);
+    await delay(0);
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(frame).toContain("✓");
+    expect(frame).not.toContain(DOTS_FRAME_0);
+  });
+
+  it("transition_running_to_failed_swaps_indicator", async () => {
+    const instance = render(<ToolCall name="build" status="running" />);
+    await delay(0);
+    instance.rerender(<ToolCall name="build" status="failed" />);
+    await delay(0);
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(stripAnsi(frame).startsWith("x")).toBe(true);
+  });
+
+  it(
+    "same_status_rerender_does_not_reset_spinner",
+    { timeout: 5000 },
+    async () => {
+      // EC-10: identical props must not remount/reset the interval.
+      const instance = render(<ToolCall name="fetch" status="running" />);
+      const half = Math.ceil(spinners.dots.frames.length / 2);
+      await delay(half * spinners.dots.interval);
+      instance.rerender(<ToolCall name="fetch" status="running" />);
+      const seen: string[] = [];
+      const budget = spinners.dots.frames.length * spinners.dots.interval + 50;
+      for (
+        let elapsed = 0;
+        elapsed < budget;
+        elapsed += spinners.dots.interval
+      ) {
+        await delay(spinners.dots.interval);
+        seen.push(instance.lastFrame() ?? "");
+      }
+      instance.unmount();
+      const cells = uniqueSpinnerCells(seen);
+      expect(cells.length).toBeGreaterThan(1);
+      for (const cell of cells) {
+        expect(spinners.dots.frames).toContain(cell);
+      }
+    },
+  );
 });

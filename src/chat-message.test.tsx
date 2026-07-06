@@ -149,6 +149,12 @@ describe("ChatMessage (T2.1)", () => {
       expect(out).toContain("·");
       expect(out).toContain("✦");
       expect(out).toContain("degraded but readable");
+      // M2 (T3.1): tool statuses + shell envelope readable without color —
+      // the stderr LABEL is the color-independence mechanism (EC-13).
+      expect(out).toContain("✓");
+      expect(out).toContain("ok-tool");
+      expect(out).toContain("stderr:");
+      expect(out).toContain("exited 2");
     },
   );
 
