@@ -51,6 +51,16 @@ describe("theme stub (T1.1)", () => {
     expect(captured?.role.assistant).toEqual(defaultTheme.role.assistant);
   });
 
+  it("provider_without_theme_prop_yields_default_tokens", async () => {
+    resetCaptured();
+    await renderFrame(
+      <TheoTUIProvider>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured).toEqual(defaultTheme);
+  });
+
   it("empty_theme_override_yields_default_tokens", async () => {
     resetCaptured();
     await renderFrame(

@@ -94,6 +94,17 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("word0");
   });
 
+  it("applies_custom_text_color_token_when_defined", async () => {
+    // Covers the color-prop branch (default text token is undefined).
+    const frame = await renderFrame(
+      <TheoTUIProvider theme={{ role: { user: { text: "green" } } }}>
+        <ChatMessage role="user">tinted</ChatMessage>
+      </TheoTUIProvider>,
+    );
+    // green foreground = ESC[32m under FORCE_COLOR=1.
+    expect(frame).toContain("[32mtinted");
+  });
+
   it("no_color_render_contains_text_without_ansi_escapes", () => {
     // Fresh subprocess with NO_COLOR set BEFORE module load (chalk pins its
     // color level at import time — in-process stubEnv cannot degrade it).
