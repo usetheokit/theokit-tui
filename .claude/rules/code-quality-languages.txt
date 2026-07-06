@@ -12,7 +12,7 @@
 #
 # go
 # python
-typescript
+typescript | package.json | ENABLED | @theokit/tui — TS strict + Ink (enabled at M0 T4.1)
 # javascript
 # rust
 # java

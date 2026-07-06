@@ -177,11 +177,21 @@ def check_acceptance_criteria(
     changed = _changed_files(repo_root, shas) if repo_root is not None else []
 
     # --- file_size budget (mechanizable, NOT covered by run_validation) ----------
+    # Generated / vendored artifacts are exempt: the LoC budget targets SOURCE
+    # files (rules/architecture.md); lockfiles and legal texts are not authored
+    # line-by-line (see usetheodev/theokit-tui#3).
+    _SIZE_EXEMPT = {
+        "pnpm-lock.yaml", "package-lock.json", "yarn.lock",
+        "Cargo.lock", "go.sum", "poetry.lock", "uv.lock",
+        "LICENSE", "NOTICE",
+    }
     if by_category.get("file_size") and repo_root is not None and changed:
         limit = _file_size_limit(criteria)
         for rel in changed:
             path = repo_root / rel
             if not path.is_file():
+                continue
+            if path.name in _SIZE_EXEMPT:
                 continue
             try:
                 loc = sum(1 for _ in path.open(encoding="utf-8", errors="ignore"))

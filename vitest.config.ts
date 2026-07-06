@@ -16,6 +16,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**"],
+      // Plan Global DoD: >= 90% on src/** (critical paths at 100%).
+      thresholds: {
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
+      },
     },
   },
 });
