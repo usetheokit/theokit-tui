@@ -11,6 +11,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `system` role for `ChatMessage` — `· ` gray glyph tokens (`defaultTheme.role.system`,
   overridable), exported `ChatRole` union (m1-chat-surface T1.1)
+- `ChatThread` — ordered chat surface with windowed `<Static>` history (frozen
+  append-only prefix in terminal scrollback), identity-memoized live rows for
+  flicker-free streaming, duplicate-id fail-fast guard (m1-chat-surface T2.1)
 
 ### Changed
 

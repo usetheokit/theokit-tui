@@ -27,4 +27,9 @@ describe("public entry surface (T0.2)", () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ChatMessage).toBe("function");
   });
+
+  it("public_entry_exposes_chat_thread", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.ChatThread).toBe("function");
+  });
 });
