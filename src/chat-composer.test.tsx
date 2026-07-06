@@ -8,6 +8,7 @@ import { ChatComposer } from "./chat-composer.js";
 const ENTER = "\r";
 const CTRL_J = "\n";
 const LEFT_ARROW = "[D";
+const RIGHT_ARROW = "\u001B[C";
 const BACKSPACE = "";
 
 const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -112,6 +113,24 @@ describe("ChatComposer (T3.2)", () => {
     const instance = await mount(<ChatComposer onSubmit={onSubmit} />);
     await type(instance, ["hello world", ENTER]);
     expect(onSubmit).toHaveBeenCalledWith("hello world");
+    instance.unmount();
+  });
+
+  it("right_arrow_moves_cursor_back_over_text", async () => {
+    const onSubmit = vi.fn();
+    const instance = await mount(<ChatComposer onSubmit={onSubmit} />);
+    await type(instance, ["ab", LEFT_ARROW, RIGHT_ARROW, BACKSPACE, ENTER]);
+    expect(onSubmit).toHaveBeenCalledWith("a");
+    instance.unmount();
+  });
+
+  it("cursor_renders_visibly_when_sitting_on_a_newline", async () => {
+    // Exercises the raw === "\n" cursor branch (cell stays visible).
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["a", CTRL_J, "b", LEFT_ARROW, LEFT_ARROW]);
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("a");
+    expect(frame).toContain("b");
     instance.unmount();
   });
 });

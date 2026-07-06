@@ -45,6 +45,10 @@ function newlineAction(
 ): TextBufferAction | undefined {
   // Ctrl+J arrives as a literal linefeed with key.return === false;
   // Shift+Enter only on terminals that encode shift (kitty protocol).
+  // key.shift+return only arrives on kitty-protocol terminals; ink 5 needs
+  // the kitty handshake, unsynthesizable via test stdin (verified: CSI-u
+  // lands as literal text). The Ctrl+J path IS tested.
+  /* v8 ignore next */
   const wantsNewline = input === "\n" || (key.return && key.shift);
   return multiLine && wantsNewline ? { type: "newline" } : undefined;
 }
@@ -134,6 +138,8 @@ export function ChatComposer({
 
   useInput(
     (input, key) => {
+      // Same kitty-only shift encoding caveat as newlineAction.
+      /* v8 ignore next */
       if (key.return && !(key.shift && multiLine)) {
         const text = buffer.text.trim();
         if (text.length > 0) {

@@ -44,6 +44,9 @@ function nextBoundary(text: string, offset: number): number {
       return end;
     }
   }
+  // Defensive fall-through: every public caller guards offset >= text.length
+  // before reaching here (unreachable via the API).
+  /* v8 ignore next 2 */
   return text.length;
 }
 

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
+import {
+  graphemeAt,
+  initialTextBuffer,
+  textBufferReducer,
+} from "./text-buffer.js";
 import type { TextBufferState } from "./text-buffer.js";
 
 const state = (text: string, cursorOffset: number): TextBufferState => ({
@@ -89,5 +93,25 @@ describe("textBufferReducer (T3.1)", () => {
     });
     expect(next.text).toBe("ab");
     expect(next.cursorOffset).toBe(1);
+  });
+
+  it("delete_forward_at_end_is_noop", () => {
+    const s = state("ab", 2);
+    expect(textBufferReducer(s, { type: "delete-forward" })).toEqual(s);
+  });
+
+  it("move_left_at_start_is_noop", () => {
+    const s = state("ab", 0);
+    expect(textBufferReducer(s, { type: "move-left" })).toEqual(s);
+  });
+
+  it("grapheme_at_end_of_text_is_empty", () => {
+    expect(graphemeAt("ab", 2)).toBe("");
+    expect(graphemeAt("ab", 5)).toBe("");
+  });
+
+  it("move_end_without_trailing_newline_targets_text_end", () => {
+    const s = state("abc", 1);
+    expect(textBufferReducer(s, { type: "move-end" }).cursorOffset).toBe(3);
   });
 });
