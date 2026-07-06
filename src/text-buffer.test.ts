@@ -56,6 +56,13 @@ describe("textBufferReducer (T3.1)", () => {
     expect(textBufferReducer(s, { type: "move-end" }).cursorOffset).toBe(5);
   });
 
+  it("move_home_at_offset_zero_with_leading_newline_is_noop", () => {
+    // SEPA iteration-5 finding 2: lastIndexOf("\n", -1) clamps to 0 and
+    // matches a leading newline, moving the cursor FORWARD. Must be a no-op.
+    const s = state("\nab", 0);
+    expect(textBufferReducer(s, { type: "move-home" }).cursorOffset).toBe(0);
+  });
+
   it("newline_inserts_linefeed_at_cursor", () => {
     const next = textBufferReducer(state("abcd", 2), { type: "newline" });
     expect(next.text).toBe("ab\ncd");

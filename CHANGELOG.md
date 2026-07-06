@@ -16,6 +16,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   flicker-free streaming, duplicate-id fail-fast guard (m1-chat-surface T2.1)
 - Grapheme-aware text-buffer reducer (`Intl.Segmenter` — cursor ops never split
   emoji), pure and TTY-free (m1-chat-surface T3.1)
+- `ChatComposer` — multi-line terminal input (Enter submits, Ctrl+J newline —
+  Shift+Enter honored on kitty-protocol terminals), inverse-video cursor, dimmed
+  placeholder, whitespace-only submit guard (m1-chat-surface T3.2)
 
 ### Changed
 

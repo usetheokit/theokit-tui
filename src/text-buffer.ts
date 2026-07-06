@@ -47,6 +47,14 @@ function nextBoundary(text: string, offset: number): number {
   return text.length;
 }
 
+/** The full grapheme starting at `offset` ("" at end of text). */
+export function graphemeAt(text: string, offset: number): string {
+  if (offset >= text.length) {
+    return "";
+  }
+  return text.slice(offset, nextBoundary(text, offset));
+}
+
 function insertAt(state: TextBufferState, insertion: string): TextBufferState {
   const { text, cursorOffset } = state;
   return {
@@ -98,6 +106,11 @@ function moveRight(state: TextBufferState): TextBufferState {
 }
 
 function moveHome(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset === 0) {
+    // lastIndexOf("\n", -1) clamps to 0 and would match a LEADING newline,
+    // moving the cursor forward (SEPA iteration-5 finding 2).
+    return state;
+  }
   const lineStart = state.text.lastIndexOf("\n", state.cursorOffset - 1) + 1;
   return { ...state, cursorOffset: lineStart };
 }
