@@ -23,6 +23,10 @@ const { AgentTimeline } = await import("./agent-timeline.js");
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+/** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
+// eslint-disable-next-line no-control-regex
+const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
+
 const message = (id: string, text: string): AgentMessageEvent => ({
   id,
   kind: "message",
@@ -45,8 +49,8 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         events={[{ id: "t1", kind: "thinking", text: "planning the diff" }]}
       />,
     );
-    expect(frame).toContain("planning the diff");
-    expect(frame).toContain("·");
+    // Line-anchored (tests-6 — M2 lesson): the leading glyph, not a substring.
+    expect(stripAnsi(frame)).toMatch(/^•\s+planning the diff/m);
   });
 
   it("tool_event_dispatches_to_tool_card_with_result", async () => {
@@ -63,8 +67,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         ]}
       />,
     );
-    expect(frame).toContain("✓");
-    expect(frame).toContain("grep");
+    expect(stripAnsi(frame)).toMatch(/^✓\s+grep/m); // line-anchored (tests-6)
     expect(frame).toContain("3 matches");
   });
 
@@ -302,6 +305,38 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
     expect(rowRenders.count).toBe(1);
   });
 
+  it("tool_tail_identity_replace_repaints_only_that_row", async () => {
+    // tests-1: the message spy misses tool/thinking repaints — assert the
+    // frame transition AND that no MESSAGE row repainted (spy 0).
+    const list: AgentEvent[] = [
+      ...events(11),
+      {
+        id: "tl-tail",
+        kind: "tool",
+        name: "vitest",
+        status: "running",
+      },
+    ];
+    const instance = render(
+      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    rowRenders.count = 0;
+    const tail = list[list.length - 1];
+    const next: AgentEvent[] = [
+      ...list.slice(0, -1),
+      { ...(tail as Extract<AgentEvent, { kind: "tool" }>), status: "success" },
+    ];
+    instance.rerender(
+      <AgentTimeline events={next} windowSize={8} windowOverscan={4} />,
+    );
+    await tick();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(stripAnsi(frame)).toMatch(/^✓\s+vitest/m);
+    expect(rowRenders.count).toBe(0); // message rows untouched by memo
+  });
+
   it("static_prefix_is_frozen_after_graduation", async () => {
     let list = events(20);
     const instance = render(
@@ -434,7 +469,7 @@ describe("AgentTimeline — representative turn (T3.1, roadmap DoD-3)", () => {
         <AgentTimeline events={turn} />
       </Box>,
     );
-    expect(frame).toContain("inspecting");
+    expect(stripAnsi(frame)).toMatch(/^•\s+inspecting/m);
     expect(frame).toContain("⠋");
     expect(frame).toContain("✓");
     expect(frame).toContain("All green now.");

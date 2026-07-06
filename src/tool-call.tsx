@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
+import { unionMessage } from "./union-message.js";
 
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
@@ -19,7 +20,7 @@ const VALID_STATUSES = TOOL_CALL_STATUSES;
 /** Tool-call lifecycle states (M2 — plan ADR D1; M3 may extend additively). */
 export type ToolCallStatus = (typeof VALID_STATUSES)[number];
 
-const STATUS_UNION_MESSAGE = VALID_STATUSES.map((s) => `"${s}"`).join(" | ");
+const STATUS_UNION_MESSAGE = unionMessage(VALID_STATUSES);
 
 /** Fixed indicator column width aligning card headers (gemini-cli idiom). */
 export const STATUS_INDICATOR_WIDTH = 3;

@@ -20,7 +20,11 @@
 - SEPA phase-1 (TIGHT): 8 findings — F1 maxLines boundary guard, F2 output→children normalization, F3 styled thinking oracle, F4-F6 polish applied; F7 (unionMessage rule-of-3) logged followup; F8 verified-clean
 - Edge-case batch EC-1..EC-14 absorbed at plan time (D8 full boundary validation)
 
-## Benchmark evidence (pinned env, 5 runs/mode)
+## Benchmark evidence (pinned env, 5 runs/mode — post-review regeneration)
 
-- m3 agent-timeline: bounded mean 4.636 ± 0.303 ms/frame (peak 13.308 ± 5.58); unbounded mean 4.904 ± 0.642 (peak 12.837 ± 3.933) — heterogeneous graduation measured; peak named as the risk-1 metric in the methodology
-- m0/m1/m2 baselines refreshed same run (m2 mean 7.65 ± 0.114)
+- ORIGINAL committed numbers were VOID (review BLOCKER DV-5: the 500-line item never
+  rendered — matrix measured identical workloads). After the fix (tall item appended
+  mid-loop): bounded mean 3.668 ± 0.135 ms/frame (peak 9.194 ± 1.833); unbounded mean
+  5.768 ± 0.596 (peak **51.054 ± 9.246**) — the tall-item graduation cost is ~5.5× on
+  peak, CONCLUSIVE (>> 1σ); peak is the risk-1 metric as planned
+- m0/m1/m2 baselines refreshed same run

@@ -38,7 +38,9 @@ export interface AgentStreamingProps {
   /**
    * Elapsed seconds shown inside the cancel hint. The indicator is DUMB — it
    * holds NO timer; ticking is the caller's/M7's concern (gemini
-   * LoadingIndicator idiom, ADR D4). Ignored when `showCancelHint` is false.
+   * LoadingIndicator idiom, ADR D4). Not rendered when `showCancelHint` is
+   * false — but STILL validated (fail-fast; prop validity must not depend on
+   * another prop).
    */
   elapsedSeconds?: number;
   /** Renders the dim `(esc to cancel[, {elapsed}])` suffix. */
@@ -74,7 +76,12 @@ export function AgentStreaming({
       <Text italic wrap="truncate-end">
         {primary}
       </Text>
-      {showCancelHint && <Text dimColor> {suffix}</Text>}
+      {showCancelHint && (
+        <Text dimColor wrap="truncate-end">
+          {" "}
+          {suffix}
+        </Text>
+      )}
     </Box>
   );
 }

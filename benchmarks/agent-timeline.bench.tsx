@@ -24,6 +24,14 @@ const WINDOW_OVERSCAN = 4;
 // ≈50% messages / ≈30% tools / ≈20% thinking (blueprint Corner 3 proposal).
 const EVENT_MIX = { message: 0.5, tool: 0.3, thinking: 0.2 };
 
+// MUST land in a tool slot (i % 10 ∈ {5,6,7}) — review dom-testing-1 found
+// the original index 42 routed to the MESSAGE branch, silently deleting the
+// tall item from every run. It must ALSO fall in the APPEND range
+// (N_EVENTS..N_EVENTS+N_STEPS) so the tall item graduates DURING the
+// measured loop — a mount-range index graduates before sampling starts and
+// its cost lands in the excluded mount. Self-check below fails loudly.
+const TALL_ITEM_INDEX = 345;
+
 const smoke = process.argv.includes("--smoke");
 
 type Mode = "bounded" | "unbounded";
@@ -51,7 +59,8 @@ function makeEvent(i: number, mode: Mode): AgentEvent {
       kind: "tool",
       name: `tool-${i}`,
       status: (["running", "success", "failed"] as const)[i % 3] ?? "success",
-      output: i === 42 ? longOutput : `result ${i}\nsecond line ${i}`,
+      output:
+        i === TALL_ITEM_INDEX ? longOutput : `result ${i}\nsecond line ${i}`,
       maxLines,
     };
   }
@@ -74,8 +83,37 @@ function App({ events }: { events: AgentEvent[] }) {
   );
 }
 
+// Fail-fast workload self-check (review dom-testing-1): the tall item must
+// be a TOOL event appended DURING the loop, or the matrix is void.
+function assertTallItemInAppendRange(mode: Mode): void {
+  const tallProbe = makeEvent(TALL_ITEM_INDEX, mode);
+  if (
+    tallProbe.kind !== "tool" ||
+    tallProbe.output === undefined ||
+    tallProbe.output.split("\n").length !== LONG_OUTPUT_LINES ||
+    TALL_ITEM_INDEX < N_EVENTS ||
+    TALL_ITEM_INDEX >= N_EVENTS + N_STEPS
+  ) {
+    throw new Error(
+      "bench: tall tool item missing from the measured append range — slot math regressed (dom-testing-1 guard)",
+    );
+  }
+}
+
+/** Streaming repaint shape for the tail event, alternating by kind. */
+function replaceTail(last: AgentEvent, step: number): AgentEvent {
+  if (last.kind === "message") {
+    return { ...last, text: last.text + "x" };
+  }
+  if (last.kind === "tool") {
+    return { ...last, status: step % 2 === 0 ? "success" : "failed" };
+  }
+  return { ...last, text: last.text + "." };
+}
+
 async function runOnce(mode: Mode): Promise<RunMetrics> {
   let events = Array.from({ length: N_EVENTS }, (_, i) => makeEvent(i, mode));
+  assertTallItemInAppendRange(mode);
   const instance = render(<App events={events} />);
   await tick();
   const sampler = frameSampler(() => instance.frames.length);
@@ -90,13 +128,11 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
     }
     // Identity-replace the tail (streaming repaint), alternating shapes,
     // then append one event (graduating one per step under the window).
-    const replaced: AgentEvent =
-      last.kind === "message"
-        ? { ...last, text: last.text + "x" }
-        : last.kind === "tool"
-          ? { ...last, status: t % 2 === 0 ? "success" : "failed" }
-          : { ...last, text: last.text + "." };
-    events = [...events.slice(0, -1), replaced, makeEvent(events.length, mode)];
+    events = [
+      ...events.slice(0, -1),
+      replaceTail(last, t),
+      makeEvent(events.length, mode),
+    ];
     instance.rerender(<App events={events} />);
     await tick();
     sampler.sample();
@@ -114,7 +150,7 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
 
 console.log(
   `agent-timeline bench — ${N_EVENTS}+${N_STEPS} mixed events, modes bounded|unbounded` +
-    (smoke ? " [SMOKE: 1 run bounded-only, no file write]" : ""),
+    (smoke ? " [SMOKE: 1 run bounded-only, 0 warmup, no file write]" : ""),
 );
 
 const measured = smoke ? 1 : MEASURED_RUNS;
@@ -178,14 +214,16 @@ if (!smoke) {
     modes: results,
     methodology:
       "ink-testing-library render + rerender loop; mount = 300 mixed events " +
-      "(≈50% 1-line messages, ≈30% tool cards incl. one 500-line output, " +
-      "≈20% 2-line thinking) under windowSize 8+4; each step " +
+      "(≈50% 1-line messages, ≈30% tool cards, ≈20% 2-line thinking) under " +
+      "windowSize 8+4, plus ONE 500-line tool output APPENDED mid-loop " +
+      "(step 45) so its graduation lands inside the sampled steps; each step " +
       "identity-replaces the tail event (token append / status transition, " +
       "alternating) AND appends one event, graduating one event per step " +
       "into <Static>; modes: bounded = tool maxLines 10, unbounded = " +
-      "maxLines > output height — the delta quantifies the tall-item " +
-      "graduation cost, and peak_ms_per_frame is the heterogeneous-heights " +
-      "metric (the graduation spike that mean averages away); per-frame ms " +
+      "maxLines > output height — compare the modes' peak_ms_per_frame to " +
+      "read the tall-item graduation cost (the heterogeneous-heights " +
+      "metric; mean averages the spike away). Deltas within 1 std_dev are " +
+      "INCONCLUSIVE and must be reported as such; per-frame ms " +
       "= wall time across stdout.frames deltas (includes tick overhead); " +
       "EC-15 guard asserts each run's total stdout frames exceed its own " +
       "mount count (per mode); color env pinned by benchmarks/run.ts " +

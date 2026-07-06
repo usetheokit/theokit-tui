@@ -1,6 +1,6 @@
 {
   "benchmark": "chat-message-render",
-  "date": "2026-07-06T21:55:08.646Z",
+  "date": "2026-07-06T22:13:08.547Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
@@ -20,39 +20,39 @@
   "runs": [
     {
       "frames": 300,
-      "mean_ms_per_frame": 26.289,
-      "peak_ms_per_frame": 51.074
+      "mean_ms_per_frame": 15.844,
+      "peak_ms_per_frame": 34.913
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 20.172,
-      "peak_ms_per_frame": 41.015
+      "mean_ms_per_frame": 16.046,
+      "peak_ms_per_frame": 32.879
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 21.631,
-      "peak_ms_per_frame": 40.272
+      "mean_ms_per_frame": 15.063,
+      "peak_ms_per_frame": 33.264
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 21.31,
-      "peak_ms_per_frame": 42.327
+      "mean_ms_per_frame": 15.266,
+      "peak_ms_per_frame": 28.444
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 20.97,
-      "peak_ms_per_frame": 39.616
+      "mean_ms_per_frame": 17.557,
+      "peak_ms_per_frame": 34.453
     }
   ],
   "aggregate": {
     "frames_mean": 300,
     "mean_ms_per_frame": {
-      "mean": 22.074,
-      "std_dev": 2.163
+      "mean": 15.955,
+      "std_dev": 0.878
     },
     "peak_ms_per_frame": {
-      "mean": 42.861,
-      "std_dev": 4.204
+      "mean": 32.791,
+      "std_dev": 2.298
     }
   },
   "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."

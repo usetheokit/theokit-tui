@@ -18,7 +18,7 @@ it(
       },
     });
     expect(out).toContain("✓");
-    expect(out).toContain("·");
+    expect(out).toContain("•"); // thinking glyph (dom-frontend-2)
     expect(out).toContain("All green");
   },
 );

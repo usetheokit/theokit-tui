@@ -241,9 +241,11 @@ interface M3Baseline {
   modes: M1Mode[];
   workload: {
     events: number;
+    steps: number;
     event_mix: Record<string, number>;
     long_output_lines: number;
     max_lines_bounded: number;
+    window: string;
   };
   protocol: { warmup_runs: number; measured_runs: number };
   node_version: string;
@@ -282,6 +284,7 @@ describe("benchmark baseline M3 (T3.2)", () => {
       }
       const recomputedFrames =
         mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
+      expect(Number.isFinite(mode.aggregate.frames_mean)).toBe(true);
       expect(
         Math.abs(recomputedFrames - mode.aggregate.frames_mean),
       ).toBeLessThan(0.01);
@@ -290,6 +293,8 @@ describe("benchmark baseline M3 (T3.2)", () => {
         "peak_ms_per_frame",
       ] as const) {
         expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
+        // M1 parity (tests-2): Infinity is >= 0 — pin finiteness too.
+        expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
         expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
         const recomputed =
           mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
@@ -299,6 +304,8 @@ describe("benchmark baseline M3 (T3.2)", () => {
       }
     }
     expect(baseline.workload.events).toBeGreaterThan(0);
+    expect(baseline.workload.steps).toBeGreaterThan(0);
+    expect(baseline.workload.window.length > 0).toBe(true);
     expect(baseline.workload.long_output_lines).toBeGreaterThan(0);
     expect(baseline.workload.max_lines_bounded).toBeGreaterThan(0);
     expect(Object.keys(baseline.workload.event_mix).sort()).toEqual([
@@ -306,6 +313,13 @@ describe("benchmark baseline M3 (T3.2)", () => {
       "thinking",
       "tool",
     ]);
+    // Values must be a real distribution, not hand-edited junk (tests-7).
+    for (const share of Object.values(baseline.workload.event_mix)) {
+      expect(share).toBeGreaterThan(0);
+    }
+    expect(
+      Object.values(baseline.workload.event_mix).reduce((a, b) => a + b, 0),
+    ).toBeCloseTo(1, 5);
     // The heterogeneous-heights metric MUST be named (plan D7).
     expect(baseline.methodology).toContain("peak_ms_per_frame");
   });

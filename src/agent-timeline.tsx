@@ -11,9 +11,8 @@ import {
 } from "./tool-call.js";
 import { ToolResult } from "./tool-result.js";
 import { useTheoTheme } from "./theme.js";
+import { unionMessage } from "./union-message.js";
 
-const unionMessage = (values: readonly string[]): string =>
-  values.map((v) => `"${v}"`).join(" | ");
 const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 
 export interface AgentTimelineProps {
@@ -108,7 +107,10 @@ function ThinkingRow({ text }: { text: string }) {
   return (
     <Box>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>
-        <Text color={theme.role.system.prefix}>·</Text>
+        {/* U+2022 (EAW-Narrow), distinct from the system role's "·" — under
+            NO_COLOR the glyph is the ONLY thinking marker (dom-frontend-2;
+            codex ReasoningSummaryCell precedent). */}
+        <Text color={theme.role.system.prefix}>•</Text>
       </Box>
       <Text dimColor italic>
         {text}
@@ -173,6 +175,11 @@ Row.displayName = "AgentTimeline.Row";
  * Ordered agent-turn timeline mixing messages, thinking and tool events
  * (plan ADR D2 — sibling of ChatThread: windowed `<Static>` history +
  * identity-memoized rows + its own kind dispatch).
+ *
+ * ONE TIMELINE (or ChatThread) PER SCREEN once history graduates: two
+ * mounted `<Static>` consumers cannot interleave their frozen output — rows
+ * print partitioned by component, not by time (D2 rationale; wire-3).
+ * Composing both is safe only while neither exceeds its window.
  */
 export function AgentTimeline({
   events,

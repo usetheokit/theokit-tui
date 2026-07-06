@@ -38,6 +38,11 @@ describe("formatElapsed — pure helper (T2.1, ADR D4)", () => {
     expect(formatElapsed(60.2)).toBe("1m 0s");
   });
 
+  it("format_elapsed_hour_cutoff_from_below", () => {
+    // tests-5: off-by-one in the minutes<60 branch would yield "0h 59m 59s".
+    expect(formatElapsed(3599)).toBe("59m 59s");
+  });
+
   it("format_elapsed_has_no_days_unit", () => {
     // EC-11: pinned so nobody adds "1d" without an ADR.
     expect(formatElapsed(86400)).toBe("24h 0m 0s");
@@ -87,6 +92,30 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
     // EC-3 resolved: || not ?? — a contentless thought renders the default.
     const frame = await renderFrame(<AgentStreaming thought="" />);
     expect(frame).toContain("Thinking…");
+  });
+
+  it("streaming_invalid_elapsed_throws_even_without_hint", () => {
+    // tests-3: the boundary claim in the JSDoc, pinned — validation must not
+    // be hint-gated (direct invocation, M0 EC-1 idiom).
+    const call = () => AgentStreaming({ elapsedSeconds: -1 });
+    expect(call).toThrow(TypeError);
+    expect(call).toThrow(
+      "formatElapsed: seconds must be a finite number >= 0 — got -1",
+    );
+  });
+
+  it("streaming_stays_one_line_at_narrow_width", async () => {
+    // dom-frontend-1 regression: the suffix used to word-wrap at 30 cols.
+    const frame = await renderFrame(
+      <Box width={30}>
+        <AgentStreaming
+          thought="running the full suite again"
+          showCancelHint
+          elapsedSeconds={3723}
+        />
+      </Box>,
+    );
+    expect(frame.split("\n")).toHaveLength(1);
   });
 
   it("streaming_frame_matches_snapshot", async () => {

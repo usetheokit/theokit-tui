@@ -26,6 +26,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Review-batch hardening (m3-agent-surface review 2026-07-06): agent-timeline bench
+  tall-item fixed twice over (index 42 landed in a MESSAGE slot and never rendered; index
+  45 graduated at mount, outside the sampled steps — now APPENDED mid-loop with a fail-fast
+  workload self-check) and the baseline regenerated with a conclusive ~5.5× unbounded peak
+  (51.05 ± 9.25 vs 9.19 ± 1.83 ms); thinking rows now use a distinct `•` glyph (the system
+  role's `·` was indistinguishable under NO_COLOR); AgentStreaming cancel-hint suffix no
+  longer wraps at narrow widths (`truncate-end` + width-30 regression test) and invalid
+  `elapsedSeconds` is pinned to throw even with the hint hidden; tool-tail repaint oracle,
+  M1-parity finiteness asserts and line-anchored glyph oracles added; shared internal
+  `unionMessage` helper (rule-of-3) with ChatMessage's role union now derived from
+  `CHAT_ROLES`; `AgentMessageEvent`/`AgentThinkingEvent`/`AgentToolEvent` types and the
+  `CHAT_ROLES`/`TOOL_CALL_STATUSES` arrays are deliberate public-entry exports for M7
+  adapters (plan divergence logged)
 - Review-batch hardening (m2-tool-surface review 2026-07-06): `stderr:` label now PINNED
   outside the truncation budget (color-independent marker survives tight `maxLines`;
   fully-capped stderr renders `stderr: (capped)`); tool-card header Texts use

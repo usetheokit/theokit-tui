@@ -167,7 +167,7 @@ describe("public API integration (M3 T3.1 — agent scene)", () => {
         </Box>
       </TheoTUIProvider>,
     );
-    expect(frame).toContain("·");
+    expect(frame).toContain("•"); // thinking glyph (dom-frontend-2)
     expect(frame).toContain("✓");
     expect(frame).toContain("Ready.");
     expect(frame).toContain("Thinking…");

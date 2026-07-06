@@ -16,8 +16,14 @@ import type { AgentEvent } from "../src/index.js";
 // sequences into logs/pagers.
 const isInteractive = process.stdout.isTTY === true;
 
+const thinkingEvent: AgentEvent = {
+  id: "th1",
+  kind: "thinking",
+  text: "inspecting the failing test",
+};
+
 const finalTurn: AgentEvent[] = [
-  { id: "th1", kind: "thinking", text: "inspecting the failing test" },
+  thinkingEvent,
   {
     id: "tl1",
     kind: "tool",
@@ -29,7 +35,7 @@ const finalTurn: AgentEvent[] = [
 ];
 
 const runningTurn: AgentEvent[] = [
-  finalTurn[0] as AgentEvent,
+  thinkingEvent,
   { id: "tl1", kind: "tool", name: "vitest", status: "running" },
 ];
 

@@ -2,6 +2,7 @@ import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 
 import { useTheoTheme } from "./theme.js";
+import { unionMessage } from "./union-message.js";
 
 // Single source for the role union (M3 D8 retrofit of the M2 VALID_STATUSES
 // idiom): the type, ChatMessage's guard and AgentTimeline's boundary check
@@ -27,7 +28,7 @@ export function ChatMessage({ role, children }: ChatMessageProps) {
   // typed error BEFORE any hook — JS consumers get the contract, not a crash.
   if (!CHAT_ROLES.includes(role)) {
     throw new TypeError(
-      `ChatMessage: invalid role "${String(role)}" — expected "user" | "assistant" | "system"`,
+      `ChatMessage: invalid role "${String(role)}" — expected ${unionMessage(CHAT_ROLES)}`,
     );
   }
   const tokens = useTheoTheme().role[role];

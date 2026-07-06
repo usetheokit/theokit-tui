@@ -1,6 +1,6 @@
 {
   "benchmark": "agent-timeline-render",
-  "date": "2026-07-06T21:54:16.594Z",
+  "date": "2026-07-06T22:12:33.131Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
@@ -30,40 +30,40 @@
       "mode": "bounded",
       "runs": [
         {
-          "frames": 300,
-          "mean_ms_per_frame": 4.288,
-          "peak_ms_per_frame": 7.337
-        },
-        {
           "frames": 301,
-          "mean_ms_per_frame": 4.261,
-          "peak_ms_per_frame": 10.123
-        },
-        {
-          "frames": 301,
-          "mean_ms_per_frame": 4.854,
-          "peak_ms_per_frame": 9.568
+          "mean_ms_per_frame": 3.825,
+          "peak_ms_per_frame": 12.59
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 4.783,
-          "peak_ms_per_frame": 17.236
+          "mean_ms_per_frame": 3.794,
+          "peak_ms_per_frame": 9.1
         },
         {
-          "frames": 301,
-          "mean_ms_per_frame": 4.992,
-          "peak_ms_per_frame": 22.277
+          "frames": 300,
+          "mean_ms_per_frame": 3.701,
+          "peak_ms_per_frame": 9.013
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 3.51,
+          "peak_ms_per_frame": 8.051
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 3.512,
+          "peak_ms_per_frame": 7.215
         }
       ],
       "aggregate": {
-        "frames_mean": 300.6,
+        "frames_mean": 300.2,
         "mean_ms_per_frame": {
-          "mean": 4.636,
-          "std_dev": 0.303
+          "mean": 3.668,
+          "std_dev": 0.135
         },
         "peak_ms_per_frame": {
-          "mean": 13.308,
-          "std_dev": 5.58
+          "mean": 9.194,
+          "std_dev": 1.833
         }
       }
     },
@@ -72,42 +72,42 @@
       "runs": [
         {
           "frames": 300,
-          "mean_ms_per_frame": 4.072,
-          "peak_ms_per_frame": 10.862
+          "mean_ms_per_frame": 6.645,
+          "peak_ms_per_frame": 66.436
         },
         {
-          "frames": 301,
-          "mean_ms_per_frame": 4.897,
-          "peak_ms_per_frame": 15.485
+          "frames": 300,
+          "mean_ms_per_frame": 6.194,
+          "peak_ms_per_frame": 55.232
         },
         {
-          "frames": 301,
-          "mean_ms_per_frame": 6.031,
-          "peak_ms_per_frame": 19.061
+          "frames": 300,
+          "mean_ms_per_frame": 5.719,
+          "peak_ms_per_frame": 50.026
         },
         {
-          "frames": 301,
-          "mean_ms_per_frame": 4.592,
-          "peak_ms_per_frame": 7.991
+          "frames": 300,
+          "mean_ms_per_frame": 5.274,
+          "peak_ms_per_frame": 41.225
         },
         {
-          "frames": 301,
-          "mean_ms_per_frame": 4.929,
-          "peak_ms_per_frame": 10.784
+          "frames": 300,
+          "mean_ms_per_frame": 5.008,
+          "peak_ms_per_frame": 42.353
         }
       ],
       "aggregate": {
-        "frames_mean": 300.8,
+        "frames_mean": 300,
         "mean_ms_per_frame": {
-          "mean": 4.904,
-          "std_dev": 0.642
+          "mean": 5.768,
+          "std_dev": 0.596
         },
         "peak_ms_per_frame": {
-          "mean": 12.837,
-          "std_dev": 3.933
+          "mean": 51.054,
+          "std_dev": 9.246
         }
       }
     }
   ],
-  "methodology": "ink-testing-library render + rerender loop; mount = 300 mixed events (≈50% 1-line messages, ≈30% tool cards incl. one 500-line output, ≈20% 2-line thinking) under windowSize 8+4; each step identity-replaces the tail event (token append / status transition, alternating) AND appends one event, graduating one event per step into <Static>; modes: bounded = tool maxLines 10, unbounded = maxLines > output height — the delta quantifies the tall-item graduation cost, and peak_ms_per_frame is the heterogeneous-heights metric (the graduation spike that mean averages away); per-frame ms = wall time across stdout.frames deltas (includes tick overhead); EC-15 guard asserts each run's total stdout frames exceed its own mount count (per mode); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs per mode; population std dev."
+  "methodology": "ink-testing-library render + rerender loop; mount = 300 mixed events (≈50% 1-line messages, ≈30% tool cards, ≈20% 2-line thinking) under windowSize 8+4, plus ONE 500-line tool output APPENDED mid-loop (step 45) so its graduation lands inside the sampled steps; each step identity-replaces the tail event (token append / status transition, alternating) AND appends one event, graduating one event per step into <Static>; modes: bounded = tool maxLines 10, unbounded = maxLines > output height — compare the modes' peak_ms_per_frame to read the tall-item graduation cost (the heterogeneous-heights metric; mean averages the spike away). Deltas within 1 std_dev are INCONCLUSIVE and must be reported as such; per-frame ms = wall time across stdout.frames deltas (includes tick overhead); EC-15 guard asserts each run's total stdout frames exceed its own mount count (per mode); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs per mode; population std dev."
 }

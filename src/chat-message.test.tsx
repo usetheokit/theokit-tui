@@ -163,8 +163,12 @@ describe("ChatMessage (T2.1)", () => {
       expect(out).toMatch(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s+running-tool/mu);
       expect(out).toContain("stderr:");
       expect(out).toContain("exited 2");
-      // M3 (T3.1): thinking + streaming readable without color.
-      expect(out).toContain("inspecting the failing test");
+      // M3 (T3.1 — plan name no_color_render_contains_thinking_and_streaming,
+      // folded here to reuse one subprocess spawn; tests-4): thinking +
+      // streaming readable without color. The thinking glyph "•" is asserted
+      // line-anchored — distinct from the system role's "·" (dom-frontend-2).
+      expect(out).toMatch(/^•\s+inspecting the failing test/m);
+      expect(out).toContain("agent turn");
       expect(out).toContain("(esc to cancel, 12s)");
     },
   );
