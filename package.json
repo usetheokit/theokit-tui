@@ -43,6 +43,8 @@
     "ink": "^5.2.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9",
+    "@types/node": "^22.20.0",
     "@types/react": "^18.3.0",
     "@vitest/coverage-v8": "^3.0.0",
     "eslint": "^9.0.0",

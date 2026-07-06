@@ -4,18 +4,32 @@ import { describe, expect, it } from "vitest";
 // Packaging contract for @theokit/tui (plan T0.1, ADR D8).
 // The manifest IS the M0 deliverable: these invariants protect consumers
 // from silent packaging regressions (a stray CJS field, a widened peer set).
+interface PackageManifest {
+  name: string;
+  type: string;
+  license: string;
+  sideEffects: boolean;
+  private?: unknown;
+  exports: Record<string, Record<string, string> | undefined>;
+  files: string[];
+  engines: Record<string, string>;
+  peerDependencies: Record<string, string>;
+  dependencies: Record<string, string>;
+}
+
 const pkg = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as Record<string, any>;
+) as PackageManifest;
 
 describe("package manifest contract (T0.1)", () => {
   it("package_manifest_declares_esm_only_types_first_exports", () => {
     expect(pkg.type).toBe("module");
     expect(Object.keys(pkg.exports)).toEqual(["."]);
+    const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
-    expect(Object.keys(pkg.exports["."])).toEqual(["types", "default"]);
-    expect(pkg.exports["."].types).toBe("./dist/index.d.ts");
-    expect(pkg.exports["."].default).toBe("./dist/index.js");
+    expect(Object.keys(dot)).toEqual(["types", "default"]);
+    expect(dot["types"]).toBe("./dist/index.d.ts");
+    expect(dot["default"]).toBe("./dist/index.js");
     expect(pkg.files).toEqual(["dist"]);
   });
 
