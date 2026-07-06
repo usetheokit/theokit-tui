@@ -11,7 +11,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `ToolCall` inline row with 4-state status lifecycle (`pending | running | success | failed`) — glyph indicator + running spinner via new runtime dependency `ink-spinner ^5.0.0` (m2-tool-surface T1.1)
 - `ToolCallCard` — `ToolCall` header + body indented under the name; plain-string children auto-wrapped (m2-tool-surface T1.2)
-- `ToolResult` — tool output block with tail-retention truncation (`maxLines`, dim `… +N lines hidden` indicator, caller-controlled `expanded`), 20k-char input cap, CRLF-safe splitting; pure `truncateLines` helper exported (m2-tool-surface T2.1)
+- `ToolResult` — tool output block with tail-retention truncation (`maxLines`, dim `… +N lines hidden` indicator, caller-controlled `expanded`), 20k-char input cap, CRLF-safe splitting (pure `truncateLines` math kept module-internal per plan ADR D7) (m2-tool-surface T2.1)
+- Tool-cards benchmark (`benchmarks/tool-cards.bench.tsx`) — 100-message thread + 50 mixed-status cards, 150 status transitions, one 500-line truncated output; committed baseline `docs/benchmarks/m2-tool-cards-baseline.json` (5 runs, mean ± std dev, pinned color env); shared sampling helpers extracted to `benchmarks/sampling.ts` (rule of three) (m2-tool-surface T3.2)
+- Tool-cards demo (`pnpm example:tools`) — agent turn with queued/running→success/failed cards, truncated output and shell envelope; CI-covered by a subprocess smoke (m2-tool-surface T3.2)
 - Tool-surface test hardening — real spinner animation test (exhaust+dedup over `cli-spinners` dots), status-transition rerenders, same-status interval stability, composition-root tool scene, NO_COLOR probe with 4-status + shell envelope (m2-tool-surface T3.1)
 - `ToolResult` shell-envelope mode (`shell={{stdout, stderr, exitCode}}`) — labeled stderr block in error color, `exited {code}` badge only on non-zero exit (survives truncation), `(no output)` placeholder for empty streams (m2-tool-surface T2.2)
 
