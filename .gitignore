@@ -10,3 +10,5 @@ dist/
 
 # halt-loop runtime checkpoints (session-local)
 .claude/knowledge-base/**/.progress-*.json
+.claude/halt-loop-prompts/
+.claude/ralph-loop.local.md
