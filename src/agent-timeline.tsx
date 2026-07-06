@@ -4,11 +4,17 @@ import { memo, useMemo } from "react";
 import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
 import type { AgentEvent } from "./agent-event.js";
 import { CHAT_ROLES, ChatMessage } from "./chat-message.js";
-import { TOOL_CALL_STATUSES, ToolCallCard } from "./tool-call.js";
+import {
+  STATUS_INDICATOR_WIDTH,
+  TOOL_CALL_STATUSES,
+  ToolCallCard,
+} from "./tool-call.js";
 import { ToolResult } from "./tool-result.js";
 import { useTheoTheme } from "./theme.js";
 
-const KIND_UNION_MESSAGE = AGENT_EVENT_KINDS.map((k) => `"${k}"`).join(" | ");
+const unionMessage = (values: readonly string[]): string =>
+  values.map((v) => `"${v}"`).join(" | ");
+const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 
 export interface AgentTimelineProps {
   /**
@@ -32,10 +38,12 @@ export interface AgentTimelineProps {
 }
 
 /**
- * FULL structural boundary check (plan ADR D8, EC-1/EC-2): variant-field
- * validation lives HERE — child-component guards would fire mid-render where
- * Ink's error boundary swallows throws (F10) and name the wrong component.
- * Extra/unknown properties are tolerated (EC-12).
+ * Structural boundary check (plan ADR D8, EC-1/EC-2): kind membership, id
+ * uniqueness, role/status membership, output⊕shell exclusivity and maxLines
+ * validity — child-component guards would fire mid-render where Ink's error
+ * boundary swallows throws (F10) and name the wrong component. Primitive
+ * FIELD TYPES are TypeScript's job (not re-checked at runtime — SEPA F5
+ * scope note). Extra/unknown properties are tolerated (EC-12).
  */
 function assertValidEvents(events: AgentEvent[]): void {
   const seen = new Set<string>();
@@ -51,13 +59,13 @@ function assertValidEvents(events: AgentEvent[]): void {
     seen.add(event.id);
     if (event.kind === "message" && !CHAT_ROLES.includes(event.role)) {
       throw new TypeError(
-        `AgentTimeline: message event "${event.id}" — invalid role "${String(event.role)}"`,
+        `AgentTimeline: message event "${event.id}" — invalid role "${String(event.role)}" — expected ${unionMessage(CHAT_ROLES)}`,
       );
     }
     if (event.kind === "tool") {
       if (!TOOL_CALL_STATUSES.includes(event.status)) {
         throw new TypeError(
-          `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}"`,
+          `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
         );
       }
       if (event.output !== undefined && event.shell !== undefined) {
@@ -65,15 +73,29 @@ function assertValidEvents(events: AgentEvent[]): void {
           `AgentTimeline: tool event "${event.id}" — provide only one of output | shell`,
         );
       }
+      // SEPA F1: ToolResult's own maxLines guard would fire mid-render
+      // (swallowed, wrong component name) — mirror it at THIS boundary.
+      if (
+        event.maxLines !== undefined &&
+        (!Number.isInteger(event.maxLines) || event.maxLines < 1)
+      ) {
+        throw new TypeError(
+          `AgentTimeline: tool event "${event.id}" — maxLines must be an integer >= 1 — got ${String(event.maxLines)}`,
+        );
+      }
     }
   }
 }
 
+// Column note (SEPA F6, accepted heritage): message rows use ChatMessage's
+// 2-cell "✦ " prefix while thinking/tool rows use the 3-cell indicator —
+// same mixed-prefix shape as the gemini timeline; aligning would change the
+// M0/M1 public render. Revisit with the M6 theme system.
 function ThinkingRow({ text }: { text: string }) {
   const theme = useTheoTheme();
   return (
     <Box>
-      <Box minWidth={3}>
+      <Box minWidth={STATUS_INDICATOR_WIDTH}>
         <Text color={theme.role.system.prefix}>·</Text>
       </Box>
       <Text dimColor italic>
@@ -84,7 +106,12 @@ function ThinkingRow({ text }: { text: string }) {
 }
 
 function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
-  const hasBody = event.output !== undefined || event.shell !== undefined;
+  // SEPA F2: pass `output` as ToolResult CHILDREN (not pre-split lines) so
+  // it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
+  // (EC-7). Empty output collapses to the bare row.
+  const hasBody =
+    (event.output !== undefined && event.output !== "") ||
+    event.shell !== undefined;
   return (
     <ToolCallCard
       name={event.name}
@@ -93,9 +120,7 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
     >
       {hasBody && (
         <ToolResult
-          {...(event.output !== undefined
-            ? { lines: event.output.split("\n") }
-            : {})}
+          {...(event.output !== undefined ? { children: event.output } : {})}
           {...(event.shell !== undefined ? { shell: event.shell } : {})}
           {...(event.maxLines !== undefined
             ? { maxLines: event.maxLines }

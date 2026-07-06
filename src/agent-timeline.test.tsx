@@ -177,6 +177,75 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(call).toThrow('AgentTimeline: duplicate event id ""');
   });
 
+  it("invalid_max_lines_throws_at_boundary", () => {
+    // SEPA F1: ToolResult's guard would fire mid-render — boundary owns it.
+    const call = () =>
+      AgentTimeline({
+        events: [
+          {
+            id: "x1",
+            kind: "tool",
+            name: "grep",
+            status: "success",
+            output: "a",
+            maxLines: 0,
+          },
+        ],
+      });
+    expect(call).toThrow(TypeError);
+    expect(call).toThrow(
+      'AgentTimeline: tool event "x1" — maxLines must be an integer >= 1 — got 0',
+    );
+  });
+
+  it("tool_output_inherits_m2_normalization", async () => {
+    // SEPA F2: CRLF stripped (EC-6), trailing blank popped (EC-7).
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "x1",
+            kind: "tool",
+            name: "build",
+            status: "success",
+            output: "a\r\nb\n",
+          },
+        ]}
+      />,
+    );
+    expect(frame).not.toContain("\r");
+    expect(frame.split("\n")).toHaveLength(3); // header + 2 rows, no phantom
+  });
+
+  it("empty_output_collapses_to_bare_row", async () => {
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "x1",
+            kind: "tool",
+            name: "noop",
+            status: "success",
+            output: "",
+          },
+        ]}
+      />,
+    );
+    expect(frame.split("\n")).toHaveLength(1);
+  });
+
+  it("thinking_row_is_actually_dim_and_italic", async () => {
+    // SEPA F3: dispatching thinking → ChatMessage(system) would produce an
+    // identical NO-ANSI frame — pin the styling bytes (FORCE_COLOR=1).
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[{ id: "t1", kind: "thinking", text: "styled thought" }]}
+      />,
+    );
+    expect(frame).toMatch(/\u001B\[2m/); // dim
+    expect(frame).toMatch(/\u001B\[3m/); // italic
+  });
+
   it("extra_event_properties_are_tolerated", async () => {
     // EC-12: M7 adapters forward enriched objects — unknown extras pass.
     const enriched: AgentMessageEvent & { timestamp: number } = {
