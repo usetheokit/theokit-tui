@@ -119,3 +119,63 @@ describe("ChatThread (T2.1)", () => {
     }
   });
 });
+
+describe("ChatThread streaming (T2.2)", () => {
+  it("streaming_replace_last_updates_frame_progressively", async () => {
+    const base = thread(3);
+    const steps = ["He", "Hello", "Hello wor", "Hello world"];
+    const instance = render(<ChatThread messages={base} />);
+    await new Promise((r) => setTimeout(r, 0));
+    for (const step of steps) {
+      const last = base[base.length - 1];
+      if (last === undefined) throw new Error("unreachable");
+      const next = [...base.slice(0, -1), { ...last, content: step }];
+      instance.rerender(<ChatThread messages={next} />);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(instance.lastFrame()).toContain(step);
+    }
+    instance.unmount();
+  });
+
+  it("streaming_repaints_only_the_growing_row", async () => {
+    const base = thread(5);
+    const instance = render(<ChatThread messages={base} />);
+    await new Promise((r) => setTimeout(r, 0));
+    let current = base;
+    for (const token of [" a", " b", " c"]) {
+      const last = current[current.length - 1];
+      if (last === undefined) throw new Error("unreachable");
+      current = [
+        ...current.slice(0, -1),
+        { ...last, content: last.content + token },
+      ];
+      rowRenders.count = 0;
+      instance.rerender(<ChatThread messages={current} />);
+      await new Promise((r) => setTimeout(r, 0));
+      // D2 contract: exactly ONE row (the replaced one) repaints per token.
+      expect(rowRenders.count).toBe(1);
+    }
+    instance.unmount();
+  });
+
+  it("static_prefix_is_frozen_after_graduation", async () => {
+    const base = thread(20);
+    const instance = render(
+      <ChatThread messages={base} windowSize={4} windowOverscan={2} />,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    // Replace a PREFIX message (id m1) with edited content — tail unchanged.
+    const edited = base.map((m) =>
+      m.id === "m1" ? { ...m, content: "EDITED CONTENT" } : m,
+    );
+    instance.rerender(
+      <ChatThread messages={edited} windowSize={4} windowOverscan={2} />,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    const frame = instance.lastFrame() ?? "";
+    // ADR D1 contract: graduated messages are FROZEN — the edit is invisible.
+    expect(frame).toContain("msg-1 content");
+    expect(frame).not.toContain("EDITED CONTENT");
+    instance.unmount();
+  });
+});
