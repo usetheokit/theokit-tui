@@ -12,3 +12,4 @@ dist/
 .claude/knowledge-base/**/.progress-*.json
 .claude/halt-loop-prompts/
 .claude/ralph-loop.local.md
+coverage/
