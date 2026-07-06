@@ -27,3 +27,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (m0-walking-skeleton T3.1)
 - Runnable example (`pnpm example`) — provider + user/assistant exchange; degrades
   cleanly when piped/non-TTY (m0-walking-skeleton T3.2)
+- GitHub Actions CI: gate chain (format → lint → typecheck → test → build → bench smoke)
+  on Node 20 + 22 for pushes to `develop` and PRs (m0-walking-skeleton T4.1)
