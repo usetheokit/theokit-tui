@@ -8,7 +8,13 @@ import type { TheoTheme } from "./theme.js";
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
 // status touches it (plus a glyph/spinner branch) exactly once.
-const VALID_STATUSES = ["pending", "running", "success", "failed"] as const;
+export const TOOL_CALL_STATUSES = [
+  "pending",
+  "running",
+  "success",
+  "failed",
+] as const;
+const VALID_STATUSES = TOOL_CALL_STATUSES;
 
 /** Tool-call lifecycle states (M2 — plan ADR D1; M3 may extend additively). */
 export type ToolCallStatus = (typeof VALID_STATUSES)[number];
