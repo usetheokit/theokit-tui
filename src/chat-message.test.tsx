@@ -163,6 +163,9 @@ describe("ChatMessage (T2.1)", () => {
       expect(out).toMatch(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s+running-tool/mu);
       expect(out).toContain("stderr:");
       expect(out).toContain("exited 2");
+      // M3 (T3.1): thinking + streaming readable without color.
+      expect(out).toContain("inspecting the failing test");
+      expect(out).toContain("(esc to cancel, 12s)");
     },
   );
 

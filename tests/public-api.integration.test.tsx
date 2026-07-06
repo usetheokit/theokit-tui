@@ -7,6 +7,9 @@ import { render } from "ink-testing-library";
 import { vi } from "vitest";
 
 import {
+  AGENT_EVENT_KINDS,
+  AgentStreaming,
+  AgentTimeline,
   ChatComposer,
   ChatMessage,
   ChatThread,
@@ -139,5 +142,38 @@ describe("public API integration (M2 T3.1 — tool scene)", () => {
     expect(frame).toContain("✓");
     expect(frame).toContain("vitest");
     expect(frame).toContain("all suites green");
+  });
+});
+
+describe("public API integration (M3 T3.1 — agent scene)", () => {
+  it("public_entry_composes_agent_surface", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider>
+        <Box flexDirection="column">
+          <AgentTimeline
+            events={[
+              { id: "t1", kind: "thinking", text: "planning" },
+              {
+                id: "x1",
+                kind: "tool",
+                name: "build",
+                status: "success",
+                output: "done",
+              },
+              { id: "m1", kind: "message", role: "assistant", text: "Ready." },
+            ]}
+          />
+          <AgentStreaming />
+        </Box>
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("·");
+    expect(frame).toContain("✓");
+    expect(frame).toContain("Ready.");
+    expect(frame).toContain("Thinking…");
+  });
+
+  it("agent_events_export_kinds_array", () => {
+    expect(AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool"]);
   });
 });

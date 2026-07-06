@@ -1,6 +1,8 @@
 import { Box } from "ink";
 import { render } from "ink-testing-library";
 
+import { AgentStreaming } from "../../src/agent-streaming.js";
+import { AgentTimeline } from "../../src/agent-timeline.js";
 import { ChatThread } from "../../src/chat-thread.js";
 import { ToolCall, ToolCallCard } from "../../src/tool-call.js";
 import { ToolResult } from "../../src/tool-result.js";
@@ -27,6 +29,16 @@ const instance = render(
         shell={{ stdout: "partial", stderr: "permission denied", exitCode: 2 }}
       />
     </ToolCallCard>
+    <AgentTimeline
+      events={[
+        {
+          id: "think",
+          kind: "thinking",
+          text: "inspecting the failing test",
+        },
+      ]}
+    />
+    <AgentStreaming thought="agent turn" showCancelHint elapsedSeconds={12} />
   </Box>,
 );
 await new Promise((resolve) => setTimeout(resolve, 0));

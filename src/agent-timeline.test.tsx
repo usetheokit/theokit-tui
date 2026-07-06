@@ -1,3 +1,4 @@
+import { Box } from "ink";
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
@@ -317,5 +318,34 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
     // length change re-runs the component — the pushed row renders.
     expect(frame).toContain("pushed body");
     expect(rowRenders.count).toBe(1);
+  });
+});
+
+describe("AgentTimeline — representative turn (T3.1, roadmap DoD-3)", () => {
+  it("representative_turn_matches_snapshot", async () => {
+    // Running spinner pinned to dots frame[0] by renderFrame's 0ms tick —
+    // NO added awaits (EC-14 coupling; plan Drawbacks).
+    const turn: AgentEvent[] = [
+      { id: "th1", kind: "thinking", text: "inspecting the failing test" },
+      { id: "tl1", kind: "tool", name: "vitest", status: "running" },
+      {
+        id: "tl2",
+        kind: "tool",
+        name: "eslint",
+        status: "success",
+        output: "0 problems",
+      },
+      { id: "ms1", kind: "message", role: "assistant", text: "All green now." },
+    ];
+    const frame = await renderFrame(
+      <Box width={40}>
+        <AgentTimeline events={turn} />
+      </Box>,
+    );
+    expect(frame).toContain("inspecting");
+    expect(frame).toContain("⠋");
+    expect(frame).toContain("✓");
+    expect(frame).toContain("All green now.");
+    expect(frame).toMatchSnapshot("agent-turn");
   });
 });
