@@ -27,6 +27,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Review-batch hardening (m1-chat-surface review 2026-07-06): composer scene added to
+  the public-API integration suite; `onSubmit` now runs BEFORE the buffer clears (a
+  throwing handler preserves the draft); cursor cell renders only while focused;
+  `textBufferReducer` clamps out-of-range cursor state at the public boundary; Delete
+  key erases backward at M1 (forward-delete is reducer-only — kitty/ink 5 conflation);
+  M1 benchmark baselines regenerated under the pinned color env; example demo fixes
+  overlapping-stream interval handling
 - Invalid-role error message now names the three-role union
   (`"user" | "assistant" | "system"`) (m1-chat-surface T1.1)
 

@@ -126,10 +126,26 @@ function moveEnd(state: TextBufferState): TextBufferState {
   };
 }
 
+/**
+ * Pure reducer over the buffer state. PUBLIC API safety (review F-arch-4):
+ * a caller-supplied out-of-range `cursorOffset` is clamped to [0, text.length]
+ * at entry — malformed state degrades safely instead of corrupting text.
+ */
+function clampCursor(state: TextBufferState): TextBufferState {
+  if (state.cursorOffset >= 0 && state.cursorOffset <= state.text.length) {
+    return state;
+  }
+  return {
+    text: state.text,
+    cursorOffset: Math.min(Math.max(0, state.cursorOffset), state.text.length),
+  };
+}
+
 export function textBufferReducer(
   state: TextBufferState,
   action: TextBufferAction,
 ): TextBufferState {
+  state = clampCursor(state);
   switch (action.type) {
     case "insert":
       return insertAt(state, action.text);

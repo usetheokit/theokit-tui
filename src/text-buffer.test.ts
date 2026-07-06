@@ -54,10 +54,31 @@ describe("textBufferReducer (T3.1)", () => {
     expect(textBufferReducer(s, { type: "move-right" }).cursorOffset).toBe(2);
   });
 
-  it("move_home_and_end_target_line_boundaries", () => {
+  it("move_home_targets_current_line_start", () => {
     const s = state("ab\ncd", 4);
     expect(textBufferReducer(s, { type: "move-home" }).cursorOffset).toBe(3);
+  });
+
+  it("move_end_targets_text_end_on_last_line", () => {
+    const s = state("ab\ncd", 4);
     expect(textBufferReducer(s, { type: "move-end" }).cursorOffset).toBe(5);
+  });
+
+  it("move_end_on_non_last_line_lands_on_next_newline", () => {
+    // Review F-tests-2: the found-newline branch on a critical path.
+    const s = state("ab\ncd", 0);
+    expect(textBufferReducer(s, { type: "move-end" }).cursorOffset).toBe(2);
+  });
+
+  it("out_of_range_cursor_is_clamped_at_the_reducer_boundary", () => {
+    // Review F-arch-4: the reducer is public API — malformed caller state is
+    // clamped to a grapheme-safe range instead of silently corrupting text.
+    const next = textBufferReducer(
+      { text: "ab", cursorOffset: 99 },
+      { type: "insert", text: "X" },
+    );
+    expect(next.text).toBe("abX");
+    expect(next.cursorOffset).toBe(3);
   });
 
   it("move_home_at_offset_zero_with_leading_newline_is_noop", () => {

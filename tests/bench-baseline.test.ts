@@ -102,6 +102,8 @@ interface M1Baseline {
   workload: { messages: number; streamed_tokens: number; window: string };
   protocol: { warmup_runs: number; measured_runs: number };
   node_version: string;
+  hardware: { cpu: string; cores: number };
+  color_env: { FORCE_COLOR: string };
   methodology: string;
 }
 
@@ -120,24 +122,34 @@ describe("benchmark baseline M1 (T4.1)", () => {
     expect(baseline.modes.length).toBe(2);
     const modeNames = baseline.modes.map((m) => m.mode).sort();
     expect(modeNames).toEqual(["plain", "windowed"]);
+    // Oracle parity with the M0 block + env pin (review F-dom-2/F-tests-7:
+    // a weaker oracle is how the unpinned baseline went green).
+    expect(baseline.protocol.warmup_runs).toBeGreaterThanOrEqual(0);
+    expect(baseline.color_env.FORCE_COLOR).toBe("1");
+    expect(baseline.node_version.length > 0).toBe(true);
+    expect(baseline.hardware.cores).toBeGreaterThan(0);
     for (const mode of baseline.modes) {
+      expect(mode.runs.length).toBe(baseline.protocol.measured_runs);
       expect(mode.runs.length).toBeGreaterThanOrEqual(3);
+      expect(Number.isFinite(mode.aggregate.frames_mean)).toBe(true);
       for (const run of mode.runs) {
         expect(run.frames).toBeGreaterThan(0);
         expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+        expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
       }
-      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.std_dev)).toBe(
-        true,
-      );
-      expect(mode.aggregate.mean_ms_per_frame.std_dev).toBeGreaterThanOrEqual(
-        0,
-      );
-      const recomputed =
-        mode.runs.reduce((a, r) => a + r.mean_ms_per_frame, 0) /
-        mode.runs.length;
-      expect(
-        Math.abs(recomputed - mode.aggregate.mean_ms_per_frame.mean),
-      ).toBeLessThan(0.01);
+      for (const metric of [
+        "mean_ms_per_frame",
+        "peak_ms_per_frame",
+      ] as const) {
+        expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
+        expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
+        expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
+        const recomputed =
+          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
+          0.01,
+        );
+      }
     }
     expect(baseline.workload.messages).toBeGreaterThan(0);
     expect(baseline.workload.streamed_tokens).toBeGreaterThan(0);

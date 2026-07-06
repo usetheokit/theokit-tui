@@ -140,7 +140,8 @@ const results: {
 }[] = [];
 
 for (const mode of modes) {
-  for (let i = 0; i < WARMUP_RUNS; i++) {
+  // Smoke skips warmups — proof-of-execution only (review F-xval-3 budget).
+  for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
     console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
   }
@@ -181,7 +182,7 @@ if (!smoke) {
       streamed_tokens: N_TOKENS,
       window: `${WINDOW_SIZE}+${WINDOW_OVERSCAN}`,
     },
-    protocol: { warmup_runs: WARMUP_RUNS, measured_runs: measured },
+    protocol: { warmup_runs: smoke ? 0 : WARMUP_RUNS, measured_runs: measured },
     modes: results,
     methodology:
       "ink-testing-library render + rerender loop; each step replaces the " +

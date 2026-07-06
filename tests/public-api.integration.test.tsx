@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 
 // Integration boundary (plan T2.2, wiring pillar b): everything imported
 // ONLY through the composition root — exactly as a consumer would.
+import { render } from "ink-testing-library";
+import { vi } from "vitest";
+
 import {
+  ChatComposer,
   ChatMessage,
   ChatThread,
   TheoTUIProvider,
@@ -53,5 +57,26 @@ describe("public API integration (T2.2 — thread scene)", () => {
     expect(frame).toContain("§");
     expect(frame).toContain("session notes");
     expect(frame).toContain("hello!");
+  });
+});
+
+describe("public API integration (T3.2 — composer scene)", () => {
+  it("public_entry_composes_composer_typing_and_submit", async () => {
+    // Review F-wire-1: the composer exercised through the composition root,
+    // driving the REAL stdin boundary (type + Enter submit).
+    const onSubmit = vi.fn();
+    const instance = render(
+      <TheoTUIProvider>
+        <ChatComposer onSubmit={onSubmit} placeholder="say hi" />
+      </TheoTUIProvider>,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+    instance.stdin.write("hey");
+    await new Promise((r) => setTimeout(r, 50));
+    instance.stdin.write("\r");
+    await new Promise((r) => setTimeout(r, 50));
+    expect(onSubmit).toHaveBeenCalledWith("hey");
+    instance.unmount();
   });
 });

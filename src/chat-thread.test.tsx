@@ -49,12 +49,29 @@ describe("ChatThread (T2.1)", () => {
   });
 
   it("long_thread_splits_history_into_static_prefix", async () => {
-    const frame = await renderFrame(
+    rowRenders.count = 0;
+    const instance = render(
       <ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />,
     );
+    await new Promise((r) => setTimeout(r, 0));
+    const frame = instance.lastFrame() ?? "";
     // Static output accumulates into the frame (ink test contract).
     expect(frame).toContain("msg-0 content");
     expect(frame).toContain("msg-19 content");
+    // Split proof (review F-dom-5): rerender with the SAME array — static
+    // prefix rows never re-render; memoized live rows also skip.
+    rowRenders.count = 0;
+    instance.rerender(
+      <ChatThread
+        messages={instance ? thread(20) : []}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    // New objects → ONLY the live tail (4+2) repaints; the 14 static rows do not.
+    expect(rowRenders.count).toBe(6);
+    instance.unmount();
   });
 
   it("short_thread_renders_without_static_and_memoizes_rerenders", async () => {
@@ -107,6 +124,33 @@ describe("ChatThread (T2.1)", () => {
   it("empty_messages_render_empty_frame", async () => {
     const frame = await renderFrame(<ChatThread messages={[]} />);
     expect(frame.trim()).toBe("");
+  });
+
+  it("window_size_zero_keeps_overscan_tail_live", async () => {
+    // Review F-tests-5: overscan-only live tail.
+    rowRenders.count = 0;
+    const instance = render(
+      <ChatThread messages={thread(10)} windowSize={0} windowOverscan={2} />,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    rowRenders.count = 0;
+    instance.rerender(
+      <ChatThread messages={thread(10)} windowSize={0} windowOverscan={2} />,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    // New objects → the overscan-only live tail (2 rows) repaints.
+    expect(rowRenders.count).toBe(2);
+    instance.unmount();
+  });
+
+  it("empty_string_id_is_legal", async () => {
+    // Review F-tests-5 / EC-4: only DUPLICATES throw.
+    const frame = await renderFrame(
+      <ChatThread
+        messages={[{ id: "", role: "user", content: "anonymous id" }]}
+      />,
+    );
+    expect(frame).toContain("anonymous id");
   });
 
   it("negative_window_values_clamp_to_zero", async () => {

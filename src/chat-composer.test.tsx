@@ -1,19 +1,20 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
-import { ChatComposer } from "./chat-composer.js";
+import { ChatComposer, isNewlineChord } from "./chat-composer.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
 // SEPA brief: never trust prose renderings of control bytes).
 const ENTER = "\r";
 const CTRL_J = "\n";
-const LEFT_ARROW = "[D";
+const LEFT_ARROW = "\u001B[D";
 const RIGHT_ARROW = "\u001B[C";
-const BACKSPACE = "";
+const BACKSPACE = "\u007F";
 
 const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
-// Ink throttles stdout flushes (~30fps) — settle past the throttle window
-// between writes, the ink-ui test idiom (`await delay(50)`).
+// Empirically, frames from writes landing in the same Ink flush window never
+// reach lastFrame() (verified live in review); settle 50ms per write — the
+// ink-ui test idiom — so each event flushes its own frame.
 const settle = async () => new Promise((resolve) => setTimeout(resolve, 50));
 
 // SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write
@@ -132,5 +133,62 @@ describe("ChatComposer (T3.2)", () => {
     expect(frame).toContain("a");
     expect(frame).toContain("b");
     instance.unmount();
+  });
+
+  it("unfocused_composer_ignores_input", async () => {
+    // Review F-tests-1 (plan T3.2 Deep Dives): isActive gating verified.
+    const onSubmit = vi.fn();
+    const instance = await mount(
+      <ChatComposer onSubmit={onSubmit} autoFocus={false} />,
+    );
+    await type(instance, ["abc", ENTER]);
+    expect(onSubmit).not.toHaveBeenCalled();
+    instance.unmount();
+  });
+
+  it("enter_submits_payload_trimmed_of_surrounding_whitespace", async () => {
+    // Review F-tests-3: the PAYLOAD is trimmed, not only the guard.
+    const onSubmit = vi.fn();
+    const instance = await mount(<ChatComposer onSubmit={onSubmit} />);
+    await type(instance, [" ", "h", "i", " ", ENTER]);
+    expect(onSubmit).toHaveBeenCalledWith("hi");
+    instance.unmount();
+  });
+
+  it("throwing_onSubmit_propagates_and_preserves_the_draft", async () => {
+    // Review F-dom-6 (frontend): EC-5 — the exception propagates SYNCHRONOUSLY
+    // through the stdin emit chain, and the draft must survive it.
+    const instance = await mount(
+      <ChatComposer
+        onSubmit={() => {
+          throw new Error("caller boom");
+        }}
+      />,
+    );
+    await type(instance, ["h", "i"]);
+    expect(() => instance.stdin.write(ENTER)).toThrow("caller boom");
+    await settle();
+    instance.stdin.write("!");
+    await settle();
+    expect(instance.lastFrame()).toContain("hi!");
+    instance.unmount();
+  });
+
+  it("kitty_shift_return_counts_as_newline_chord", () => {
+    // The kitty-only branch, unit-tested with a synthetic key (review
+    // F-dom-4/testing — unreachable via test stdin, reachable as a function).
+    const key = {
+      return: true,
+      shift: true,
+      leftArrow: false,
+      rightArrow: false,
+      backspace: false,
+      delete: false,
+      ctrl: false,
+      meta: false,
+    };
+    expect(isNewlineChord("", key, true)).toBe(true);
+    expect(isNewlineChord("", key, false)).toBe(false);
+    expect(isNewlineChord("", { ...key, shift: false }, true)).toBe(false);
   });
 });

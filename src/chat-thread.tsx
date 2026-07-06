@@ -22,6 +22,10 @@ export interface ChatThreadProps {
   /**
    * Messages beyond `windowSize + windowOverscan` graduate into Ink `<Static>`
    * (terminal scrollback) and are FROZEN — append-only history (ADR D1).
+   * Treat both props as mount-time tuning knobs: INCREASING them after
+   * messages have graduated pulls scrollback rows back into the live tail,
+   * visibly duplicating history (Static output is unerasable) — review
+   * F-arch-2/F-dom-3.
    */
   windowSize?: number;
   windowOverscan?: number;

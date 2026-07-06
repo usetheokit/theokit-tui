@@ -29,7 +29,10 @@ const initialMessages: ChatThreadMessage[] = [
 function useFakeStreaming(
   setMessages: React.Dispatch<React.SetStateAction<ChatThreadMessage[]>>,
 ) {
-  const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  // Per-stream handles in a Set: overlapping submits each clear their OWN
+  // interval (review F-arch-1/F-dom-1 — a shared ref froze the second reply
+  // and leaked the first interval).
+  const timers = useRef(new Set<ReturnType<typeof setInterval>>());
 
   const stream = (onDone?: () => void) => {
     const id = makeId();
@@ -39,7 +42,7 @@ function useFakeStreaming(
       ...current,
       { id, role: "assistant", content: "" },
     ]);
-    timer.current = setInterval(() => {
+    const handle = setInterval(() => {
       index += 1;
       const content = tokens.slice(0, index).join(" ");
       setMessages((current) => {
@@ -50,18 +53,19 @@ function useFakeStreaming(
         // Streaming contract (ADR D2): replace the LAST message object.
         return [...current.slice(0, -1), { ...last, content }];
       });
-      if (index >= tokens.length && timer.current !== undefined) {
-        clearInterval(timer.current);
-        timer.current = undefined;
+      if (index >= tokens.length) {
+        clearInterval(handle);
+        timers.current.delete(handle);
         onDone?.();
       }
     }, 60);
+    timers.current.add(handle);
   };
 
   useEffect(
     () => () => {
-      if (timer.current !== undefined) {
-        clearInterval(timer.current);
+      for (const handle of timers.current) {
+        clearInterval(handle);
       }
     },
     [],

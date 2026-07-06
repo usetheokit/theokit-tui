@@ -38,19 +38,37 @@ interface ComposerKey {
   meta: boolean;
 }
 
+/**
+ * Shift+Enter chord — ONLY arrives on kitty-protocol terminals (ink 5 needs
+ * the kitty handshake; unsynthesizable via test stdin — verified: CSI-u lands
+ * as literal text). Unit-tested with a synthetic key object instead.
+ * Exported for tests; not part of the package public surface.
+ */
+export function isShiftReturn(key: ComposerKey): boolean {
+  return key.return && key.shift;
+}
+
+/**
+ * Single source of the newline-vs-submit decision (review F-arch-3): the
+ * submit gate is derived from THIS predicate, never re-encoded.
+ */
+export function isNewlineChord(
+  input: string,
+  key: ComposerKey,
+  multiLine: boolean,
+): boolean {
+  // Ctrl+J arrives as a literal linefeed with key.return === false.
+  return multiLine && (input === "\n" || isShiftReturn(key));
+}
+
 function newlineAction(
   input: string,
   key: ComposerKey,
   multiLine: boolean,
 ): TextBufferAction | undefined {
-  // Ctrl+J arrives as a literal linefeed with key.return === false;
-  // Shift+Enter only on terminals that encode shift (kitty protocol).
-  // key.shift+return only arrives on kitty-protocol terminals; ink 5 needs
-  // the kitty handshake, unsynthesizable via test stdin (verified: CSI-u
-  // lands as literal text). The Ctrl+J path IS tested.
-  /* v8 ignore next */
-  const wantsNewline = input === "\n" || (key.return && key.shift);
-  return multiLine && wantsNewline ? { type: "newline" } : undefined;
+  return isNewlineChord(input, key, multiLine)
+    ? { type: "newline" }
+    : undefined;
 }
 
 function motionAction(key: ComposerKey): TextBufferAction | undefined {
@@ -122,6 +140,13 @@ function cursorSlices(text: string, cursorOffset: number): CursorSlices {
  * Multi-line chat input on a grapheme-aware buffer (plan ADR D3).
  * Enter submits (whitespace-only is a no-op); the buffer clears on submit.
  *
+ * Environment caveats (review F-dom-2/F-dom-5):
+ * - Requires a raw-mode-capable stdin (real TTY). Gate the mount on
+ *   `process.stdin.isTTY` in non-interactive contexts, as `examples/chat.tsx`
+ *   does — ink's `useInput` throws otherwise.
+ * - Under NO_COLOR the inverse-video cursor is invisible (ANSI-only
+ *   affordance); typed text still renders. A visible fallback is an M6 item.
+ *
  * Key caveat: ink conflates Backspace (0x7f) and Delete into erase-BACKWARD
  * on most terminals; forward-delete is reducer-reachable (`delete-forward`)
  * but not key-bound at M1 (same YAGNI posture as home/end).
@@ -138,13 +163,13 @@ export function ChatComposer({
 
   useInput(
     (input, key) => {
-      // Same kitty-only shift encoding caveat as newlineAction.
-      /* v8 ignore next */
-      if (key.return && !(key.shift && multiLine)) {
+      if (key.return && !isNewlineChord(input, key, multiLine)) {
         const text = buffer.text.trim();
         if (text.length > 0) {
-          dispatch({ type: "clear" });
+          // onSubmit BEFORE clear: a throwing handler propagates (EC-5) AND
+          // the user's draft survives (review F-dom-6).
           onSubmit(text);
+          dispatch({ type: "clear" });
         }
         return;
       }
@@ -167,13 +192,15 @@ export function ChatComposer({
       <Text color={theme.role.user.prefix}>{theme.role.user.glyph}</Text>
       {showPlaceholder ? (
         <Box>
-          <Text inverse> </Text>
+          {isFocused && <Text inverse> </Text>}
           <Text dimColor>{placeholder}</Text>
         </Box>
       ) : (
         <Text>
           {before}
-          <Text inverse>{atCursor}</Text>
+          {/* Cursor cell only while focused (review F-dom-4 — plan: "cursor
+              shows when focused"); blurred composers render plain text. */}
+          <Text inverse={isFocused}>{atCursor}</Text>
           {after}
         </Text>
       )}
