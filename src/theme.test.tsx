@@ -85,6 +85,23 @@ describe("theme stub (T1.1)", () => {
     expect(captured?.role.user.glyph).toBe(defaultTheme.role.user.glyph);
   });
 
+  it("default_theme_exposes_system_tokens", () => {
+    expect(defaultTheme.role.system.glyph).toBe("· ");
+    expect(defaultTheme.role.system.prefix).toBe("gray");
+  });
+
+  it("system_tokens_overridable_via_provider", async () => {
+    resetCaptured();
+    await renderFrame(
+      <TheoTUIProvider theme={{ role: { system: { glyph: "§ " } } }}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.role.system.glyph).toBe("§ ");
+    // Leaf preservation for the new group too.
+    expect(captured?.role.system.prefix).toBe(defaultTheme.role.system.prefix);
+  });
+
   it("empty_theme_override_yields_default_tokens", async () => {
     await renderFrame(
       <TheoTUIProvider theme={{}}>

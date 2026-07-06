@@ -20,6 +20,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.useTheoTheme).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("> ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("✦ ");
+    expect(mod.defaultTheme.role.system.glyph).toBe("· ");
   });
 
   it("public_entry_exposes_chat_message", async () => {

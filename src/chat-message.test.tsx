@@ -24,6 +24,23 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("hi there");
   });
 
+  it("renders_system_message_with_glyph_prefix", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="system">context note</ChatMessage>,
+    );
+    expect(frame).toContain("·");
+    expect(frame).toContain("context note");
+  });
+
+  it("system_frame_matches_snapshot_under_forced_color", async () => {
+    const frame = await renderFrame(
+      <Box width={40}>
+        <ChatMessage role="system">Session started.</ChatMessage>
+      </Box>,
+    );
+    expect(frame).toMatchSnapshot("chat-message-system");
+  });
+
   it("user_frame_matches_snapshot_under_forced_color", async () => {
     const frame = await renderFrame(
       <Box width={40}>
@@ -67,18 +84,18 @@ describe("ChatMessage (T2.1)", () => {
     expect(() =>
       ChatMessage({
         // @ts-expect-error — deliberately invalid role (EC-1 negative case)
-        role: "system",
+        role: "model",
         children: "x",
       }),
     ).toThrow(TypeError);
     expect(() =>
       ChatMessage({
         // @ts-expect-error — deliberately invalid role (EC-1 negative case)
-        role: "system",
+        role: "model",
         children: "x",
       }),
     ).toThrow(
-      'ChatMessage: invalid role "system" — expected "user" | "assistant"',
+      'ChatMessage: invalid role "model" — expected "user" | "assistant" | "system"',
     );
   });
 

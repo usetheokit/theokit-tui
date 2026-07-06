@@ -14,6 +14,7 @@ export interface TheoTheme {
   role: {
     user: RoleTokens;
     assistant: RoleTokens;
+    system: RoleTokens;
   };
   status: {
     error: string;
@@ -32,6 +33,7 @@ export interface TheoThemeOverride {
   role?: {
     user?: Partial<RoleTokens>;
     assistant?: Partial<RoleTokens>;
+    system?: Partial<RoleTokens>;
   };
   status?: Partial<TheoTheme["status"]>;
 }
@@ -44,6 +46,7 @@ export const defaultTheme: TheoTheme = Object.freeze({
       prefix: "magenta",
       text: undefined,
     }),
+    system: Object.freeze({ glyph: "· ", prefix: "gray", text: undefined }),
   }),
   status: Object.freeze({ error: "red", success: "green", warning: "yellow" }),
 });
@@ -61,6 +64,7 @@ function mergeTheme(override: TheoThemeOverride | undefined): TheoTheme {
         ...defaultTheme.role.assistant,
         ...override.role?.assistant,
       },
+      system: { ...defaultTheme.role.system, ...override.role?.system },
     },
     status: { ...defaultTheme.status, ...override.status },
   };

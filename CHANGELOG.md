@@ -9,7 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `system` role for `ChatMessage` — `· ` gray glyph tokens (`defaultTheme.role.system`,
+  overridable), exported `ChatRole` union (m1-chat-surface T1.1)
+
 ### Changed
+
+- Invalid-role error message now names the three-role union
+  (`"user" | "assistant" | "system"`) (m1-chat-surface T1.1)
 
 ### Deprecated
 
