@@ -38,9 +38,9 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ToolCall).toBe("function");
     expect(typeof mod.ToolCallCard).toBe("function");
     expect(typeof mod.ToolResult).toBe("function");
-    expect(typeof mod.truncateLines).toBe("function");
-    // STATUS_INDICATOR_WIDTH stays module-internal (ADR D1 — SEPA phase-1 F2).
+    // Module-internal by ADR: D1 (indicator width), D7 (truncation helper).
     expect(mod).not.toHaveProperty("STATUS_INDICATOR_WIDTH");
+    expect(mod).not.toHaveProperty("truncateLines");
     expect(mod.MAX_RESULT_CHARS).toBe(20000);
   });
 

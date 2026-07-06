@@ -114,7 +114,9 @@ describe("ToolResult — plain content (T2.1)", () => {
   });
 
   it("conflicting_content_sources_throw_typed_error", () => {
-    // EC-2: content sources are mutually exclusive.
+    // EC-2: content sources are mutually exclusive. Direct function call
+    // works ONLY because resolveContent precedes useTheoTheme (F10) — if the
+    // hook moves first, switch these to renderFrame rejection asserts.
     const call = () => ToolResult({ lines: ["a"], children: "b" });
     expect(call).toThrow(TypeError);
     expect(call).toThrow(
@@ -137,6 +139,23 @@ describe("ToolResult — plain content (T2.1)", () => {
     expect(frame).toContain("… +5 lines hidden");
     expect(frame).not.toContain("line-0");
     expect(frame).not.toContain("line-4");
+  });
+
+  it("expanded_still_rejects_invalid_max_lines", () => {
+    // SEPA phase-2 F3: prop validity must not depend on `expanded`. Direct
+    // call — Ink's error boundary swallows render-time throws (F10 note).
+    const call = () =>
+      ToolResult({ lines: ["a"], maxLines: 0, expanded: true });
+    expect(call).toThrow(TypeError);
+    expect(call).toThrow("maxLines must be an integer >= 1");
+  });
+
+  it("blank_line_occupies_a_row", async () => {
+    // EC-11 render half (SEPA phase-2 F7): blank lines keep their row.
+    const frame = await renderFrame(
+      <ToolResult lines={["a", "", "b"]} expanded />,
+    );
+    expect(frame.split("\n")).toHaveLength(3);
   });
 
   it("result_frame_matches_snapshot", async () => {
@@ -178,6 +197,9 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
     const frame = await renderFrame(
       <ToolResult shell={{ stdout: "done", stderr: "", exitCode: 0 }} />,
     );
+    // Presence pairing (SEPA phase-2 F4): the absence oracle alone would
+    // pass on an empty render.
+    expect(frame).toContain("done");
     expect(frame).not.toContain("exited");
   });
 
@@ -194,7 +216,11 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
     const frame = await renderFrame(
       <ToolResult shell={{ stdout, stderr, exitCode: 1 }} maxLines={10} />,
     );
-    expect(frame).toContain("… +");
+    // Pin the combined math (SEPA phase-2 F5): 30 stdout + 1 label + 5
+    // stderr = 36 rows; maxLines 10 keeps 9 → hidden 27.
+    expect(frame).toContain("… +27 lines hidden");
+    expect(frame).toContain("e-4");
+    expect(frame).not.toContain("line-0");
     // Badge survives truncation (appended AFTER the line budget).
     expect(frame).toContain("exited 1");
   });
@@ -204,6 +230,7 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
     const frame = await renderFrame(
       <ToolResult shell={{ stdout: "x-stream", stderr: "" }} />,
     );
+    expect(frame).toContain("x-stream"); // presence pairing (F4)
     expect(frame).not.toContain("exited");
   });
 
@@ -224,6 +251,35 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
     const badgeIndex = rows.findIndex((row) => row.includes("exited 2"));
     expect(badgeIndex).toBeGreaterThan(0);
     expect(rows[badgeIndex - 1]).toContain("two");
+  });
+
+  it("truncation_past_stderr_label_pins_current_behavior", async () => {
+    // SEPA phase-2 F6: when the budget cuts INTO the stderr block the label
+    // row is truncated away — stderr tail stays visible, no marker. Pinned
+    // as CURRENT behavior; promoting the label to badge-like persistence is
+    // a logged M3+ follow-up (deviations.md).
+    const stdout = numbered(30).join("\n");
+    const stderr = ["e-0", "e-1", "e-2", "e-3", "e-4"].join("\n");
+    const frame = await renderFrame(
+      <ToolResult shell={{ stdout, stderr, exitCode: 0 }} maxLines={3} />,
+    );
+    expect(frame).toContain("e-4");
+    expect(frame).not.toContain("stderr:");
+    expect(frame).toContain("… +34 lines hidden");
+  });
+
+  it("shell_char_cap_budget_is_combined_across_streams", async () => {
+    // SEPA phase-2 F2: the 20k guard is a TOTAL budget — stdout consuming
+    // all of it leaves stderr capped (indicator notes the cap).
+    const frame = await renderFrame(
+      <ToolResult
+        shell={{ stdout: "y".repeat(20000), stderr: "tail-error", exitCode: 1 }}
+        maxLines={5}
+      />,
+    );
+    expect(frame).toContain("output capped at 20000 chars");
+    expect(frame).not.toContain("tail-error");
+    expect(frame).toContain("exited 1");
   });
 
   it("shell_conflicts_with_children_throw", async () => {

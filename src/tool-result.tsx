@@ -55,7 +55,12 @@ export interface ToolResultProps {
   lines?: string[];
   /** Shell envelope (ADR D5). Exclusive with children/lines. */
   shell?: ShellEnvelope;
-  /** Visible-line budget incl. the indicator row (ADR D4). Integer >= 1. */
+  /**
+   * Visible-line budget incl. the indicator row when LINE truncation fires
+   * (ADR D4). Integer >= 1 — validated even when `expanded` (fail-fast at
+   * the boundary). A cap-only indicator (char cap fired, no hidden lines)
+   * renders as one extra row outside this budget (SEPA phase-2 F8).
+   */
   maxLines?: number;
   /** Render every line (bypasses LINE truncation only — not the char cap). */
   expanded?: boolean;
@@ -80,24 +85,31 @@ function applyCharCap(raw: string): { text: string; capped: boolean } {
 
 interface ResolvedContent {
   rows: string[];
-  stderrLabelIndexes: Set<number>;
+  /** Absolute row index of the single `stderr:` label (SEPA phase-2 F9). */
+  stderrLabelIndex: number | undefined;
   capped: boolean;
   exitCode: number | undefined;
 }
 
 function resolveShell(shell: ShellEnvelope): ResolvedContent {
   const stdoutCap = applyCharCap(shell.stdout);
-  const stderrCap = applyCharCap(shell.stderr);
+  // The 20k cap is a COMBINED budget (SEPA phase-2 F2 — "total chars" per
+  // the plan): stderr gets whatever stdout left over.
+  const stderrBudget = MAX_RESULT_CHARS - stdoutCap.text.length;
+  const stderrCapped = shell.stderr.length > stderrBudget;
+  const stderrText = stderrCapped
+    ? shell.stderr.slice(0, Math.max(0, stderrBudget))
+    : shell.stderr;
   const rows = shell.stdout === "" ? [] : splitContent(stdoutCap.text);
-  const stderrLabelIndexes = new Set<number>();
+  let stderrLabelIndex: number | undefined;
   if (shell.stderr !== "") {
-    stderrLabelIndexes.add(rows.length);
-    rows.push("stderr:", ...splitContent(stderrCap.text));
+    stderrLabelIndex = rows.length;
+    rows.push("stderr:", ...splitContent(stderrText));
   }
   return {
     rows,
-    stderrLabelIndexes,
-    capped: stdoutCap.capped || stderrCap.capped,
+    stderrLabelIndex,
+    capped: stdoutCap.capped || stderrCapped,
     exitCode: shell.exitCode,
   };
 }
@@ -120,7 +132,7 @@ function resolveContent(props: ToolResultProps): ResolvedContent {
   const { text, capped } = applyCharCap(raw);
   return {
     rows: raw === "" ? [] : splitContent(text),
-    stderrLabelIndexes: new Set(),
+    stderrLabelIndex: undefined,
     capped,
     exitCode: undefined,
   };
@@ -147,10 +159,10 @@ function contentRows(
   const start = content.rows.length - visibleCount;
   return content.rows.slice(start).map((row, index) => {
     const absoluteIndex = start + index;
-    const isLabel = content.stderrLabelIndexes.has(absoluteIndex);
-    const afterLabel = [...content.stderrLabelIndexes].some(
-      (labelIndex) => absoluteIndex > labelIndex,
-    );
+    const isLabel = absoluteIndex === content.stderrLabelIndex;
+    const afterLabel =
+      content.stderrLabelIndex !== undefined &&
+      absoluteIndex > content.stderrLabelIndex;
     if (isLabel) {
       return (
         <Text key={absoluteIndex} dimColor>
@@ -200,12 +212,16 @@ function resultView(
  */
 export function ToolResult(props: ToolResultProps) {
   const { maxLines = 10, expanded = false } = props;
+  // Boundary guards precede the hook (ChatMessage EC-1 idiom): source
+  // exclusivity (EC-2) and maxLines validity — the latter UNCONDITIONALLY,
+  // prop validity must not depend on `expanded` (SEPA phase-2 F3).
   const content = resolveContent(props);
+  const lineTruncation = truncateLines(content.rows, maxLines);
   const theme = useTheoTheme();
 
   const truncation = expanded
     ? { visible: content.rows, hidden: 0 }
-    : truncateLines(content.rows, maxLines);
+    : lineTruncation;
   const view = resultView(
     props.shell !== undefined,
     content,
