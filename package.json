@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
   "version": "0.2.0",
-  "description": "TUI component library for AI-agent surfaces — Ink primitives for chat, tool-calls, agent timelines, diffs and metrics.",
+  "description": "TUI component library for AI-agent surfaces \u2014 Ink primitives for chat, tool-calls, agent timelines, diffs and metrics.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -41,7 +41,8 @@
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "lowlight": "^3.0.0"
   },
   "dependencies": {
     "ink": "^5.2.0",
@@ -57,6 +58,7 @@
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "ink-testing-library": "^4.0.0",
+    "lowlight": "^3.3.0",
     "prettier": "^3.3.0",
     "react": "^18.3.1",
     "tsup": "^8.3.0",
@@ -71,6 +73,11 @@
     ],
     "overrides": {
       "esbuild@>=0.27.3 <0.28.1": ">=0.28.1"
+    }
+  },
+  "peerDependenciesMeta": {
+    "lowlight": {
+      "optional": true
     }
   }
 }

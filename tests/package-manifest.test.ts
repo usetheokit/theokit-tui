@@ -55,8 +55,13 @@ describe("package manifest contract (T0.1)", () => {
     }
   });
 
-  it("package_manifest_declares_react_as_only_peer_and_ink_as_dependency", () => {
-    expect(Object.keys(pkg.peerDependencies)).toEqual(["react"]);
+  it("package_manifest_declares_react_required_peer_and_ink_as_dependency", () => {
+    // M4 evolves the contract: lowlight joins as an OPTIONAL peer (plan D2);
+    // react stays the only REQUIRED peer.
+    expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "lowlight",
+      "react",
+    ]);
     expect(pkg.peerDependencies.react).toBe("^18.0.0 || ^19.0.0");
     expect(pkg.dependencies.ink).toMatch(/^\^5/);
   });

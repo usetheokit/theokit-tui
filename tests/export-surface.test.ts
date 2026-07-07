@@ -58,13 +58,30 @@ describe("public entry surface (T0.2)", () => {
       "ink-spinner",
       "parse-diff",
     ]);
-    expect(Object.keys(pkg.peerDependencies)).toEqual(["react"]);
+    expect(pkg.peerDependencies["react"]).toBeDefined();
   });
 
   it("public_entry_exposes_diff_model", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.parseUnifiedDiff).toBe("function");
     expect(typeof mod.DiffViewer).toBe("function");
+    expect(typeof mod.CodeBlock).toBe("function");
+    // Module-internal by plan decision (EC-10, D7 precedent):
+    expect(mod).not.toHaveProperty("ensureHighlighter");
+  });
+
+  it("manifest_declares_lowlight_optional_peer", () => {
+    const pkg = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "lowlight",
+      "react",
+    ]);
+    expect(pkg.peerDependenciesMeta["lowlight"]?.optional).toBe(true);
   });
 
   it("public_entry_exposes_agent_surface", async () => {

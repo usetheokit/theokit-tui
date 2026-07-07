@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CodeBlock — highlight pipeline (T2.1, ADR D2/D6) > highlighted_snapshot_is_stable > code-block-highlighted 1`] = `"[34mconst[39m x = [32m1[39m;"`;
