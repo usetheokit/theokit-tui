@@ -123,7 +123,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M1
 **Risks:** 1. Long tool output overflowing the viewport. 2. Status transitions racing the stream.
 
-### M3 — [ ] Agent surface
+### M3 — [x] Agent surface
 
 **Objective:** Ship agent-lifecycle primitives.
 **Definition of done:**
