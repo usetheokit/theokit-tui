@@ -131,6 +131,12 @@ describe("public entry surface (T0.2)", () => {
     expect(mod).not.toHaveProperty("formatCost");
   });
 
+  it("public_entry_exposes_welcome_banner", async () => {
+    const mod = await import("../src/index.js");
+    // M9 (plan ADR D1): the banner primitive.
+    expect(typeof mod.WelcomeBanner).toBe("function");
+  });
+
   it("public_entry_exposes_stream_adapter", async () => {
     const mod = await import("../src/index.js");
     // M7 (plan ADR D8): hook + reducer + initial state are the public trio.

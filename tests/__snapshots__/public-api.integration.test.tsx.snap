@@ -29,3 +29,15 @@ exports[`public API integration (M7 T3.2 — stream adapter scene) > composed_st
    435 passed
 [35m✦ [39mAll green now."
 `;
+
+exports[`public API integration (M9 T2.1 — welcome banner scene) > composed_banner_scene_matches_snapshot > welcome-banner-scene 1`] = `
+"[36m╭──────────────────────────────────────────────────────────╮[39m
+[36m│[39m [1m[36mTheo TUI[2m v0.9.0[22m[39m                                          [36m│[39m
+[36m│[39m AI-agent primitives for the terminal                     [36m│[39m
+[36m│[39m                                                          [36m│[39m
+[36m│[39m [2m/help for commands[22m                                       [36m│[39m
+[36m│[39m [2mesc to cancel[22m                                            [36m│[39m
+[36m╰──────────────────────────────────────────────────────────╯[39m
+[36m> [39mhello
+[35m✦ [39mwelcome aboard"
+`;

@@ -30,6 +30,7 @@ import {
   agentStreamReducer,
   initialAgentStreamState,
   useAgentStream,
+  WelcomeBanner,
 } from "../src/index.js";
 import type { AgentStreamEvent } from "../src/index.js";
 // (M1↔M2 composition asserted below — review wire-4.)
@@ -421,5 +422,38 @@ describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
     expect(plain).toContain("vitest");
     expect(plain).toContain("✓");
     expect(frame).toMatchSnapshot("stream-adapter-scene");
+  });
+});
+
+describe("public API integration (M9 T2.1 — welcome banner scene)", () => {
+  it("composed_banner_scene_matches_snapshot", async () => {
+    const frame = await renderFrame(
+      <Box width={60}>
+        <TheoTUIProvider>
+          <Box flexDirection="column">
+            <WelcomeBanner
+              name="Theo TUI"
+              version="0.9.0"
+              tagline="AI-agent primitives for the terminal"
+              hints={["/help for commands", "esc to cancel"]}
+            />
+            <ChatThread
+              messages={[
+                { id: "u1", role: "user", content: "hello" },
+                { id: "a1", role: "assistant", content: "welcome aboard" },
+              ]}
+            />
+          </Box>
+        </TheoTUIProvider>
+      </Box>,
+    );
+    // Anchors FIRST (house convention) — then the layout pin.
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("Theo TUI");
+    expect(plain).toContain("v0.9.0");
+    expect(plain).toContain("/help for commands");
+    expect(plain).toContain("✦");
+    expect(plain).toContain("welcome aboard");
+    expect(frame).toMatchSnapshot("welcome-banner-scene");
   });
 });
