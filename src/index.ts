@@ -48,6 +48,11 @@ export type { AgentStreamingProps } from "./agent-streaming.js";
 // module-internal (M5 ADR D7 — truncateLines/foldDiffLines precedent).
 export { ContextWindowBar } from "./context-window-bar.js";
 export type { ContextWindowBarProps } from "./context-window-bar.js";
+export { TokenUsageChart } from "./token-usage-chart.js";
+export type {
+  TokenCategory,
+  TokenUsageChartProps,
+} from "./token-usage-chart.js";
 
 export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";

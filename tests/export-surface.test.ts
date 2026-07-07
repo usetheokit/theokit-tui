@@ -108,6 +108,7 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_metrics_surface", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ContextWindowBar).toBe("function");
+    expect(typeof mod.TokenUsageChart).toBe("function");
     // Module-internal by plan decision (M5 ADR D7 — pure cores stay off the
     // entry; a future public formatter export is one line + this pin):
     expect(mod).not.toHaveProperty("renderFillBar");
