@@ -1,6 +1,6 @@
 {
   "benchmark": "chat-message-render",
-  "date": "2026-07-07T14:20:17.499Z",
+  "date": "2026-07-07T17:17:55.387Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
@@ -11,7 +11,7 @@
     "streamed_tokens": 300
   },
   "color_env": {
-    "FORCE_COLOR": "1"
+    "FORCE_COLOR": "unset"
   },
   "protocol": {
     "warmup_runs": 1,
@@ -20,39 +20,39 @@
   "runs": [
     {
       "frames": 300,
-      "mean_ms_per_frame": 14.431,
-      "peak_ms_per_frame": 24.794
+      "mean_ms_per_frame": 14.876,
+      "peak_ms_per_frame": 29.926
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 15.883,
-      "peak_ms_per_frame": 34.93
+      "mean_ms_per_frame": 12.813,
+      "peak_ms_per_frame": 32.074
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 14.888,
-      "peak_ms_per_frame": 34.391
+      "mean_ms_per_frame": 10.378,
+      "peak_ms_per_frame": 19.137
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 15.997,
-      "peak_ms_per_frame": 36.532
+      "mean_ms_per_frame": 9.771,
+      "peak_ms_per_frame": 20.856
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 14.384,
-      "peak_ms_per_frame": 31.088
+      "mean_ms_per_frame": 10.073,
+      "peak_ms_per_frame": 20.652
     }
   ],
   "aggregate": {
     "frames_mean": 300,
     "mean_ms_per_frame": {
-      "mean": 15.117,
-      "std_dev": 0.696
+      "mean": 11.582,
+      "std_dev": 1.968
     },
     "peak_ms_per_frame": {
-      "mean": 32.347,
-      "std_dev": 4.171
+      "mean": 24.529,
+      "std_dev": 5.36
     }
   },
   "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."

@@ -1,13 +1,13 @@
 {
   "benchmark": "chat-thread-render",
-  "date": "2026-07-07T14:22:51.031Z",
+  "date": "2026-07-07T17:20:19.223Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
     "cores": 12
   },
   "color_env": {
-    "FORCE_COLOR": "1"
+    "FORCE_COLOR": "unset"
   },
   "workload": {
     "messages": 500,
@@ -24,39 +24,39 @@
       "runs": [
         {
           "frames": 300,
-          "mean_ms_per_frame": 60.83,
-          "peak_ms_per_frame": 115.724
+          "mean_ms_per_frame": 67.841,
+          "peak_ms_per_frame": 153.31
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 119.012,
-          "peak_ms_per_frame": 246.006
+          "mean_ms_per_frame": 78.085,
+          "peak_ms_per_frame": 181.544
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 67.852,
-          "peak_ms_per_frame": 126.736
+          "mean_ms_per_frame": 71.621,
+          "peak_ms_per_frame": 181.689
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 80.066,
-          "peak_ms_per_frame": 175.596
+          "mean_ms_per_frame": 65.98,
+          "peak_ms_per_frame": 108.704
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 86.434,
-          "peak_ms_per_frame": 140.87
+          "mean_ms_per_frame": 78.07,
+          "peak_ms_per_frame": 170.295
         }
       ],
       "aggregate": {
         "frames_mean": 300,
         "mean_ms_per_frame": {
-          "mean": 82.839,
-          "std_dev": 20.19
+          "mean": 72.319,
+          "std_dev": 5.041
         },
         "peak_ms_per_frame": {
-          "mean": 160.986,
-          "std_dev": 47.049
+          "mean": 159.108,
+          "std_dev": 27.249
         }
       }
     },
@@ -65,39 +65,39 @@
       "runs": [
         {
           "frames": 600,
-          "mean_ms_per_frame": 2.137,
-          "peak_ms_per_frame": 6.714
+          "mean_ms_per_frame": 2.18,
+          "peak_ms_per_frame": 4.705
         },
         {
           "frames": 600,
-          "mean_ms_per_frame": 2.092,
-          "peak_ms_per_frame": 4.697
+          "mean_ms_per_frame": 1.959,
+          "peak_ms_per_frame": 4.142
         },
         {
           "frames": 600,
-          "mean_ms_per_frame": 1.92,
-          "peak_ms_per_frame": 3.69
+          "mean_ms_per_frame": 2.17,
+          "peak_ms_per_frame": 5.57
         },
         {
           "frames": 600,
-          "mean_ms_per_frame": 2.018,
-          "peak_ms_per_frame": 4.615
+          "mean_ms_per_frame": 2.166,
+          "peak_ms_per_frame": 4.483
         },
         {
           "frames": 600,
-          "mean_ms_per_frame": 1.91,
-          "peak_ms_per_frame": 7.961
+          "mean_ms_per_frame": 1.957,
+          "peak_ms_per_frame": 5.321
         }
       ],
       "aggregate": {
         "frames_mean": 600,
         "mean_ms_per_frame": {
-          "mean": 2.015,
-          "std_dev": 0.09
+          "mean": 2.086,
+          "std_dev": 0.105
         },
         "peak_ms_per_frame": {
-          "mean": 5.535,
-          "std_dev": 1.564
+          "mean": 4.844,
+          "std_dev": 0.529
         }
       }
     }
