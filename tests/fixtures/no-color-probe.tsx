@@ -2,9 +2,12 @@ import { Box } from "ink";
 import { render } from "ink-testing-library";
 
 import { AgentStreaming } from "../../src/agent-streaming.js";
+import { ContextWindowBar } from "../../src/context-window-bar.js";
+import { CostMeter } from "../../src/cost-meter.js";
 import { DiffViewer } from "../../src/diff-viewer.js";
 import { AgentTimeline } from "../../src/agent-timeline.js";
 import { ChatThread } from "../../src/chat-thread.js";
+import { TokenUsageChart } from "../../src/token-usage-chart.js";
 import { ToolCall, ToolCallCard } from "../../src/tool-call.js";
 import { ToolResult } from "../../src/tool-result.js";
 
@@ -52,6 +55,11 @@ const instance = render(
       ].join("\n")}
       contextLines={2}
     />
+    {/* M5 (T3.1): metrics scene — glyph-distinct fill (█ vs ░) is the
+        color-independence mechanism (EC-5). */}
+    <ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={40} />
+    <TokenUsageChart usage={{ input: 12_500, output: 4_000 }} />
+    <CostMeter costUsd={1.234} />
   </Box>,
 );
 await new Promise((resolve) => setTimeout(resolve, 0));

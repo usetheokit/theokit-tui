@@ -175,6 +175,13 @@ describe("ChatMessage (T2.1)", () => {
       expect(out).toMatch(/^\s*\d+ \+ new probe line/m);
       expect(out).toMatch(/^\s*\d+ - old probe line/m);
       expect(out).toContain("lines hidden");
+      // M5 (T3.1): glyph-distinct fill is the color-independence mechanism —
+      // filled vs empty survive as DIFFERENT characters (EC-5; both analogs
+      // lack this test — the gap is ours to close).
+      expect(out).toContain("█");
+      expect(out).toContain("░");
+      expect(out).toMatch(/\d+% left/);
+      expect(out).toContain("~$");
     },
   );
 

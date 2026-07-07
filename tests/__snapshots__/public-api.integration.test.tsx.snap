@@ -8,3 +8,10 @@ exports[`public API integration (M4 T3.1 — code scene) > composed_scene_matche
 [2m3 [22m
 const scene = true;"
 `;
+
+exports[`public API integration (M5 T3.1 — metrics scene) > composed_metrics_scene_matches_snapshot > metrics-surface-scene 1`] = `
+"[33m███████[39m[2m░░░░░░[22m 50% left[2m (64k used / 128k)[22m
+[2minput  [22m[36m███████████████████████████[39m 12.5k
+[2moutput [22m[36m█████████[39m[2m░░░░░░░░░░░░░░░░░░[22m    4k
+[2mcost [22m~$1.23"
+`;

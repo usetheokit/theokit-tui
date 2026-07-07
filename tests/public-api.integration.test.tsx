@@ -11,12 +11,15 @@ import {
   AgentStreaming,
   AgentTimeline,
   CodeBlock,
+  ContextWindowBar,
+  CostMeter,
   DiffViewer,
   parseUnifiedDiff,
   ChatComposer,
   ChatMessage,
   ChatThread,
   TheoTUIProvider,
+  TokenUsageChart,
   ToolCallCard,
   ToolResult,
   defaultTheme,
@@ -223,5 +226,52 @@ describe("public API integration (M4 T3.1 — code scene)", () => {
       </Box>,
     );
     expect(frame).toMatchSnapshot("code-surface-scene");
+  });
+});
+
+describe("public API integration (M5 T3.1 — metrics scene)", () => {
+  it("public_entry_composes_metrics_surface", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider>
+        <Box flexDirection="column">
+          <ContextWindowBar
+            usedTokens={64_000}
+            limitTokens={128_000}
+            width={40}
+          />
+          <TokenUsageChart usage={{ input: 12_500, output: 4_000 }} />
+          <CostMeter costUsd={1.234} />
+        </Box>
+      </TheoTUIProvider>,
+    );
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("% left");
+    expect(plain).toContain("input");
+    expect(plain).toContain("~$");
+  });
+
+  it("composed_metrics_scene_matches_snapshot", async () => {
+    const frame = await renderFrame(
+      <Box width={60}>
+        <TheoTUIProvider>
+          <Box flexDirection="column">
+            <ContextWindowBar
+              usedTokens={64_000}
+              limitTokens={128_000}
+              width={40}
+            />
+            <TokenUsageChart usage={{ input: 12_500, output: 4_000 }} />
+            <CostMeter costUsd={1.234} />
+          </Box>
+        </TheoTUIProvider>
+      </Box>,
+    );
+    // Anchor-then-snapshot hard convention (D5): the load-bearing numbers
+    // are pinned before the layout snapshot can absorb them.
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("50% left");
+    expect(plain).toContain("~$1.23");
+    expect(plain).toContain("█");
+    expect(frame).toMatchSnapshot("metrics-surface-scene");
   });
 });
