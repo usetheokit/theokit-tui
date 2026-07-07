@@ -53,6 +53,8 @@ export type {
   TokenCategory,
   TokenUsageChartProps,
 } from "./token-usage-chart.js";
+export { CostMeter } from "./cost-meter.js";
+export type { CostMeterProps } from "./cost-meter.js";
 
 export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";
