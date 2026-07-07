@@ -221,11 +221,16 @@ M8's dogfood (`examples/live-agent-tui` + TheoCode as consumer) will assemble ex
 
 > Added 2026-07-07 by `/roadmap-feature` (slug: `m10-react19-ink7`). See CHANGELOG `[Unreleased] § Added`.
 
-**Objective:** Upgrade the rendering foundation to ink ^7 with an HONEST dual React peer (`^18.2 || ^19`) — rehearsal-proven on both majors.
+**Objective:** Upgrade the rendering foundation to ink ^7 with an HONEST React 19 peer — rehearsal-proven from a fresh install.
+
+> Revised 2026-07-07 (pre-lock, before any cycle started): the original DoD assumed
+> ink ≥ 6 supported a dual `^18.2 || ^19` peer — FALSE (every ink ≥ 6.0.0 declares
+> `react >= 19`, registry-verified). Dual peer is impossible on modern ink; react-18
+> consumers stay on the 0.10.x line (ink 5). See CHANGELOG.
 
 **Definition of done:**
 
-- [ ] ink ^7 dependency; react peer `^18.2 || ^19` proven by the tarball-rehearsal harness running on BOTH majors (the M8 rehearsal, now 2×).
+- [ ] ink ^7 dependency; react peer `^19.0.0` proven by the tarball-rehearsal harness on a fresh react-19 install (the M8 rehearsal harness).
 - [ ] Full suite green with zero weakened tests (ink 7 API/behavior renames absorbed task-by-task).
 - [ ] Degrade-matrix + all 6 benches re-baselined on the new stack (ADVERSE-only table vs the v0.10.0 baselines).
 - [ ] Publish minor with rehearsal; SDK tripwire re-run.
@@ -236,7 +241,7 @@ M8's dogfood (`examples/live-agent-tui` + TheoCode as consumer) will assemble ex
 **Top risks (new — pre-existing risks documented elsewhere in roadmap):**
 
 1. ink 7 breaking changes ripple through 455 tests (borderStyle/measure/Static semantics) — mitigated by DISCOVER over `references/ink` (already cloned at 7.1.0) + never-weaken discipline.
-2. Dual-major react peer doubles the compat matrix — mitigated by the 2× rehearsal release AC.
+2. React-18 consumers are left behind on 0.10.x — mitigated by honest README/release-notes guidance (0.10.x = ink5/react18 line; 0.11+ = ink7/react19).
 
 **Why now (from grill Q1):**
 

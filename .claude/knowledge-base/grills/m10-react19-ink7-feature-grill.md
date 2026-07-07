@@ -34,3 +34,9 @@ M8 (published baseline). First of the V2 chain — M11/M12 depend on M10.
 
 ## Step 5 — SOTA delta
 No — references/ink is already 7.1.0 (cloned at HEAD); no new peer needed.
+
+## Revision 2026-07-07 (pre-lock, DISCOVER finding)
+The Q3 DoD assumed ink ≥ 6 supports react 18 — FALSE: ink@6.0.0 and ink@7.1.0
+both declare `react >= 19` peers (registry-verified). DoD revised: ink ^7 +
+react `^19` single-major peer; 0.10.x remains the ink5/react18 line. R2
+re-scoped accordingly (leave-behind risk, not compat-matrix risk).

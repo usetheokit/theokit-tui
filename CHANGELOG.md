@@ -9,6 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Roadmap M10 DoD revised pre-lock: dual React peer is impossible on modern ink (every ink ≥ 6.0.0 requires `react >= 19`, registry-verified) — M10 targets ink ^7 + react `^19` peer; react-18 consumers stay on the 0.10.x line
 - Roadmap V2 amended: added M10 Foundation upgrade (ink 7 + dual React peer), M11 ChatThread/AgentTimeline header slot, M12 Animated welcome banner (`/roadmap-feature`, V2 batch — dependencies M8→M10→{M11, M12})
 - TTFATT record `docs/ttfatt.md` — 16.3 s measured from the published registry artifact (install 13.7 s + first rendered turn 2.6 s; target < 10 min), pinned by a package-contract test (m8-ga-publish T2.2)
 
