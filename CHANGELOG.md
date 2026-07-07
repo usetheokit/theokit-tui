@@ -9,6 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `WelcomeBanner` — Claude Code/gemini-cli-style startup banner primitive: `name`/`version?`/`tagline?`/`hints?` + single `children` slot; accent-bordered box clamped to `min(columns ?? 60, 60)` with a plain-text final rung below 24 columns; border style is theme-data-driven (`single` under monochrome themes, `round` otherwise); fail-fast typed prop validation; zero new dependencies (m9-welcome-banner T1.1)
 - Roadmap amended: added M9 Welcome banner (`/roadmap-feature welcome-banner`); SOTA references extended with opencode (MIT), oh-my-logo (MIT+CC0), ascii-motion (MIT) — crush excluded by license gate (FSL-1.1)
 
 ### Fixed
