@@ -94,6 +94,7 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
       expect(outDumb).not.toContain("▏");
       // M9 EC-3: dumb resolves the DARK theme at level 0 → round border.
       expect(outDumb).toContain("╭");
+      expect(outDumb).not.toContain("┌");
       const outNoColor = spawnProbe({ NO_COLOR: "1" });
       // Exactly ONE marker (review tests-3 — a duplicated-marker regression
       // must not hide inside the global replaceAll wherever dumb has spaces).
@@ -118,6 +119,7 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     assertDegradedScene(out);
     // M9 EC-3: bare pipe also resolves the DARK theme → round border.
     expect(out).toContain("╭");
+    expect(out).not.toContain("┌");
   });
 
   it("chalk_downsample_canary", { timeout: 20000 }, () => {

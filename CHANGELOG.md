@@ -14,6 +14,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `WelcomeBanner`: empty/whitespace `version` now renders as absent (never a dangling ` v`); width contract documented honestly (columns frozen at render — ink does not re-render React on resize); behavioral oracles added for the hints margin gap and floor-rung truncation (m9-welcome-banner review F-1/F-2/F1/F2)
 - Manifest `version`/`VERSION` synced to the released tag (the v0.3.0–v0.8.0 split-release chain had not bumped `package.json` — caught by the entry-surface contract before any npm publish)
 
 ## [0.8.0] - 2026-07-07

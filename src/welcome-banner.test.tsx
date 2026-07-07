@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+import { readFileSync } from "node:fs";
 import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
@@ -63,6 +64,15 @@ describe("WelcomeBanner", () => {
     expect(frame).toContain("AI in your terminal");
     expect(frame).toContain("/help for commands");
     expect(frame).toContain("esc to cancel");
+    // Review F1: the hints margin gap is BEHAVIOR, not just a snapshot pin —
+    // exactly one blank content row sits between the tagline and the first
+    // hint (the marginTop={1} line renders as a border-only row).
+    const rawLines = stripAnsi(frame).split("\n");
+    const taglineIdx = rawLines.findIndex((l) => l.includes("AI in your"));
+    const hintIdx = rawLines.findIndex((l) => l.includes("/help"));
+    expect(hintIdx - taglineIdx).toBe(2);
+    const gapRow = rawLines[taglineIdx + 1] ?? "";
+    expect(gapRow.replace(/[│\s]/g, "")).toBe("");
   });
 
   it("version_absent_renders_no_vundefined_and_no_empty_meta_line", () => {
@@ -115,6 +125,12 @@ describe("WelcomeBanner", () => {
     expect(below).not.toContain("╭");
     expect(below).not.toContain("│");
     expect(below).toContain("Theo v1.0.0");
+    // Review F2: the plain rung TRUNCATES too — a long name must not exceed
+    // columns nor wrap into extra rows.
+    const longFloor = renderAtColumns(23, { name: "A".repeat(80) });
+    const floorLines = nonEmptyLines(longFloor);
+    expect(floorLines).toHaveLength(1);
+    expect((floorLines[0] ?? "").length).toBeLessThanOrEqual(23);
   });
 
   it("width_matrix_lines_fit", () => {
@@ -209,6 +225,7 @@ describe("WelcomeBanner", () => {
       { name: "a\nb" },
       { name: "T", version: "1\n2" },
       { name: "T", hints: ["ok", "bad\nhint"] },
+      { name: "T", hints: [""] },
     ];
     for (const props of bad) {
       // House idiom (context-window-bar precedent): direct call — the
@@ -224,6 +241,18 @@ describe("WelcomeBanner", () => {
       WelcomeBanner({ name: "T", hints: ["bad\nhint"] }),
     );
     expect(hintErr.message).toContain("hints");
+    const versionErr = catchError(() =>
+      WelcomeBanner({ name: "T", version: "1\n2" }),
+    );
+    expect(versionErr.message).toContain("version");
+  });
+
+  it("empty_version_renders_as_absent", () => {
+    // Review F-2: no dangling " v" suffix.
+    const frame = renderBanner({ name: "Theo", version: "  " });
+    expect(stripAnsi(frame)).not.toMatch(/Theo v\s*$/m);
+    const lines = nonEmptyLines(frame);
+    expect(lines).toHaveLength(3);
   });
 
   it("snapshots_default_and_floor", () => {
@@ -245,7 +274,13 @@ describe("WelcomeBanner", () => {
   });
 
   it("banner_composes_above_other_content_without_static", () => {
-    // D4 pin: plain component — no <Static> mount (module-source assert).
+    // D4 pin: plain component above the thread — plus the module-source
+    // assert (review tests-1): the banner never imports <Static>.
+    const source = readFileSync(
+      new URL("./welcome-banner.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toMatch(/import\s*\{[^}]*\bStatic\b[^}]*\}/);
     const instance = render(
       <Box flexDirection="column">
         <WelcomeBanner name="T" />

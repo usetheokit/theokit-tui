@@ -58,13 +58,26 @@ function assertBannerProps(props: WelcomeBannerProps): void {
   }
 }
 
+/** Empty/whitespace version renders as ABSENT — never a dangling " v"
+ * (review F-2; validation allows "" since D5 only forbids newlines). */
+function normalizeVersion(value: string | undefined): string | undefined {
+  return value === undefined || value.trim() === "" ? undefined : value;
+}
+
 export function WelcomeBanner(props: WelcomeBannerProps) {
   // Boundary validation FIRST, before hooks (house F10 idiom).
   assertBannerProps(props);
-  const { name, version, tagline, hints, children } = props;
+  const { name, tagline, hints, children } = props;
+  const version = normalizeVersion(props.version);
   const theme = useTheoTheme();
   const { stdout } = useStdout();
 
+  // WIDTH CONTRACT (review F-1 errata to ADR D3): columns are read at
+  // RENDER time and frozen until the next React re-render — ink 5.2.1's
+  // resize handler only re-runs yoga layout + repaint, it does NOT re-render
+  // React, and useStdout is a stable context value. For a startup-moment
+  // banner this is accepted; live-resize demand flips to a useTerminalSize
+  // hook (stdout.on("resize") → state — the gemini-cli pattern).
   const columns = stdout?.columns ?? MAX_WIDTH;
   if (columns < FLOOR_COLUMNS) {
     // The plain-text final rung: nothing that can exceed `columns`.
