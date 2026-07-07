@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- TTFATT record `docs/ttfatt.md` — 16.3 s measured from the published registry artifact (install 13.7 s + first rendered turn 2.6 s; target < 10 min), pinned by a package-contract test (m8-ga-publish T2.2)
+
+### Added
+
 ### Changed
 
 ### Deprecated

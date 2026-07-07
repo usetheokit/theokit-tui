@@ -93,3 +93,15 @@ describe("README public-copy contract (M8 T1.2)", () => {
     }
   });
 });
+
+describe("TTFATT record (M8 T2.2)", () => {
+  it("ttfatt_record_exists_with_measurement", () => {
+    const md = readFileSync(
+      new URL("../docs/ttfatt.md", import.meta.url),
+      "utf8",
+    );
+    expect(md).toMatch(/@theokit\/tui@0\.10\.0/);
+    expect(md).toMatch(/\d+(\.\d+)?\s?(s|seconds|min)/);
+    expect(md).toContain("npm i");
+  });
+});
