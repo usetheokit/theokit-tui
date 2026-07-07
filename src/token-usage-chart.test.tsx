@@ -151,5 +151,8 @@ describe("TokenUsageChart", () => {
     expect(() => TokenUsageChart({ usage: { output: Number.NaN } })).toThrow(
       TypeError,
     );
+    expect(() => TokenUsageChart({ usage: { input: 1 }, width: 1.5 })).toThrow(
+      TypeError,
+    );
   });
 });

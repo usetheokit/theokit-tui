@@ -268,6 +268,9 @@ describe("ContextWindowBar", () => {
     expect(() => ContextWindowBar({ usedTokens: 1, width: 1.5 })).toThrow(
       TypeError,
     );
+    expect(() =>
+      ContextWindowBar({ usedTokens: 1, baselineTokens: Number.NaN }),
+    ).toThrow(TypeError);
   });
 
   it("baseline_at_or_above_limit_throws", () => {
