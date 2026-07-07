@@ -62,16 +62,16 @@ describe("package manifest contract (T0.1)", () => {
       "lowlight",
       "react",
     ]);
-    // ^18.2.0 ONLY — the former "^18 || ^19" shipped a broken fresh-install
-    // (ink 5 reconciler × React 19; M8 rehearsal evidence). Flip on ink >= 6.
-    expect(pkg.peerDependencies.react).toBe("^18.2.0");
-    expect(pkg.dependencies.ink).toMatch(/^\^5/);
+    // ^19.2.0 — mirrors ink7's exact floor (react >=19.2.0, blueprint M10
+    // Corner 2); the 0.10.x line remains the ink5/react18 track.
+    expect(pkg.peerDependencies.react).toBe("^19.2.0");
+    expect(pkg.dependencies.ink).toMatch(/^\^7/);
   });
 
-  it("package_manifest_declares_apache2_license_and_node20_floor", () => {
+  it("package_manifest_declares_apache2_license_and_node22_floor", () => {
     expect(pkg.name).toBe("@theokit/tui");
     expect(pkg.license).toBe("Apache-2.0");
-    expect(pkg.engines.node).toBe(">=20");
+    expect(pkg.engines.node).toBe(">=22");
     expect(pkg.sideEffects).toBe(false);
     expect(pkg.private).toBeUndefined();
   });

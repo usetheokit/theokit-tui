@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Requires: react >= 19.2.0 (peer, was ^18.2.0) and node >= 22 (engines, was >= 20) — the foundation moved to ink ^7.1.0 (every ink >= 6 is react-19-only); the 0.10.x line remains the ink5/react18 track (m10-react19-ink7 T1.1)
+- Snapshot resequencing: ink 7 closes bold (`[22m`) before opening dim — 2 snapshot files re-recorded with per-diff review (visible text byte-identical; border glyphs zero-diff, cli-boxes 4 proven glyph-stable) (m10-react19-ink7 T1.4)
+
+### Added
+
+- ink7 pipe-contract pin in the degrade matrix (non-interactive writes ONE final frame at unmount — content appears exactly once) and a permanent never-weaken migration guard (it-count never decreases vs the pre-bump base) (m10-react19-ink7 T1.2+T1.3)
+
 ### Added
 
 - Roadmap M10 DoD revised pre-lock: dual React peer is impossible on modern ink (every ink ≥ 6.0.0 requires `react >= 19`, registry-verified) — M10 targets ink ^7 + react `^19` peer; react-18 consumers stay on the 0.10.x line
