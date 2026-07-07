@@ -167,7 +167,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M1, M2, M3, M4, M5
 **Risks:** 1. Combinatorial snapshot surface. 2. Terminal capability detection edge cases.
 
-### M7 — [ ] Stream adapter + Harness bridge
+### M7 — [x] Stream adapter + Harness bridge
 
 **Objective:** Ship the `@theokit/sdk` stream adapter that drives the primitives (the `useAgentStream` analog).
 **Definition of done:**
