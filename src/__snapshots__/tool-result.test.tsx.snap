@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ToolResult — plain content (T2.1) > result_frame_matches_snapshot > tool-result-truncated 1`] = `
+"[2m… +11 lines hidden[22m
+line-11
+line-12
+line-13
+line-14"
+`;

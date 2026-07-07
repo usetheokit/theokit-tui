@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TokenUsageChart > snapshots_partial_full_narrow > token-usage-chart-full 1`] = `
+"[2minput     [22m[36m████████████████████████[39m 12.5k
+[2moutput    [22m[36m████████[39m[2m░░░░░░░░░░░░░░░░[22m    4k
+[2mcached    [22m[36m█[39m[2m░░░░░░░░░░░░░░░░░░░░░░░[22m   800
+[2mreasoning [22m[36m████[39m[2m░░░░░░░░░░░░░░░░░░░░[22m    2k"
+`;
+
+exports[`TokenUsageChart > snapshots_partial_full_narrow > token-usage-chart-narrow 1`] = `
+"[2minput  [22m[36m███████[39m 12.5k
+[2moutput [22m[36m██[39m[2m░░░░░[22m    4k"
+`;
+
+exports[`TokenUsageChart > snapshots_partial_full_narrow > token-usage-chart-partial 1`] = `
+"[2minput  [22m[36m███████████████████████████[39m 12.5k
+[2moutput [22m[36m█████████[39m[2m░░░░░░░░░░░░░░░░░░[22m    4k"
+`;

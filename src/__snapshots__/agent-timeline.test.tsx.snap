@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AgentTimeline — representative turn (T3.1, roadmap DoD-3) > representative_turn_matches_snapshot > agent-turn 1`] = `
+"[90m•[39m  [3m[2minspecting the failing test[22m[23m
+[33m⠋[39m  [1mvitest[22m
+[32m✓[39m  [1meslint[22m
+   0 problems
+[35m✦ [39mAll green now."
+`;

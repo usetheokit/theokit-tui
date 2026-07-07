@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`public API integration (M4 T3.1 — code scene) > composed_scene_matches_snapshot > code-surface-scene 1`] = `
+"[1mold-name.ts → new-name.ts[22m[32m +1[31m -1[39m
+[2m1 [22m  context line
+[2m2 [22m[31m- removed line[39m
+[2m2 [22m[32m+ added line[39m
+[2m3 [22m
+const scene = true;"
+`;
+
+exports[`public API integration (M5 T3.1 — metrics scene) > composed_metrics_scene_matches_snapshot > metrics-surface-scene 1`] = `
+"[33m███████[39m[2m░░░░░░[22m 50% left[2m (64k used / 128k)[22m
+[2minput  [22m[36m███████████████████████████[39m 12.5k
+[2moutput [22m[36m█████████[39m[2m░░░░░░░░░░░░░░░░░░[22m    4k
+[2mcost [22m~$1.23"
+`;
+
+exports[`public API integration (M6 T3.2 — theme matrix) > light_composite_scene_matches_snapshot > light-theme-scene 1`] = `
+"[35m✦ [39mtheme matrix scene
+[32m✓[39m  [1mbuild[2m ok[22m
+[34m███[39m[2m░░░░░░░░░░[22m 75% left[2m (32k used / 128k)[22m
+[34mconst[39m t = [32m1[39m;"
+`;
+
+exports[`public API integration (M7 T3.2 — stream adapter scene) > composed_stream_scene_matches_snapshot > stream-adapter-scene 1`] = `
+"[90m•[39m  [3m[2minspecting the failing test[22m[23m
+[32m✓[39m  [1mvitest[22m
+   435 passed
+[35m✦ [39mAll green now."
+`;

@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ToolCall — status lifecycle (T1.1) > each_status_frame_matches_snapshot > tool-call-failed 1`] = `"[1m[31mx[39m[22m  [1mgrep[2m src/**[22m"`;
+
+exports[`ToolCall — status lifecycle (T1.1) > each_status_frame_matches_snapshot > tool-call-pending 1`] = `"[90mo[39m  [1mgrep[2m src/**[22m"`;
+
+exports[`ToolCall — status lifecycle (T1.1) > each_status_frame_matches_snapshot > tool-call-running 1`] = `"[33m⠋[39m  [1mgrep[2m src/**[22m"`;
+
+exports[`ToolCall — status lifecycle (T1.1) > each_status_frame_matches_snapshot > tool-call-success 1`] = `"[32m✓[39m  [1mgrep[2m src/**[22m"`;
+
+exports[`ToolCallCard — header + indented body (T1.2) > card_frame_matches_snapshot > tool-call-card 1`] = `
+"[1m[31mx[39m[22m  [1mgrep[2m src/**[22m
+   no matches found"
+`;

@@ -2,6 +2,7 @@ import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import { ChatComposer, isNewlineChord } from "./chat-composer.js";
+import { TheoTUIProvider } from "./theme.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
 // SEPA brief: never trust prose renderings of control bytes).
@@ -190,5 +191,63 @@ describe("ChatComposer (T3.2)", () => {
     expect(isNewlineChord("", key, true)).toBe(true);
     expect(isNewlineChord("", key, false)).toBe(false);
     expect(isNewlineChord("", { ...key, shift: false }, true)).toBe(false);
+  });
+});
+
+// M6 T3.1 (plan D8): the cursor is invisible at chalk level 0 (inverse is an
+// attribute — the whole visual channel collapses). Under the no-color theme
+// a visible marker carries the affordance.
+describe("ChatComposer — no-color cursor fallback (M6 T3.1)", () => {
+  it("no_color_focused_cursor_shows_marker", async () => {
+    const instance = await mount(
+      <TheoTUIProvider theme="no-color">
+        <ChatComposer onSubmit={() => {}} />
+      </TheoTUIProvider>,
+    );
+    await type(instance, ["h", "i"]);
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("hi");
+    expect(frame).toContain("▏");
+    instance.unmount();
+  });
+
+  it("no_color_placeholder_cursor_visible", async () => {
+    const instance = await mount(
+      <TheoTUIProvider theme="no-color">
+        <ChatComposer onSubmit={() => {}} placeholder="type…" />
+      </TheoTUIProvider>,
+    );
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("type…");
+    expect(frame).toContain("▏");
+    instance.unmount();
+  });
+
+  it("marker_survives_customized_no_color_base", async () => {
+    // review arch-2/dom-frontend-1: the branch is DATA (isMonochrome), not
+    // name identity — a customized no-color base (name "custom", colorless
+    // values) keeps the visible cursor.
+    const instance = await mount(
+      <TheoTUIProvider
+        theme={{
+          base: "no-color",
+          override: { role: { user: { glyph: ">> " } } },
+        }}
+      >
+        <ChatComposer onSubmit={() => {}} placeholder="type…" />
+      </TheoTUIProvider>,
+    );
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain(">>");
+    expect(frame).toContain("▏");
+    instance.unmount();
+  });
+
+  it("colored_mode_bytes_unchanged", async () => {
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    const frame = instance.lastFrame() ?? "";
+    // The marker is no-color-only — colored mode keeps the inverse cursor.
+    expect(frame).not.toContain("▏");
+    instance.unmount();
   });
 });

@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ContextWindowBar > snapshots_empty_partial_full_narrow > context-window-bar-empty 1`] = `"[2m░░░░░░░░░░░░░░[22m 100% left[2m (0 used / 128k)[22m"`;
+
+exports[`ContextWindowBar > snapshots_empty_partial_full_narrow > context-window-bar-full 1`] = `"[31m█████████████[39m 0% left[2m (128k used / 128k)[22m"`;
+
+exports[`ContextWindowBar > snapshots_empty_partial_full_narrow > context-window-bar-narrow 1`] = `"50% left"`;
+
+exports[`ContextWindowBar > snapshots_empty_partial_full_narrow > context-window-bar-partial 1`] = `"[33m███████[39m[2m░░░░░░[22m 50% left[2m (64k used / 128k)[22m"`;

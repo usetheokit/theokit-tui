@@ -193,6 +193,11 @@ def check_acceptance_criteria(
                 continue
             if path.name in _SIZE_EXEMPT:
                 continue
+            # Kit-internal artifacts (audit trail, compaction snapshots,
+            # knowledge-base) are not authored source — the LoC budget is for
+            # the product tree (usetheodev/theokit-tui#3, second instance).
+            if rel.startswith(".claude/"):
+                continue
             try:
                 loc = sum(1 for _ in path.open(encoding="utf-8", errors="ignore"))
             except OSError:

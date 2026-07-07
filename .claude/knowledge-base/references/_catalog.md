@@ -56,3 +56,28 @@ peers for AI-agent terminal UIs. Read by `/discover-plan` when deep-diving a ref
 ## Skipped peers
 
 (none — all approved peers had permissive licenses (MIT/Apache-2.0) and cloned successfully.)
+
+## theokit-ui (internal sibling — M7 snapshot 2026-07-07)
+- Source: ../../theokit-ui (same org); snapshot: src/hooks/use-agent-stream/ + src/index.ts
+- Reproduce: rsync -a ../theokit-ui/src/hooks/use-agent-stream .claude/knowledge-base/references/theokit-ui/src/hooks/
+
+## theokit-sdk (internal sibling — M7 snapshot 2026-07-07)
+- Source: ../../theokit-sdk (same org); snapshot: packages/sdk/src (no node_modules/dist)
+- Reproduce: rsync -a --exclude node_modules --exclude dist ../theokit-sdk/packages/sdk/src .claude/knowledge-base/references/theokit-sdk/packages/sdk/
+
+## opencode (added_by: roadmap-feature, added_for_milestone: M9 — 2026-07-07)
+- Source: https://github.com/sst/opencode (MIT, 183k★, active)
+- Why: real agent-TUI splash/home screen (logo + version + hints) — the M9 welcome-banner pattern in production
+- Reproduce: git clone --depth 1 --filter=blob:none https://github.com/sst/opencode.git .claude/knowledge-base/references/opencode
+
+## oh-my-logo (added_by: roadmap-feature, added_for_milestone: M9 — 2026-07-07)
+- Source: https://github.com/shinshin86/oh-my-logo (MIT AND CC0-1.0)
+- Why: the Claude-Code/Gemini-CLI-style gradient ASCII logo pattern, TypeScript — direct prior art for banner rendering
+- Reproduce: git clone --depth 1 --filter=blob:none https://github.com/shinshin86/oh-my-logo.git .claude/knowledge-base/references/oh-my-logo
+
+## ascii-motion (added_by: roadmap-feature, added_for_milestone: M9 — 2026-07-07)
+- Source: https://github.com/CameronFoxly/Ascii-Motion (MIT) — by the GitHub Copilot CLI banner designer
+- Why: animated ASCII banner authoring + the Copilot CLI banner engineering constraints (github.blog post) as design reference
+- Reproduce: git clone --depth 1 --filter=blob:none https://github.com/CameronFoxly/Ascii-Motion.git .claude/knowledge-base/references/ascii-motion
+
+> License-gate note (2026-07-07): charmbracelet/crush was EXCLUDED (FSL-1.1 source-available — warn class); Aider dispensed (Python, trivial banner, low pattern value for Ink/React).

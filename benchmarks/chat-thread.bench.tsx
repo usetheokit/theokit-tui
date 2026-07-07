@@ -1,13 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { dirname, join } from "node:path";
-import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
 import { render } from "ink-testing-library";
 
 import { ChatThread, TheoTUIProvider } from "../src/index.js";
 import type { ChatThreadMessage } from "../src/index.js";
+import { fmt, frameSampler, round, stats, tick } from "./sampling.js";
+import type { RunMetrics } from "./sampling.js";
 
 // M1 thread benchmark (plan T4.1, ADR D6): plain vs windowed mode matrix.
 // Workload per EC-1 (edge-case MUST FIX): each step BOTH replaces the last
@@ -24,17 +25,6 @@ const WINDOW_OVERSCAN = 4;
 const FINAL_LENGTH = N_MESSAGES + N_TOKENS;
 
 const smoke = process.argv.includes("--smoke");
-
-const tick = async (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 0));
-
-const round = (n: number): number => Math.round(n * 1000) / 1000;
-
-interface RunMetrics {
-  frames: number;
-  mean_ms_per_frame: number;
-  peak_ms_per_frame: number;
-}
 
 type Mode = "plain" | "windowed";
 
@@ -63,12 +53,12 @@ function App({
 }
 
 async function runOnce(mode: Mode): Promise<RunMetrics> {
-  const frameTimes: number[] = [];
+  // Sampling via shared helpers (review arch-1/dom-testing-2 migration) —
+  // identical frame-delta heuristic as the original inline loop.
   let messages = Array.from({ length: N_MESSAGES }, (_, i) => makeMessage(i));
   const instance = render(<App messages={messages} mode={mode} />);
   await tick();
-  let lastSeen = instance.frames.length;
-  let lastTime = performance.now();
+  const sampler = frameSampler(() => instance.frames.length);
 
   for (let t = 0; t < N_TOKENS; t++) {
     const last = messages[messages.length - 1];
@@ -83,44 +73,11 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
     ];
     instance.rerender(<App messages={messages} mode={mode} />);
     await tick();
-    const now = performance.now();
-    const newFrames = instance.frames.length - lastSeen;
-    if (newFrames > 0) {
-      const perFrame = (now - lastTime) / newFrames;
-      for (let k = 0; k < newFrames; k++) {
-        frameTimes.push(perFrame);
-      }
-      lastTime = now;
-      lastSeen = instance.frames.length;
-    }
+    sampler.sample();
   }
   instance.unmount();
-
-  const frames = frameTimes.length;
-  if (frames === 0) {
-    // EC-2 (M0): never serialize NaN aggregates from an empty sample.
-    console.error("bench: 0 frames captured — aborting (EC-2 guard)");
-    process.exit(1);
-  }
-  const mean = frameTimes.reduce((a, b) => a + b, 0) / frames;
-  return {
-    frames,
-    mean_ms_per_frame: round(mean),
-    peak_ms_per_frame: round(Math.max(...frameTimes)),
-  };
+  return sampler.finish();
 }
-
-const stats = (values: number[]): { mean: number; std_dev: number } => {
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const variance =
-    values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
-  return { mean: round(mean), std_dev: round(Math.sqrt(variance)) };
-};
-
-const fmt = (label: string, r: RunMetrics): string =>
-  `${label.padEnd(16)} frames=${String(r.frames).padStart(4)}  mean=${r.mean_ms_per_frame
-    .toFixed(3)
-    .padStart(8)}ms  peak=${r.peak_ms_per_frame.toFixed(3).padStart(8)}ms`;
 
 console.log(
   `chat-thread bench — ${N_MESSAGES}+${N_TOKENS} msgs, modes plain|windowed` +

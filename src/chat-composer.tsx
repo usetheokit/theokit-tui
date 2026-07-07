@@ -7,7 +7,7 @@ import {
   textBufferReducer,
 } from "./text-buffer.js";
 import type { TextBufferAction } from "./text-buffer.js";
-import { useTheoTheme } from "./theme.js";
+import { isMonochrome, useTheoTheme } from "./theme.js";
 
 export interface ChatComposerProps {
   /**
@@ -151,6 +151,44 @@ function cursorSlices(text: string, cursorOffset: number): CursorSlices {
  * on most terminals; forward-delete is reducer-reachable (`delete-forward`)
  * but not key-bound at M1 (same YAGNI posture as home/end).
  */
+// Single source for the degrade cursor glyph (review arch-3 — one knowledge,
+// one site). U+258F, EAW-Ambiguous — same class as the shipped █/░ bars.
+const NO_COLOR_CURSOR_MARKER = "▏";
+
+/** Placeholder-branch cursor cell (M6 D8): visible marker under monochrome
+ * themes (chalk level 0 strips the inverse attribute). */
+function PlaceholderCursor({ marker }: { marker: boolean }) {
+  return marker ? (
+    <Text>{NO_COLOR_CURSOR_MARKER}</Text>
+  ) : (
+    <Text inverse> </Text>
+  );
+}
+
+/** Text-branch cursor cell (M6 D8): the marker before the char under
+ * monochrome themes, inverse styling otherwise. Known cosmetic scope
+ * (review dom-frontend-3): the marker adds +1 column in monochrome mode,
+ * so exact-fit lines clip one column earlier than the colored render. */
+function CursorCell({
+  atCursor,
+  focused,
+  marker,
+}: {
+  atCursor: string;
+  focused: boolean;
+  marker: boolean;
+}) {
+  if (marker) {
+    return (
+      <>
+        {NO_COLOR_CURSOR_MARKER}
+        {atCursor}
+      </>
+    );
+  }
+  return <Text inverse={focused}>{atCursor}</Text>;
+}
+
 export function ChatComposer({
   onSubmit,
   placeholder = "",
@@ -187,12 +225,22 @@ export function ChatComposer({
   );
   const showPlaceholder = buffer.text.length === 0 && placeholder.length > 0;
 
+  // M6 D8: at chalk level 0 the inverse attribute is stripped — the cursor
+  // vanishes. Under MONOCHROME themes (degrade as DATA — no env read, and no
+  // name-identity check: a customized no-color base reads name "custom" yet
+  // still renders colorless — review arch-2/dom-frontend-1) a visible marker
+  // carries the affordance instead. Colored-mode bytes are unchanged. Known
+  // scope (EC-1): TERM=dumb/bare-pipe with a COLORED theme keeps the
+  // invisible inverse — the cursor is an interactive affordance, meaningless
+  // in non-interactive pipes; NO_COLOR is the standard opt-out for dumb
+  // interactive terminals.
+  const noColorMarker = isMonochrome(theme) && isFocused;
   return (
     <Box>
       <Text color={theme.role.user.prefix}>{theme.role.user.glyph}</Text>
       {showPlaceholder ? (
         <Box>
-          {isFocused && <Text inverse> </Text>}
+          {isFocused && <PlaceholderCursor marker={noColorMarker} />}
           <Text dimColor>{placeholder}</Text>
         </Box>
       ) : (
@@ -200,7 +248,11 @@ export function ChatComposer({
           {before}
           {/* Cursor cell only while focused (review F-dom-4 — plan: "cursor
               shows when focused"); blurred composers render plain text. */}
-          <Text inverse={isFocused}>{atCursor}</Text>
+          <CursorCell
+            atCursor={atCursor}
+            focused={isFocused}
+            marker={noColorMarker}
+          />
           {after}
         </Text>
       )}
