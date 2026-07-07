@@ -112,7 +112,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M0
 **Risks:** 1. Viewport/scroll correctness with variable terminal height. 2. Streaming re-render perf/flicker.
 
-### M2 — [ ] Tool-use surface
+### M2 — [x] Tool-use surface
 
 **Objective:** Ship tool-call primitives with the status lifecycle.
 **Definition of done:**

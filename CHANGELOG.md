@@ -34,13 +34,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `CodeBlock` — syntax-highlighted code rendering with `lowlight` as an OPTIONAL peer (dynamic import, single-flight; absent peer degrades to plain text with one console hint); explicit `language` only (no auto-detect — determinism), 4-level fallback ladder, ANSI-sanitized input, tab expansion, optional original-numbered gutter, HEAD-retained `maxLines` cap (m4-code-surface T2.1)
 - `DiffViewer` — UNIFIED terminal diff renderer (split view deferred with a recorded verified-absence rationale — no terminal analog ships it): unconditional `+`/`-` sign column (the NO_COLOR mechanism), dim line-number gutter, per-file header with rename arrow + `+N`/`-M` stats, dim `⋮` hunk gaps, wrap-never-truncate content, `contextLines` folding + global HEAD-retained `maxLines` cap, explicit `(no changes)`/binary rows, typed malformed-patch error (m4-code-surface T1.2)
 - `parseUnifiedDiff` — typed multi-file unified-diff model (`DiffFile`/`DiffLine`, CRLF stripped, `\ No newline` suppressed, `/dev/null` → absent names, binary/mode-change = zero-line files) built on `parse-diff`; typed error on unparsable patches; pure `foldDiffLines` context folding (m4-code-surface T1.1)
-- `AgentEvent` union (`kind: "message" | "thinking" | "tool"`, caller-provided ids) + `AgentTimeline` — ordered agent-turn timeline dispatching to `ChatMessage`/thinking rows/`ToolCallCard`+`ToolResult`, with full boundary validation (duplicate id, unknown kind, invalid role/status, `output`⊕`shell` exclusivity → typed `AgentTimeline:` errors) (m3-agent-surface T1.1)
-- `AgentTimeline` windowed `<Static>` history — events beyond `windowSize + windowOverscan` graduate into frozen terminal scrollback; identity-memoized rows keep streaming repaints scoped to the tail (M1 windowing contract, sibling implementation) (m3-agent-surface T1.2)
-- `AgentStreaming` — dumb one-line live indicator (spinner + italic thought with `Thinking…` fallback + optional dim `(esc to cancel, 2m 5s)` suffix); elapsed arrives as a prop, ticking is the caller's concern (m3-agent-surface T2.1)
-- Agent-surface integration coverage — representative multi-event-turn snapshot (thinking → tool running → tool success → assistant message), composition-root agent scene, NO_COLOR probe with thinking + streaming rows (m3-agent-surface T3.1)
-- Agent-timeline benchmark (`benchmarks/agent-timeline.bench.tsx`) — 300 mixed events (50/30/20 message/tool/thinking incl. one 500-line output) streaming+appending under windowing, bounded|unbounded `maxLines` matrix; committed baseline `docs/benchmarks/m3-agent-timeline-baseline.json` (5 runs/mode, pinned env, peak = heterogeneous-heights metric) (m3-agent-surface T3.2)
-- Agent-turn demo (`pnpm example:agent`) — scripted thinking → running tool → success → message with a live elapsed ticker; renders the final scene statically when piped (m3-agent-surface T3.2)
-- `CHAT_ROLES` and `TOOL_CALL_STATUSES` runtime union arrays exported (single-source derivation of the existing `ChatRole`/`ToolCallStatus` types) (m3-agent-surface T1.1)
 
 ### Changed
 
@@ -59,6 +52,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   guard; oracle hardening across suites (fresh-registry plain-first proof, fold edges,
   width-matrix positive anchors, backslash/quoted-name pins, example highlight-byte
   assert). The `diff` AgentEvent variant remains deferred to M5+ (M3 note kept traceable)
+
+### Fixed
+
+- Stream reducer: thinking graduation now closes an open live message first — a thinking burst between text deltas no longer makes later deltas replace a non-tail timeline event (frozen scrollback under windowing); late result-less tool updates preserve already-folded shell/output; the hook's internal reset is envelope-guarded so a stream event `{type: "__reset__"}` can never wipe folded state; teardown `iterator.return()` rejections are swallowed at the only place they can be handled (m7-stream-adapter review fixes F-1/F-2/F-4/F-6)
+- `ChatComposer` cursor was invisible under color-less rendering (chalk level 0 strips the `inverse` attribute) — under the `no-color` theme a visible `▏` marker now carries the cursor affordance (colored-mode bytes unchanged; NO_COLOR remains the opt-out for dumb interactive terminals) (m6-theme-robustness T3.1)
+
+### Security
+
+- Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
+  Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
+  `pnpm audit` clean
+
+## [0.4.0] - 2026-07-07
+
+### Added
+
+- `AgentEvent` union (`kind: "message" | "thinking" | "tool"`, caller-provided ids) + `AgentTimeline` — ordered agent-turn timeline dispatching to `ChatMessage`/thinking rows/`ToolCallCard`+`ToolResult`, with full boundary validation (duplicate id, unknown kind, invalid role/status, `output`⊕`shell` exclusivity → typed `AgentTimeline:` errors) (m3-agent-surface T1.1)
+- `AgentTimeline` windowed `<Static>` history — events beyond `windowSize + windowOverscan` graduate into frozen terminal scrollback; identity-memoized rows keep streaming repaints scoped to the tail (M1 windowing contract, sibling implementation) (m3-agent-surface T1.2)
+- `AgentStreaming` — dumb one-line live indicator (spinner + italic thought with `Thinking…` fallback + optional dim `(esc to cancel, 2m 5s)` suffix); elapsed arrives as a prop, ticking is the caller's concern (m3-agent-surface T2.1)
+- Agent-surface integration coverage — representative multi-event-turn snapshot (thinking → tool running → tool success → assistant message), composition-root agent scene, NO_COLOR probe with thinking + streaming rows (m3-agent-surface T3.1)
+- Agent-timeline benchmark (`benchmarks/agent-timeline.bench.tsx`) — 300 mixed events (50/30/20 message/tool/thinking incl. one 500-line output) streaming+appending under windowing, bounded|unbounded `maxLines` matrix; committed baseline `docs/benchmarks/m3-agent-timeline-baseline.json` (5 runs/mode, pinned env, peak = heterogeneous-heights metric) (m3-agent-surface T3.2)
+- Agent-turn demo (`pnpm example:agent`) — scripted thinking → running tool → success → message with a live elapsed ticker; renders the final scene statically when piped (m3-agent-surface T3.2)
+- `CHAT_ROLES` and `TOOL_CALL_STATUSES` runtime union arrays exported (single-source derivation of the existing `ChatRole`/`ToolCallStatus` types) (m3-agent-surface T1.1)
+
+### Changed
+
 - Review-batch hardening (m3-agent-surface review 2026-07-06): agent-timeline bench
   tall-item fixed twice over (index 42 landed in a MESSAGE slot and never rendered; index
   45 graduated at mount, outside the sampled steps — now APPENDED mid-loop with a fail-fast
@@ -72,17 +91,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `CHAT_ROLES`; `AgentMessageEvent`/`AgentThinkingEvent`/`AgentToolEvent` types and the
   `CHAT_ROLES`/`TOOL_CALL_STATUSES` arrays are deliberate public-entry exports for M7
   adapters (plan divergence logged)
-
-### Fixed
-
-- Stream reducer: thinking graduation now closes an open live message first — a thinking burst between text deltas no longer makes later deltas replace a non-tail timeline event (frozen scrollback under windowing); late result-less tool updates preserve already-folded shell/output; the hook's internal reset is envelope-guarded so a stream event `{type: "__reset__"}` can never wipe folded state; teardown `iterator.return()` rejections are swallowed at the only place they can be handled (m7-stream-adapter review fixes F-1/F-2/F-4/F-6)
-- `ChatComposer` cursor was invisible under color-less rendering (chalk level 0 strips the `inverse` attribute) — under the `no-color` theme a visible `▏` marker now carries the cursor affordance (colored-mode bytes unchanged; NO_COLOR remains the opt-out for dumb interactive terminals) (m6-theme-robustness T3.1)
-
-### Security
-
-- Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
-  Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
-  `pnpm audit` clean
 
 ## [0.3.0] - 2026-07-07
 
