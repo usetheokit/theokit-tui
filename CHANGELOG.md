@@ -28,12 +28,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ContextWindowBar` — context-window fill gauge with data-props contract (`usedTokens` + optional `limitTokens` — never a model registry): `% left` (default, with dim `(used / limit)` detail) or `% used` conventions both derived from ONE display authority; unknown limit renders the absolute count only (never a fabricated percentage); over-limit clamps the bar and colors it as error; opt-in codex-parity `baselineTokens`; warning at ≥ 50% used; label-only degrade below a 3-cell bar floor (m5-metrics-surface T2.1)
 - Pure metric formatters (`src/format.ts`, module-internal) — `formatTokens` lowercase k/m with half-up 1-decimal rounding AND boundary promotion (`999_950 → "1m"`, never the analog "1000K" anomaly); `formatCost` honest USD (`~$1.23` estimate marker, `<$0.01` sub-cent — never `$0.00` for nonzero, thousands separators) (m5-metrics-surface T1.2)
 - Pure fill-bar core (`src/fill-bar.ts`, module-internal) — `renderFillBar` glyph-distinct `█`/`░` segments + `formatPercent`/`displayPercent` as THE single endpoint-honest rounding authority (100% reserved for truly-full, 0% for truly-empty; label and bar can never disagree); integer-numerator fill math immune to the verified `p/100*w` float divergences (m5-metrics-surface T1.1)
-- Diff-viewer benchmark (`benchmarks/diff-viewer.bench.tsx`) — growing multi-hunk diff (10+40 hunks, wide-line hunk appended mid-loop with a fail-fast self-check), windowed|full matrix; committed baseline shows windowing ~12× faster per frame (9.2 ± 1.0 vs 114.1 ± 4.9 ms mean; peak 16.1 ± 1.9 vs 216.0 ± 28.2) (m4-code-surface T3.2)
-- Code-surface demo (`pnpm example:code`) — diff + highlighted code block, static scene, clean piped output (m4-code-surface T3.2)
-- M4 integration coverage — composition-root diff+code scene, NO_COLOR probe diff (signs + fold indicator readable without color) (m4-code-surface T3.1)
-- `CodeBlock` — syntax-highlighted code rendering with `lowlight` as an OPTIONAL peer (dynamic import, single-flight; absent peer degrades to plain text with one console hint); explicit `language` only (no auto-detect — determinism), 4-level fallback ladder, ANSI-sanitized input, tab expansion, optional original-numbered gutter, HEAD-retained `maxLines` cap (m4-code-surface T2.1)
-- `DiffViewer` — UNIFIED terminal diff renderer (split view deferred with a recorded verified-absence rationale — no terminal analog ships it): unconditional `+`/`-` sign column (the NO_COLOR mechanism), dim line-number gutter, per-file header with rename arrow + `+N`/`-M` stats, dim `⋮` hunk gaps, wrap-never-truncate content, `contextLines` folding + global HEAD-retained `maxLines` cap, explicit `(no changes)`/binary rows, typed malformed-patch error (m4-code-surface T1.2)
-- `parseUnifiedDiff` — typed multi-file unified-diff model (`DiffFile`/`DiffLine`, CRLF stripped, `\ No newline` suppressed, `/dev/null` → absent names, binary/mode-change = zero-line files) built on `parse-diff`; typed error on unparsable patches; pure `foldDiffLines` context folding (m4-code-surface T1.1)
 
 ### Changed
 
@@ -41,17 +35,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Syntax-highlight colors moved to `theme.code.*` bucket tokens — `HLJS_COLOR_MAP` deleted; the hljs class→bucket table stays module-local; default bytes unchanged (m6-theme-robustness T2.2)
 - Tool-status visuals moved to `theme.toolStatus.*` tokens — `STATUS_VISUALS` deleted; BEHAVIOR NOTE: the pending glyph's color is now the `toolStatus.pending.color` token literal and no longer follows `role.system.prefix` overrides (theme `toolStatus.pending.color` instead); default bytes unchanged (m6-theme-robustness T2.1)
 - `TheoTheme` (the OUTPUT type of `useTheoTheme`) gained required groups — consumers who hand-built a full `TheoTheme` object must spread `defaultTheme` (`{...defaultTheme, ...}`); override-based usage is source-compatible and unchanged (m6-theme-robustness T1.1)
-- Review-batch hardening (m4-code-surface review 2026-07-07): `preloadHighlighter()`
-  promoted to the public entry (one-shot/static renders could never capture a highlighted
-  frame — published consumers had no readiness seam; logged divergence DV-5); DiffViewer
-  cap trailer now counts SOURCE lines (a dropped fold row hid its whole run from the
-  count); loader distinguishes lowlight-absent from lowlight-broken in its one-time hint;
-  `⋮` hunk gaps indent under the gutter; `DiffFold`/`DiffRow` types withdrawn from the
-  entry (module-internal per plan D10); lowlight devDependency exact-pinned (snapshot
-  drift budget); bench gains a windowing-active mount self-check + a negative wide-hunk
-  guard; oracle hardening across suites (fresh-registry plain-first proof, fold edges,
-  width-matrix positive anchors, backslash/quoted-name pins, example highlight-byte
-  assert). The `diff` AgentEvent variant remains deferred to M5+ (M3 note kept traceable)
 
 ### Fixed
 
@@ -63,6 +46,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
   Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
   `pnpm audit` clean
+
+## [0.5.0] - 2026-07-07
+
+### Added
+
+- Diff-viewer benchmark (`benchmarks/diff-viewer.bench.tsx`) — growing multi-hunk diff (10+40 hunks, wide-line hunk appended mid-loop with a fail-fast self-check), windowed|full matrix; committed baseline shows windowing ~12× faster per frame (9.2 ± 1.0 vs 114.1 ± 4.9 ms mean; peak 16.1 ± 1.9 vs 216.0 ± 28.2) (m4-code-surface T3.2)
+- Code-surface demo (`pnpm example:code`) — diff + highlighted code block, static scene, clean piped output (m4-code-surface T3.2)
+- M4 integration coverage — composition-root diff+code scene, NO_COLOR probe diff (signs + fold indicator readable without color) (m4-code-surface T3.1)
+- `CodeBlock` — syntax-highlighted code rendering with `lowlight` as an OPTIONAL peer (dynamic import, single-flight; absent peer degrades to plain text with one console hint); explicit `language` only (no auto-detect — determinism), 4-level fallback ladder, ANSI-sanitized input, tab expansion, optional original-numbered gutter, HEAD-retained `maxLines` cap (m4-code-surface T2.1)
+- `DiffViewer` — UNIFIED terminal diff renderer (split view deferred with a recorded verified-absence rationale — no terminal analog ships it): unconditional `+`/`-` sign column (the NO_COLOR mechanism), dim line-number gutter, per-file header with rename arrow + `+N`/`-M` stats, dim `⋮` hunk gaps, wrap-never-truncate content, `contextLines` folding + global HEAD-retained `maxLines` cap, explicit `(no changes)`/binary rows, typed malformed-patch error (m4-code-surface T1.2)
+- `parseUnifiedDiff` — typed multi-file unified-diff model (`DiffFile`/`DiffLine`, CRLF stripped, `\ No newline` suppressed, `/dev/null` → absent names, binary/mode-change = zero-line files) built on `parse-diff`; typed error on unparsable patches; pure `foldDiffLines` context folding (m4-code-surface T1.1)
+
+### Changed
+
+- Review-batch hardening (m4-code-surface review 2026-07-07): `preloadHighlighter()`
+  promoted to the public entry (one-shot/static renders could never capture a highlighted
+  frame — published consumers had no readiness seam; logged divergence DV-5); DiffViewer
+  cap trailer now counts SOURCE lines (a dropped fold row hid its whole run from the
+  count); loader distinguishes lowlight-absent from lowlight-broken in its one-time hint;
+  `⋮` hunk gaps indent under the gutter; `DiffFold`/`DiffRow` types withdrawn from the
+  entry (module-internal per plan D10); lowlight devDependency exact-pinned (snapshot
+  drift budget); bench gains a windowing-active mount self-check + a negative wide-hunk
+  guard; oracle hardening across suites (fresh-registry plain-first proof, fold edges,
+  width-matrix positive anchors, backslash/quoted-name pins, example highlight-byte
+  assert). The `diff` AgentEvent variant remains deferred to M5+ (M3 note kept traceable)
 
 ## [0.4.0] - 2026-07-07
 
