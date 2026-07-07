@@ -151,6 +151,28 @@ function cursorSlices(text: string, cursorOffset: number): CursorSlices {
  * on most terminals; forward-delete is reducer-reachable (`delete-forward`)
  * but not key-bound at M1 (same YAGNI posture as home/end).
  */
+/** Placeholder-branch cursor cell (M6 D8): visible marker under no-color. */
+function PlaceholderCursor({ marker }: { marker: boolean }) {
+  return marker ? <Text>▏</Text> : <Text inverse> </Text>;
+}
+
+/** Text-branch cursor cell (M6 D8): `▏` before the char under no-color,
+ * inverse styling otherwise. */
+function CursorCell({
+  atCursor,
+  focused,
+  marker,
+}: {
+  atCursor: string;
+  focused: boolean;
+  marker: boolean;
+}) {
+  if (marker) {
+    return <>▏{atCursor}</>;
+  }
+  return <Text inverse={focused}>{atCursor}</Text>;
+}
+
 export function ChatComposer({
   onSubmit,
   placeholder = "",
@@ -187,12 +209,20 @@ export function ChatComposer({
   );
   const showPlaceholder = buffer.text.length === 0 && placeholder.length > 0;
 
+  // M6 D8: at chalk level 0 the inverse attribute is stripped — the cursor
+  // vanishes. Under the no-color THEME (degrade as data — no env read here)
+  // a visible `▏` marker carries the affordance instead. Colored-mode bytes
+  // are unchanged. Known scope (EC-1): TERM=dumb/bare-pipe with a colored
+  // theme keeps the invisible inverse — the cursor is an interactive
+  // affordance, meaningless in non-interactive pipes; NO_COLOR is the
+  // standard opt-out for dumb interactive terminals.
+  const noColorMarker = theme.name === "no-color" && isFocused;
   return (
     <Box>
       <Text color={theme.role.user.prefix}>{theme.role.user.glyph}</Text>
       {showPlaceholder ? (
         <Box>
-          {isFocused && <Text inverse> </Text>}
+          {isFocused && <PlaceholderCursor marker={noColorMarker} />}
           <Text dimColor>{placeholder}</Text>
         </Box>
       ) : (
@@ -200,7 +230,11 @@ export function ChatComposer({
           {before}
           {/* Cursor cell only while focused (review F-dom-4 — plan: "cursor
               shows when focused"); blurred composers render plain text. */}
-          <Text inverse={isFocused}>{atCursor}</Text>
+          <CursorCell
+            atCursor={atCursor}
+            focused={isFocused}
+            marker={noColorMarker}
+          />
           {after}
         </Text>
       )}

@@ -91,6 +91,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `ChatComposer` cursor was invisible under color-less rendering (chalk level 0 strips the `inverse` attribute) — under the `no-color` theme a visible `▏` marker now carries the cursor affordance (colored-mode bytes unchanged; NO_COLOR remains the opt-out for dumb interactive terminals) (m6-theme-robustness T3.1)
+
 ### Security
 
 - Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
