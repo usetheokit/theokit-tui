@@ -26,6 +26,12 @@ import {
   themes,
 } from "../src/index.js";
 import type { TheoBuiltinThemeName } from "../src/index.js";
+import {
+  agentStreamReducer,
+  initialAgentStreamState,
+  useAgentStream,
+} from "../src/index.js";
+import type { AgentStreamEvent } from "../src/index.js";
 // (M1↔M2 composition asserted below — review wire-4.)
 import { renderFrame } from "./helpers.js";
 
@@ -331,5 +337,89 @@ describe("public API integration (M6 T3.2 — theme matrix)", () => {
     expect(themes.light.accent).toBe("blue");
     expect(themes["no-color"].accent).toBe("");
     expect(themes.dark).toBe(defaultTheme);
+  });
+});
+
+describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
+  const streamTicks = async (count = 20) => {
+    for (let index = 0; index < count; index += 1) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    }
+  };
+
+  // The canonical agent turn, streamed through the REAL hook — thinking,
+  // tool lifecycle with a shell result, text-delta typing, done.
+  async function* scriptedTurn(): AsyncGenerator<AgentStreamEvent> {
+    yield { type: "thinking", text: "inspecting the failing test" };
+    yield {
+      type: "tool_call",
+      call_id: "t1",
+      name: "vitest",
+      status: "running",
+    };
+    yield {
+      type: "tool_call",
+      call_id: "t1",
+      name: "vitest",
+      status: "completed",
+      result: { stdout: "435 passed", stderr: "", exitCode: 0 },
+    };
+    yield { type: "text-delta", text: "All " };
+    yield { type: "text-delta", text: "green now." };
+  }
+
+  function StreamScene() {
+    const { events, streaming } = useAgentStream(scriptedTurn);
+    return (
+      <TheoTUIProvider>
+        <Box flexDirection="column" width={60}>
+          <AgentTimeline events={events} />
+          {streaming.active ? (
+            <AgentStreaming
+              {...(streaming.thought === undefined
+                ? {}
+                : { thought: streaming.thought })}
+            />
+          ) : undefined}
+        </Box>
+      </TheoTUIProvider>
+    );
+  }
+
+  it("public_entry_composes_stream_adapter", async () => {
+    expect(typeof agentStreamReducer).toBe("function");
+    expect(initialAgentStreamState.status).toBe("idle");
+    const instance = render(
+      <Box width={60}>
+        <StreamScene />
+      </Box>,
+    );
+    await streamTicks();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("✓");
+    expect(plain).toContain("vitest");
+    expect(plain).toContain("inspecting the failing test");
+    expect(plain).toContain("All green now.");
+  });
+
+  it("composed_stream_scene_matches_snapshot", async () => {
+    const instance = render(
+      <Box width={60}>
+        <StreamScene />
+      </Box>,
+    );
+    await streamTicks();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    // Anchors FIRST — the snapshot is a layout pin, not the oracle.
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("All green now.");
+    expect(plain).toContain("vitest");
+    expect(plain).toContain("✓");
+    expect(frame).toMatchSnapshot("stream-adapter-scene");
   });
 });

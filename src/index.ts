@@ -76,3 +76,24 @@ export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";
 export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
 export type { TextBufferAction, TextBufferState } from "./text-buffer.js";
+
+// M7 — stream adapter (plan ADR D8): the hook + the pure fold + its zero
+// state; the structural event union ships as the source-param type.
+// isShellEnvelope/extractAssistantText stay module-internal (reducer detail).
+export { useAgentStream } from "./use-agent-stream.js";
+export type {
+  AgentStreamSource,
+  UseAgentStreamResult,
+} from "./use-agent-stream.js";
+export {
+  agentStreamReducer,
+  initialAgentStreamState,
+} from "./agent-stream-reducer.js";
+export type {
+  AgentStreamState,
+  AgentStreamStatus,
+} from "./agent-stream-reducer.js";
+export type {
+  AgentStreamEvent,
+  AssistantContentBlock,
+} from "./agent-stream-event.js";

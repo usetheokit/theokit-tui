@@ -131,6 +131,22 @@ describe("public entry surface (T0.2)", () => {
     expect(mod).not.toHaveProperty("formatCost");
   });
 
+  it("public_entry_exposes_stream_adapter", async () => {
+    const mod = await import("../src/index.js");
+    // M7 (plan ADR D8): hook + reducer + initial state are the public trio.
+    expect(typeof mod.useAgentStream).toBe("function");
+    expect(typeof mod.agentStreamReducer).toBe("function");
+    expect(mod.initialAgentStreamState).toMatchObject({
+      status: "idle",
+      events: [],
+      seq: 0,
+    });
+    // Module-internal by design (the absence-pin pattern): the guards are
+    // reducer implementation detail, not API.
+    expect(mod).not.toHaveProperty("isShellEnvelope");
+    expect(mod).not.toHaveProperty("extractAssistantText");
+  });
+
   it("public_entry_exposes_chat_composer_and_text_buffer", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ChatComposer).toBe("function");
