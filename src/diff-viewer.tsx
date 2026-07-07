@@ -34,6 +34,16 @@ export interface DiffViewerProps {
 const expandTabs = (value: string): string =>
   value.replaceAll("\t", " ".repeat(TAB_WIDTH));
 
+/** Hunk gap: a line-number jump between consecutive visible lines (EC-3). */
+function isGapBetween(previous: DiffLine | undefined, row: DiffLine): boolean {
+  if (previous === undefined) {
+    return false;
+  }
+  const prev = previous.newLine ?? previous.oldLine ?? 0;
+  const next = row.newLine ?? row.oldLine ?? 0;
+  return next - prev > 1;
+}
+
 function fileRows(file: DiffFile, contextLines: number | undefined): ViewRow[] {
   const rows: ViewRow[] = [{ kind: "header", file }];
   if (file.lines.length === 0) {
@@ -44,8 +54,7 @@ function fileRows(file: DiffFile, contextLines: number | undefined): ViewRow[] {
     contextLines !== undefined
       ? foldDiffLines(file.lines, contextLines)
       : file.lines;
-  // Hunk gaps: a jump in line numbers between consecutive VISIBLE model
-  // lines renders a dim `⋮` — unless a fold row already marks it (EC-3).
+  // A fold row already marks the jump — the `⋮` gap fires only without one.
   let previous: DiffLine | undefined;
   for (const row of body) {
     if (row.kind === "fold") {
@@ -53,12 +62,8 @@ function fileRows(file: DiffFile, contextLines: number | undefined): ViewRow[] {
       previous = undefined;
       continue;
     }
-    if (previous !== undefined) {
-      const prev = previous.newLine ?? previous.oldLine ?? 0;
-      const next = row.newLine ?? row.oldLine ?? 0;
-      if (next - prev > 1) {
-        rows.push({ kind: "gap" });
-      }
+    if (isGapBetween(previous, row)) {
+      rows.push({ kind: "gap" });
     }
     rows.push(row);
     previous = row;
@@ -165,18 +170,10 @@ function viewRowElement(
   }
 }
 
-/**
- * Unified diff renderer (plan ADR D3/D4 — split view deferred: verified
- * absence in every terminal analog). Signs are rendered UNCONDITIONALLY —
- * the color-independent NO_COLOR mechanism. Code lines WRAP, never truncate.
- */
-export function DiffViewer({
-  patch,
-  showLineNumbers = true,
-  maxLines,
-  contextLines,
-}: DiffViewerProps) {
-  // Boundary guards FIRST, before hooks (F10 idiom).
+function assertValidBounds(
+  maxLines: number | undefined,
+  contextLines: number | undefined,
+): void {
   if (maxLines !== undefined && (!Number.isInteger(maxLines) || maxLines < 1)) {
     throw new TypeError(
       `DiffViewer: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
@@ -190,6 +187,21 @@ export function DiffViewer({
       `DiffViewer: contextLines must be an integer >= 0 — got ${String(contextLines)}`,
     );
   }
+}
+
+/**
+ * Unified diff renderer (plan ADR D3/D4 — split view deferred: verified
+ * absence in every terminal analog). Signs are rendered UNCONDITIONALLY —
+ * the color-independent NO_COLOR mechanism. Code lines WRAP, never truncate.
+ */
+export function DiffViewer({
+  patch,
+  showLineNumbers = true,
+  maxLines,
+  contextLines,
+}: DiffViewerProps) {
+  // Boundary guards FIRST, before hooks (F10 idiom).
+  assertValidBounds(maxLines, contextLines);
   // Parse BEFORE hooks (DV-2 vs plan EC-12): the typed malformed error must
   // fire ahead of any hook so the direct-invocation contract tests (F10 —
   // Ink swallows render throws) can pin it. Same-string reparse per render
