@@ -566,7 +566,7 @@ CHANGELOG.md       — Added entry (grouped with T1.1)
 #### TDD
 ```
 RED:     format_tokens_boundary_table() — rows: [[0, "0"], [999, "999"], [1000, "1k"], [1049, "1k"], [1050, "1.1k"], [9999, "10k"], [999_949, "999.9k"], [999_950, "1m"], [1_050_000, "1.1m"], [1_500_000_000, "1.5b"], [999_950_000_000, "1000b"]]; for each: expect(formatTokens(input)).toBe(expected) (blueprint EC-3 boundary table + promotion fix + saturation tail EC-10)
-RED:     format_tokens_floors_fractional_input() — expect(formatTokens(1500.9)).toBe("1.5k")
+RED:     format_tokens_floors_fractional_input() — const out = formatTokens(1500.9); expect(out).toBe("1.5k")
 RED:     format_tokens_throws_typed_on_invalid() — for bad of [-1, Number.NaN, Infinity]: expect(() => formatTokens(bad)).toThrow(TypeError); expect(() => formatTokens(-1)).toThrow("formatTokens: value must be a finite number >= 0")
 RED:     format_cost_table() — rows: [[0, "$0.00"], [1.234, "~$1.23"], [1.236, "~$1.24"], [3.05, "~$3.05"], [999.994, "~$999.99"], [1234.5, "~$1,234.50"], [1_234_567.891, "~$1,234,567.89"]]; for each: expect(formatCost(input)).toBe(expected) (multi-group commas + cents pad — EC-9; all rows verified float-safe)
 RED:     format_cost_sub_cent_honesty() — expect(formatCost(0.004)).toBe("<$0.01"); expect(formatCost(0.0001)).toBe("<$0.01"); expect(formatCost(0.005)).toBe("~$0.01") (never "$0.00" for nonzero)
