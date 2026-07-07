@@ -2,6 +2,9 @@ import { Box, Text } from "ink";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useTheoTheme } from "./theme.js";
+import type { CodeTokens } from "./theme.js";
+
 // Minimal structural types for lowlight's hast output — the real package
 // types live behind the OPTIONAL peer (plan ADR D2), so we keep a local
 // shape instead of importing @types/hast at build time.
@@ -27,28 +30,28 @@ const TAB_WIDTH = 4;
 const ANSI_RE = /\u001B\[[0-9;]*m/g;
 const stripAnsiInput = (value: string): string => value.replace(ANSI_RE, "");
 
-// Module-local hljs palette (~10 buckets from the gemini theme bucketing
-// table → ink named colors). Documented M6 theming candidate (M2 glyph
-// precedent) — do NOT hardcode per-class colors in render code.
-const HLJS_COLOR_MAP: Record<string, string> = {
-  "hljs-keyword": "blue",
-  "hljs-literal": "blue",
-  "hljs-symbol": "blue",
-  "hljs-name": "blue",
-  "hljs-built_in": "cyan",
-  "hljs-type": "cyan",
-  "hljs-number": "green",
-  "hljs-class": "green",
-  "hljs-string": "yellow",
-  "hljs-meta-string": "yellow",
-  "hljs-regexp": "red",
-  "hljs-template-tag": "red",
-  "hljs-comment": "gray",
-  "hljs-quote": "gray",
-  "hljs-variable": "magenta",
-  "hljs-template-variable": "magenta",
-  "hljs-attr": "cyan",
-  "hljs-attribute": "cyan",
+// hljs class → theme.code bucket (M6 T2.2 — colors live in the theme; the
+// class→bucket mapping is render-side knowledge and stays module-local,
+// mirroring how gemini keeps its class map inside the Theme).
+const HLJS_CLASS_TO_BUCKET: Record<string, keyof CodeTokens> = {
+  "hljs-keyword": "keyword",
+  "hljs-literal": "keyword",
+  "hljs-symbol": "keyword",
+  "hljs-name": "keyword",
+  "hljs-built_in": "builtin",
+  "hljs-type": "builtin",
+  "hljs-attr": "builtin",
+  "hljs-attribute": "builtin",
+  "hljs-number": "number",
+  "hljs-class": "number",
+  "hljs-string": "string",
+  "hljs-meta-string": "string",
+  "hljs-regexp": "regexp",
+  "hljs-template-tag": "regexp",
+  "hljs-comment": "comment",
+  "hljs-quote": "comment",
+  "hljs-variable": "variable",
+  "hljs-template-variable": "variable",
 };
 
 // Single-flight loader (EC-15): ONE module-scope promise; absent module →
@@ -106,6 +109,7 @@ function renderHast(
   nodes: HastNode[],
   inherited: string | undefined,
   keyPrefix: string,
+  codeColors: CodeTokens,
 ): ReactNode[] {
   return nodes.map((node, index) => {
     const key = `${keyPrefix}-${index}`;
@@ -124,15 +128,15 @@ function renderHast(
       const classes = element.properties?.className ?? [];
       let color: string | undefined;
       for (let i = classes.length - 1; i >= 0; i--) {
-        const mapped = HLJS_COLOR_MAP[classes[i] as string];
-        if (mapped !== undefined) {
-          color = mapped;
+        const bucket = HLJS_CLASS_TO_BUCKET[classes[i] as string];
+        if (bucket !== undefined) {
+          color = codeColors[bucket];
           break;
         }
       }
       return (
         <Text key={key}>
-          {renderHast(element.children, color ?? inherited, key)}
+          {renderHast(element.children, color ?? inherited, key, codeColors)}
         </Text>
       );
     }
@@ -151,6 +155,7 @@ export function highlightLine(
   language: string | undefined,
   highlighter: HighlighterLike | undefined,
   key: string,
+  codeColors: CodeTokens,
 ): ReactNode {
   if (
     highlighter === undefined ||
@@ -164,7 +169,7 @@ export function highlightLine(
     if (root.children.length === 0) {
       return line;
     }
-    return <>{renderHast(root.children, undefined, key)}</>;
+    return <>{renderHast(root.children, undefined, key, codeColors)}</>;
   } catch {
     return line;
   }
@@ -214,6 +219,7 @@ export function CodeBlock({
       `CodeBlock: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
     );
   }
+  const theme = useTheoTheme();
   const [highlighter, setHighlighter] = useState<HighlighterLike | undefined>(
     undefined,
   );
@@ -250,7 +256,13 @@ export function CodeBlock({
           <Text wrap="wrap">
             {line === ""
               ? " "
-              : highlightLine(line, language, highlighter, `h${index}`)}
+              : highlightLine(
+                  line,
+                  language,
+                  highlighter,
+                  `h${index}`,
+                  theme.code,
+                )}
           </Text>
         </Box>
       ))}

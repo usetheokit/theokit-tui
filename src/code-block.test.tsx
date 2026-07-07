@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import { CodeBlock, ensureHighlighter, highlightLine } from "./code-block.js";
+import { TheoTUIProvider, defaultTheme } from "./theme.js";
 
 /** Compound-SGR-safe strip (M2 idiom). */
 // eslint-disable-next-line no-control-regex
@@ -179,14 +180,18 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
       registered: () => true,
       highlight: () => ({ children: [] }),
     };
-    expect(highlightLine("raw line", "ts", emptyRoot, "k")).toBe("raw line");
+    expect(
+      highlightLine("raw line", "ts", emptyRoot, "k", defaultTheme.code),
+    ).toBe("raw line");
     const throwing = {
       registered: () => true,
       highlight: () => {
         throw new Error("boom");
       },
     };
-    expect(highlightLine("raw line", "ts", throwing, "k")).toBe("raw line");
+    expect(
+      highlightLine("raw line", "ts", throwing, "k", defaultTheme.code),
+    ).toBe("raw line");
     // Unknown hast node types render as null (renderHast fallthrough).
     const weirdNode = {
       registered: () => true,
@@ -194,7 +199,13 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
     };
     // tests-7: unknown hast nodes render as null children — the returned
     // value must be an element (not the raw string fallback).
-    const rendered = highlightLine("x", "ts", weirdNode, "k");
+    const rendered = highlightLine(
+      "x",
+      "ts",
+      weirdNode,
+      "k",
+      defaultTheme.code,
+    );
     expect(typeof rendered).not.toBe("string");
   });
 
@@ -208,5 +219,19 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
     // EC-7 render layer.
     const frame = await renderFrame(<CodeBlock code={"\tx"} />);
     expect(stripAnsi(frame)).toBe("    x");
+  });
+});
+
+// M6 T2.2: HLJS_COLOR_MAP migrated to theme.code.* buckets.
+describe("CodeBlock — code tokens (M6 T2.2)", () => {
+  it("code_tokens_drive_highlight_colors", async () => {
+    await ensureHighlighter();
+    const frame = await renderFrame(
+      <TheoTUIProvider theme={{ code: { string: "magenta" } }}>
+        <CodeBlock code={'const s = "x";'} language="typescript" />
+      </TheoTUIProvider>,
+    );
+    // The string literal renders with the overridden bucket color.
+    expect(frame).toContain("[35m");
   });
 });
