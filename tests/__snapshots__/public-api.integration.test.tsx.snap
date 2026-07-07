@@ -15,3 +15,10 @@ exports[`public API integration (M5 T3.1 — metrics scene) > composed_metrics_s
 [2moutput [22m[36m█████████[39m[2m░░░░░░░░░░░░░░░░░░[22m    4k
 [2mcost [22m~$1.23"
 `;
+
+exports[`public API integration (M6 T3.2 — theme matrix) > light_composite_scene_matches_snapshot > light-theme-scene 1`] = `
+"[35m✦ [39mtheme matrix scene
+[32m✓[39m  [1mbuild[2m ok[22m
+[34m███[39m[2m░░░░░░░░░░[22m 75% left[2m (32k used / 128k)[22m
+[34mconst[39m t = [32m1[39m;"
+`;

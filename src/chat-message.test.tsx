@@ -1,5 +1,3 @@
-import { execFileSync } from "node:child_process";
-
 import { Box } from "ink";
 import { describe, expect, it } from "vitest";
 
@@ -122,69 +120,10 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("[32mtinted");
   });
 
-  // Subprocess spawn (~1-2s; slower under coverage instrumentation) — explicit
-  // timeout keeps the test deterministic under load (M0 review F-tests-5).
-  it(
-    "no_color_render_contains_text_without_ansi_escapes",
-    { timeout: 20000 },
-    () => {
-      // Fresh subprocess with NO_COLOR set BEFORE module load (chalk pins its
-      // color level at import time — in-process stubEnv cannot degrade it).
-      const out = execFileSync(
-        "pnpm",
-        ["exec", "tsx", "tests/fixtures/no-color-probe.tsx"],
-        {
-          encoding: "utf8",
-          // Kills the child at the deadline — the it-level timeout cannot
-          // interrupt a synchronous execFileSync (review tests-3).
-          timeout: 20000,
-          env: {
-            PATH: process.env["PATH"] ?? "",
-            HOME: process.env["HOME"] ?? "",
-            NO_COLOR: "1",
-          },
-        },
-      );
-      expect(out).not.toContain("\u001b[");
-      expect(out).toContain(">");
-      expect(out).toContain("plain text probe");
-      // M1 (T4.2): all three role glyphs distinguishable without color.
-      expect(out).toContain("·");
-      expect(out).toContain("✦");
-      expect(out).toContain("degraded but readable");
-      // M2 (T3.1): tool statuses + shell envelope readable without color —
-      // the stderr LABEL is the color-independence mechanism (EC-13).
-      expect(out).toContain("✓");
-      expect(out).toContain("ok-tool");
-      // Line-anchored (review tests-1/wire-3): bare toContain("o"/"x") is
-      // vacuous — "o" lives in "ok-tool", "x" in "exit path".
-      expect(out).toMatch(/^o\s+queued-tool/m);
-      expect(out).toMatch(/^x\s+broken-tool/m);
-      expect(out).toMatch(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s+running-tool/mu);
-      expect(out).toContain("stderr:");
-      expect(out).toContain("exited 2");
-      // M3 (T3.1 — plan name no_color_render_contains_thinking_and_streaming,
-      // folded here to reuse one subprocess spawn; tests-4): thinking +
-      // streaming readable without color. The thinking glyph "•" is asserted
-      // line-anchored — distinct from the system role's "·" (dom-frontend-2).
-      expect(out).toMatch(/^•\s+inspecting the failing test/m);
-      expect(out).toContain("agent turn");
-      expect(out).toContain("(esc to cancel, 12s)");
-      // M4 (T3.1): diff signs + fold indicator readable without color
-      // (the sign column is THE mechanism — gemini-verified; EC-19).
-      expect(out).toMatch(/^\s*\d+ \+ new probe line/m);
-      expect(out).toMatch(/^\s*\d+ - old probe line/m);
-      expect(out).toContain("lines hidden");
-      // M5 (T3.1): glyph-distinct fill is the color-independence mechanism —
-      // filled vs empty survive as DIFFERENT characters (EC-5; both analogs
-      // lack this test — the gap is ours to close).
-      expect(out).toContain("█");
-      expect(out).toContain("░");
-      expect(out).toMatch(/\d+% left/);
-      expect(out).toContain("~$");
-    },
-  );
-
+  // The NO_COLOR subprocess probe MOVED to
+  // tests/degrade-matrix.integration.test.tsx (M6 T3.2) — one file now owns
+  // the 3-scene env matrix; the forced-color canary above stays here to
+  // guard the vitest FORCE_COLOR pin.
   it("renders_glyph_only_for_empty_children", async () => {
     const frame = await renderFrame(
       <Box width={40}>

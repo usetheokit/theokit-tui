@@ -23,7 +23,9 @@ import {
   ToolCallCard,
   ToolResult,
   defaultTheme,
+  themes,
 } from "../src/index.js";
+import type { TheoBuiltinThemeName } from "../src/index.js";
 // (M1↔M2 composition asserted below — review wire-4.)
 import { renderFrame } from "./helpers.js";
 
@@ -273,5 +275,56 @@ describe("public API integration (M5 T3.1 — metrics scene)", () => {
     expect(plain).toContain("~$1.23");
     expect(plain).toContain("█");
     expect(frame).toMatchSnapshot("metrics-surface-scene");
+  });
+});
+
+describe("public API integration (M6 T3.2 — theme matrix)", () => {
+  // Representative scene — NO focused composer: its ▏ marker is a DELIBERATE
+  // no-color layout delta (plan EC-1); the invariance contract covers the
+  // color-only components.
+  function scene(themeName: TheoBuiltinThemeName) {
+    return (
+      <Box width={60}>
+        <TheoTUIProvider theme={themeName}>
+          <Box flexDirection="column">
+            <ChatMessage role="assistant">theme matrix scene</ChatMessage>
+            <ToolCallCard name="build" status="success" summary="ok" />
+            <ContextWindowBar
+              usedTokens={32_000}
+              limitTokens={128_000}
+              width={40}
+            />
+            <CodeBlock code={"const t = 1;"} language="typescript" />
+          </Box>
+        </TheoTUIProvider>
+      </Box>
+    );
+  }
+
+  it("theme_swap_preserves_text_layout", async () => {
+    // D6: theming may change ONLY color bytes — never text or layout.
+    const dark = stripAnsi(await renderFrame(scene("dark")));
+    for (const themeName of ["light", "no-color"] as const) {
+      const themed = stripAnsi(await renderFrame(scene(themeName)));
+      expect(themed, themeName).toBe(dark);
+    }
+  });
+
+  it("light_composite_scene_matches_snapshot", async () => {
+    const frame = await renderFrame(scene("light"));
+    // Anchor-then-snapshot hard convention: the light accent (blue → [34m)
+    // must be present BEFORE the layout snapshot can absorb it.
+    expect(frame).toContain("[34m");
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("theme matrix scene");
+    expect(plain).toContain("75% left");
+    expect(plain).toContain("const t = 1;");
+    expect(frame).toMatchSnapshot("light-theme-scene");
+  });
+
+  it("builtin_themes_reachable_from_entry", () => {
+    expect(themes.light.accent).toBe("blue");
+    expect(themes["no-color"].accent).toBe("");
+    expect(themes.dark).toBe(defaultTheme);
   });
 });

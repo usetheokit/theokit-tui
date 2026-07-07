@@ -40,6 +40,7 @@
     "example:agent": "tsx examples/agent.tsx",
     "example:code": "tsx examples/code.tsx",
     "example:metrics": "tsx examples/metrics.tsx",
+    "example:themes": "tsx examples/themes.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {
