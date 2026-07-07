@@ -217,6 +217,81 @@ rendering in a terminal, built + tested + snapshot-covered.
 
 M8's dogfood (`examples/live-agent-tui` + TheoCode as consumer) will assemble exactly this pattern; shipping the primitive first prevents each consumer from reinventing it. User opted for the slots variant for free composition.
 
+### M10 — [ ] Foundation upgrade: ink 7 + dual React peer
+
+> Added 2026-07-07 by `/roadmap-feature` (slug: `m10-react19-ink7`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Upgrade the rendering foundation to ink ^7 with an HONEST dual React peer (`^18.2 || ^19`) — rehearsal-proven on both majors.
+
+**Definition of done:**
+
+- [ ] ink ^7 dependency; react peer `^18.2 || ^19` proven by the tarball-rehearsal harness running on BOTH majors (the M8 rehearsal, now 2×).
+- [ ] Full suite green with zero weakened tests (ink 7 API/behavior renames absorbed task-by-task).
+- [ ] Degrade-matrix + all 6 benches re-baselined on the new stack (ADVERSE-only table vs the v0.10.0 baselines).
+- [ ] Publish minor with rehearsal; SDK tripwire re-run.
+- [ ] M7 DV-1 re-evaluated: if ink 7 enables StrictMode strict effects, the hook tests are upgraded honestly.
+
+**Dependencies:** M8
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. ink 7 breaking changes ripple through 455 tests (borderStyle/measure/Static semantics) — mitigated by DISCOVER over `references/ink` (already cloned at 7.1.0) + never-weaken discipline.
+2. Dual-major react peer doubles the compat matrix — mitigated by the 2× rehearsal release AC.
+
+**Why now (from grill Q1):**
+
+V1 closed (10/10, v0.10.0 published); the M8 rehearsal PROVED the react-19 fresh-install break and recorded the flip condition ("flip on ink >= 6"); every V2 feature builds on the new base — validate once.
+
+### M11 — [ ] ChatThread/AgentTimeline header slot
+
+> Added 2026-07-07 by `/roadmap-feature` (slug: `m11-chatthread-header-slot`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** `header?: ReactElement` folded as the FIRST item of the thread's own `<Static>` (gemini AppHeader shape) — the banner stays pinned above frozen scrollback.
+
+**Definition of done:**
+
+- [ ] `header` prop folded as the first item of the EXISTING `<Static>` (never a second one — invariant pinned by test).
+- [ ] The recorded M9 D4 drawback resolved: test proving the banner stays pinned above graduated history.
+- [ ] Immutable-header contract decided + documented (Static prints once — the gemini refreshStatic trap stays out of the library).
+- [ ] Example updated + snapshot within budget; windowing suite extended with header-present scenarios.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M10
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Header inside Static prints ONCE — later header changes are invisible; mitigated by an explicit immutable-header contract (throw or re-key on identity change, decided in plan).
+2. Interleaving with windowing/graduation ordering — mitigated by extending the M3 windowing suite.
+
+**Why now (from grill Q1):**
+
+The M9 D4 drawback is RECORDED with this exact flip condition; V2 is the moment to honor it on the upgraded base.
+
+### M12 — [ ] Animated welcome banner
+
+> Added 2026-07-07 by `/roadmap-feature` (slug: `m12-animated-banner`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Opt-in short banner reveal (< 2 s, codex/Copilot-CLI style) that ALWAYS degrades to the M9 static banner.
+
+**Definition of done:**
+
+- [ ] Opt-in variant gated by TTY + codex-style minimum rows/cols; reduced-motion respected.
+- [ ] Degrades to the static banner everywhere else — final scene byte-identical to static (non-TTY/NO_COLOR/narrow).
+- [ ] OWN render bench lands with the slice (the recorded M9 flip condition: per-frame path ⇒ bench before merge).
+- [ ] Example + deterministic smoke (pipe → static path).
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M10
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Animation timers × ink render loop as a flake surface — mitigated by timer-free test fakes + a deterministic frame script.
+2. Terminal-emulator variance for block glyphs (gemini's Apple Terminal special-case) — mitigated by a conservative glyph set + the degrade ladder.
+
+**Why now (from grill Q1):**
+
+The M9 blueprint recorded the flip condition and the brand-moment value is peer-proven (Copilot CLI engineering post); rides the M10 base.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
