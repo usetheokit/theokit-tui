@@ -42,6 +42,7 @@
     "example:metrics": "tsx examples/metrics.tsx",
     "example:themes": "tsx examples/themes.tsx",
     "example:stream": "tsx examples/stream.tsx",
+    "example:banner": "tsx examples/banner.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {
