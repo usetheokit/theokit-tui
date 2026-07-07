@@ -34,14 +34,35 @@ export interface DiffViewerProps {
 const expandTabs = (value: string): string =>
   value.replaceAll("\t", " ".repeat(TAB_WIDTH));
 
-/** Hunk gap: a line-number jump between consecutive visible lines (EC-3). */
-function isGapBetween(previous: DiffLine | undefined, row: DiffLine): boolean {
-  if (previous === undefined) {
-    return false;
+/**
+ * Per-side hunk-gap tracker (SEPA F1): comparing mixed old/new numbers
+ * renders spurious `⋮` inside contiguous hunks with net insertions. A gap
+ * exists only when a SIDE's number jumps past its own last-seen value.
+ */
+interface SideCounters {
+  lastOld: number | undefined;
+  lastNew: number | undefined;
+}
+
+function isGapBetween(counters: SideCounters, row: DiffLine): boolean {
+  const oldJump =
+    row.oldLine !== undefined &&
+    counters.lastOld !== undefined &&
+    row.oldLine > counters.lastOld + 1;
+  const newJump =
+    row.newLine !== undefined &&
+    counters.lastNew !== undefined &&
+    row.newLine > counters.lastNew + 1;
+  return oldJump || newJump;
+}
+
+function advance(counters: SideCounters, row: DiffLine): void {
+  if (row.oldLine !== undefined) {
+    counters.lastOld = row.oldLine;
   }
-  const prev = previous.newLine ?? previous.oldLine ?? 0;
-  const next = row.newLine ?? row.oldLine ?? 0;
-  return next - prev > 1;
+  if (row.newLine !== undefined) {
+    counters.lastNew = row.newLine;
+  }
 }
 
 function fileRows(file: DiffFile, contextLines: number | undefined): ViewRow[] {
@@ -55,18 +76,19 @@ function fileRows(file: DiffFile, contextLines: number | undefined): ViewRow[] {
       ? foldDiffLines(file.lines, contextLines)
       : file.lines;
   // A fold row already marks the jump — the `⋮` gap fires only without one.
-  let previous: DiffLine | undefined;
+  const counters: SideCounters = { lastOld: undefined, lastNew: undefined };
   for (const row of body) {
     if (row.kind === "fold") {
       rows.push(row);
-      previous = undefined;
+      counters.lastOld = undefined;
+      counters.lastNew = undefined;
       continue;
     }
-    if (isGapBetween(previous, row)) {
+    if (isGapBetween(counters, row)) {
       rows.push({ kind: "gap" });
     }
     rows.push(row);
-    previous = row;
+    advance(counters, row);
   }
   return rows;
 }

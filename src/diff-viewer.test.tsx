@@ -45,9 +45,11 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
   });
 
   it("add_and_del_lines_carry_status_colors", async () => {
+    // SEPA F2: anchored to LINE content — the header stats also carry these
+    // colors, so bare toContain would be vacuous.
     const frame = await renderFrame(<DiffViewer patch={PATCH_BASIC} />);
-    expect(frame).toContain("[32m");
-    expect(frame).toContain("[31m");
+    expect(frame).toMatch(/\[32m.*new two/);
+    expect(frame).toMatch(/\[31m.*old two/);
   });
 
   it("header_shows_name_and_stats", async () => {
@@ -99,6 +101,56 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
     expect(stripAnsi(frame)).toMatch(/^\s*⋮\s*$/m);
   });
 
+  it("net_insertion_hunk_has_no_spurious_gap", async () => {
+    // SEPA F1 regression: net insertions >= 2 before a del→add transition
+    // used to render a false ⋮ INSIDE a contiguous hunk (old/new counter mix).
+    const patch = [
+      "--- a/net.ts",
+      "+++ b/net.ts",
+      "@@ -1,4 +1,6 @@",
+      " a",
+      "+x",
+      "+y",
+      " b",
+      "-c",
+      "+c2",
+      " d",
+      "",
+    ].join("\n");
+    const frame = await renderFrame(<DiffViewer patch={patch} />);
+    expect(stripAnsi(frame)).not.toMatch(/^\s*⋮\s*$/m);
+  });
+
+  it("blank_add_line_renders_signed_row", async () => {
+    // SEPA F6: the blank-line placeholder branch needs viewer coverage.
+    const patch = [
+      "--- a/b.ts",
+      "+++ b/b.ts",
+      "@@ -1,1 +1,2 @@",
+      " x",
+      "+",
+      "",
+    ].join("\n");
+    const frame = await renderFrame(<DiffViewer patch={patch} />);
+    expect(stripAnsi(frame)).toMatch(/^\s*\d+ \+\s*$/m);
+  });
+
+  it("multi_file_boundary_pins_no_spacing", async () => {
+    // SEPA F4 pinned as DESIGN: no separator row between files — the bold
+    // header + stats row IS the boundary (DV-3).
+    const patch =
+      PATCH_BASIC +
+      ["--- a/two.ts", "+++ b/two.ts", "@@ -1,1 +1,1 @@", "-x", "+y", ""].join(
+        "\n",
+      );
+    const frame = await renderFrame(<DiffViewer patch={patch} />);
+    const plain = stripAnsi(frame);
+    const rows = plain.split("\n");
+    const boundary = rows.findIndex((r) => r.includes("two.ts"));
+    expect(boundary).toBeGreaterThan(0);
+    expect(rows[boundary - 1]!.trim()).not.toBe("");
+  });
+
   it("context_lines_fold_hides_runs", async () => {
     const frame = await renderFrame(
       <DiffViewer patch={longContextPatch(10)} contextLines={2} />,
@@ -138,6 +190,7 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
     const rows = plain.split("\n").filter((r) => r.trim() !== "");
     expect(rows.length).toBeLessThanOrEqual(7);
     expect(plain).toContain("lines hidden");
+    expect(plain).toContain("… (+3 more lines)"); // SEPA F3: trailer N pinned
     expect(plain).not.toMatch(/^\s*⋮\s*$/m);
   });
 
