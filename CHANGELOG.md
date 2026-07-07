@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Metrics-footer benchmark (`benchmarks/metrics-footer.bench.tsx`) — 50-message streaming thread × 150 ticks, with-metrics|without-metrics matrix; committed baseline shows the footer costs **0.755 ± 0.086 ms/frame** in the streaming hot path (3.522 ± 0.085 vs 2.767 ± 0.086 ms mean; conclusive at >1σ; peak delta within noise — inconclusive) (m5-metrics-surface T3.2)
+- Metrics demo (`pnpm example:metrics`) — always-on agent footer (context gauge + category bars + cost), static scene, clean piped output (m5-metrics-surface T3.2)
 - M5 integration coverage — composition-root metrics footer scene (gauge + chart + cost), NO_COLOR probe metrics scene proving glyph-distinct `█`/`░` fill readable without color (m5-metrics-surface T3.1)
 - `CostMeter` — honest USD cost display (`cost ~$1.23`): caller-computed number (no pricing tables), `~` estimate marker with `approx={false}` opt-out, `<$0.01` sub-cent honesty — never `$0.00` for a nonzero cost (m5-metrics-surface T2.3)
 - `TokenUsageChart` — per-category token bars (`input | output | cached | reasoning`, fixed order, only present keys render): bars scale to the LARGEST category (relative comparison — total is not a limit), aligned label/value columns, k/M values, all-zero renders empty bars, all-absent renders nothing (m5-metrics-surface T2.2)

@@ -403,3 +403,75 @@ describe("benchmark baseline M4 (T3.2)", () => {
     expect(baseline.methodology).toContain("peak_ms_per_frame");
   });
 });
+
+interface M5Baseline {
+  benchmark: string;
+  modes: M1Mode[];
+  workload: {
+    messages: number;
+    steps: number;
+    tokens_per_step: number;
+    categories: number;
+  };
+  protocol: { warmup_runs: number; measured_runs: number };
+  node_version: string;
+  hardware: { cpu: string; cores: number };
+  color_env: { FORCE_COLOR: string };
+  methodology: string;
+}
+
+describe("benchmark baseline M5 (T3.2)", () => {
+  it("m5_metrics_baseline_exists_with_mode_matrix", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL("../docs/benchmarks/m5-metrics-baseline.json", import.meta.url),
+        "utf8",
+      ),
+    ) as M5Baseline;
+
+    expect(baseline.modes.map((m) => m.mode).sort()).toEqual([
+      "with-metrics",
+      "without-metrics",
+    ]);
+    expect(baseline.protocol.measured_runs).toBeGreaterThanOrEqual(3);
+    expect(baseline.protocol.warmup_runs).toBeGreaterThanOrEqual(1);
+    expect(baseline.color_env.FORCE_COLOR).toBe("1");
+    expect(baseline.node_version.length > 0).toBe(true);
+    expect(baseline.hardware.cores).toBeGreaterThan(0);
+    for (const mode of baseline.modes) {
+      expect(mode.runs.length).toBe(baseline.protocol.measured_runs);
+      for (const run of mode.runs) {
+        expect(run.frames).toBeGreaterThan(0);
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+        expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
+      }
+      expect(Number.isFinite(mode.aggregate.frames_mean)).toBe(true);
+      const recomputedFrames =
+        mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
+      expect(
+        Math.abs(recomputedFrames - mode.aggregate.frames_mean),
+      ).toBeLessThan(0.01);
+      for (const metric of [
+        "mean_ms_per_frame",
+        "peak_ms_per_frame",
+      ] as const) {
+        expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
+        expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
+        expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
+        const recomputed =
+          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
+          0.01,
+        );
+      }
+    }
+    expect(baseline.workload.messages).toBeGreaterThan(0);
+    expect(baseline.workload.steps).toBeGreaterThan(0);
+    expect(baseline.workload.tokens_per_step).toBeGreaterThan(0);
+    expect(baseline.workload.categories).toBeGreaterThan(0);
+    // The honest-delta contract (D6): the reportable result is the mode
+    // delta, and sub-sigma deltas are declared inconclusive.
+    expect(baseline.methodology).toContain("INCONCLUSIVE");
+    expect(baseline.methodology).toContain("delta");
+  });
+});
