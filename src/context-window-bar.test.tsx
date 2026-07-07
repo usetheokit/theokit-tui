@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ContextWindowBar } from "./context-window-bar.js";
+import { TheoTUIProvider } from "./theme.js";
 import { renderFrame } from "../tests/helpers.js";
 
 // eslint-disable-next-line no-control-regex
@@ -284,5 +285,22 @@ describe("ContextWindowBar", () => {
         baselineTokens: 128_000,
       }),
     ).toThrow("baselineTokens must be < limitTokens");
+  });
+});
+
+// M6 T2.3: ACCENT_COLOR migrated to theme.accent.
+describe("ContextWindowBar — accent token (M6 T2.3)", () => {
+  it("gauge_accent_follows_token", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider theme={{ accent: "magenta" }}>
+        <ContextWindowBar
+          usedTokens={10_000}
+          limitTokens={128_000}
+          width={40}
+        />
+      </TheoTUIProvider>,
+    );
+    // Sub-warning fill uses the token.
+    expect(frame).toContain("[35m");
   });
 });

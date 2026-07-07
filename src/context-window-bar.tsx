@@ -9,11 +9,6 @@ import {
 import { assertFiniteNonNegative, formatTokens } from "./format.js";
 import { useTheoTheme } from "./theme.js";
 
-// Module-local accent for the sub-warning fill (M6 theming candidate — the
-// M2 glyph / M4 palette precedent; do NOT hardcode per-state colors inline).
-// Kept in sync with token-usage-chart.tsx until the M6 `accent` theme token.
-const ACCENT_COLOR = "cyan";
-
 /** Warn when the used ratio reaches this fraction (gemini default). */
 const WARNING_RATIO = 0.5;
 
@@ -132,7 +127,7 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
       ? theme.status.error
       : usedRatio >= WARNING_RATIO
         ? theme.status.warning
-        : ACCENT_COLOR;
+        : theme.accent;
   return (
     <Box>
       <Text color={fillColor}>{segments.filled}</Text>

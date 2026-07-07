@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TokenUsageChart } from "./token-usage-chart.js";
+import { TheoTUIProvider } from "./theme.js";
 import { renderFrame } from "../tests/helpers.js";
 
 // eslint-disable-next-line no-control-regex
@@ -158,5 +159,17 @@ describe("TokenUsageChart", () => {
     expect(() => TokenUsageChart({ usage: { input: 1 }, width: 1.5 })).toThrow(
       TypeError,
     );
+  });
+});
+
+// M6 T2.3: ACCENT_COLOR migrated to theme.accent.
+describe("TokenUsageChart — accent token (M6 T2.3)", () => {
+  it("chart_accent_follows_token", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider theme={{ accent: "magenta" }}>
+        <TokenUsageChart usage={{ input: 100 }} />
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("[35m");
   });
 });

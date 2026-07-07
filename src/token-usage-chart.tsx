@@ -1,11 +1,8 @@
 import { Box, Text } from "ink";
 
 import { MIN_BAR_CELLS, renderFillBar } from "./fill-bar.js";
+import { useTheoTheme } from "./theme.js";
 import { assertFiniteNonNegative, formatTokens } from "./format.js";
-
-// Module-local accent for chart bars (M6 theming candidate — M2/M4 precedent).
-// Kept in sync with context-window-bar.tsx until the M6 `accent` theme token.
-const ACCENT_COLOR = "cyan";
 
 /** Fixed row order (codex fields ∪ gemini metrics — plan ADR D2). */
 const TOKEN_CATEGORIES = ["input", "output", "cached", "reasoning"] as const;
@@ -57,6 +54,7 @@ export function TokenUsageChart({ usage, width = 40 }: TokenUsageChartProps) {
       `TokenUsageChart: width must be an integer >= 0 — got ${String(width)}`,
     );
   }
+  const theme = useTheoTheme();
   if (rows.length === 0) {
     return null;
   }
@@ -86,7 +84,7 @@ export function TokenUsageChart({ usage, width = 40 }: TokenUsageChartProps) {
         return (
           <Box key={row.category}>
             <Text dimColor>{label} </Text>
-            <Text color={ACCENT_COLOR}>{segments.filled}</Text>
+            <Text color={theme.accent}>{segments.filled}</Text>
             <Text dimColor>{segments.empty}</Text>
             <Text> {value}</Text>
           </Box>

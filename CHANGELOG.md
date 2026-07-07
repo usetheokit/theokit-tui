@@ -45,6 +45,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Metrics accent moved to the `theme.accent` token — the duplicated `ACCENT_COLOR` constants in ContextWindowBar/TokenUsageChart deleted; default bytes unchanged (m6-theme-robustness T2.3)
 - Syntax-highlight colors moved to `theme.code.*` bucket tokens — `HLJS_COLOR_MAP` deleted; the hljs class→bucket table stays module-local; default bytes unchanged (m6-theme-robustness T2.2)
 - Tool-status visuals moved to `theme.toolStatus.*` tokens — `STATUS_VISUALS` deleted; BEHAVIOR NOTE: the pending glyph's color is now the `toolStatus.pending.color` token literal and no longer follows `role.system.prefix` overrides (theme `toolStatus.pending.color` instead); default bytes unchanged (m6-theme-robustness T2.1)
 - `TheoTheme` (the OUTPUT type of `useTheoTheme`) gained required groups — consumers who hand-built a full `TheoTheme` object must spread `defaultTheme` (`{...defaultTheme, ...}`); override-based usage is source-compatible and unchanged (m6-theme-robustness T1.1)
