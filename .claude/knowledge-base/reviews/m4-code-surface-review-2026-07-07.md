@@ -65,7 +65,13 @@ tests-14).
   Baseline-churn process note for M5 (dom-testing-3). No vitest retry (dom-testing-5 —
   flaky = bug; subprocess spawns only). Cap arithmetic stays view-side with rationale
   (arch-1); TAB_WIDTH duplication awaits rule-of-3 (arch-6).
-- **Baseline load-contention caveat:** the post-batch m4 baseline was regenerated during a
+- **Baseline load-contention RESOLUTION:** the load-watcher's re-run also caught residual
+  contention (windowed 26.95 ± 8.41 / full 249.30 ± 65.23 — CV ~30%). The committed
+  baseline carries the CORRECT new-shape schema+methodology with these noisier numbers;
+  the windowing verdict is consistent across all three measurements (12.4× / ~18× / 9.25×)
+  and the tight-variance quiet-machine quote remains windowed 9.204 ± 0.957 vs full
+  114.105 ± 4.938. The M5 Final-Phase refresh on a quiet machine supersedes.
+- **Baseline load-contention caveat (superseded by the resolution above):** the post-batch m4 baseline was regenerated during a
   machine-load spike (documented) — a clean re-run is queued on a load-watcher; BOTH
   measurements agree the windowing claim is conclusive (clean run: 12.4× mean / 13.4×
   peak; loaded run: ~18×). The committed artifact will be replaced by the clean re-run
