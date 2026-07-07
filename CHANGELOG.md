@@ -14,6 +14,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Strict-effects canary (`tests/strict-effects-canary.test.tsx`) — pins the OBSERVED single-invoke behavior under StrictMode on ink7 (the source-level prediction of a double-invoke flip was empirically refuted; the M7 DV-1 claim remains true) (m10-react19-ink7 T2.1)
 - ink7 pipe-contract pin in the degrade matrix (non-interactive writes ONE final frame at unmount — content appears exactly once) and a permanent never-weaken migration guard (it-count never decreases vs the pre-bump base) (m10-react19-ink7 T1.2+T1.3)
 
 ### Added
