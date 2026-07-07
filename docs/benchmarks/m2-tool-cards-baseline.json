@@ -1,6 +1,6 @@
 {
   "benchmark": "tool-cards-render",
-  "date": "2026-07-06T22:18:20.595Z",
+  "date": "2026-07-07T04:33:01.969Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
@@ -22,40 +22,40 @@
   },
   "runs": [
     {
-      "frames": 2271,
-      "mean_ms_per_frame": 14.221,
-      "peak_ms_per_frame": 34.987
+      "frames": 1719,
+      "mean_ms_per_frame": 8.946,
+      "peak_ms_per_frame": 22.628
     },
     {
-      "frames": 2045,
-      "mean_ms_per_frame": 14.794,
-      "peak_ms_per_frame": 38.154
+      "frames": 1798,
+      "mean_ms_per_frame": 8.952,
+      "peak_ms_per_frame": 18.852
     },
     {
-      "frames": 1916,
-      "mean_ms_per_frame": 9.858,
-      "peak_ms_per_frame": 21.629
+      "frames": 1834,
+      "mean_ms_per_frame": 9.037,
+      "peak_ms_per_frame": 23.809
     },
     {
-      "frames": 2023,
-      "mean_ms_per_frame": 11.704,
-      "peak_ms_per_frame": 25.962
+      "frames": 1802,
+      "mean_ms_per_frame": 8.945,
+      "peak_ms_per_frame": 20.315
     },
     {
-      "frames": 2346,
-      "mean_ms_per_frame": 16.943,
-      "peak_ms_per_frame": 32.892
+      "frames": 2011,
+      "mean_ms_per_frame": 10.065,
+      "peak_ms_per_frame": 27.28
     }
   ],
   "aggregate": {
-    "frames_mean": 2120.2,
+    "frames_mean": 1832.8,
     "mean_ms_per_frame": {
-      "mean": 13.504,
-      "std_dev": 2.471
+      "mean": 9.189,
+      "std_dev": 0.439
     },
     "peak_ms_per_frame": {
-      "mean": 30.725,
-      "std_dev": 6.058
+      "mean": 22.577,
+      "std_dev": 2.92
     }
   },
   "methodology": "ink-testing-library render + rerender loop; mount = 100-message thread + 50 ToolCallCards (statuses round-robin, one card with a 500-line shell output truncated at maxLines 10); each step transitions one running card to success/failed and promotes one pending card to running, then rerenders; per-frame ms = wall time distributed across stdout.frames deltas (includes tick overhead); EC-15 guard asserts the run's total stdout frames exceed the mount-time count (end-of-run check — Ink throttling batches steps); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; population std dev."

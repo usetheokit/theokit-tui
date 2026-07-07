@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Diff-viewer benchmark (`benchmarks/diff-viewer.bench.tsx`) — growing multi-hunk diff (10+40 hunks, wide-line hunk appended mid-loop with a fail-fast self-check), windowed|full matrix; committed baseline shows windowing ~12× faster per frame (9.2 ± 1.0 vs 114.1 ± 4.9 ms mean; peak 16.1 ± 1.9 vs 216.0 ± 28.2) (m4-code-surface T3.2)
+- Code-surface demo (`pnpm example:code`) — diff + highlighted code block, static scene, clean piped output (m4-code-surface T3.2)
 - M4 integration coverage — composition-root diff+code scene, NO_COLOR probe diff (signs + fold indicator readable without color) (m4-code-surface T3.1)
 - `CodeBlock` — syntax-highlighted code rendering with `lowlight` as an OPTIONAL peer (dynamic import, single-flight; absent peer degrades to plain text with one console hint); explicit `language` only (no auto-detect — determinism), 4-level fallback ladder, ANSI-sanitized input, tab expansion, optional original-numbered gutter, HEAD-retained `maxLines` cap (m4-code-surface T2.1)
 - `DiffViewer` — UNIFIED terminal diff renderer (split view deferred with a recorded verified-absence rationale — no terminal analog ships it): unconditional `+`/`-` sign column (the NO_COLOR mechanism), dim line-number gutter, per-file header with rename arrow + `+N`/`-M` stats, dim `⋮` hunk gaps, wrap-never-truncate content, `contextLines` folding + global HEAD-retained `maxLines` cap, explicit `(no changes)`/binary rows, typed malformed-patch error (m4-code-surface T1.2)

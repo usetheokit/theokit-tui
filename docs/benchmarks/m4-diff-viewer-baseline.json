@@ -1,0 +1,109 @@
+{
+  "benchmark": "diff-viewer-render",
+  "date": "2026-07-07T04:31:20.593Z",
+  "node_version": "v22.22.2",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cores": 12
+  },
+  "color_env": {
+    "FORCE_COLOR": "1"
+  },
+  "workload": {
+    "mount_hunks": 10,
+    "steps": 40,
+    "hunk_lines": 30,
+    "context_lines_per_hunk": 10,
+    "wide_line_chars": 500,
+    "windowed": "maxLines 80 + contextLines 2"
+  },
+  "protocol": {
+    "warmup_runs": 1,
+    "measured_runs": 5
+  },
+  "modes": [
+    {
+      "mode": "windowed",
+      "runs": [
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 10.979,
+          "peak_ms_per_frame": 17.813
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 9.116,
+          "peak_ms_per_frame": 14.813
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 8.373,
+          "peak_ms_per_frame": 12.996
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 8.349,
+          "peak_ms_per_frame": 17.297
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 9.201,
+          "peak_ms_per_frame": 17.452
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 40,
+        "mean_ms_per_frame": {
+          "mean": 9.204,
+          "std_dev": 0.957
+        },
+        "peak_ms_per_frame": {
+          "mean": 16.074,
+          "std_dev": 1.87
+        }
+      }
+    },
+    {
+      "mode": "full",
+      "runs": [
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 121.815,
+          "peak_ms_per_frame": 264.416
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 112.417,
+          "peak_ms_per_frame": 195.572
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 114.646,
+          "peak_ms_per_frame": 223.353
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 115.17,
+          "peak_ms_per_frame": 182.115
+        },
+        {
+          "frames": 40,
+          "mean_ms_per_frame": 106.477,
+          "peak_ms_per_frame": 214.659
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 40,
+        "mean_ms_per_frame": {
+          "mean": 114.105,
+          "std_dev": 4.938
+        },
+        "peak_ms_per_frame": {
+          "mean": 216.023,
+          "std_dev": 28.162
+        }
+      }
+    }
+  ],
+  "methodology": "ink-testing-library render + rerender loop; mount = DiffViewer with 10 hunks (30 lines each: 10 context / 15 add / 5 del); each of 40 measured steps swaps in a PRE-GENERATED patch string with one more hunk (parse runs inside render — the component cost; string generation excluded per EC-17); the step-25 hunk carries 500-char wide lines so its wrap+parse cost lands INSIDE the sampled window (M3 lesson); modes: windowed = maxLines 80 + contextLines 2, full = unbounded; compare the modes' mean/peak_ms_per_frame growth to read the large-diff windowing claim — peak_ms_per_frame is the headline metric; deltas within 1 std_dev are INCONCLUSIVE and must be reported as such; EC-15 guard asserts each run's total stdout frames exceed its mount count; color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs per mode; population std dev."
+}
