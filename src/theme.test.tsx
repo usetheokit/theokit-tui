@@ -398,6 +398,18 @@ describe("built-in themes + provider resolution (M6 T1.2)", () => {
     expect(captured?.name).toBe("custom");
   });
 
+  it("pair_form_without_base_merges_onto_dark", async () => {
+    // The `base ?? "dark"` default branch: an override-only pair form.
+    await renderFrame(
+      <TheoTUIProvider theme={{ override: { accent: "magenta" } }}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.accent).toBe("magenta");
+    expect(captured?.code.keyword).toBe("blue");
+    expect(captured?.name).toBe("custom");
+  });
+
   it("builtin_selection_is_referentially_stable", async () => {
     const captures: TheoTheme[] = [];
     function Capture() {
