@@ -10,7 +10,40 @@ export interface RoleTokens {
   text: string | undefined;
 }
 
+/** Glyph + color pair (tool-status indicators — M6 D1). */
+export interface GlyphToken {
+  glyph: string;
+  color: string;
+}
+
+/** Syntax-highlight bucket colors (M6 D1 — the hljs class→bucket table stays
+ * module-local in code-block.tsx; the theme carries only the 7 bucket colors). */
+export interface CodeTokens {
+  keyword: string;
+  builtin: string;
+  number: string;
+  string: string;
+  regexp: string;
+  comment: string;
+  variable: string;
+}
+
+/** Tool-status visuals. `running` carries NO glyph — ink-spinner animates it
+ * (a never-rendered token would be fabricated API — M6 D1). */
+export interface ToolStatusTokens {
+  pending: GlyphToken;
+  running: { color: string };
+  success: GlyphToken;
+  failed: GlyphToken;
+}
+
 export interface TheoTheme {
+  /**
+   * Theme identity: a built-in name ("dark" | "light" | "no-color") or
+   * "custom" when a non-empty override is applied. Degrade-as-data seam —
+   * components may branch on `name === "no-color"` instead of reading env.
+   */
+  name: string;
   role: {
     user: RoleTokens;
     assistant: RoleTokens;
@@ -21,6 +54,15 @@ export interface TheoTheme {
     success: string;
     warning: string;
   };
+  /** Neutral metrics accent (gauge/chart fill below the warning threshold). */
+  accent: string;
+  code: CodeTokens;
+  /**
+   * Note (M6): `pending.color` is a literal — it no longer aliases
+   * `role.system.prefix`; theming the system role does NOT recolor the
+   * pending glyph (theme `toolStatus.pending.color` instead).
+   */
+  toolStatus: ToolStatusTokens;
 }
 
 /**
@@ -36,9 +78,18 @@ export interface TheoThemeOverride {
     system?: Partial<RoleTokens>;
   };
   status?: Partial<TheoTheme["status"]>;
+  accent?: string;
+  code?: Partial<CodeTokens>;
+  toolStatus?: {
+    pending?: Partial<GlyphToken>;
+    running?: Partial<{ color: string }>;
+    success?: Partial<GlyphToken>;
+    failed?: Partial<GlyphToken>;
+  };
 }
 
 export const defaultTheme: TheoTheme = Object.freeze({
+  name: "dark",
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "cyan", text: undefined }),
     assistant: Object.freeze({
@@ -49,15 +100,48 @@ export const defaultTheme: TheoTheme = Object.freeze({
     system: Object.freeze({ glyph: "· ", prefix: "gray", text: undefined }),
   }),
   status: Object.freeze({ error: "red", success: "green", warning: "yellow" }),
+  // M6 growth — values are BYTE-IDENTICAL to the M0-M5 module constants
+  // they replace (plan D1/D5: zero snapshot churn by construction).
+  accent: "cyan",
+  code: Object.freeze({
+    keyword: "blue",
+    builtin: "cyan",
+    number: "green",
+    string: "yellow",
+    regexp: "red",
+    comment: "gray",
+    variable: "magenta",
+  }),
+  toolStatus: Object.freeze({
+    pending: Object.freeze({ glyph: "o", color: "gray" }),
+    running: Object.freeze({ color: "yellow" }),
+    success: Object.freeze({ glyph: "✓", color: "green" }),
+    failed: Object.freeze({ glyph: "x", color: "red" }),
+  }),
 });
 
 const ThemeContext = createContext<TheoTheme>(defaultTheme);
 
+function mergeToolStatus(
+  base: ToolStatusTokens,
+  override: TheoThemeOverride["toolStatus"],
+): ToolStatusTokens {
+  return {
+    pending: { ...base.pending, ...override?.pending },
+    running: { ...base.running, ...override?.running },
+    success: { ...base.success, ...override?.success },
+    failed: { ...base.failed, ...override?.failed },
+  };
+}
+
 function mergeTheme(override: TheoThemeOverride | undefined): TheoTheme {
-  if (override === undefined) {
+  // Empty object ≡ no override — the theme identity stays the base's
+  // (form-based `name` semantics: "custom" only for a NON-EMPTY override).
+  if (override === undefined || Object.keys(override).length === 0) {
     return defaultTheme;
   }
   return {
+    name: "custom",
     role: {
       user: { ...defaultTheme.role.user, ...override.role?.user },
       assistant: {
@@ -67,6 +151,9 @@ function mergeTheme(override: TheoThemeOverride | undefined): TheoTheme {
       system: { ...defaultTheme.role.system, ...override.role?.system },
     },
     status: { ...defaultTheme.status, ...override.status },
+    accent: override.accent ?? defaultTheme.accent,
+    code: { ...defaultTheme.code, ...override.code },
+    toolStatus: mergeToolStatus(defaultTheme.toolStatus, override.toolStatus),
   };
 }
 

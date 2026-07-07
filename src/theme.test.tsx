@@ -111,3 +111,104 @@ describe("theme stub (T1.1)", () => {
     expect(captured).toEqual(defaultTheme);
   });
 });
+
+// M6 T1.1 (plan m6-theme-robustness, ADR D1): semantic growth — new groups
+// with BYTE-IDENTICAL defaults (the values are today's module constants).
+describe("theme token growth (M6 T1.1)", () => {
+  beforeEach(() => {
+    resetCaptured();
+  });
+
+  it("default_theme_carries_new_groups_with_todays_values", () => {
+    const t = defaultTheme;
+    expect(t.name).toBe("dark");
+    expect(t.accent).toBe("cyan");
+    expect(t.code.keyword).toBe("blue");
+    expect(t.code.builtin).toBe("cyan");
+    expect(t.code.number).toBe("green");
+    expect(t.code.string).toBe("yellow");
+    expect(t.code.regexp).toBe("red");
+    expect(t.code.comment).toBe("gray");
+    expect(t.code.variable).toBe("magenta");
+  });
+
+  it("default_tool_status_matches_current_visuals", () => {
+    expect(defaultTheme.toolStatus.pending).toEqual({
+      glyph: "o",
+      color: "gray",
+    });
+    expect(defaultTheme.toolStatus.success).toEqual({
+      glyph: "✓",
+      color: "green",
+    });
+    expect(defaultTheme.toolStatus.failed).toEqual({
+      glyph: "x",
+      color: "red",
+    });
+    // running carries NO glyph slot — ink-spinner animates (D1).
+    expect(defaultTheme.toolStatus.running).toEqual({ color: "yellow" });
+  });
+
+  it("new_groups_are_frozen", () => {
+    expect(Object.isFrozen(defaultTheme.code)).toBe(true);
+    expect(Object.isFrozen(defaultTheme.toolStatus)).toBe(true);
+    expect(Object.isFrozen(defaultTheme.toolStatus.pending)).toBe(true);
+  });
+
+  it("override_merges_accent_leaf", async () => {
+    await renderFrame(
+      <TheoTUIProvider theme={{ accent: "magenta" }}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.accent).toBe("magenta");
+    expect(captured?.code.keyword).toBe("blue");
+  });
+
+  it("override_merges_code_group_leaf", async () => {
+    await renderFrame(
+      <TheoTUIProvider theme={{ code: { string: "cyan" } }}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.code.string).toBe("cyan");
+    expect(captured?.code.keyword).toBe("blue");
+  });
+
+  it("override_merges_tool_status_leaf", async () => {
+    await renderFrame(
+      <TheoTUIProvider theme={{ toolStatus: { failed: { glyph: "✗" } } }}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.toolStatus.failed.glyph).toBe("✗");
+    // Leaf sibling preserved.
+    expect(captured?.toolStatus.failed.color).toBe("red");
+  });
+
+  it("override_marks_theme_name_custom", async () => {
+    await renderFrame(
+      <TheoTUIProvider theme={{ accent: "magenta" }}>
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.name).toBe("custom");
+  });
+
+  it("m0_override_calls_unchanged", async () => {
+    // The M0 contract intact: existing two-group overrides behave identically.
+    await renderFrame(
+      <TheoTUIProvider
+        theme={{
+          role: { user: { glyph: "$ " } },
+          status: { error: "redBright" },
+        }}
+      >
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.role.user.glyph).toBe("$ ");
+    expect(captured?.status.error).toBe("redBright");
+    expect(captured?.role.assistant.glyph).toBe("✦ ");
+  });
+});

@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `TheoTheme` semantic growth — `name` (theme identity), `accent`, `code.*` (7 syntax-highlight bucket colors) and `toolStatus.*` (glyph+color per tool status; `running` is color-only — the spinner animates) token groups, all overridable via `TheoThemeOverride` with the same leaf-preserving merge; defaults are byte-identical to the M0-M5 constants they will replace (m6-theme-robustness T1.1)
+
+### Changed
+
+- `TheoTheme` (the OUTPUT type of `useTheoTheme`) gained required groups — consumers who hand-built a full `TheoTheme` object must spread `defaultTheme` (`{...defaultTheme, ...}`); override-based usage is source-compatible and unchanged (m6-theme-robustness T1.1)
+
 - Metrics-footer benchmark (`benchmarks/metrics-footer.bench.tsx`) — 50-message streaming thread × 150 ticks, with-metrics|without-metrics matrix; committed baseline shows the footer costs **1.00 ± 0.31 ms/frame** in the streaming hot path (3.684 ± 0.309 vs 2.682 ± 0.058 ms mean; conclusive at >1σ; peak delta 3.22 ms vs σ 2.46 — also conclusive, σ-inflated by one outlier run) (m5-metrics-surface T3.2)
 - Metrics demo (`pnpm example:metrics`) — always-on agent footer (context gauge + category bars + cost), static scene, clean piped output (m5-metrics-surface T3.2)
 - M5 integration coverage — composition-root metrics footer scene (gauge + chart + cost), NO_COLOR probe metrics scene proving glyph-distinct `█`/`░` fill readable without color (m5-metrics-surface T3.1)
