@@ -190,7 +190,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M6, M7
 **Risks:** 1. "Published but no consumer" — mitigated by the TheoCode dogfood gate. 2. Real-LLM demo flakiness.
 
-### M9 — [ ] Welcome banner
+### M9 — [x] Welcome banner
 
 > Added 2026-07-07 by `/roadmap-feature` (slug: `welcome-banner`). See CHANGELOG `[Unreleased] § Added`.
 
