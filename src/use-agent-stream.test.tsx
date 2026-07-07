@@ -258,16 +258,93 @@ describe("useAgentStream", () => {
     const returned = fake.wasReturned();
     expect(returned).toBe(true);
     expect(captured.current?.status).toBe("done");
-    // Idempotent: a second cancel is a no-op (already-cancelled early return).
+    expect(captured.current?.events[0]).toMatchObject({ text: "a" });
+    unmount();
+  });
+
+  it("second_cancel_is_noop", async () => {
+    // Review F-9: idempotent — the already-cancelled early return.
+    const fake = deferredStream();
+    const captured: Captured = {};
+    const { unmount } = render(
+      <Probe source={fake.iterable} captured={captured} />,
+    );
+    await ticks(3);
+    fake.emit(delta("a"));
+    await ticks(3);
+    captured.current?.cancel();
+    await ticks(1);
     captured.current?.cancel();
     await ticks(1);
     expect(captured.current?.status).toBe("done");
-    // Later resolves are dropped — cancelled flag + terminal reducer state.
+    unmount();
+  });
+
+  it("post_cancel_resolves_are_dropped", async () => {
+    // Review F-9: cancelled flag + terminal reducer state drop late events.
+    const fake = deferredStream();
+    const captured: Captured = {};
+    const { unmount } = render(
+      <Probe source={fake.iterable} captured={captured} />,
+    );
+    await ticks(3);
+    fake.emit(delta("a"));
+    await ticks(3);
+    captured.current?.cancel();
+    await ticks(1);
     fake.emit(delta("ZOMBIE"));
     await ticks(3);
     expect(captured.current?.status).toBe("done");
     expect(captured.current?.events[0]).toMatchObject({ text: "a" });
     unmount();
+  });
+
+  it("producer_reset_event_is_a_noop", async () => {
+    // Review F-2 (MEDIUM): a producer emitting {type: "__reset__"} must NOT
+    // reach the hook's internal reset — folded state survives.
+    const captured: Captured = {};
+    const { unmount } = render(
+      <Probe
+        source={finiteStream([delta("a"), { type: "__reset__" }, delta("b")])}
+        captured={captured}
+      />,
+    );
+    await ticks();
+    expect(captured.current?.status).toBe("done");
+    expect(captured.current?.events).toHaveLength(1);
+    expect(captured.current?.events[0]).toMatchObject({
+      id: "msg-1",
+      text: "ab",
+    });
+    unmount();
+  });
+
+  it("rejecting_iterator_return_never_escapes", async () => {
+    // Review F-4 (LOW): a producer whose return() rejects (finally-block
+    // cleanup failure) must not surface an unhandled rejection from the
+    // teardown/cancel call-sites. Vitest fails the run on unhandled
+    // rejections — surviving ticks IS the oracle.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let resolveNext:
+      ((result: IteratorResult<AgentStreamEvent>) => void) | undefined;
+    const iterator: AsyncIterator<AgentStreamEvent> = {
+      next: () =>
+        new Promise((resolve) => {
+          resolveNext = resolve;
+        }),
+      return: () => Promise.reject(new Error("cleanup blew up")),
+    };
+    const source: AsyncIterable<AgentStreamEvent> = {
+      [Symbol.asyncIterator]: () => iterator,
+    };
+    const captured: Captured = {};
+    const { unmount } = render(<Probe source={source} captured={captured} />);
+    await ticks(3);
+    resolveNext?.({ done: false, value: delta("a") });
+    await ticks(3);
+    unmount();
+    await ticks(5);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it("rejection_after_teardown_is_swallowed_silently", async () => {

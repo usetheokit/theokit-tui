@@ -21,6 +21,10 @@ import {
  * so an inline arrow restarts the stream on every render (EC-7). A NEW
  * identity deliberately restarts: state resets and refolds from scratch
  * (fresh seq/ids) — reconnect-by-refold rides exactly this contract (D5).
+ *
+ * Under React StrictMode (dev, strict-effects reconcilers) pass a FACTORY:
+ * a raw generator instance is closed by the run-1 cleanup's return() and
+ * the remount refolds it as an instant clean done (review F-10).
  */
 export type AgentStreamSource =
   AsyncIterable<AgentStreamEvent> | (() => AsyncIterable<AgentStreamEvent>);
@@ -30,18 +34,27 @@ export interface UseAgentStreamResult extends AgentStreamState {
   cancel: () => void;
 }
 
-/** Internal wrapper action — NEVER part of the public union (EC-4): the
- * hook resets its own state between sources; producers cannot. */
-type HookAction = AgentStreamEvent | { type: "__reset__" };
+/** Internal wrapper action — a structural ENVELOPE (review F-2), so a
+ * producer emitting `{type: "__reset__"}` can never reach the reset branch
+ * (EC-4: the hook resets its own state between sources; producers cannot —
+ * their unknown types fold to no-op in the public reducer). */
+type HookAction = { kind: "fold"; event: AgentStreamEvent } | { kind: "reset" };
 
 function hookReducer(
   state: AgentStreamState,
   action: HookAction,
 ): AgentStreamState {
-  if (action.type === "__reset__") {
+  if (action.kind === "reset") {
     return initialAgentStreamState;
   }
-  return agentStreamReducer(state, action);
+  return agentStreamReducer(state, action.event);
+}
+
+/** Teardown return() rejections have nowhere to rise (review F-4) — a
+ * producer whose finally-block cleanup fails must not become an unhandled
+ * rejection that kills the consumer CLI. Swallowing HERE is the contract. */
+function swallowTeardown(result: Promise<unknown> | undefined): void {
+  void result?.catch(() => {});
 }
 
 interface StreamControl {
@@ -61,7 +74,7 @@ export function useAgentStream(
     }
     const control: StreamControl = { cancelled: false };
     controlRef.current = control;
-    dispatch({ type: "__reset__" });
+    dispatch({ kind: "reset" });
     void (async () => {
       try {
         // Factory resolution INSIDE the try: a synchronously-throwing
@@ -76,10 +89,10 @@ export function useAgentStream(
           }
           if (result.done === true) {
             // Synthetic terminal — no SDK stream emits "done" (D1).
-            dispatch({ type: "done" });
+            dispatch({ kind: "fold", event: { type: "done" } });
             return;
           }
-          dispatch(result.value);
+          dispatch({ kind: "fold", event: result.value });
         }
       } catch (thrown) {
         if (control.cancelled) {
@@ -87,12 +100,15 @@ export function useAgentStream(
         }
         const message =
           thrown instanceof Error ? thrown.message : String(thrown);
-        dispatch({ type: "error", error: { message } });
+        dispatch({
+          kind: "fold",
+          event: { type: "error", error: { message } },
+        });
       }
     })();
     return () => {
       control.cancelled = true;
-      void control.iterator?.return?.();
+      swallowTeardown(control.iterator?.return?.());
     };
   }, [source]);
 
@@ -102,8 +118,8 @@ export function useAgentStream(
       return;
     }
     control.cancelled = true;
-    void control.iterator?.return?.();
-    dispatch({ type: "done" });
+    swallowTeardown(control.iterator?.return?.());
+    dispatch({ kind: "fold", event: { type: "done" } });
   }, []);
 
   return { ...state, cancel };

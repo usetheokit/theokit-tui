@@ -81,6 +81,9 @@ export type { TextBufferAction, TextBufferState } from "./text-buffer.js";
 // state; the structural event union ships as the source-param type.
 // isShellEnvelope/extractAssistantText stay module-internal (reducer detail).
 export { useAgentStream } from "./use-agent-stream.js";
+// UseAgentStreamResult and AssistantContentBlock ship as props-construction
+// accessories (hook return type / block embedded in AgentStreamEvent.message)
+// — the TokenCategory arch-5 precedent (review F-7 rationale).
 export type {
   AgentStreamSource,
   UseAgentStreamResult,

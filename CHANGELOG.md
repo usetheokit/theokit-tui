@@ -98,6 +98,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Stream reducer: thinking graduation now closes an open live message first — a thinking burst between text deltas no longer makes later deltas replace a non-tail timeline event (frozen scrollback under windowing); late result-less tool updates preserve already-folded shell/output; the hook's internal reset is envelope-guarded so a stream event `{type: "__reset__"}` can never wipe folded state; teardown `iterator.return()` rejections are swallowed at the only place they can be handled (m7-stream-adapter review fixes F-1/F-2/F-4/F-6)
 - `ChatComposer` cursor was invisible under color-less rendering (chalk level 0 strips the `inverse` attribute) — under the `no-color` theme a visible `▏` marker now carries the cursor affordance (colored-mode bytes unchanged; NO_COLOR remains the opt-out for dumb interactive terminals) (m6-theme-robustness T3.1)
 
 ### Security

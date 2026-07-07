@@ -88,9 +88,13 @@ describe("agentStreamReducer", () => {
 
   it("text_delta_replaces_tail_by_identity", () => {
     // Same id — the M3 streaming replace anchor; new object each fold.
-    const s = fold(delta("he"), delta("llo"));
+    const first = fold(delta("he"));
+    const s = agentStreamReducer(first, delta("llo"));
     expect(s.events).toHaveLength(1);
     expect(s.events[0]).toMatchObject({ id: "msg-1", text: "hello" });
+    // Reference identity pinned (review F-8): the tail is a NEW object —
+    // React re-render depends on it.
+    expect(s.events[0]).not.toBe(first.events[0]);
   });
 
   it("assistant_finalizes_live_message_in_place", () => {
@@ -147,6 +151,22 @@ describe("agentStreamReducer", () => {
     });
     expect(s.events[1]).toMatchObject({ kind: "message" });
     expect(s.streaming.thought).toBeUndefined();
+  });
+
+  it("thinking_between_deltas_closes_live_message", () => {
+    // Review fix F-1 (M3 only-the-tail violation): graduation APPENDS, so an
+    // open live message must CLOSE on graduation (close-on-effectful-fold
+    // extends to the thinking graduation) — otherwise the next delta would
+    // tail-replace a NON-tail message (frozen in <Static> scrollback).
+    const s = fold(delta("a"), thinkDelta("T"), delta("b"));
+    expect(s.events.map((e) => `${e.id}:${e.kind}`)).toEqual([
+      "msg-1:message",
+      "think-2:thinking",
+      "msg-3:message",
+    ]);
+    expect(s.events[0]).toMatchObject({ text: "a" });
+    expect(s.events[2]).toMatchObject({ text: "b" });
+    expect(passesBoundary(s)).toBe(true);
   });
 
   it("coarse_thinking_event_folds_like_accumulation", () => {
@@ -247,11 +267,13 @@ describe("agentStreamReducer", () => {
 
   it("delta_replace_leaves_earlier_events_untouched", () => {
     // The non-live arm of the tail-replace map: the graduated prefix passes
-    // through by reference while the tail replaces.
-    const s = fold(toolRunning("c1", "t"), delta("a"), delta("b"));
+    // through BY REFERENCE while the tail replaces (review F-8 — memo/Static
+    // stability depends on referential identity, not just shape).
+    const before = fold(toolRunning("c1", "t"), delta("a"));
+    const s = agentStreamReducer(before, delta("b"));
     expect(s.events.map((e) => e.id)).toEqual(["tool-c1", "msg-1"]);
     expect(s.events[1]).toMatchObject({ text: "ab" });
-    expect(s.events[0]).toMatchObject({ kind: "tool", status: "running" });
+    expect(s.events[0]).toBe(before.events[0]);
   });
 
   it("assistant_finalize_leaves_earlier_events_untouched", () => {
@@ -267,6 +289,20 @@ describe("agentStreamReducer", () => {
     const tool = find(s, "tool-c1");
     expect(tool).toMatchObject({ shell: { stdout: "x", stderr: "" } });
     expect((tool as { shell?: object }).shell).not.toHaveProperty("exitCode");
+  });
+
+  it("late_resultless_update_preserves_folded_content", () => {
+    // Review fix F-6: a status-only tool_call AFTER completed (e.g. a late
+    // SDK error) must not discard the already-folded shell/output.
+    const s = fold(
+      toolRunning("c1", "sh"),
+      toolCompleted("c1", { stdout: "ok", stderr: "", exitCode: 0 }),
+      { type: "tool_call", call_id: "c1", name: "sh", status: "error" },
+    );
+    expect(find(s, "tool-c1")).toMatchObject({
+      status: "failed",
+      shell: { stdout: "ok", exitCode: 0 },
+    });
   });
 
   it("error_fails_open_tools_and_closes_live_message", () => {

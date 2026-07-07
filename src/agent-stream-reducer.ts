@@ -33,20 +33,27 @@ export const initialAgentStreamState: AgentStreamState = {
 };
 
 /** D9: the thought buffer graduates to a timeline event at the first
- * EFFECTFUL non-thinking fold — never on ignored/unknown events (EC-10). */
+ * EFFECTFUL non-thinking fold — never on ignored/unknown events (EC-10).
+ * Graduation APPENDS, so it CLOSES any open live message first (review F-1
+ * — close-on-effectful-fold extends to graduation): otherwise the anchor
+ * would be buried behind the thinking event and the next delta would
+ * tail-replace a NON-tail message, violating the M3 only-the-tail contract
+ * (frozen in <Static> scrollback). */
 function graduateThought(state: AgentStreamState): AgentStreamState {
-  if (state.streaming.thought === undefined) {
+  const thought = state.streaming.thought;
+  if (thought === undefined) {
     return state;
   }
-  const seq = state.seq + 1;
+  const closed = withoutLiveMessage(state);
+  const seq = closed.seq + 1;
   return {
-    ...state,
+    ...closed,
     seq,
     events: [
-      ...state.events,
-      { id: `think-${seq}`, kind: "thinking", text: state.streaming.thought },
+      ...closed.events,
+      { id: `think-${seq}`, kind: "thinking", text: thought },
     ],
-    streaming: { active: state.streaming.active },
+    streaming: { active: closed.streaming.active },
   };
 }
 
@@ -177,6 +184,21 @@ function toolContent(
   return { output: JSON.stringify(result) };
 }
 
+/** A resultless late update (e.g. a status-only error after completed)
+ * inherits the already-folded content (review F-6) — never discards it. */
+function resolveToolContent(
+  result: unknown,
+  existing: AgentToolEvent | undefined,
+): Pick<AgentToolEvent, "output" | "shell"> {
+  if (result !== undefined) {
+    return toolContent(result);
+  }
+  return {
+    ...(existing?.output === undefined ? {} : { output: existing.output }),
+    ...(existing?.shell === undefined ? {} : { shell: existing.shell }),
+  };
+}
+
 function foldToolCall(
   state: AgentStreamState,
   event: AgentStreamEvent,
@@ -194,17 +216,22 @@ function foldToolCall(
     seq += 1;
     id = `tool-#${seq}`;
   }
-  const existing = next.events.find(
-    (item): item is AgentToolEvent => item.kind === "tool" && item.id === id,
+  // Single lookup, FULL predicate (review F-5): a producer call_id that
+  // collides with a non-tool id appends instead of overwriting — the M3
+  // duplicate-id throw then fails loud at the boundary, never silently.
+  const index = next.events.findIndex(
+    (item) => item.kind === "tool" && item.id === id,
   );
+  const existing =
+    index === -1 ? undefined : (next.events[index] as AgentToolEvent);
+  const content = resolveToolContent(event.result, existing);
   const toolEvent: AgentToolEvent = {
     id,
     kind: "tool",
     name: event.name ?? existing?.name ?? "tool",
     status: TOOL_STATUS_MAP[event.status ?? ""] ?? "running",
-    ...toolContent(event.result),
+    ...content,
   };
-  const index = next.events.findIndex((item) => item.id === id);
   const events =
     index === -1
       ? [...next.events, toolEvent]
@@ -218,8 +245,12 @@ function foldToolCall(
   };
 }
 
-/** EC-2/EC-6: terminal folds fail every non-terminal tool — never a frozen
- * spinner (new objects, same ids — graduated events stay replace-consistent). */
+/** EC-2/EC-6: terminal folds fail every non-terminal tool (new objects,
+ * same ids). KNOWN LIMIT (review F-3, plan Drawback "graduation-stale tool
+ * upsert — accepted v0"): a tool already graduated into <Static> scrollback
+ * (windowSize+overscan events behind) was printed once and will NOT repaint
+ * — the failed status is visible only within the live window. Status-aware
+ * windowing is a future ADR, not a hotfix. */
 function failNonTerminalTools(events: AgentEvent[]): AgentEvent[] {
   return events.map((item) =>
     item.kind === "tool" &&
