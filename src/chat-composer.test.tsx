@@ -223,6 +223,26 @@ describe("ChatComposer — no-color cursor fallback (M6 T3.1)", () => {
     instance.unmount();
   });
 
+  it("marker_survives_customized_no_color_base", async () => {
+    // review arch-2/dom-frontend-1: the branch is DATA (isMonochrome), not
+    // name identity — a customized no-color base (name "custom", colorless
+    // values) keeps the visible cursor.
+    const instance = await mount(
+      <TheoTUIProvider
+        theme={{
+          base: "no-color",
+          override: { role: { user: { glyph: ">> " } } },
+        }}
+      >
+        <ChatComposer onSubmit={() => {}} placeholder="type…" />
+      </TheoTUIProvider>,
+    );
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain(">>");
+    expect(frame).toContain("▏");
+    instance.unmount();
+  });
+
   it("colored_mode_bytes_unchanged", async () => {
     const instance = await mount(<ChatComposer onSubmit={() => {}} />);
     const frame = instance.lastFrame() ?? "";

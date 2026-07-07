@@ -28,6 +28,11 @@ describe("public entry surface (T0.2)", () => {
       "no-color",
     ]);
     expect(mod.themes.dark).toBe(mod.defaultTheme);
+    // Module-internal by design (M6 — the file's absence-pin pattern):
+    expect(mod).not.toHaveProperty("resolveTheme");
+    expect(mod).not.toHaveProperty("assertThemeProp");
+    expect(mod).not.toHaveProperty("mergeToolStatus");
+    expect(mod).not.toHaveProperty("isMonochrome");
   });
 
   it("public_entry_exposes_chat_message", async () => {

@@ -5,7 +5,9 @@ import {
   ContextWindowBar,
   TheoTUIProvider,
   ToolCall,
+  themes,
 } from "../src/index.js";
+import type { TheoBuiltinThemeName } from "../src/index.js";
 
 // Theme showcase (plan T3.2 — TTFATT caller for the built-ins): the same
 // scene under the dark and light themes. Static; piped output is clean.
@@ -19,16 +21,23 @@ function Scene() {
   );
 }
 
+// The showcase iterates the PUBLIC `themes` map (review wire-1 — the
+// exported map demoed through the entry, not just the string-name form).
+const showcase: TheoBuiltinThemeName[] = ["dark", "light"];
+
 const instance = render(
   <Box flexDirection="column">
-    <Text bold>dark (default)</Text>
-    <TheoTUIProvider theme="dark">
-      <Scene />
-    </TheoTUIProvider>
-    <Text bold>light</Text>
-    <TheoTUIProvider theme="light">
-      <Scene />
-    </TheoTUIProvider>
+    {showcase.map((name) => (
+      <Box key={name} flexDirection="column">
+        <Text bold>
+          {themes[name].name}
+          {name === "dark" ? " (default)" : ""}
+        </Text>
+        <TheoTUIProvider theme={name}>
+          <Scene />
+        </TheoTUIProvider>
+      </Box>
+    ))}
   </Box>,
 );
 setTimeout(() => {

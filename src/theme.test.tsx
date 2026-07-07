@@ -5,6 +5,7 @@ import { renderFrame } from "../tests/helpers.js";
 import {
   TheoTUIProvider,
   defaultTheme,
+  isMonochrome,
   themes,
   useTheoTheme,
 } from "./theme.js";
@@ -396,6 +397,57 @@ describe("built-in themes + provider resolution (M6 T1.2)", () => {
       </TheoTUIProvider>,
     );
     expect(captured?.name).toBe("custom");
+  });
+
+  it("pair_form_invalid_override_throws_our_typed_error", () => {
+    // review arch-1: null/string/array overrides must hit OUR guard, never
+    // the engine's Object.keys TypeError (or silently mislabel as custom).
+    for (const bad of [null, "light", []]) {
+      const call = () =>
+        TheoTUIProvider({
+          theme: { base: "dark", override: bad } as never,
+          children: null,
+        });
+      expect(call).toThrow(TypeError);
+      expect(call).toThrow("TheoTUIProvider: theme must be");
+    }
+  });
+
+  it("pair_form_unknown_base_throws_typed", () => {
+    // review tests-5: the unknown-name negative through the PAIR form.
+    const call = () =>
+      TheoTUIProvider({
+        theme: { base: "solarized" } as never,
+        children: null,
+      });
+    expect(call).toThrow(TypeError);
+    expect(call).toThrow('unknown theme "solarized"');
+  });
+
+  it("no_color_theme_has_every_color_leaf_empty", () => {
+    // review tests-4: audit EVERY leaf, not a sample.
+    for (const value of collectColorStrings(themes["no-color"])) {
+      expect(value).toBe("");
+    }
+    expect(isMonochrome(themes["no-color"])).toBe(true);
+    expect(isMonochrome(themes.dark)).toBe(false);
+  });
+
+  it("customized_no_color_base_stays_monochrome", async () => {
+    // review arch-2/dom-frontend-1: identity says "custom", DATA says
+    // monochrome — degrade-aware branches must follow the data.
+    await renderFrame(
+      <TheoTUIProvider
+        theme={{
+          base: "no-color",
+          override: { role: { user: { glyph: ">> " } } },
+        }}
+      >
+        <Probe />
+      </TheoTUIProvider>,
+    );
+    expect(captured?.name).toBe("custom");
+    expect(captured ? isMonochrome(captured) : false).toBe(true);
   });
 
   it("pair_form_without_base_merges_onto_dark", async () => {

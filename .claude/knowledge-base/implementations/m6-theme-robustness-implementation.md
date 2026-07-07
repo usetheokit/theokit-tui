@@ -85,8 +85,12 @@ five components' render paths).
 | m5-metrics | without-metrics | mean | 2.682±0.058 | 2.612±0.084 | −0.070 | 0.084 | OK |
 | m5-metrics | without-metrics | peak | 3.597±0.062 | 4.178±0.296 | +0.581 | 0.296 | WATCH |
 
-**Verdict: NO M6-caused regression — 18/20 within 1σ; the 2 WATCH rows (1-2σ) sit on
-paths M6 did NOT touch:** `git diff c036ef8..HEAD -- src/diff-viewer.tsx
+**Verdict: NO M6-caused regression — the rule is ADVERSE-only (review dom-testing-1
+corrected the earlier "18/20 within 1σ" framing, which held only for adverse deltas:
+two-sided, 5/20 rows exceed 1 max-σ, and the large FAVORABLE swings — e.g. m4-full
+mean −1.4σ / peak −2.6σ, m1-windowed mean −3.2σ — corroborate machine variance
+rather than stability). No ADVERSE delta exceeds 2σ; the 2 adverse WATCH rows
+(1-2σ) sit on paths M6 did NOT touch:** `git diff c036ef8..HEAD -- src/diff-viewer.tsx
 src/diff-model.ts src/chat-thread.tsx src/chat-message.tsx` is EMPTY (diff-viewer's
 windowed +2.6ms coexists with its own FULL mode IMPROVING 22% in the same run;
 m5-without-metrics is the footer-ABSENT mode — pure ChatThread). Both are cross-run
@@ -96,9 +100,15 @@ predicted.
 
 ## Deviations
 
-(none — all seven tasks landed as planned; the only plan-text ambiguity found at
-implement time was resolved WITHIN plan bounds: `toolStatus.running` typed color-only
-per D1's own resolution note.)
+- **DV-1 (review xval-1/tests-2)** — suite subprocess spawn count is **11**, not the
+  plan AC's "≤ 10": the dumb≡no-color equality test independently RE-SPAWNS the
+  NO_COLOR probe (test independence per `testing.md § 3` — caching across tests was
+  considered and rejected). The arithmetic drifted, not the discipline; its it-level
+  timeout was raised to 45s for the two-spawn worst case (review dom-testing-3).
+- Otherwise all seven tasks landed as planned; the one plan-text ambiguity was
+  resolved WITHIN plan bounds (`toolStatus.running` typed color-only per D1's own
+  resolution note), and the equality normalization (`▏`→space, not `""`) is the
+  plan-delegated "exact normalization locked in the test".
 
 ## Environment notes
 

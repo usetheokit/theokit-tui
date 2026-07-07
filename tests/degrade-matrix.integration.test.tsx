@@ -73,7 +73,10 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
 
   it(
     "term_dumb_scene_matches_no_color_bytes_modulo_marker",
-    { timeout: 20000 },
+    // TWO sequential spawns, each with its own 20s deadline — the it-level
+    // budget must exceed the worst case (review dom-testing-3; house
+    // subprocess-flake history under load).
+    { timeout: 45000 },
     () => {
       // TERM=dumb resolves the DARK theme at chalk level 0 — no marker by
       // design (EC-1); the composer cursor cell is the inverse-stripped
@@ -82,6 +85,9 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
       assertDegradedScene(outDumb);
       expect(outDumb).not.toContain("▏");
       const outNoColor = spawnProbe({ NO_COLOR: "1" });
+      // Exactly ONE marker (review tests-3 — a duplicated-marker regression
+      // must not hide inside the global replaceAll wherever dumb has spaces).
+      expect(outNoColor.split("▏")).toHaveLength(2);
       const normalized = outNoColor.replaceAll("▏", " ");
       expect(outDumb).toBe(normalized);
     },

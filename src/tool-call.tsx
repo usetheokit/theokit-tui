@@ -44,7 +44,8 @@ export interface ToolCallProps {
    * KNOWN RENDER TRADE-OFF (SEPA phase-1 F9): Ink's SGR merger does not close
    * the name's bold before opening dim (`[1m…[2m…[22m`), so bold-capable
    * terminals render the summary bold+faint — faint dominates visually; same
-   * output shape as the gemini-cli header. Revisit with the M6 theme system.
+   * output shape as the gemini-cli header. SETTLED at M6 (plan D1:
+   * attributes stay component-level, never tokens) — accepted gemini-parity.
    */
   summary?: string;
 }

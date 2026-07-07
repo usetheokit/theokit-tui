@@ -311,6 +311,11 @@ describe("public API integration (M6 T3.2 — theme matrix)", () => {
   });
 
   it("light_composite_scene_matches_snapshot", async () => {
+    // review tests-1: the snapshot pins HIGHLIGHTED bytes — await the
+    // single-flight loader so a filtered/isolated run can't capture the
+    // plain first frame (testing.md § 3 independence).
+    const { ensureHighlighter } = await import("../src/code-block.js");
+    await ensureHighlighter();
     const frame = await renderFrame(scene("light"));
     // Anchor-then-snapshot hard convention: the light accent (blue → [34m)
     // must be present BEFORE the layout snapshot can absorb it.

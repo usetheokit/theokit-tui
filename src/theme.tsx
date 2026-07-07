@@ -1,6 +1,8 @@
 import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 
+import { unionMessage } from "./union-message.js";
+
 export interface RoleTokens {
   /** Glyph prefix rendered before the message (gemini-cli idiom). */
   glyph: string;
@@ -40,8 +42,10 @@ export interface ToolStatusTokens {
 export interface TheoTheme {
   /**
    * Theme identity: a built-in name ("dark" | "light" | "no-color") or
-   * "custom" when a non-empty override is applied. Degrade-as-data seam —
-   * components may branch on `name === "no-color"` instead of reading env.
+   * "custom" when a non-empty override is applied. Identity is FORM-based —
+   * degrade-aware components must branch on `isMonochrome(theme)` (data),
+   * never on this name (a customized no-color base reads "custom" while
+   * still rendering colorless — review arch-2/dom-frontend-1).
    */
   name: string;
   role: {
@@ -67,9 +71,10 @@ export interface TheoTheme {
 
 /**
  * Two-level partial override accepted by `<TheoTUIProvider theme>`.
- * Hand-rolled (no deepmerge dep at M0 — plan ADR D5); the merge is leaf-level
- * per role/status group (overriding one leaf preserves its siblings).
- * Recursive deepmerge is deferred to the M6 theme system.
+ * Hand-rolled leaf-level merge per group (overriding one leaf preserves its
+ * siblings) — the SETTLED contract (M6 plan D2 rejected a deepmerge dep:
+ * ~20 lines cover the closed tree and deepmerge's array-concat is a
+ * documented foot-gun).
  */
 export interface TheoThemeOverride {
   role?: {
@@ -120,7 +125,14 @@ export const defaultTheme: TheoTheme = Object.freeze({
   }),
 });
 
-export type TheoBuiltinThemeName = "dark" | "light" | "no-color";
+// Single source for the built-in name union (review arch-4 — the tool-call
+// TOOL_CALL_STATUSES idiom): type, runtime guard and error message all
+// derive from this array; a new built-in touches it exactly once.
+const BUILTIN_THEME_NAMES = ["dark", "light", "no-color"] as const;
+
+export type TheoBuiltinThemeName = (typeof BUILTIN_THEME_NAMES)[number];
+
+const BUILTIN_UNION_MESSAGE = unionMessage(BUILTIN_THEME_NAMES);
 
 /** Light-terminal palette (named ANSI-16 only — plan D3; seeded from the
  * gemini ansi-light slot choices: bright-yellow/cyan-on-white avoided). */
@@ -239,7 +251,7 @@ export type TheoThemeProp =
   | { base?: TheoBuiltinThemeName; override?: TheoThemeOverride };
 
 function isBuiltinName(value: string): value is TheoBuiltinThemeName {
-  return value === "dark" || value === "light" || value === "no-color";
+  return (BUILTIN_THEME_NAMES as readonly string[]).includes(value);
 }
 
 function isPairForm(
@@ -251,9 +263,13 @@ function isPairForm(
 function assertBuiltinName(name: string): void {
   if (!isBuiltinName(name)) {
     throw new TypeError(
-      `TheoTUIProvider: unknown theme "${name}" — expected "dark" | "light" | "no-color"`,
+      `TheoTUIProvider: unknown theme "${name}" — expected ${BUILTIN_UNION_MESSAGE}`,
     );
   }
+}
+
+function isPlainObject(value: unknown): boolean {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function assertPairForm(pair: {
@@ -269,6 +285,14 @@ function assertPairForm(pair: {
   }
   if (pair.base !== undefined) {
     assertBuiltinName(pair.base);
+  }
+  // review arch-1: an unvalidated override (null/string/array) would reach
+  // mergeTheme and throw the ENGINE's TypeError — breaking the EC-5 contract
+  // (or silently mislabel base values as "custom" for a string).
+  if (pair.override !== undefined && !isPlainObject(pair.override)) {
+    throw new TypeError(
+      `TheoTUIProvider: theme must be a built-in name or an override object — got ${Array.isArray(pair.override) ? "array" : String(pair.override)} as override`,
+    );
   }
 }
 
@@ -317,9 +341,14 @@ function resolveTheme(theme: TheoThemeProp | undefined): TheoTheme {
 }
 
 /**
- * Nesting note (M0 semantics): a nested provider RESETS to
- * `defaultTheme + own override` — it does not compose with ancestor
- * providers. Composition arrives with the M6 theme system.
+ * Nesting note (SETTLED — M6 plan D2): a nested provider RESETS to its OWN
+ * resolved base + override; it never composes with ancestor providers (the
+ * base of a partial override is explicit, never ambient).
+ *
+ * Referential-stability note (review dom-frontend-5): the value is memoized
+ * on `[theme]` — pass a HOISTED override object (or a built-in name); an
+ * inline object literal re-merges and re-renders every consumer per parent
+ * render.
  */
 export function TheoTUIProvider({
   theme,
@@ -343,4 +372,32 @@ export function TheoTUIProvider({
 /** Never returns `undefined` — falls back to `defaultTheme` without a provider. */
 export function useTheoTheme(): TheoTheme {
   return useContext(ThemeContext);
+}
+
+/**
+ * TRUE when every color slot of the theme is empty — the DATA-derived
+ * degrade predicate (review arch-2/dom-frontend-1: branching on
+ * `name === "no-color"` loses degrade behavior for any CUSTOMIZED no-color
+ * base, whose name reads "custom"). Components branch on this, never on env
+ * and never on the identity string. Module export — NOT on the package entry.
+ */
+export function isMonochrome(theme: TheoTheme): boolean {
+  const colors: string[] = [
+    theme.role.user.prefix,
+    theme.role.assistant.prefix,
+    theme.role.system.prefix,
+    ...Object.values(theme.status),
+    theme.accent,
+    ...Object.values(theme.code),
+    theme.toolStatus.pending.color,
+    theme.toolStatus.running.color,
+    theme.toolStatus.success.color,
+    theme.toolStatus.failed.color,
+  ];
+  for (const role of Object.values(theme.role)) {
+    if (role.text !== undefined) {
+      colors.push(role.text);
+    }
+  }
+  return colors.every((color) => color === "");
 }
