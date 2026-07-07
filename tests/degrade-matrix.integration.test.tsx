@@ -70,6 +70,11 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
   it("no_color_scene_degrades_readably", { timeout: 20000 }, () => {
     const out = spawnProbe({ NO_COLOR: "1" });
     assertDegradedScene(out);
+    // M10 pipe contract (blueprint Corner 4): ink7 non-interactive writes
+    // ONE final frame at unmount — the probe content appears exactly once
+    // (ink5 pipes wrote N throttled intermediate frames).
+    const occurrences = out.split("plain text probe").length - 1;
+    expect(occurrences).toBe(1);
     // The ▏ cursor marker is the only-OUR-swap-can-produce oracle (EC-2):
     // it renders exclusively under the no-color THEME, which only the
     // provider's NO_COLOR resolution selects here.
