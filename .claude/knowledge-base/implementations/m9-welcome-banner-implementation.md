@@ -59,6 +59,13 @@ T2.1's other touches are tests/fixtures. The flip-condition guard in the plan
 No-new-bench justification + flip condition per blueprint Corner 3 (banner
 renders once at startup; a bench would measure process startup noise).
 
-## Follow-ups
+- **DV-3 — hints validation stricter than D5's letter (review arch-m9-1).**
+  Empty/whitespace hint entries throw (D5 only required `\n` rejection) —
+  deliberate Rule-8 strengthening at the boundary, now pinned by the
+  `hints: [""]` negative test.
 
-- Review guards (from D1): no layout props, no `<Static>`, no gradient dep — for `/review` to verify.
+## Review outcome
+
+`/review` 2026-07-07: READY_TO_MERGE (6 independent subagents; 2 MEDIUM +
+4 LOW fixed in batch `5a0157a`, 0 open). Report:
+`.claude/knowledge-base/reviews/m9-welcome-banner-review-2026-07-07.md`.
