@@ -179,7 +179,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M3
 **Risks:** 1. Structural-type drift vs the real SDK output. 2. Reducer complexity/correctness.
 
-### M8 — [ ] GA: dogfood + publish
+### M8 — [x] GA: dogfood + publish
 
 **Objective:** Prove V1 end-to-end and publish `@theokit/tui` to npm.
 **Definition of done:**
