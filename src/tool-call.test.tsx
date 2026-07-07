@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import { ToolCall, ToolCallCard } from "./tool-call.js";
+import { TheoTUIProvider } from "./theme.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
 const DOTS_FRAME_0 = "⠋";
@@ -227,4 +228,19 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
       instance.unmount();
     },
   );
+});
+
+// M6 T2.1: STATUS_VISUALS migrated to theme.toolStatus — tokens drive render.
+describe("ToolCall — toolStatus tokens (M6 T2.1)", () => {
+  it("tool_status_tokens_drive_render", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider
+        theme={{ toolStatus: { failed: { glyph: "✗", color: "magenta" } } }}
+      >
+        <ToolCall name="t" status="failed" />
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("✗");
+    expect(frame).toContain("[35m");
+  });
 });

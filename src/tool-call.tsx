@@ -25,18 +25,10 @@ const STATUS_UNION_MESSAGE = unionMessage(VALID_STATUSES);
 /** Fixed indicator column width aligning card headers (gemini-cli idiom). */
 export const STATUS_INDICATOR_WIDTH = 3;
 
-// Module-local status visuals (documented M6 theming candidates — ADR D1).
-// ONE map per static status (review arch-2): an M3 additive status touches
-// VALID_STATUSES + this map (or the spinner branch) — nothing else.
-// Record<Exclude<...>> keeps it compile-time complete vs the union.
-const STATUS_VISUALS: Record<
-  Exclude<ToolCallStatus, "running">,
-  { glyph: string; color: (theme: TheoTheme) => string; bold: boolean }
-> = {
-  pending: { glyph: "o", color: (t) => t.role.system.prefix, bold: false },
-  success: { glyph: "✓", color: (t) => t.status.success, bold: false },
-  failed: { glyph: "x", color: (t) => t.status.error, bold: true },
-};
+// Status visuals live in theme.toolStatus since M6 (glyph + color tokens);
+// `failed` bold stays a component attribute (attributes are never tokens —
+// they are the channel that survives color loss). NOTE: pending's color is a
+// token literal — it no longer follows role.system.prefix overrides.
 
 export interface ToolCallProps {
   /**
@@ -65,15 +57,15 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
     // Each mounted running indicator owns one interval timer (ink-spinner);
     // many concurrent running cards = many timers (plan risk register).
     return (
-      <Text color={theme.status.warning}>
+      <Text color={theme.toolStatus.running.color}>
         <Spinner type="dots" />
       </Text>
     );
   }
-  const visual = STATUS_VISUALS[status];
+  const token = theme.toolStatus[status];
   return (
-    <Text color={visual.color(theme)} bold={visual.bold}>
-      {visual.glyph}
+    <Text color={token.color} bold={status === "failed"}>
+      {token.glyph}
     </Text>
   );
 }

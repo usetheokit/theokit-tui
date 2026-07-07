@@ -69,7 +69,7 @@ export function AgentStreaming({
   return (
     <Box>
       <Box minWidth={3}>
-        <Text color={theme.status.warning}>
+        <Text color={theme.toolStatus.running.color}>
           <Spinner type="dots" />
         </Text>
       </Box>

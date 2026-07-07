@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import { AgentStreaming, formatElapsed } from "./agent-streaming.js";
+import { TheoTUIProvider } from "./theme.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick. */
 const DOTS_FRAME_0 = "⠋";
@@ -129,5 +130,17 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
       </Box>,
     );
     expect(frame).toMatchSnapshot("agent-streaming");
+  });
+});
+
+// M6 T2.1: the spinner color follows theme.toolStatus.running.
+describe("AgentStreaming — running token (M6 T2.1)", () => {
+  it("spinner_color_follows_running_token", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider theme={{ toolStatus: { running: { color: "cyan" } } }}>
+        <AgentStreaming />
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("[36m");
   });
 });
