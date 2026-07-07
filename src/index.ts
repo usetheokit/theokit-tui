@@ -44,6 +44,11 @@ export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentStreaming } from "./agent-streaming.js";
 export type { AgentStreamingProps } from "./agent-streaming.js";
 
+// renderFillBar/formatPercent/displayPercent/formatTokens/formatCost stay
+// module-internal (M5 ADR D7 — truncateLines/foldDiffLines precedent).
+export { ContextWindowBar } from "./context-window-bar.js";
+export type { ContextWindowBarProps } from "./context-window-bar.js";
+
 export { ChatComposer } from "./chat-composer.js";
 export type { ChatComposerProps } from "./chat-composer.js";
 export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";

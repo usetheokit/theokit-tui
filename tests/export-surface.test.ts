@@ -105,6 +105,18 @@ describe("public entry surface (T0.2)", () => {
     expect(mod).not.toHaveProperty("formatElapsed");
   });
 
+  it("public_entry_exposes_metrics_surface", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.ContextWindowBar).toBe("function");
+    // Module-internal by plan decision (M5 ADR D7 — pure cores stay off the
+    // entry; a future public formatter export is one line + this pin):
+    expect(mod).not.toHaveProperty("renderFillBar");
+    expect(mod).not.toHaveProperty("formatPercent");
+    expect(mod).not.toHaveProperty("displayPercent");
+    expect(mod).not.toHaveProperty("formatTokens");
+    expect(mod).not.toHaveProperty("formatCost");
+  });
+
   it("public_entry_exposes_chat_composer_and_text_buffer", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ChatComposer).toBe("function");
