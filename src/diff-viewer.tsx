@@ -176,9 +176,10 @@ function viewRowElement(
         </Text>
       );
     case "gap":
+      // Indent under the gutter (codex spacer parity — dom-frontend-4).
       return (
         <Text key={key} dimColor>
-          {"  ⋮"}
+          {" ".repeat(showLineNumbers ? width + 1 : 0)}⋮
         </Text>
       );
     case "fold":
@@ -240,9 +241,23 @@ export function DiffViewer({
     return <Text dimColor>(no changes)</Text>;
   }
   // Cap AFTER folding (EC-3), GLOBAL across files incl. headers (EC-4),
-  // HEAD retention (EC-5 — documents rule).
+  // HEAD retention (EC-5 — documents rule). The trailer counts SOURCE lines
+  // (fold rows expand to their hidden count; headers/gaps count 0) — a row
+  // count misleads when a dropped "row" hides a whole fold (dom-frontend-2).
   const capped = maxLines !== undefined && rows.length > maxLines;
   const visible = capped ? rows.slice(0, maxLines) : rows;
+  const hiddenSourceLines = capped
+    ? rows.slice(maxLines as number).reduce((total, row) => {
+        if (row.kind === "fold") {
+          return total + row.hidden;
+        }
+        return row.kind === "add" ||
+          row.kind === "del" ||
+          row.kind === "context"
+          ? total + 1
+          : total;
+      }, 0)
+    : 0;
   const width = gutterWidth(files);
 
   return (
@@ -250,11 +265,7 @@ export function DiffViewer({
       {visible.map((row, index) =>
         viewRowElement(row, index, theme, showLineNumbers, width),
       )}
-      {capped && (
-        <Text dimColor>
-          … (+{rows.length - (maxLines as number)} more lines)
-        </Text>
-      )}
+      {capped && <Text dimColor>… (+{hiddenSourceLines} more lines)</Text>}
     </Box>
   );
 }

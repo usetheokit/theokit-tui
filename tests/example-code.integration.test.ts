@@ -22,5 +22,8 @@ it(
     const plain = out.replace(/\u001B\[[0-9;]*m/g, "");
     expect(plain).toMatch(/^\s*\d+ \+ /m);
     expect(plain).toContain("const");
+    // Highlighting actually happened (tests-13/wire-7): the example awaits
+    // preloadHighlighter, so the single frame must carry color bytes.
+    expect(out).toMatch(/\[3[0-9]m/);
   },
 );

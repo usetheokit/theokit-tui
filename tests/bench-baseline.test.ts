@@ -334,6 +334,7 @@ interface M4Baseline {
     hunk_lines: number;
     context_lines_per_hunk: number;
     wide_line_chars: number;
+    windowed: string;
   };
   protocol: { warmup_runs: number; measured_runs: number };
   node_version: string;
@@ -395,6 +396,10 @@ describe("benchmark baseline M4 (T3.2)", () => {
     expect(baseline.workload.hunk_lines).toBeGreaterThan(0);
     expect(baseline.workload.context_lines_per_hunk).toBeGreaterThan(0);
     expect(baseline.workload.wide_line_chars).toBeGreaterThan(0);
+    // The windowing descriptor the 12x claim hinges on (dom-testing-1).
+    expect(baseline.workload.windowed).toMatch(
+      /maxLines \d+ \+ contextLines \d+/,
+    );
     expect(baseline.methodology).toContain("peak_ms_per_frame");
   });
 });

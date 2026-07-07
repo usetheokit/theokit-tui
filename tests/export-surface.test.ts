@@ -68,6 +68,10 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.CodeBlock).toBe("function");
     // Module-internal by plan decision (EC-10, D7 precedent):
     expect(mod).not.toHaveProperty("ensureHighlighter");
+    expect(mod).not.toHaveProperty("highlightLine");
+    expect(mod).not.toHaveProperty("foldDiffLines");
+    // PUBLIC readiness seam (DV-5 — review dom-frontend-1):
+    expect(typeof mod.preloadHighlighter).toBe("function");
   });
 
   it("manifest_declares_lowlight_optional_peer", () => {

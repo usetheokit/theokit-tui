@@ -33,6 +33,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Review-batch hardening (m4-code-surface review 2026-07-07): `preloadHighlighter()`
+  promoted to the public entry (one-shot/static renders could never capture a highlighted
+  frame — published consumers had no readiness seam; logged divergence DV-5); DiffViewer
+  cap trailer now counts SOURCE lines (a dropped fold row hid its whole run from the
+  count); loader distinguishes lowlight-absent from lowlight-broken in its one-time hint;
+  `⋮` hunk gaps indent under the gutter; `DiffFold`/`DiffRow` types withdrawn from the
+  entry (module-internal per plan D10); lowlight devDependency exact-pinned (snapshot
+  drift budget); bench gains a windowing-active mount self-check + a negative wide-hunk
+  guard; oracle hardening across suites (fresh-registry plain-first proof, fold edges,
+  width-matrix positive anchors, backslash/quoted-name pins, example highlight-byte
+  assert). The `diff` AgentEvent variant remains deferred to M5+ (M3 note kept traceable)
 - Review-batch hardening (m3-agent-surface review 2026-07-06): agent-timeline bench
   tall-item fixed twice over (index 42 landed in a MESSAGE slot and never rendered; index
   45 graduated at mount, outside the sampled steps — now APPENDED mid-loop with a fail-fast

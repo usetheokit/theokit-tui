@@ -70,6 +70,10 @@ if (!(patches[WIDE_HUNK_STEP] as string).includes("x".repeat(100))) {
     "bench: wide-line hunk missing from its patch — generator regressed",
   );
 }
+// Negative half (wire-2): the wide hunk must NOT leak before its step.
+if ((patches[WIDE_HUNK_STEP - 1] as string).includes("x".repeat(100))) {
+  throw new Error("bench: wide hunk leaked before its step");
+}
 
 function App({ patch, mode }: { patch: string; mode: Mode }) {
   return (
@@ -86,6 +90,25 @@ function App({ patch, mode }: { patch: string; mode: Mode }) {
     </TheoTUIProvider>
   );
 }
+
+/** Mount self-check (wire-1, plan EC-18): cap+fold must be ACTIVE. */
+async function assertWindowingActiveAtMount(): Promise<void> {
+  const w = render(<App patch={patches[0] as string} mode="windowed" />);
+  await tick();
+  const windowedRows = (w.lastFrame() ?? "").split("\n").length;
+  w.unmount();
+  const f = render(<App patch={patches[0] as string} mode="full" />);
+  await tick();
+  const fullRows = (f.lastFrame() ?? "").split("\n").length;
+  f.unmount();
+  if (windowedRows >= fullRows) {
+    throw new Error(
+      `bench: windowing inactive at mount (windowed ${windowedRows} >= full ${fullRows})`,
+    );
+  }
+}
+
+await assertWindowingActiveAtMount();
 
 async function runOnce(mode: Mode): Promise<RunMetrics> {
   const instance = render(<App patch={patches[0] as string} mode={mode} />);
@@ -178,9 +201,11 @@ if (!smoke) {
       "10 hunks (30 lines each: 10 context / 15 add / 5 del); each of 40 " +
       "measured steps swaps in a PRE-GENERATED patch string with one more " +
       "hunk (parse runs inside render — the component cost; string " +
-      "generation excluded per EC-17); the step-25 hunk carries 500-char " +
-      "wide lines so its wrap+parse cost lands INSIDE the sampled window " +
-      "(M3 lesson); modes: windowed = maxLines 80 + contextLines 2, full = " +
+      "generation excluded per EC-17); a 500-char wide-line hunk is " +
+      "INTRODUCED at step 25 and present in all subsequent steps, so its " +
+      "wrap+parse cost lands INSIDE the sampled window (M3 lesson); a mount " +
+      "self-check asserts windowed renders fewer rows than full; modes: " +
+      "windowed = maxLines 80 + contextLines 2, full = " +
       "unbounded; compare the modes' mean/peak_ms_per_frame growth to read " +
       "the large-diff windowing claim — peak_ms_per_frame is the headline " +
       "metric; deltas within 1 std_dev are INCONCLUSIVE and must be " +

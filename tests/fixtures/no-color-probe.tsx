@@ -44,7 +44,7 @@ const instance = render(
       patch={[
         "--- a/probe.ts",
         "+++ b/probe.ts",
-        "@@ -1,12 +1,12 @@",
+        "@@ -1,11 +1,11 @@",
         "-old probe line",
         "+new probe line",
         ...Array.from({ length: 10 }, (_, i) => ` probe-ctx-${i}`),

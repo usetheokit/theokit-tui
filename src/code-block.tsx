@@ -65,18 +65,39 @@ export function ensureHighlighter(): Promise<HighlighterLike | undefined> {
   highlighterPromise ??= import("lowlight")
     .then((mod) => {
       const lowlight = mod.createLowlight(mod.common);
-      return lowlight as unknown as HighlighterLike;
+      // Checked adapter (review arch-5): bind the two methods we use so a
+      // lowlight signature change fails HERE at build time, not at runtime.
+      const adapter: HighlighterLike = {
+        registered: (language) => lowlight.registered(language),
+        highlight: (language, code) => lowlight.highlight(language, code),
+      };
+      return adapter;
     })
-    .catch(() => {
+    .catch((error: unknown) => {
       if (!warnedAbsent) {
         warnedAbsent = true;
+        const code = (error as { code?: string }).code;
+        // Distinguish absent from broken (review arch-4 — fail-clear).
         console.warn(
-          'CodeBlock: optional peer "lowlight" is not installed — code renders unhighlighted. Install it with: pnpm add lowlight',
+          code === "ERR_MODULE_NOT_FOUND"
+            ? 'CodeBlock: optional peer "lowlight" is not installed — code renders unhighlighted. Install it with: pnpm add lowlight'
+            : `CodeBlock: optional peer "lowlight" failed to load — code renders unhighlighted. ${String(error)}`,
         );
       }
       return undefined;
     });
   return highlighterPromise;
+}
+
+/**
+ * PUBLIC readiness seam (review dom-frontend-1 — logged divergence DV-5):
+ * one-shot/static renders (piped demos, snapshot tools) capture the PLAIN
+ * first frame unless the optional highlighter is awaited first; published
+ * consumers cannot reach the internal loader, so this thin wrapper is on the
+ * package entry. Resolves whether or not `lowlight` is installed.
+ */
+export async function preloadHighlighter(): Promise<void> {
+  await ensureHighlighter();
 }
 
 /** hast→Text mapping (gemini CodeColorizer port): color inherited down,

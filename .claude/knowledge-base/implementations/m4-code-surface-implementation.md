@@ -7,9 +7,9 @@
 | Task | Commit(s) | Wiring triad |
 |---|---|---|
 | T1.1 diff-model + parse-diff | fb91832 | (a) example/bench · (b) 20-test parser suite · (c) baseline |
-| T1.2 DiffViewer | c08d6e4 (+64d1b0a/a12b919 complexity, +526efad SEPA batch F1-F6) | 22-test renderer suite |
+| T1.2 DiffViewer | c08d6e4 (+a12b919 complexity; 64d1b0a is a mislabeled docs-only commit — xval-4; +eb26ed9 SEPA batch F1-F6) | 22-test renderer suite |
 | T2.1 CodeBlock + lowlight optional peer | d8d6751 | (a) example · (b) 20+1 tests incl. module-absent · (c) baseline |
-| T3.1 integration + NO_COLOR | eb26ed9 | composition scene + probe diff |
+| T3.1 integration + NO_COLOR | 526efad | composition scene + probe diff |
 | T3.2 bench + baseline + example | eba9cac (+d0c0f08 coverage closure) | pillars (a)+(c) |
 
 ## Gates

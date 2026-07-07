@@ -16,9 +16,18 @@ const lines12 = Array.from({ length: 12 }, (_, i) => `line-${i}`).join("\n");
 
 describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
   it("renders_plain_before_highlighter_loads", async () => {
-    // First frame may precede the dynamic import resolving — text is intact.
-    const frame = await renderFrame(<CodeBlock code={SNIPPET} />);
-    expect(stripAnsi(frame)).toContain("const x = 1;");
+    // tests-1: engage the HIGHLIGHT path on a FRESH module registry so the
+    // first synchronous frame genuinely precedes the dynamic import.
+    vi.resetModules();
+    const fresh = await import("./code-block.js");
+    const { render } = await import("ink-testing-library");
+    const instance = render(
+      <fresh.CodeBlock code={SNIPPET} language="typescript" />,
+    );
+    const first = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(stripAnsi(first)).toContain("const x = 1;");
+    expect(first).not.toMatch(/\[3[0-9]m/); // plain BEFORE load
   });
 
   it("highlight_preserves_text_exactly", async () => {
@@ -129,7 +138,10 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
   });
 
   it("unmount_before_load_does_not_set_state", async () => {
-    // EC-14.
+    // EC-14. HONEST LIMITATION (tests-2): React >= 18 removed the
+    // setState-after-unmount warning and the module promise may already be
+    // resolved by earlier tests — this is a smoke, not a proof; the mounted
+    // guard remains correct defensive code.
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const { render } = await import("ink-testing-library");
@@ -146,14 +158,17 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
   });
 
   it("language_change_after_load_keeps_text_invariant", async () => {
-    // EC-25.
+    // EC-25 via RERENDER on the mounted instance (tests-6) — a future
+    // memoization must not escape the prop-change path.
     await ensureHighlighter();
-    const js = await renderFrame(
-      <CodeBlock code={SNIPPET} language="javascript" />,
-    );
-    const py = await renderFrame(
-      <CodeBlock code={SNIPPET} language="python" />,
-    );
+    const { render } = await import("ink-testing-library");
+    const instance = render(<CodeBlock code={SNIPPET} language="javascript" />);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const js = instance.lastFrame() ?? "";
+    instance.rerender(<CodeBlock code={SNIPPET} language="python" />);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const py = instance.lastFrame() ?? "";
+    instance.unmount();
     expect(stripAnsi(js)).toBe(stripAnsi(py));
   });
 
@@ -177,7 +192,10 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
       registered: () => true,
       highlight: () => ({ children: [{ type: "comment" }] }),
     };
-    expect(highlightLine("x", "ts", weirdNode, "k")).not.toBe("x");
+    // tests-7: unknown hast nodes render as null children — the returned
+    // value must be an element (not the raw string fallback).
+    const rendered = highlightLine("x", "ts", weirdNode, "k");
+    expect(typeof rendered).not.toBe("string");
   });
 
   it("interior_blank_line_occupies_a_row", async () => {

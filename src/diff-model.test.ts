@@ -142,8 +142,9 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
       "",
     ].join("\n");
     const files = parseUnifiedDiff(patch);
-    expect(files[0]!.lines[0]!.text).toBe("");
-    expect(files[0]!.lines[1]!.text).toBe("");
+    // Full-shape asserts binding kind to text (tests-16).
+    expect(files[0]!.lines[0]).toEqual({ kind: "del", oldLine: 1, text: "" });
+    expect(files[0]!.lines[1]).toEqual({ kind: "add", newLine: 1, text: "" });
   });
 
   it("empty_patch_returns_empty_array", () => {
@@ -169,6 +170,7 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
     const files = parseUnifiedDiff(patch);
     expect(files).toHaveLength(1);
     expect(files[0]!.lines).toHaveLength(0);
+    expect(files[0]!.newName).toBe("img.png"); // tests-8: names as titled
   });
 
   it("mode_change_only_patch_yields_zero_lines", () => {
@@ -214,7 +216,44 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
       "+b",
       "",
     ].join("\n");
-    expect(() => parseUnifiedDiff(patch)).not.toThrow();
+    const files = parseUnifiedDiff(patch);
+    // parse-diff strips BOTH the quotes and the a/ prefix from quoted names
+    // (probed) — pinned verbatim post-normalization (tests-4).
+    expect(files[0]!.oldName).toBe("caf\\303\\251.ts");
+  });
+
+  it("windows_backslash_paths_parse_verbatim", () => {
+    // tests-4: the plan's Windows fixture, previously missing.
+    const patch = [
+      "--- a/dir\\sub\\file.ts",
+      "+++ b/dir\\sub\\file.ts",
+      "@@ -1,1 +1,1 @@",
+      "-a",
+      "+b",
+      "",
+    ].join("\n");
+    const files = parseUnifiedDiff(patch);
+    expect(files[0]!.newName).toBe("dir\\sub\\file.ts");
+  });
+
+  it("mixed_binary_and_content_files_coexist", () => {
+    // tests-11: degenerate + content files in ONE patch.
+    const patch = [
+      "diff --git a/img.png b/img.png",
+      "index 1234567..89abcde 100644",
+      "Binary files a/img.png and b/img.png differ",
+      "diff --git a/code.ts b/code.ts",
+      "--- a/code.ts",
+      "+++ b/code.ts",
+      "@@ -1,1 +1,1 @@",
+      "-x",
+      "+y",
+      "",
+    ].join("\n");
+    const files = parseUnifiedDiff(patch);
+    expect(files).toHaveLength(2);
+    expect(files[0]!.lines).toHaveLength(0);
+    expect(files[1]!.lines).toHaveLength(2);
   });
 });
 
@@ -245,10 +284,24 @@ describe("foldDiffLines — pure fold math (T1.1, ADR D5)", () => {
   });
 
   it("fold_at_file_edges_emits_no_empty_folds", () => {
-    // EC-2: change at the very first/last line.
-    const lines = [add(1), ctx(2), ctx(3)];
-    const folded = foldDiffLines(lines, 2);
-    expect(folded.some((r) => r.kind === "fold")).toBe(false);
+    // EC-2 FULL (tests-5): change at the first line — long TRAILING context
+    // folds once; change at the last line — long LEADING context folds once;
+    // neither emits an empty fold at its edge.
+    const headChange = [add(1), ...[2, 3, 4, 5, 6, 7, 8].map(ctx)];
+    const headFolds = foldDiffLines(headChange, 2).filter(
+      (r) => r.kind === "fold",
+    );
+    expect(headFolds).toHaveLength(1);
+    expect(headFolds[0]!.hidden).toBe(5);
+    const tailChange = [...[1, 2, 3, 4, 5, 6, 7].map(ctx), add(8)];
+    const tailFolds = foldDiffLines(tailChange, 2).filter(
+      (r) => r.kind === "fold",
+    );
+    expect(tailFolds).toHaveLength(1);
+    expect(tailFolds[0]!.hidden).toBe(5);
+    // Short runs at the edges never fold.
+    const short = [add(1), ctx(2), ctx(3)];
+    expect(foldDiffLines(short, 2).some((r) => r.kind === "fold")).toBe(false);
   });
 
   it("fold_context_lines_zero_folds_all_context", () => {

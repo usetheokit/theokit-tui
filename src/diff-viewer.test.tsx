@@ -77,10 +77,10 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
     const frame = await renderFrame(
       <DiffViewer patch={PATCH_BASIC} showLineNumbers={false} />,
     );
-    const contentRows = stripAnsi(frame)
-      .split("\n")
-      .filter((row) => row.includes("line one"));
-    expect(contentRows[0]).not.toMatch(/\d/);
+    const plain = stripAnsi(frame);
+    // Whole-frame negative (tests-10 — plan literal restored).
+    expect(plain).not.toMatch(/^\s*\d+ /m);
+    expect(plain).toContain("line one");
   });
 
   it("hunk_gap_renders_ellipsis_row", async () => {
@@ -190,7 +190,9 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
     const rows = plain.split("\n").filter((r) => r.trim() !== "");
     expect(rows.length).toBeLessThanOrEqual(7);
     expect(plain).toContain("lines hidden");
-    expect(plain).toContain("… (+3 more lines)"); // SEPA F3: trailer N pinned
+    // Trailer counts SOURCE lines (dom-frontend-2): dropped = ctx10 + ctx11
+    // + fold(hidden 8) = 10.
+    expect(plain).toContain("… (+10 more lines)");
     expect(plain).not.toMatch(/^\s*⋮\s*$/m);
   });
 
@@ -234,6 +236,7 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
   it("invalid_context_lines_throws_typed_error", () => {
     const call = () => DiffViewer({ patch: PATCH_BASIC, contextLines: -1 });
     expect(call).toThrow(TypeError);
+    expect(call).toThrow("contextLines must be an integer >= 0"); // tests-9
   });
 
   it("malformed_patch_propagates_typed_error", () => {
@@ -276,7 +279,13 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
           <DiffViewer patch={patch} />
         </Box>,
       );
-      for (const row of stripAnsi(frame).split("\n")) {
+      const plainRows = stripAnsi(frame).split("\n");
+      // Positive anchor (tests-3): content survived AND wrapped (not lost).
+      expect(stripAnsi(frame)).toContain("x");
+      expect(plainRows.length).toBeGreaterThan(3);
+      for (const row of plainRows) {
+        // Invariant scoped to narrow chars — EAW-wide count 2 columns
+        // (EC-13; `→`/`…` are EAW-Ambiguous, dom-frontend-6).
         expect(row.length).toBeLessThanOrEqual(width);
       }
     }

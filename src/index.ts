@@ -20,19 +20,15 @@ export type {
 export { MAX_RESULT_CHARS, ToolResult } from "./tool-result.js";
 export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";
 
-// ensureHighlighter stays module-internal (EC-10 — D7 precedent).
-export { CodeBlock } from "./code-block.js";
+// ensureHighlighter stays module-internal (EC-10 — D7 precedent);
+// preloadHighlighter is the PUBLIC readiness seam (DV-5, review batch).
+export { CodeBlock, preloadHighlighter } from "./code-block.js";
 export type { CodeBlockProps } from "./code-block.js";
 export { DiffViewer } from "./diff-viewer.js";
 export type { DiffViewerProps } from "./diff-viewer.js";
 export { parseUnifiedDiff } from "./diff-model.js";
-export type {
-  DiffFile,
-  DiffFold,
-  DiffLine,
-  DiffLineKind,
-  DiffRow,
-} from "./diff-model.js";
+// DiffFold/DiffRow stay module-internal (D10 — no public producer/consumer).
+export type { DiffFile, DiffLine, DiffLineKind } from "./diff-model.js";
 
 export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {
