@@ -258,12 +258,43 @@ describe("useAgentStream", () => {
     const returned = fake.wasReturned();
     expect(returned).toBe(true);
     expect(captured.current?.status).toBe("done");
+    // Idempotent: a second cancel is a no-op (already-cancelled early return).
+    captured.current?.cancel();
+    await ticks(1);
+    expect(captured.current?.status).toBe("done");
     // Later resolves are dropped — cancelled flag + terminal reducer state.
     fake.emit(delta("ZOMBIE"));
     await ticks(3);
     expect(captured.current?.status).toBe("done");
     expect(captured.current?.events[0]).toMatchObject({ text: "a" });
     unmount();
+  });
+
+  it("rejection_after_teardown_is_swallowed_silently", async () => {
+    // The cancelled-guard in the CATCH path: a next() that rejects after
+    // unmount must not dispatch an error into a dead component.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let rejectNext: ((reason: Error) => void) | undefined;
+    const iterator: AsyncIterator<AgentStreamEvent> = {
+      next: () =>
+        new Promise((_resolve, reject) => {
+          rejectNext = reject;
+        }),
+      return: () => Promise.resolve({ done: true as const, value: undefined }),
+    };
+    const source: AsyncIterable<AgentStreamEvent> = {
+      [Symbol.asyncIterator]: () => iterator,
+    };
+    const captured: Captured = {};
+    const { unmount } = render(<Probe source={source} captured={captured} />);
+    await ticks(3);
+    const snapshot = captured.current;
+    unmount();
+    await ticks(3);
+    rejectNext?.(new Error("late failure"));
+    await ticks(3);
+    expect(captured.current).toBe(snapshot);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it("stream_throw_surfaces_error_status", async () => {
@@ -280,6 +311,23 @@ describe("useAgentStream", () => {
     expect(captured.current?.error?.message).toBe("stream blew up");
     // The pre-error fold survives — fail-clear, never silently lost text.
     expect(captured.current?.events[0]).toMatchObject({ text: "a" });
+    unmount();
+  });
+
+  it("non_error_throw_is_stringified", async () => {
+    // The String(thrown) arm — producers that throw non-Error values still
+    // surface a readable message (fail-clear).
+    async function* throwsValue(): AsyncGenerator<AgentStreamEvent> {
+      yield delta("a");
+      throw "plain string failure";
+    }
+    const captured: Captured = {};
+    const { unmount } = render(
+      <Probe source={throwsValue()} captured={captured} />,
+    );
+    await ticks();
+    expect(captured.current?.status).toBe("error");
+    expect(captured.current?.error?.message).toBe("plain string failure");
     unmount();
   });
 

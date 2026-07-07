@@ -245,6 +245,30 @@ describe("agentStreamReducer", () => {
     expect(find(weird, "tool-c")).not.toHaveProperty("shell");
   });
 
+  it("delta_replace_leaves_earlier_events_untouched", () => {
+    // The non-live arm of the tail-replace map: the graduated prefix passes
+    // through by reference while the tail replaces.
+    const s = fold(toolRunning("c1", "t"), delta("a"), delta("b"));
+    expect(s.events.map((e) => e.id)).toEqual(["tool-c1", "msg-1"]);
+    expect(s.events[1]).toMatchObject({ text: "ab" });
+    expect(s.events[0]).toMatchObject({ kind: "tool", status: "running" });
+  });
+
+  it("assistant_finalize_leaves_earlier_events_untouched", () => {
+    // The non-live arm of the finalize map: earlier graduated events pass
+    // through by reference (immutability of the graduated prefix).
+    const s = fold(toolRunning("c1", "t"), delta("hi"), assistantMsg("hi!"));
+    expect(s.events.map((e) => e.id)).toEqual(["tool-c1", "msg-1"]);
+    expect(s.events[1]).toMatchObject({ text: "hi!" });
+  });
+
+  it("shell_envelope_without_exit_code_omits_it", () => {
+    const s = fold(toolCompleted("c1", { stdout: "x", stderr: "" }));
+    const tool = find(s, "tool-c1");
+    expect(tool).toMatchObject({ shell: { stdout: "x", stderr: "" } });
+    expect((tool as { shell?: object }).shell).not.toHaveProperty("exitCode");
+  });
+
   it("error_fails_open_tools_and_closes_live_message", () => {
     // EC-6 — never the mirror's frozen spinner / silently lost text.
     const s = fold(
