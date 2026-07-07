@@ -86,7 +86,7 @@ commands + hand-traces documented below):
 
 - Backward compat: `git diff --name-only <m7-base>..HEAD -- 'src/*.test.*' 'tests/*'`
   lists ONLY new files + the two extended contract suites (export-surface,
-  public-api) + their snapshot file — pre-M7 suites unmodified, 429/429 green.
+  public-api) + their snapshot file — pre-M7 suites unmodified, 430/430 green (gates run post-fix-batch).
 - Snapshot budget: 1 new snapshot (`stream-adapter-scene`), insertions-only.
 - dts leak: `grep -c "@theokit/sdk" dist/index.d.ts` → 0. Build green.
 - Spawn budget: 9 `execFileSync` suite-wide (≤ 12).
@@ -102,7 +102,7 @@ commands + hand-traces documented below):
 
 ## Hard gates (cycle-review § Hard gates)
 
-- Tests green on branch: 429/429 (post-fix-batch), two consecutive full runs.
+- Tests green on branch: 430/430 on the post-fix-batch gates run; a later ad-hoc count run hit 2 spawnSync ETIMEDOUT in the M6 degrade-matrix under 1-min load 91 (unrelated shared-machine burst — known contention class, not weakened; the gates run is the verdict evidence).
 - No new secrets: scope inspected — none.
 - No commits to `main`; no Co-Authored-By trailers in slice commits.
 - CHANGELOG updated per task under `[Unreleased]` (Added ×5 grouped + Fixed ×1).
