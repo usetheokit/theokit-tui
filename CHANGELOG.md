@@ -7,15 +7,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-
-- React peer range corrected to `^18.2.0` — the previous `^18 || ^19` shipped a broken fresh-install (ink 5's reconciler does not run on React 19; caught by the pre-publish tarball rehearsal, never reached the registry); README install line fixed accordingly (`ink` is a dependency — never install it separately) (m8-ga-publish T2.2)
-
-### Added
-
-- Publish readiness: `publint --strict` clean (new devDependency, audit clean), manifest publish fields (description/keywords/`prepublishOnly` gates+build) pinned by a package-contract test; AI-native README (outcome-shaped HERO, quickstart with resolving symbols, public-copy-compliant — banned-claim lint runs in the suite) (m8-ga-publish T1.1+T1.2)
-- `examples/live-agent-tui.tsx` (`pnpm example:live`) — a REAL LLM turn streamed through `useAgentStream` using only @theokit/tui primitives (OpenRouter SSE via global fetch, zero deps, caller-side transport per the M7 contract); gated on `OPENROUTER_API_KEY` — absent key renders an instructive scene and exits cleanly (deterministic smoke) (m8-ga-publish T2.1)
-
 ### Added
 
 ### Changed
@@ -27,6 +18,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 ### Security
+
+## [0.10.0] - 2026-07-07
+
+### Added
+
+- Publish readiness: `publint --strict` clean (new devDependency, audit clean), manifest publish fields (description/keywords/`prepublishOnly` gates+build) pinned by a package-contract test; AI-native README (outcome-shaped HERO, quickstart with resolving symbols, public-copy-compliant — banned-claim lint runs in the suite) (m8-ga-publish T1.1+T1.2)
+- `examples/live-agent-tui.tsx` (`pnpm example:live`) — a REAL LLM turn streamed through `useAgentStream` using only @theokit/tui primitives (OpenRouter SSE via global fetch, zero deps, caller-side transport per the M7 contract); gated on `OPENROUTER_API_KEY` — absent key renders an instructive scene and exits cleanly (deterministic smoke) (m8-ga-publish T2.1)
+
+### Fixed
+
+- React peer range corrected to `^18.2.0` — the previous `^18 || ^19` shipped a broken fresh-install (ink 5's reconciler does not run on React 19; caught by the pre-publish tarball rehearsal, never reached the registry); README install line fixed accordingly (`ink` is a dependency — never install it separately) (m8-ga-publish T2.2)
 
 ## [0.9.0] - 2026-07-07
 
