@@ -9,6 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `AgentStreamEvent` structural stream-event union (module `src/agent-stream-event.ts`) — designed fresh from the real `@theokit/sdk` tables (coarse `SDKMessage` + fine `onDelta` vocabularies under their REAL names; `message` widened for the status-event string arm); shell-envelope and assistant-text guards with string-when-present validation (m7-stream-adapter T1.1)
 - Degrade matrix (`tests/degrade-matrix.integration.test.tsx`) — THREE subprocess scenes of ONE provider-wrapped all-primitives probe fixture (NO_COLOR / TERM=dumb / bare-pipe), with a byte-equality invariant between the NO_COLOR and TERM=dumb renders (modulo the composer cursor marker) and a chalk hex→ANSI-256 downsample canary pinning the installed rounding; the probe fixture gains ChatComposer + CodeBlock (every primitive now degrades under test) (m6-theme-robustness T3.2)
 - Theme-invariance test — `stripAnsi(light/no-color frame) === stripAnsi(dark frame)`: theming may change ONLY color bytes, never text/layout; plus ONE composite light-theme snapshot and a theme showcase demo (`pnpm example:themes`) (m6-theme-robustness T3.2)
 - Built-in themes `themes.dark` (≡ `defaultTheme`), `themes.light` and `themes["no-color"]` — named ANSI-16 values only (chalk-version-proof, level-pin-proof); the provider `theme` prop now also accepts a built-in name or `{ base, override }` with an EXPLICIT base (existing override objects unchanged — the M0 call sites compile and behave identically) (m6-theme-robustness T1.2)
