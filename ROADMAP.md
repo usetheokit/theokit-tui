@@ -155,7 +155,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M0
 **Risks:** 1. Meaningful ASCII charts at small widths. 2. Overclaiming precision in a text gauge.
 
-### M6 — [ ] Theme + robustness foundation
+### M6 — [x] Theme + robustness foundation
 
 **Objective:** Finalize the theme system and terminal-robustness contract across all primitives.
 **Definition of done:**
