@@ -10,6 +10,9 @@ import {
   AGENT_EVENT_KINDS,
   AgentStreaming,
   AgentTimeline,
+  CodeBlock,
+  DiffViewer,
+  parseUnifiedDiff,
   ChatComposer,
   ChatMessage,
   ChatThread,
@@ -20,6 +23,9 @@ import {
 } from "../src/index.js";
 // (M1↔M2 composition asserted below — review wire-4.)
 import { renderFrame } from "./helpers.js";
+
+// eslint-disable-next-line no-control-regex
+const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
 
 describe("public API integration (T2.2)", () => {
   it("public_entry_composes_provider_and_message_for_both_roles", async () => {
@@ -175,5 +181,47 @@ describe("public API integration (M3 T3.1 — agent scene)", () => {
 
   it("agent_events_export_kinds_array", () => {
     expect(AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool"]);
+  });
+});
+
+describe("public API integration (M4 T3.1 — code scene)", () => {
+  const scenePatch = [
+    "--- a/old-name.ts",
+    "+++ b/new-name.ts",
+    "@@ -1,3 +1,3 @@",
+    " context line",
+    "-removed line",
+    "+added line",
+    "",
+  ].join("\n");
+
+  it("public_entry_composes_code_surface", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider>
+        <Box flexDirection="column">
+          <DiffViewer patch={scenePatch} />
+          <CodeBlock code={"const scene = true;"} language="typescript" />
+        </Box>
+      </TheoTUIProvider>,
+    );
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("old-name.ts → new-name.ts");
+    expect(plain).toMatch(/^\s*\d+ \+ added line$/m);
+    expect(plain).toContain("const scene = true;");
+    expect(typeof parseUnifiedDiff).toBe("function");
+  });
+
+  it("composed_scene_matches_snapshot", async () => {
+    const frame = await renderFrame(
+      <Box width={60}>
+        <TheoTUIProvider>
+          <Box flexDirection="column">
+            <DiffViewer patch={scenePatch} contextLines={2} />
+            <CodeBlock code={"const scene = true;"} />
+          </Box>
+        </TheoTUIProvider>
+      </Box>,
+    );
+    expect(frame).toMatchSnapshot("code-surface-scene");
   });
 });

@@ -1,0 +1,10 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`public API integration (M4 T3.1 — code scene) > composed_scene_matches_snapshot > code-surface-scene 1`] = `
+"[1mold-name.ts → new-name.ts[22m[32m +1[31m -1[39m
+[2m1 [22m  context line
+[2m2 [22m[31m- removed line[39m
+[2m2 [22m[32m+ added line[39m
+[2m3 [22m
+const scene = true;"
+`;

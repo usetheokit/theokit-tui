@@ -170,6 +170,11 @@ describe("ChatMessage (T2.1)", () => {
       expect(out).toMatch(/^•\s+inspecting the failing test/m);
       expect(out).toContain("agent turn");
       expect(out).toContain("(esc to cancel, 12s)");
+      // M4 (T3.1): diff signs + fold indicator readable without color
+      // (the sign column is THE mechanism — gemini-verified; EC-19).
+      expect(out).toMatch(/^\s*\d+ \+ new probe line/m);
+      expect(out).toMatch(/^\s*\d+ - old probe line/m);
+      expect(out).toContain("lines hidden");
     },
   );
 

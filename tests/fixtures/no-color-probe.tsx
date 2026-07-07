@@ -2,6 +2,7 @@ import { Box } from "ink";
 import { render } from "ink-testing-library";
 
 import { AgentStreaming } from "../../src/agent-streaming.js";
+import { DiffViewer } from "../../src/diff-viewer.js";
 import { AgentTimeline } from "../../src/agent-timeline.js";
 import { ChatThread } from "../../src/chat-thread.js";
 import { ToolCall, ToolCallCard } from "../../src/tool-call.js";
@@ -39,6 +40,18 @@ const instance = render(
       ]}
     />
     <AgentStreaming thought="agent turn" showCancelHint elapsedSeconds={12} />
+    <DiffViewer
+      patch={[
+        "--- a/probe.ts",
+        "+++ b/probe.ts",
+        "@@ -1,12 +1,12 @@",
+        "-old probe line",
+        "+new probe line",
+        ...Array.from({ length: 10 }, (_, i) => ` probe-ctx-${i}`),
+        "",
+      ].join("\n")}
+      contextLines={2}
+    />
   </Box>,
 );
 await new Promise((resolve) => setTimeout(resolve, 0));
