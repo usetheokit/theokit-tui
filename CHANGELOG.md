@@ -9,6 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Roadmap amended: added M9 Welcome banner (`/roadmap-feature welcome-banner`); SOTA references extended with opencode (MIT), oh-my-logo (MIT+CC0), ascii-motion (MIT) — crush excluded by license gate (FSL-1.1)
 - Stream adapter wired through the composition root: `useAgentStream`/`agentStreamReducer`/`initialAgentStreamState` + types exported from the package entry; composed integration scene + anchored snapshot; deterministic `examples/stream.tsx` demo (`pnpm example:stream`) driving AgentTimeline/AgentStreaming through the real hook with done-gated exit (m7-stream-adapter T3.2)
 - Drift tripwire against the real `@theokit/sdk` (devDependency `^2.19.0`, import-type-only): compile-time whole-union + per-member assignability checks plus a canonical runtime fold contract test — a stream-shape drift in a new sdk minor now fails `pnpm typecheck` at install time naming the member (m7-stream-adapter T3.1)
 - `useAgentStream(source?)` hook (module `src/use-agent-stream.ts`) — consumes an async-iterable stream (or factory) and folds it through `agentStreamReducer`; cancelled-flag-after-every-await loop, `iterator.return` teardown, state reset on source change, `cancel()` escape hatch, sync-throwing/failing sources become the error state; reconnect proven both ways — producer-side exactly-once resume and reset-and-refold total replay (m7-stream-adapter T2.1+T2.2)

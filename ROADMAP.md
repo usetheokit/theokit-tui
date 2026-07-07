@@ -190,6 +190,33 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M6, M7
 **Risks:** 1. "Published but no consumer" — mitigated by the TheoCode dogfood gate. 2. Real-LLM demo flakiness.
 
+### M9 — [ ] Welcome banner
+
+> Added 2026-07-07 by `/roadmap-feature` (slug: `welcome-banner`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Ship a `WelcomeBanner` primitive — the Claude Code/gemini-cli-style startup banner (accent-bordered box, product name/logo, version, hint rows) with idiomatic React slots (single `children`).
+
+**Definition of done:**
+
+- [ ] `WelcomeBanner` exported from the entry with props `name`/`version`/`tagline?`/`hints?`/`children` (slots).
+- [ ] Consumes theme tokens (accent/border) and degrades clean under NO_COLOR/term dumb — covered in the degrade-matrix.
+- [ ] Unit + integration via composition root + 1 anchored snapshot.
+- [ ] `examples/` updated to consume the banner + subprocess smoke.
+- [ ] Gates green; module coverage 100% lines; CHANGELOG entry.
+
+**Dependencies:** M6
+
+> Skill-default: most recent `[x]` milestone at amendment time. User may have overridden to a different/wider set in grill Q2.
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Scope-creep: generic slots as a gateway to "generic layout widgets" (the out-of-scope item) — mitigation: minimal API (single `children`, no grid/columns), explicit guard in review. (Out-of-scope overlap adjudicated as false-positive in the grill — banner is an AI-native pattern; slots are idiomatic React children, not a layout framework.)
+2. Narrow terminals: a bordered banner breaks below ~40 cols or without box-drawing support — mitigation: minimum-width test + degrade-matrix coverage.
+
+**Why now (from grill Q1):**
+
+M8's dogfood (`examples/live-agent-tui` + TheoCode as consumer) will assemble exactly this pattern; shipping the primitive first prevents each consumer from reinventing it. User opted for the slots variant for free composition.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
@@ -204,6 +231,9 @@ Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full c
 | `codex` (`codex-rs/tui`) | Apache-2.0 | High-craft agent TUI (ratatui/Rust) — diff/streaming/tool-output layout patterns | M2, M4 |
 | `bubbletea` | MIT | Gold-standard TUI framework (Go) — Elm architecture, render/update patterns | M0, M6 |
 | `bubbles` | MIT | Gold-standard TUI component set (Go) — viewport/progress/spinner component design | M1, M5 |
+| `opencode` | MIT | Agent-TUI splash/home screen (logo + version + hints) in production | M9 |
+| `oh-my-logo` | MIT + CC0-1.0 | Claude-Code/Gemini-CLI-style gradient ASCII logo pattern (TypeScript) | M9 |
+| `ascii-motion` | MIT | Animated ASCII banner authoring — by the GitHub Copilot CLI banner designer | M9 |
 
 ## Revision protocol
 
