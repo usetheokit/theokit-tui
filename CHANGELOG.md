@@ -15,6 +15,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `useAgentStream(source?)` hook (module `src/use-agent-stream.ts`) — consumes an async-iterable stream (or factory) and folds it through `agentStreamReducer`; cancelled-flag-after-every-await loop, `iterator.return` teardown, state reset on source change, `cancel()` escape hatch, sync-throwing/failing sources become the error state; reconnect proven both ways — producer-side exactly-once resume and reset-and-refold total replay (m7-stream-adapter T2.1+T2.2)
 - `agentStreamReducer` + `initialAgentStreamState` pure mapping fold (module `src/agent-stream-reducer.ts`) — folds SDK stream events onto the M3 `AgentEvent` timeline: tail-replace live message, close-on-effectful-fold, thinking graduation, namespaced ids, shell⊕output ladder, terminal `done`/`error` fails open tools and drops later events (m7-stream-adapter T1.2)
 - `AgentStreamEvent` structural stream-event union (module `src/agent-stream-event.ts`) — designed fresh from the real `@theokit/sdk` tables (coarse `SDKMessage` + fine `onDelta` vocabularies under their REAL names; `message` widened for the status-event string arm); shell-envelope and assistant-text guards with string-when-present validation (m7-stream-adapter T1.1)
+
+### Fixed
+
+- Stream reducer: thinking graduation now closes an open live message first — a thinking burst between text deltas no longer makes later deltas replace a non-tail timeline event (frozen scrollback under windowing); late result-less tool updates preserve already-folded shell/output; the hook's internal reset is envelope-guarded so a stream event `{type: "__reset__"}` can never wipe folded state; teardown `iterator.return()` rejections are swallowed at the only place they can be handled (m7-stream-adapter review fixes F-1/F-2/F-4/F-6)
+
+### Security
+
+- Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
+  Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
+  `pnpm audit` clean
+
+## [0.7.0] - 2026-07-07
+
+### Added
+
 - Degrade matrix (`tests/degrade-matrix.integration.test.tsx`) — THREE subprocess scenes of ONE provider-wrapped all-primitives probe fixture (NO_COLOR / TERM=dumb / bare-pipe), with a byte-equality invariant between the NO_COLOR and TERM=dumb renders (modulo the composer cursor marker) and a chalk hex→ANSI-256 downsample canary pinning the installed rounding; the probe fixture gains ChatComposer + CodeBlock (every primitive now degrades under test) (m6-theme-robustness T3.2)
 - Theme-invariance test — `stripAnsi(light/no-color frame) === stripAnsi(dark frame)`: theming may change ONLY color bytes, never text/layout; plus ONE composite light-theme snapshot and a theme showcase demo (`pnpm example:themes`) (m6-theme-robustness T3.2)
 - Built-in themes `themes.dark` (≡ `defaultTheme`), `themes.light` and `themes["no-color"]` — named ANSI-16 values only (chalk-version-proof, level-pin-proof); the provider `theme` prop now also accepts a built-in name or `{ base, override }` with an EXPLICIT base (existing override objects unchanged — the M0 call sites compile and behave identically) (m6-theme-robustness T1.2)
@@ -30,14 +45,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Stream reducer: thinking graduation now closes an open live message first — a thinking burst between text deltas no longer makes later deltas replace a non-tail timeline event (frozen scrollback under windowing); late result-less tool updates preserve already-folded shell/output; the hook's internal reset is envelope-guarded so a stream event `{type: "__reset__"}` can never wipe folded state; teardown `iterator.return()` rejections are swallowed at the only place they can be handled (m7-stream-adapter review fixes F-1/F-2/F-4/F-6)
 - `ChatComposer` cursor was invisible under color-less rendering (chalk level 0 strips the `inverse` attribute) — under the `no-color` theme a visible `▏` marker now carries the cursor affordance (colored-mode bytes unchanged; NO_COLOR remains the opt-out for dumb interactive terminals) (m6-theme-robustness T3.1)
-
-### Security
-
-- Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
-  Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
-  `pnpm audit` clean
 
 ## [0.6.0] - 2026-07-07
 
