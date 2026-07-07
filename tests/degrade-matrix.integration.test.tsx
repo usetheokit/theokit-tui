@@ -29,6 +29,11 @@ function assertDegradedScene(out: string): void {
   expect(out).not.toContain("\u001b[");
   expect(out).toContain(">");
   expect(out).toContain("plain text probe");
+  // M9: banner name + hint readable in every degraded scene (theme-agnostic;
+  // the border GLYPH is asserted per scene — the policy is theme-DATA-driven,
+  // plan EC-3).
+  expect(out).toContain("Probe");
+  expect(out).toContain("hint row");
   // M1: all three role glyphs distinguishable without color.
   expect(out).toContain("·");
   expect(out).toContain("✦");
@@ -69,6 +74,9 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     // it renders exclusively under the no-color THEME, which only the
     // provider's NO_COLOR resolution selects here.
     expect(out).toContain("▏");
+    // M9 EC-3: ONLY this scene resolves the no-color THEME → single border.
+    expect(out).toContain("┌");
+    expect(out).not.toContain("╭");
   });
 
   it(
@@ -84,11 +92,22 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
       const outDumb = spawnProbe({ TERM: "dumb" });
       assertDegradedScene(outDumb);
       expect(outDumb).not.toContain("▏");
+      // M9 EC-3: dumb resolves the DARK theme at level 0 → round border.
+      expect(outDumb).toContain("╭");
+      expect(outDumb).not.toContain("┌");
       const outNoColor = spawnProbe({ NO_COLOR: "1" });
       // Exactly ONE marker (review tests-3 — a duplicated-marker regression
       // must not hide inside the global replaceAll wherever dumb has spaces).
       expect(outNoColor.split("▏")).toHaveLength(2);
-      const normalized = outNoColor.replaceAll("▏", " ");
+      // M9 EC-3: the banner border differs BY DESIGN between the scenes
+      // (dark→round vs no-color→single) — normalize the 4 corner glyphs
+      // alongside the marker (─/│ are shared between round and single).
+      const normalized = outNoColor
+        .replaceAll("▏", " ")
+        .replaceAll("┌", "╭")
+        .replaceAll("┐", "╮")
+        .replaceAll("└", "╰")
+        .replaceAll("┘", "╯");
       expect(outDumb).toBe(normalized);
     },
   );
@@ -98,6 +117,9 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     // (non-TTY → 0 when FORCE_COLOR is unset): detection proves itself.
     const out = spawnProbe({});
     assertDegradedScene(out);
+    // M9 EC-3: bare pipe also resolves the DARK theme → round border.
+    expect(out).toContain("╭");
+    expect(out).not.toContain("┌");
   });
 
   it("chalk_downsample_canary", { timeout: 20000 }, () => {

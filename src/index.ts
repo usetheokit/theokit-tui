@@ -1,4 +1,4 @@
-export const VERSION = "0.2.0";
+export const VERSION = "0.9.0";
 
 export {
   TheoTUIProvider,
@@ -100,3 +100,7 @@ export type {
   AgentStreamEvent,
   AssistantContentBlock,
 } from "./agent-stream-event.js";
+
+// M9 — welcome banner (plan ADR D1): the startup-banner primitive.
+export { WelcomeBanner } from "./welcome-banner.js";
+export type { WelcomeBannerProps } from "./welcome-banner.js";

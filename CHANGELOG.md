@@ -9,7 +9,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.9.0] - 2026-07-07
+
+### Added
+
+- `WelcomeBanner` — Claude Code/gemini-cli-style startup banner primitive: `name`/`version?`/`tagline?`/`hints?` + single `children` slot; accent-bordered box clamped to `min(columns ?? 60, 60)` with a plain-text final rung below 24 columns; border style is theme-data-driven (`single` under monochrome themes, `round` otherwise); fail-fast typed prop validation; zero new dependencies; exported from the package entry, composed-scene snapshot, degrade-matrix coverage in all three scenes with per-scene border policy; deterministic `examples/banner.tsx` demo (`pnpm example:banner`) + non-TTY subprocess smoke (m9-welcome-banner T1.1+T2.1+T2.2)
 - Roadmap amended: added M9 Welcome banner (`/roadmap-feature welcome-banner`); SOTA references extended with opencode (MIT), oh-my-logo (MIT+CC0), ascii-motion (MIT) — crush excluded by license gate (FSL-1.1)
+
+### Fixed
+
+- `WelcomeBanner`: empty/whitespace `version` now renders as absent (never a dangling ` v`); width contract documented honestly (columns frozen at render — ink does not re-render React on resize); behavioral oracles added for the hints margin gap and floor-rung truncation (m9-welcome-banner review F-1/F-2/F1/F2)
+- Manifest `version`/`VERSION` synced to the released tag (the v0.3.0–v0.8.0 split-release chain had not bumped `package.json` — caught by the entry-surface contract before any npm publish)
 
 ## [0.8.0] - 2026-07-07
 

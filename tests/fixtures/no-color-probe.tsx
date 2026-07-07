@@ -11,6 +11,7 @@ import { AgentTimeline } from "../../src/agent-timeline.js";
 import { ChatThread } from "../../src/chat-thread.js";
 import { TheoTUIProvider } from "../../src/theme.js";
 import { TokenUsageChart } from "../../src/token-usage-chart.js";
+import { WelcomeBanner } from "../../src/welcome-banner.js";
 import { ToolCall, ToolCallCard } from "../../src/tool-call.js";
 import { ToolResult } from "../../src/tool-result.js";
 
@@ -25,6 +26,7 @@ import { ToolResult } from "../../src/tool-result.js";
 const instance = render(
   <TheoTUIProvider>
     <Box flexDirection="column">
+      <WelcomeBanner name="Probe" version="0.0.0" hints={["hint row"]} />
       <ChatThread
         messages={[
           { id: "s", role: "system", content: "session context" },

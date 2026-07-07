@@ -1,0 +1,13 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`WelcomeBanner > snapshots_default_and_floor > welcome-banner-default 1`] = `
+"[36m╭──────────────────────────────────────────────────────────╮[39m
+[36m│[39m [1m[36mTheo TUI[2m v0.9.0[22m[39m                                          [36m│[39m
+[36m│[39m AI-agent primitives for the terminal                     [36m│[39m
+[36m│[39m                                                          [36m│[39m
+[36m│[39m [2m/help for commands[22m                                       [36m│[39m
+[36m│[39m [2mesc to cancel[22m                                            [36m│[39m
+[36m╰──────────────────────────────────────────────────────────╯[39m"
+`;
+
+exports[`WelcomeBanner > snapshots_default_and_floor > welcome-banner-floor-rung 1`] = `"Theo TUI v0.9.0"`;
