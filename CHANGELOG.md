@@ -20,14 +20,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Built-in themes `themes.dark` (≡ `defaultTheme`), `themes.light` and `themes["no-color"]` — named ANSI-16 values only (chalk-version-proof, level-pin-proof); the provider `theme` prop now also accepts a built-in name or `{ base, override }` with an EXPLICIT base (existing override objects unchanged — the M0 call sites compile and behave identically) (m6-theme-robustness T1.2)
 - `NO_COLOR` support implemented at the theme layer — a non-empty `NO_COLOR` env resolves the no-color built-in (full swap: ALL overrides including glyphs revert to defaults), read once per provider mount, never per frame. NOTE: the installed ink→chalk chain never reads `NO_COLOR`; handling requires mounting `TheoTUIProvider` (m6-theme-robustness T1.2)
 - `TheoTheme` semantic growth — `name` (theme identity), `accent`, `code.*` (7 syntax-highlight bucket colors) and `toolStatus.*` (glyph+color per tool status; `running` is color-only — the spinner animates) token groups, all overridable via `TheoThemeOverride` with the same leaf-preserving merge; defaults are byte-identical to the M0-M5 constants they will replace (m6-theme-robustness T1.1)
-- Metrics-footer benchmark (`benchmarks/metrics-footer.bench.tsx`) — 50-message streaming thread × 150 ticks, with-metrics|without-metrics matrix; committed baseline shows the footer costs **1.00 ± 0.31 ms/frame** in the streaming hot path (3.684 ± 0.309 vs 2.682 ± 0.058 ms mean; conclusive at >1σ; peak delta 3.22 ms vs σ 2.46 — also conclusive, σ-inflated by one outlier run) (m5-metrics-surface T3.2)
-- Metrics demo (`pnpm example:metrics`) — always-on agent footer (context gauge + category bars + cost), static scene, clean piped output (m5-metrics-surface T3.2)
-- M5 integration coverage — composition-root metrics footer scene (gauge + chart + cost), NO_COLOR probe metrics scene proving glyph-distinct `█`/`░` fill readable without color (m5-metrics-surface T3.1)
-- `CostMeter` — honest USD cost display (`cost ~$1.23`): caller-computed number (no pricing tables), `~` estimate marker with `approx={false}` opt-out, `<$0.01` sub-cent honesty — never `$0.00` for a nonzero cost (m5-metrics-surface T2.3)
-- `TokenUsageChart` — per-category token bars (`input | output | cached | reasoning`, fixed order, only present keys render): bars scale to the LARGEST category (relative comparison — total is not a limit), aligned label/value columns, k/M values, all-zero renders empty bars, all-absent renders nothing (m5-metrics-surface T2.2)
-- `ContextWindowBar` — context-window fill gauge with data-props contract (`usedTokens` + optional `limitTokens` — never a model registry): `% left` (default, with dim `(used / limit)` detail) or `% used` conventions both derived from ONE display authority; unknown limit renders the absolute count only (never a fabricated percentage); over-limit clamps the bar and colors it as error; opt-in codex-parity `baselineTokens`; warning at ≥ 50% used; label-only degrade below a 3-cell bar floor (m5-metrics-surface T2.1)
-- Pure metric formatters (`src/format.ts`, module-internal) — `formatTokens` lowercase k/m with half-up 1-decimal rounding AND boundary promotion (`999_950 → "1m"`, never the analog "1000K" anomaly); `formatCost` honest USD (`~$1.23` estimate marker, `<$0.01` sub-cent — never `$0.00` for nonzero, thousands separators) (m5-metrics-surface T1.2)
-- Pure fill-bar core (`src/fill-bar.ts`, module-internal) — `renderFillBar` glyph-distinct `█`/`░` segments + `formatPercent`/`displayPercent` as THE single endpoint-honest rounding authority (100% reserved for truly-full, 0% for truly-empty; label and bar can never disagree); integer-numerator fill math immune to the verified `p/100*w` float divergences (m5-metrics-surface T1.1)
 
 ### Changed
 
@@ -46,6 +38,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Transitive `esbuild` advisory (GHSA-g7r4-m6w7-qqqr, LOW — dev-server file read on
   Windows; devDependency via tsup) resolved with a pnpm override to `>=0.28.1`;
   `pnpm audit` clean
+
+## [0.6.0] - 2026-07-07
+
+### Added
+
+- Metrics-footer benchmark (`benchmarks/metrics-footer.bench.tsx`) — 50-message streaming thread × 150 ticks, with-metrics|without-metrics matrix; committed baseline shows the footer costs **1.00 ± 0.31 ms/frame** in the streaming hot path (3.684 ± 0.309 vs 2.682 ± 0.058 ms mean; conclusive at >1σ; peak delta 3.22 ms vs σ 2.46 — also conclusive, σ-inflated by one outlier run) (m5-metrics-surface T3.2)
+- Metrics demo (`pnpm example:metrics`) — always-on agent footer (context gauge + category bars + cost), static scene, clean piped output (m5-metrics-surface T3.2)
+- M5 integration coverage — composition-root metrics footer scene (gauge + chart + cost), NO_COLOR probe metrics scene proving glyph-distinct `█`/`░` fill readable without color (m5-metrics-surface T3.1)
+- `CostMeter` — honest USD cost display (`cost ~$1.23`): caller-computed number (no pricing tables), `~` estimate marker with `approx={false}` opt-out, `<$0.01` sub-cent honesty — never `$0.00` for a nonzero cost (m5-metrics-surface T2.3)
+- `TokenUsageChart` — per-category token bars (`input | output | cached | reasoning`, fixed order, only present keys render): bars scale to the LARGEST category (relative comparison — total is not a limit), aligned label/value columns, k/M values, all-zero renders empty bars, all-absent renders nothing (m5-metrics-surface T2.2)
+- `ContextWindowBar` — context-window fill gauge with data-props contract (`usedTokens` + optional `limitTokens` — never a model registry): `% left` (default, with dim `(used / limit)` detail) or `% used` conventions both derived from ONE display authority; unknown limit renders the absolute count only (never a fabricated percentage); over-limit clamps the bar and colors it as error; opt-in codex-parity `baselineTokens`; warning at ≥ 50% used; label-only degrade below a 3-cell bar floor (m5-metrics-surface T2.1)
+- Pure metric formatters (`src/format.ts`, module-internal) — `formatTokens` lowercase k/m with half-up 1-decimal rounding AND boundary promotion (`999_950 → "1m"`, never the analog "1000K" anomaly); `formatCost` honest USD (`~$1.23` estimate marker, `<$0.01` sub-cent — never `$0.00` for nonzero, thousands separators) (m5-metrics-surface T1.2)
+- Pure fill-bar core (`src/fill-bar.ts`, module-internal) — `renderFillBar` glyph-distinct `█`/`░` segments + `formatPercent`/`displayPercent` as THE single endpoint-honest rounding authority (100% reserved for truly-full, 0% for truly-empty; label and bar can never disagree); integer-numerator fill math immune to the verified `p/100*w` float divergences (m5-metrics-surface T1.1)
 
 ## [0.5.0] - 2026-07-07
 
