@@ -145,7 +145,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M1
 **Risks:** 1. Syntax-highlight dep weight / ESM interop. 2. Diff layout at narrow widths.
 
-### M5 — [ ] Metrics surface
+### M5 — [x] Metrics surface
 
 **Objective:** Ship metric primitives as ASCII/terminal visualizations.
 **Definition of done:**
