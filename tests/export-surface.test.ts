@@ -21,6 +21,13 @@ describe("public entry surface (T0.2)", () => {
     expect(mod.defaultTheme.role.user.glyph).toBe("> ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("✦ ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
+    // M6: built-ins exported; dark IS the default theme (same object).
+    expect(Object.keys(mod.themes).sort()).toEqual([
+      "dark",
+      "light",
+      "no-color",
+    ]);
+    expect(mod.themes.dark).toBe(mod.defaultTheme);
   });
 
   it("public_entry_exposes_chat_message", async () => {

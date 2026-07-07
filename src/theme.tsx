@@ -120,6 +120,76 @@ export const defaultTheme: TheoTheme = Object.freeze({
   }),
 });
 
+export type TheoBuiltinThemeName = "dark" | "light" | "no-color";
+
+/** Light-terminal palette (named ANSI-16 only — plan D3; seeded from the
+ * gemini ansi-light slot choices: bright-yellow/cyan-on-white avoided). */
+const lightTheme: TheoTheme = Object.freeze({
+  name: "light",
+  role: Object.freeze({
+    user: Object.freeze({ glyph: "> ", prefix: "blue", text: undefined }),
+    assistant: Object.freeze({
+      glyph: "✦ ",
+      prefix: "magenta",
+      text: undefined,
+    }),
+    system: Object.freeze({ glyph: "· ", prefix: "gray", text: undefined }),
+  }),
+  status: Object.freeze({ error: "red", success: "green", warning: "yellow" }),
+  accent: "blue",
+  code: Object.freeze({
+    keyword: "blue",
+    builtin: "magenta",
+    number: "green",
+    string: "red",
+    regexp: "magenta",
+    comment: "gray",
+    variable: "blue",
+  }),
+  toolStatus: Object.freeze({
+    pending: Object.freeze({ glyph: "o", color: "gray" }),
+    running: Object.freeze({ color: "yellow" }),
+    success: Object.freeze({ glyph: "✓", color: "green" }),
+    failed: Object.freeze({ glyph: "x", color: "red" }),
+  }),
+});
+
+/** Degrade-as-data (gemini no-color pattern): every color slot empty — Ink
+ * renders unstyled; glyphs (the color-independent channel) preserved. */
+const noColorTheme: TheoTheme = Object.freeze({
+  name: "no-color",
+  role: Object.freeze({
+    user: Object.freeze({ glyph: "> ", prefix: "", text: undefined }),
+    assistant: Object.freeze({ glyph: "✦ ", prefix: "", text: undefined }),
+    system: Object.freeze({ glyph: "· ", prefix: "", text: undefined }),
+  }),
+  status: Object.freeze({ error: "", success: "", warning: "" }),
+  accent: "",
+  code: Object.freeze({
+    keyword: "",
+    builtin: "",
+    number: "",
+    string: "",
+    regexp: "",
+    comment: "",
+    variable: "",
+  }),
+  toolStatus: Object.freeze({
+    pending: Object.freeze({ glyph: "o", color: "" }),
+    running: Object.freeze({ color: "" }),
+    success: Object.freeze({ glyph: "✓", color: "" }),
+    failed: Object.freeze({ glyph: "x", color: "" }),
+  }),
+});
+
+/** Built-in themes (frozen module singletons — referential stability free). */
+export const themes: Readonly<Record<TheoBuiltinThemeName, TheoTheme>> =
+  Object.freeze({
+    dark: defaultTheme,
+    light: lightTheme,
+    "no-color": noColorTheme,
+  });
+
 const ThemeContext = createContext<TheoTheme>(defaultTheme);
 
 function mergeToolStatus(
@@ -134,27 +204,116 @@ function mergeToolStatus(
   };
 }
 
-function mergeTheme(override: TheoThemeOverride | undefined): TheoTheme {
+function mergeTheme(
+  base: TheoTheme,
+  override: TheoThemeOverride | undefined,
+): TheoTheme {
   // Empty object ≡ no override — the theme identity stays the base's
   // (form-based `name` semantics: "custom" only for a NON-EMPTY override).
   if (override === undefined || Object.keys(override).length === 0) {
-    return defaultTheme;
+    return base;
   }
   return {
     name: "custom",
     role: {
-      user: { ...defaultTheme.role.user, ...override.role?.user },
+      user: { ...base.role.user, ...override.role?.user },
       assistant: {
-        ...defaultTheme.role.assistant,
+        ...base.role.assistant,
         ...override.role?.assistant,
       },
-      system: { ...defaultTheme.role.system, ...override.role?.system },
+      system: { ...base.role.system, ...override.role?.system },
     },
-    status: { ...defaultTheme.status, ...override.status },
-    accent: override.accent ?? defaultTheme.accent,
-    code: { ...defaultTheme.code, ...override.code },
-    toolStatus: mergeToolStatus(defaultTheme.toolStatus, override.toolStatus),
+    status: { ...base.status, ...override.status },
+    accent: override.accent ?? base.accent,
+    code: { ...base.code, ...override.code },
+    toolStatus: mergeToolStatus(base.toolStatus, override.toolStatus),
   };
+}
+
+/** Union accepted by the provider `theme` prop (plan D2 — every M0-M5 call
+ * site compiles and behaves identically; the base is EXPLICIT, never the
+ * ambient active theme). */
+export type TheoThemeProp =
+  | TheoThemeOverride
+  | TheoBuiltinThemeName
+  | { base?: TheoBuiltinThemeName; override?: TheoThemeOverride };
+
+function isBuiltinName(value: string): value is TheoBuiltinThemeName {
+  return value === "dark" || value === "light" || value === "no-color";
+}
+
+function isPairForm(
+  value: object,
+): value is { base?: TheoBuiltinThemeName; override?: TheoThemeOverride } {
+  return "base" in value || "override" in value;
+}
+
+function assertBuiltinName(name: string): void {
+  if (!isBuiltinName(name)) {
+    throw new TypeError(
+      `TheoTUIProvider: unknown theme "${name}" — expected "dark" | "light" | "no-color"`,
+    );
+  }
+}
+
+function assertPairForm(pair: {
+  base?: TheoBuiltinThemeName;
+  override?: TheoThemeOverride;
+}): void {
+  for (const key of Object.keys(pair)) {
+    if (key !== "base" && key !== "override") {
+      throw new TypeError(
+        `TheoTUIProvider: unknown key "${key}" in {base, override} theme form`,
+      );
+    }
+  }
+  if (pair.base !== undefined) {
+    assertBuiltinName(pair.base);
+  }
+}
+
+/** Type/shape guards — run BEFORE hooks (F10 idiom) so direct invocation
+ * throws OUR typed error, never the engine's (EC-5). */
+function assertThemeProp(theme: TheoThemeProp | undefined): void {
+  if (theme === undefined) {
+    return;
+  }
+  if (typeof theme === "string") {
+    assertBuiltinName(theme);
+    return;
+  }
+  if (theme === null || typeof theme !== "object" || Array.isArray(theme)) {
+    throw new TypeError(
+      `TheoTUIProvider: theme must be a built-in name or an override object — got ${Array.isArray(theme) ? "array" : String(theme)}`,
+    );
+  }
+  if (isPairForm(theme)) {
+    assertPairForm(theme);
+  }
+}
+
+/**
+ * Resolution (plan D2/D4): NO_COLOR (non-empty — the vitest `NO_COLOR: ""`
+ * pin means NOT set) wins over ANY prop with FULL-swap semantics (glyph
+ * overrides revert to the tested-readable defaults too — documented);
+ * then name / {base, override} / plain-override (M0 path, base dark).
+ * NO_COLOR handling lives HERE — the installed ink→chalk chain never reads
+ * it, so provider-less usage gets no NO_COLOR support (documented).
+ */
+function resolveTheme(theme: TheoThemeProp | undefined): TheoTheme {
+  if (process.env["NO_COLOR"]) {
+    return noColorTheme;
+  }
+  if (theme === undefined) {
+    return defaultTheme;
+  }
+  if (typeof theme === "string") {
+    return themes[theme];
+  }
+  if (isPairForm(theme)) {
+    return mergeTheme(themes[theme.base ?? "dark"], theme.override);
+  }
+  return mergeTheme(defaultTheme, theme);
 }
 
 /**
@@ -166,12 +325,16 @@ export function TheoTUIProvider({
   theme,
   children,
 }: {
-  theme?: TheoThemeOverride | undefined;
+  theme?: TheoThemeProp | undefined;
   children: ReactNode;
 }) {
+  // Shape guards FIRST, before hooks (F10 idiom — EC-5 typed errors).
+  assertThemeProp(theme);
   // Referentially stable context value — a fresh object per render would
   // re-render every consumer on each provider render (review F-dom-1).
-  const value = useMemo(() => mergeTheme(theme), [theme]);
+  // resolveTheme reads NO_COLOR here (once per mount/prop-change — never
+  // per frame; the swap is testable in-process via a fresh mount).
+  const value = useMemo(() => resolveTheme(theme), [theme]);
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
