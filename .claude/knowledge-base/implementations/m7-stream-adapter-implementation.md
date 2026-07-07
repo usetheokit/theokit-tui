@@ -75,40 +75,46 @@ the library. **Flip condition:** the day the adapter grows its own render path
 (e.g., a built-in `<AgentStream>` component or adapter-side memoization), that
 slice MUST land with its own bench.
 
-**Methodology note (shared-machine contention):** the suite-level re-run was
-polluted by an unrelated multi-hundred-% CPU postgres workload (different OS
-user) that produced contradictory ADVERSE readings in DIFFERENT benches per
-run (m4-full 230ms in run A with m5 clean; m5 2× in run B with m4-full clean
-isolated at 85.9±0.95ms — better than the M6 baseline). Per the established
-protocol (never weaken, wait for quiet), benches were re-run ISOLATED and
-LOAD-GATED (1-min loadavg < 4 at start of each bench). M7 touches none of the
-benched render paths; the tripwire for a REAL regression is the delta pattern
-(consistent across runs), which no metric exhibits.
+**Methodology note (shared-machine contention + env fix):** suite-level
+re-runs were polluted by unrelated multi-hundred-% CPU workloads (postgres
+under another OS user; a sibling-project tsc) producing contradictory ADVERSE
+readings in DIFFERENT benches per run — while isolated re-runs of the same
+benches were clean. Per the established protocol (never weaken, wait for
+quiet), each bench was re-run ISOLATED and LOAD-GATED (1-min loadavg < 4 at
+start: 3.22/3.07/3.33/3.14/3.00/3.16). A FIRST isolated round accidentally ran
+without `FORCE_COLOR=1` (the suite runner injects it; direct `tsx` invocation
+did not) — the committed baseline contract tests caught it
+(`color_env.FORCE_COLOR: "unset"`), and the round was DISCARDED as
+incomparable (less ANSI = spuriously cheap frames). The table below is the
+corrected round (`FORCE_COLOR=1 NO_COLOR= CI=`, matching `benchmarks/run.ts`),
+compared against the last VALID M6 baselines (`e86d545~1`).
 
 | bench | metric | M6 | M7 | delta | max σ | verdict |
 |---|---|---|---|---|---|---|
-| m0-chat-message | aggregate.mean_ms_per_frame | 15.117±0.696 | 11.582±1.968 | -3.535 | 1.968 | OK |
-| m0-chat-message | aggregate.peak_ms_per_frame | 32.347±4.171 | 24.529±5.360 | -7.818 | 5.360 | OK |
-| m1-chat-thread | plain.mean_ms_per_frame | 82.839±20.190 | 72.319±5.041 | -10.520 | 20.190 | OK |
-| m1-chat-thread | plain.peak_ms_per_frame | 160.986±47.049 | 159.108±27.249 | -1.878 | 47.049 | OK |
-| m1-chat-thread | windowed.mean_ms_per_frame | 2.015±0.090 | 2.086±0.105 | +0.071 | 0.105 | OK |
-| m1-chat-thread | windowed.peak_ms_per_frame | 5.535±1.564 | 4.844±0.529 | -0.691 | 1.564 | OK |
-| m2-tool-cards | aggregate.mean_ms_per_frame | 13.013±2.828 | 10.547±0.433 | -2.466 | 2.828 | OK |
-| m2-tool-cards | aggregate.peak_ms_per_frame | 29.721±6.302 | 27.765±1.657 | -1.956 | 6.302 | OK |
-| m3-agent-timeline | bounded.mean_ms_per_frame | 3.032±0.619 | 1.848±0.049 | -1.184 | 0.619 | OK |
-| m3-agent-timeline | bounded.peak_ms_per_frame | 6.906±1.748 | 4.216±0.735 | -2.690 | 1.748 | OK |
-| m3-agent-timeline | unbounded.mean_ms_per_frame | 5.545±0.264 | 3.688±0.165 | -1.857 | 0.264 | OK |
-| m3-agent-timeline | unbounded.peak_ms_per_frame | 48.292±4.361 | 35.922±2.118 | -12.370 | 4.361 | OK |
-| m4-diff-viewer | windowed.mean_ms_per_frame | 13.539±1.301 | 10.940±1.412 | -2.599 | 1.412 | OK |
-| m4-diff-viewer | windowed.peak_ms_per_frame | 23.487±5.688 | 21.261±2.962 | -2.226 | 5.688 | OK |
-| m4-diff-viewer | full.mean_ms_per_frame | 106.686±21.301 | 102.442±12.006 | -4.244 | 21.301 | OK |
-| m4-diff-viewer | full.peak_ms_per_frame | 184.158±25.284 | 190.343±28.620 | +6.185 | 28.620 | OK |
-| m5-metrics | with-metrics.mean_ms_per_frame | 3.391±0.292 | 2.800±0.088 | -0.591 | 0.292 | OK |
-| m5-metrics | with-metrics.peak_ms_per_frame | 6.011±1.168 | 5.099±0.714 | -0.912 | 1.168 | OK |
-| m5-metrics | without-metrics.mean_ms_per_frame | 2.612±0.084 | 2.226±0.126 | -0.386 | 0.126 | OK |
-| m5-metrics | without-metrics.peak_ms_per_frame | 4.178±0.296 | 3.854±0.517 | -0.324 | 0.517 | OK |
+| m0-chat-message | aggregate.mean_ms_per_frame | 15.117±0.696 | 11.311±1.210 | -3.806 | 1.210 | OK |
+| m0-chat-message | aggregate.peak_ms_per_frame | 32.347±4.171 | 28.426±4.630 | -3.921 | 4.630 | OK |
+| m1-chat-thread | plain.mean_ms_per_frame | 82.839±20.190 | 65.798±10.187 | -17.041 | 20.190 | OK |
+| m1-chat-thread | plain.peak_ms_per_frame | 160.986±47.049 | 131.439±32.612 | -29.547 | 47.049 | OK |
+| m1-chat-thread | windowed.mean_ms_per_frame | 2.015±0.090 | 1.590±0.020 | -0.425 | 0.090 | OK |
+| m1-chat-thread | windowed.peak_ms_per_frame | 5.535±1.564 | 3.142±0.368 | -2.393 | 1.564 | OK |
+| m2-tool-cards | aggregate.mean_ms_per_frame | 13.013±2.828 | 7.803±0.457 | -5.210 | 2.828 | OK |
+| m2-tool-cards | aggregate.peak_ms_per_frame | 29.721±6.302 | 21.998±7.392 | -7.723 | 7.392 | OK |
+| m3-agent-timeline | bounded.mean_ms_per_frame | 3.032±0.619 | 2.156±0.072 | -0.876 | 0.619 | OK |
+| m3-agent-timeline | bounded.peak_ms_per_frame | 6.906±1.748 | 5.043±0.477 | -1.863 | 1.748 | OK |
+| m3-agent-timeline | unbounded.mean_ms_per_frame | 5.545±0.264 | 3.861±0.190 | -1.684 | 0.264 | OK |
+| m3-agent-timeline | unbounded.peak_ms_per_frame | 48.292±4.361 | 35.515±1.705 | -12.777 | 4.361 | OK |
+| m4-diff-viewer | windowed.mean_ms_per_frame | 13.539±1.301 | 7.245±0.112 | -6.294 | 1.301 | OK |
+| m4-diff-viewer | windowed.peak_ms_per_frame | 23.487±5.688 | 13.874±1.709 | -9.613 | 5.688 | OK |
+| m4-diff-viewer | full.mean_ms_per_frame | 106.686±21.301 | 89.858±1.955 | -16.828 | 21.301 | OK |
+| m4-diff-viewer | full.peak_ms_per_frame | 184.158±25.284 | 153.846±9.465 | -30.312 | 25.284 | OK |
+| m5-metrics | with-metrics.mean_ms_per_frame | 3.391±0.292 | 2.518±0.142 | -0.873 | 0.292 | OK |
+| m5-metrics | with-metrics.peak_ms_per_frame | 6.011±1.168 | 4.111±0.264 | -1.900 | 1.168 | OK |
+| m5-metrics | without-metrics.mean_ms_per_frame | 2.612±0.084 | 2.170±0.122 | -0.442 | 0.122 | OK |
+| m5-metrics | without-metrics.peak_ms_per_frame | 4.178±0.296 | 3.515±0.230 | -0.663 | 0.296 | OK |
 
-**Result: 20/20 metrics OK — ZERO ADVERSE beyond 1σ** (per-bench isolated runs, 1-min loadavg < 4.0 at each start: 3.21/3.01/3.17/3.99/2.86/3.03). Most deltas favorable — consistent with the quieter load-gated windows vs the M6 run.
+**Result: 20/20 metrics OK — ZERO ADVERSE beyond 1σ** (all 20 deltas
+favorable, consistent with the load-gated quiet windows vs the M6 run's
+noisier machine). M7 touches none of the benched render paths.
 
 ## Follow-ups
 

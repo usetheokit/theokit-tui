@@ -1,6 +1,6 @@
 {
   "benchmark": "chat-message-render",
-  "date": "2026-07-07T17:17:55.387Z",
+  "date": "2026-07-07T18:44:53.620Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
@@ -11,7 +11,7 @@
     "streamed_tokens": 300
   },
   "color_env": {
-    "FORCE_COLOR": "unset"
+    "FORCE_COLOR": "1"
   },
   "protocol": {
     "warmup_runs": 1,
@@ -20,39 +20,39 @@
   "runs": [
     {
       "frames": 300,
-      "mean_ms_per_frame": 14.876,
-      "peak_ms_per_frame": 29.926
+      "mean_ms_per_frame": 9.987,
+      "peak_ms_per_frame": 24.858
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 12.813,
-      "peak_ms_per_frame": 32.074
+      "mean_ms_per_frame": 11.159,
+      "peak_ms_per_frame": 27.552
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 10.378,
-      "peak_ms_per_frame": 19.137
+      "mean_ms_per_frame": 10.134,
+      "peak_ms_per_frame": 24.21
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 9.771,
-      "peak_ms_per_frame": 20.856
+      "mean_ms_per_frame": 12.072,
+      "peak_ms_per_frame": 28.372
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 10.073,
-      "peak_ms_per_frame": 20.652
+      "mean_ms_per_frame": 13.204,
+      "peak_ms_per_frame": 37.14
     }
   ],
   "aggregate": {
     "frames_mean": 300,
     "mean_ms_per_frame": {
-      "mean": 11.582,
-      "std_dev": 1.968
+      "mean": 11.311,
+      "std_dev": 1.21
     },
     "peak_ms_per_frame": {
-      "mean": 24.529,
-      "std_dev": 5.36
+      "mean": 28.426,
+      "std_dev": 4.63
     }
   },
   "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."
