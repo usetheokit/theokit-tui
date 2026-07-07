@@ -1,6 +1,6 @@
 {
   "name": "@theokit/tui",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "TUI component library for AI-agent surfaces — Ink primitives for chat, tool-calls, agent timelines, diffs and metrics.",
   "license": "Apache-2.0",
   "repository": {
