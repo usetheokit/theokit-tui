@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Publish readiness: `publint --strict` clean (new devDependency, audit clean), manifest publish fields (description/keywords/`prepublishOnly` gates+build) pinned by a package-contract test (m8-ga-publish T1.1)
+
+### Added
+
 ### Changed
 
 ### Deprecated

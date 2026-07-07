@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
   "version": "0.9.0",
-  "description": "TUI component library for AI-agent surfaces — Ink primitives for chat, tool-calls, agent timelines, diffs and metrics.",
+  "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -43,7 +43,8 @@
     "example:themes": "tsx examples/themes.tsx",
     "example:stream": "tsx examples/stream.tsx",
     "example:banner": "tsx examples/banner.tsx",
-    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "prepublishOnly": "pnpm gates && pnpm build"
   },
   "peerDependencies": {
     "lowlight": "^3.0.0",
@@ -66,6 +67,7 @@
     "ink-testing-library": "^4.0.0",
     "lowlight": "3.3.0",
     "prettier": "^3.3.0",
+    "publint": "^0.3.21",
     "react": "^18.3.1",
     "tsup": "^8.3.0",
     "tsx": "^4.19.0",
@@ -85,5 +87,17 @@
     "lowlight": {
       "optional": true
     }
-  }
+  },
+  "keywords": [
+    "tui",
+    "ink",
+    "react",
+    "terminal",
+    "ai",
+    "agent",
+    "cli",
+    "chat",
+    "streaming",
+    "llm"
+  ]
 }
