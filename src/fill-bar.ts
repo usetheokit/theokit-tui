@@ -30,6 +30,14 @@ const ROUNDERS = {
 } as const;
 
 /**
+ * ONE business rule, one home (plan D4, review arch-1): below this many bar
+ * cells the metrics components drop the bar and degrade to label-only.
+ * Layout invariant of the bar primitive — color policy stays caller-side.
+ * NOT re-exported from the package entry.
+ */
+export const MIN_BAR_CELLS = 3;
+
+/**
  * THE single rounding authority (EC-1): the integer display percent every label
  * AND every bar derives from. Endpoint-honest: 100 is reserved for ratio >= 1
  * and 0 for ratio <= 0 — interior ratios clamp to 1..99 (99.6% reads "99%",

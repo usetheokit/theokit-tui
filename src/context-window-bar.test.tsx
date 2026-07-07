@@ -143,7 +143,10 @@ describe("ContextWindowBar", () => {
         />,
       ),
     );
-    expect(count(atBoundary, "█") + count(atBoundary, "░")).toBe(3);
+    // 50% of 3 cells rounds to 2 filled + 1 empty (review tests-2 — the
+    // total-only assert also passed for 0█+3░).
+    expect(count(atBoundary, "█")).toBe(2);
+    expect(count(atBoundary, "░")).toBe(1);
     const below = stripAnsi(
       await renderFrame(
         <ContextWindowBar

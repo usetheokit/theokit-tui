@@ -469,6 +469,11 @@ describe("benchmark baseline M5 (T3.2)", () => {
     expect(baseline.workload.steps).toBeGreaterThan(0);
     expect(baseline.workload.tokens_per_step).toBeGreaterThan(0);
     expect(baseline.workload.categories).toBeGreaterThan(0);
+    // Cadence symmetry (EC-6, review dom-testing-6): the delta is only
+    // meaningful if both modes produced the same frame count per run.
+    expect(baseline.modes[0]?.aggregate.frames_mean).toBe(
+      baseline.modes[1]?.aggregate.frames_mean,
+    );
     // The honest-delta contract (D6): the reportable result is the mode
     // delta, and sub-sigma deltas are declared inconclusive.
     expect(baseline.methodology).toContain("INCONCLUSIVE");

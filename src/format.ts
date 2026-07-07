@@ -11,7 +11,12 @@ const TOKEN_UNITS = [
   { suffix: "b", scale: 1e9 },
 ] as const;
 
-function assertFiniteNonNegative(value: number, message: string): void {
+/**
+ * Shared metric-input boundary guard (review arch-3 — the "finite number
+ * >= 0" contract appears at every M5 boundary; one home past rule-of-3).
+ * NOT re-exported from the package entry.
+ */
+export function assertFiniteNonNegative(value: number, message: string): void {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
     throw new TypeError(`${message} — got ${String(value)}`);
   }

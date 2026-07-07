@@ -49,6 +49,8 @@ export type { AgentStreamingProps } from "./agent-streaming.js";
 export { ContextWindowBar } from "./context-window-bar.js";
 export type { ContextWindowBarProps } from "./context-window-bar.js";
 export { TokenUsageChart } from "./token-usage-chart.js";
+// TokenCategory ships as a props-construction accessory (it is the key type
+// embedded in TokenUsageChartProps.usage) — review arch-5 rationale.
 export type {
   TokenCategory,
   TokenUsageChartProps,

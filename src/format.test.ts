@@ -47,6 +47,8 @@ describe("formatCost", () => {
       [1.236, "~$1.24"],
       [3.05, "~$3.05"], // single-digit cents keep the leading zero (EC-9)
       [999.994, "~$999.99"],
+      [999.999, "~$1,000.00"], // cent-rounding crosses the grouping boundary (tests-3)
+      [1000, "~$1,000.00"],
       [1234.5, "~$1,234.50"],
       [1_234_567.891, "~$1,234,567.89"], // multi-group commas (EC-9)
     ];

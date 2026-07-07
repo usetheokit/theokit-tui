@@ -75,9 +75,13 @@ describe("TokenUsageChart", () => {
 
   it("single_category_renders_full_bar", async () => {
     // D8: bars scale to the LARGEST category — alone, it is the largest.
-    const frame = await renderFrame(<TokenUsageChart usage={{ input: 500 }} />);
+    // Literal fill-count at a pinned width (review tests-1): label "input"
+    // (5) + value "500" (3) + 2 spacers → width 20 leaves EXACTLY 10 cells.
+    const frame = await renderFrame(
+      <TokenUsageChart usage={{ input: 500 }} width={20} />,
+    );
     const plain = stripAnsi(frame);
-    expect(count(plain, "█")).toBeGreaterThanOrEqual(1);
+    expect(count(plain, "█")).toBe(10);
     expect(count(plain, "░")).toBe(0);
   });
 

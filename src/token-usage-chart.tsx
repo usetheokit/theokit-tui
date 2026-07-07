@@ -1,13 +1,11 @@
 import { Box, Text } from "ink";
 
-import { renderFillBar } from "./fill-bar.js";
-import { formatTokens } from "./format.js";
+import { MIN_BAR_CELLS, renderFillBar } from "./fill-bar.js";
+import { assertFiniteNonNegative, formatTokens } from "./format.js";
 
 // Module-local accent for chart bars (M6 theming candidate — M2/M4 precedent).
+// Kept in sync with context-window-bar.tsx until the M6 `accent` theme token.
 const ACCENT_COLOR = "cyan";
-
-/** Bar cells below this floor render label + value only (D4 binary degrade). */
-const MIN_BAR_CELLS = 3;
 
 /** Fixed row order (codex fields ∪ gemini metrics — plan ADR D2). */
 const TOKEN_CATEGORIES = ["input", "output", "cached", "reasoning"] as const;
@@ -37,11 +35,10 @@ function collectRows(usage: TokenUsageChartProps["usage"]): ChartRow[] {
     if (value === undefined) {
       continue;
     }
-    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-      throw new TypeError(
-        `TokenUsageChart: usage.${category} must be a finite number >= 0 — got ${String(value)}`,
-      );
-    }
+    assertFiniteNonNegative(
+      value,
+      `TokenUsageChart: usage.${category} must be a finite number >= 0`,
+    );
     rows.push({ category, value, formatted: formatTokens(value) });
   }
   return rows;
@@ -55,7 +52,7 @@ function collectRows(usage: TokenUsageChartProps["usage"]): ChartRow[] {
 export function TokenUsageChart({ usage, width = 40 }: TokenUsageChartProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   const rows = collectRows(usage);
-  if (width !== undefined && (!Number.isInteger(width) || width < 0)) {
+  if (!Number.isInteger(width) || width < 0) {
     throw new TypeError(
       `TokenUsageChart: width must be an integer >= 0 — got ${String(width)}`,
     );

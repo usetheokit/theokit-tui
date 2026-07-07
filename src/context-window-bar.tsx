@@ -1,15 +1,18 @@
 import { Box, Text } from "ink";
 
-import { displayPercent, renderFillBar } from "./fill-bar.js";
-import { formatTokens } from "./format.js";
+import {
+  MIN_BAR_CELLS,
+  displayPercent,
+  formatPercent,
+  renderFillBar,
+} from "./fill-bar.js";
+import { assertFiniteNonNegative, formatTokens } from "./format.js";
 import { useTheoTheme } from "./theme.js";
 
 // Module-local accent for the sub-warning fill (M6 theming candidate — the
 // M2 glyph / M4 palette precedent; do NOT hardcode per-state colors inline).
+// Kept in sync with token-usage-chart.tsx until the M6 `accent` theme token.
 const ACCENT_COLOR = "cyan";
-
-/** Bar cells below this floor render label-only (EC-4/EC-5 — binary degrade). */
-const MIN_BAR_CELLS = 3;
 
 /** Warn when the used ratio reaches this fraction (gemini default). */
 const WARNING_RATIO = 0.5;
@@ -39,31 +42,29 @@ export interface ContextWindowBarProps {
   width?: number;
 }
 
-function isNonNegativeFinite(value: number): boolean {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
-}
-
 function assertTokenProps({
   usedTokens,
   limitTokens,
   baselineTokens,
 }: ContextWindowBarProps): void {
-  if (!isNonNegativeFinite(usedTokens)) {
-    throw new TypeError(
-      `ContextWindowBar: usedTokens must be a finite number >= 0 — got ${String(usedTokens)}`,
-    );
-  }
+  assertFiniteNonNegative(
+    usedTokens,
+    "ContextWindowBar: usedTokens must be a finite number >= 0",
+  );
   if (
     limitTokens !== undefined &&
-    (!isNonNegativeFinite(limitTokens) || limitTokens === 0)
+    (typeof limitTokens !== "number" ||
+      !Number.isFinite(limitTokens) ||
+      limitTokens <= 0)
   ) {
     throw new TypeError(
       `ContextWindowBar: limitTokens must be a finite number > 0 — got ${String(limitTokens)}`,
     );
   }
-  if (baselineTokens !== undefined && !isNonNegativeFinite(baselineTokens)) {
-    throw new TypeError(
-      `ContextWindowBar: baselineTokens must be a finite number >= 0 — got ${String(baselineTokens)}`,
+  if (baselineTokens !== undefined) {
+    assertFiniteNonNegative(
+      baselineTokens,
+      "ContextWindowBar: baselineTokens must be a finite number >= 0",
     );
   }
 }
@@ -111,9 +112,13 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
 
   const usedRatio =
     Math.max(0, usedTokens - baselineTokens) / (limitTokens - baselineTokens);
-  const usedPercent = displayPercent(usedRatio);
-  const percent = convention === "left" ? 100 - usedPercent : usedPercent;
-  const label = `${String(percent)}% ${convention}`;
+  // 'used' consumes the authority's label form directly; 'left' DERIVES from
+  // the same displayPercent — NEVER a second formatPercent(1 − usedRatio)
+  // call (the EC-1 float trap: 1 − 5e-17 === 1 → "100% left" overclaim).
+  const label =
+    convention === "used"
+      ? `${formatPercent(usedRatio)} used`
+      : `${String(100 - displayPercent(usedRatio))}% left`;
   const detail = `(${formatTokens(usedTokens)} used / ${formatTokens(limitTokens)})`;
 
   const barCells = width - label.length - detail.length - 2;

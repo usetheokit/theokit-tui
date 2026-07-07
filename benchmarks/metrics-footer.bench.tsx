@@ -174,13 +174,22 @@ for (const r of results) {
   );
 }
 if (!smoke && results.length === 2) {
-  const withM = results[0]?.aggregate.mean_ms_per_frame;
-  const without = results[1]?.aggregate.mean_ms_per_frame;
-  if (withM && without) {
-    const delta = round(withM.mean - without.mean);
-    const sigma = Math.max(withM.std_dev, without.std_dev);
+  // Find by mode, never by position (review dom-testing-3) — reordering the
+  // modes array must not silently flip the delta sign.
+  const withM = results.find((r) => r.mode === "with-metrics");
+  const without = results.find((r) => r.mode === "without-metrics");
+  if (withM === undefined || without === undefined) {
+    throw new Error("bench: mode results missing — delta cannot be computed");
+  }
+  // BOTH promised deltas printed (review dom-testing-2) — the peak verdict
+  // must never be hand-derived after the fact.
+  for (const metric of ["mean_ms_per_frame", "peak_ms_per_frame"] as const) {
+    const a = withM.aggregate[metric];
+    const b = without.aggregate[metric];
+    const delta = round(a.mean - b.mean);
+    const sigma = Math.max(a.std_dev, b.std_dev);
     console.log(
-      `=== mode delta (with − without) === ${delta}ms/frame (max σ ${sigma}) ` +
+      `=== mode delta (with − without) ${metric} === ${delta}ms/frame (max σ ${sigma}) ` +
         (Math.abs(delta) <= sigma ? "[INCONCLUSIVE — within 1σ]" : ""),
     );
   }

@@ -24,9 +24,12 @@
 - `pnpm gates` exit 0 per commit (gates-gated commit discipline; two contention flakes
   re-ran green and are logged below).
 - Tests: **327/327** green — two consecutive full `pnpm vitest run` (stability gate).
-- Coverage: **99.74% stmts/lines global**; M5 modules (`fill-bar.ts`, `format.ts`,
-  `context-window-bar.tsx`, `token-usage-chart.tsx`, `cost-meter.tsx`) **100% on all
-  axes**; critical paths (fill-bar, format) 100% lines.
+- Coverage: **99.74% stmts/lines global**; M5 modules 100% stmts/lines/funcs;
+  branches 100% except `format.ts` **95.23%** — the loop-exit guard at
+  `src/format.ts:46` is unreachable-by-construction (the last unit always
+  returns) and the v8 ignore covers its lines but not the branch axis
+  (review xval-1 correction — the earlier "100% on all axes" wording
+  overclaimed). Critical paths (fill-bar, format) 100% lines — the plan gate.
 - `run_validation.py m5-metrics-surface` exit 0 (first run had a load-flake `npm test`
   FAIL — composer stdin timing test, passed 327/327 twice immediately before and re-ran
   clean; second run 0 FAIL / 1 LOW WARN: 14 criteria need human evidence — the `pnpm
@@ -40,8 +43,13 @@
 
 - with-metrics 3.684 ± 0.309 ms/frame mean vs without-metrics 2.682 ± 0.058 →
   **footer delta 1.00 ± 0.31 ms/frame — conclusive (>1σ)**: the metrics surface costs
-  ~1ms/frame under a streaming 50-message thread. Peak delta within noise
-  (INCONCLUSIVE, reported as such). A pre-refresh run measured 0.755 ± 0.086 — same
+  ~1ms/frame under a streaming 50-message thread. Peak delta 3.22 ms vs max σ 2.46
+  (~1.3σ) — **also conclusive**, but σ-inflated by a single first-measured-run
+  outlier (11.4 ms vs 4.8-7.2 for runs 2-5; review dom-testing-1 corrected the
+  earlier "within noise" claim, which was stale from the pre-refresh run — the
+  bench now prints BOTH deltas so peak verdicts are never hand-derived). A
+  pre-refresh run measured mean delta 0.755 (± 0.121 combined-σ convention;
+  the originally quoted ± 0.086 was a single mode's σ — review xval-2) — same
   conclusion.
 - Final-Phase full refresh of all six baselines under pinned env; the m4 refresh
   (windowed 10.968 ± 0.925 vs full 137.05 ± 9.98 — 12.5× mean) supersedes the

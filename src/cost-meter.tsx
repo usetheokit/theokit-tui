@@ -1,6 +1,6 @@
 import { Box, Text } from "ink";
 
-import { formatCost } from "./format.js";
+import { assertFiniteNonNegative, formatCost } from "./format.js";
 
 export interface CostMeterProps {
   /**
@@ -21,13 +21,12 @@ export interface CostMeterProps {
  * `<$0.01`, never `$0.00`. No bar, no thresholds (no budget semantics at M5).
  */
 export function CostMeter({ costUsd, approx = true }: CostMeterProps) {
-  // Boundary guard FIRST (F10 idiom); formatCost validates once — the
-  // component names itself in the error.
-  if (typeof costUsd !== "number" || !Number.isFinite(costUsd) || costUsd < 0) {
-    throw new TypeError(
-      `CostMeter: costUsd must be a finite number >= 0 — got ${String(costUsd)}`,
-    );
-  }
+  // Boundary guard FIRST (F10 idiom) — the component names itself in the
+  // error; formatCost re-validates at its own boundary (single shared guard).
+  assertFiniteNonNegative(
+    costUsd,
+    "CostMeter: costUsd must be a finite number >= 0",
+  );
   return (
     <Box>
       <Text dimColor>cost </Text>
