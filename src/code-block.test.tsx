@@ -2,7 +2,7 @@ import { Box } from "ink";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
-import { CodeBlock, ensureHighlighter } from "./code-block.js";
+import { CodeBlock, ensureHighlighter, highlightLine } from "./code-block.js";
 
 /** Compound-SGR-safe strip (M2 idiom). */
 // eslint-disable-next-line no-control-regex
@@ -155,6 +155,35 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
       <CodeBlock code={SNIPPET} language="python" />,
     );
     expect(stripAnsi(js)).toBe(stripAnsi(py));
+  });
+
+  it("fallback_ladder_empty_root_and_throw_return_raw_line", () => {
+    // D6 ladder levels 2 (empty root) and 3 (highlight throw) — stubbed:
+    // real lowlight rarely produces either on common languages.
+    const emptyRoot = {
+      registered: () => true,
+      highlight: () => ({ children: [] }),
+    };
+    expect(highlightLine("raw line", "ts", emptyRoot, "k")).toBe("raw line");
+    const throwing = {
+      registered: () => true,
+      highlight: () => {
+        throw new Error("boom");
+      },
+    };
+    expect(highlightLine("raw line", "ts", throwing, "k")).toBe("raw line");
+    // Unknown hast node types render as null (renderHast fallthrough).
+    const weirdNode = {
+      registered: () => true,
+      highlight: () => ({ children: [{ type: "comment" }] }),
+    };
+    expect(highlightLine("x", "ts", weirdNode, "k")).not.toBe("x");
+  });
+
+  it("interior_blank_line_occupies_a_row", async () => {
+    // M2 EC-11 parity: a blank interior line keeps its row.
+    const frame = await renderFrame(<CodeBlock code={"a\n\nb"} />);
+    expect(stripAnsi(frame).split("\n")).toHaveLength(3);
   });
 
   it("tab_renders_as_four_spaces", async () => {

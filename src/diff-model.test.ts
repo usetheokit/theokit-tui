@@ -81,6 +81,19 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
     expect(files[0]!.newName).toBe("new.ts");
   });
 
+  it("maps_deleted_file_to_absent_new_name", () => {
+    const patch = [
+      "--- a/gone.ts",
+      "+++ /dev/null",
+      "@@ -1,1 +0,0 @@",
+      "-bye",
+      "",
+    ].join("\n");
+    const files = parseUnifiedDiff(patch);
+    expect(files[0]!.oldName).toBe("gone.ts");
+    expect(files[0]!.newName).toBeUndefined();
+  });
+
   it("detects_rename_names", () => {
     const patch = [
       "--- a/old.ts",

@@ -119,8 +119,13 @@ function renderHast(
   });
 }
 
-/** Per-line highlight with the 4-level fallback ladder (plan ADR D6). */
-function highlightLine(
+/**
+ * Per-line highlight with the 4-level fallback ladder (plan ADR D6).
+ * Exported for ladder unit tests (levels 2/3 need a stub highlighter —
+ * real lowlight rarely returns empty roots or throws on common langs);
+ * NOT on the package entry.
+ */
+export function highlightLine(
   line: string,
   language: string | undefined,
   highlighter: HighlighterLike | undefined,
