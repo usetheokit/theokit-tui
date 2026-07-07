@@ -30,6 +30,16 @@ describe("package publish contract (M8 T1.1)", () => {
     expect(pkg.devDependencies["publint"]).toBeDefined();
   });
 
+  it("react_peer_range_is_honest", () => {
+    // Rehearsal-proven (M8 T2.2): ink@5's reconciler does NOT run on
+    // React 19 (ReactCurrentOwner removed) — a ^19 peer range ships a
+    // broken fresh-install. Flip when the lib migrates to ink >= 6.
+    const peers = (
+      pkg as unknown as { peerDependencies: Record<string, string> }
+    ).peerDependencies;
+    expect(peers["react"]).toBe("^18.2.0");
+  });
+
   it("publint_reports_zero_errors", { timeout: 60000 }, () => {
     // Throws on non-zero exit — publint --strict IS the oracle.
     const out = execFileSync("pnpm", ["exec", "publint", "--strict"], {

@@ -62,7 +62,9 @@ describe("package manifest contract (T0.1)", () => {
       "lowlight",
       "react",
     ]);
-    expect(pkg.peerDependencies.react).toBe("^18.0.0 || ^19.0.0");
+    // ^18.2.0 ONLY — the former "^18 || ^19" shipped a broken fresh-install
+    // (ink 5 reconciler × React 19; M8 rehearsal evidence). Flip on ink >= 6.
+    expect(pkg.peerDependencies.react).toBe("^18.2.0");
     expect(pkg.dependencies.ink).toMatch(/^\^5/);
   });
 

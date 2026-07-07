@@ -24,11 +24,13 @@ Target: under 10 minutes. Measured record: [`docs/ttfatt.md`](docs/ttfatt.md).
 ## Install
 
 ```sh
-npm i @theokit/tui ink react
+npm i @theokit/tui react@18
 ```
 
-Node ≥ 20, ESM. `react` and (optionally) `lowlight` for syntax highlighting
-are peers.
+Node ≥ 20, **ESM-only** (set `"type": "module"`). `ink` ships as a
+dependency — don't install it separately. React **18** is the supported peer
+(ink 5's reconciler does not run on React 19 yet); `lowlight` is an optional
+peer for syntax highlighting.
 
 ## Quickstart — a streamed agent turn
 
