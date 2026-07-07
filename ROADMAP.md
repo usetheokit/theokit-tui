@@ -134,7 +134,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 **Depends on:** M2
 **Risks:** 1. Timeline layout with heterogeneous item heights. 2. Event ordering under concurrency.
 
-### M4 — [ ] Code surface
+### M4 — [x] Code surface
 
 **Objective:** Ship code-rendering primitives adapted to the terminal.
 **Definition of done:**
