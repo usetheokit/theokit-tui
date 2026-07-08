@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `examples/showcase.tsx` (`pnpm example:showcase`) — every shipped primitive in ONE scripted agent turn: animated WelcomeBanner in the ChatThread header slot, markdown assistant reply, per-kind ToolCallCards (diff/output/preview), AgentStreaming driven by useTurnElapsed, ContextWindowBar + CostMeter, AppStatusBar and the slash-command ChatComposer (interactive runs); piped runs play the script deterministically and exit — pinned by a per-surface smoke
+
 ### Changed
 
 ### Deprecated

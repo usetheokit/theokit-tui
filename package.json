@@ -44,6 +44,7 @@
     "example:stream": "tsx examples/stream.tsx",
     "example:banner": "tsx examples/banner.tsx",
     "example:live": "tsx examples/live-agent-tui.tsx",
+    "example:showcase": "tsx examples/showcase.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "prepublishOnly": "pnpm gates && pnpm build"
   },
