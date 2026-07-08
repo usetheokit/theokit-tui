@@ -19,6 +19,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.15.0] - 2026-07-08
+
+### Added
+
+- OWN render bench for the status bar (`benchmarks/app-status-bar.bench.tsx` — the ticking 1 Hz hook path IS a per-frame path): ticking mode wall 10020 ± 1 ms (10 real 1 s ticks, ~1 frame/s), static-presence rerender cost 14.4 ± 0.1 ms/frame at load 1.95; baseline committed with contract test (m14-status-bar T2.2)
+
+- `examples/chat.tsx` mounts the AppStatusBar under the thread (model · cwd · tokens · state) and drives `AgentStreaming elapsedSeconds` through `useTurnElapsed` during the scripted turn; smoke pins the bar below the thread with its separators (m14-status-bar T2.1)
+
+- `AppStatusBar` — the persistent AI-native status line (model · cwd · tokens · state): dim `·` separators between PRESENT slots only, cwd tildeified with truncate-start (path tail survives narrow widths), tokens compacted via formatTokens, typed validation; exported from the package entry (m14-status-bar T1.2)
+
+- `useTurnElapsed(active)` — the lib-shipped 1 Hz turn clock for `AgentStreaming.elapsedSeconds` (0 while inactive, resets on re-activation, cleared on deactivate/unmount; AgentStreaming's no-timer contract untouched) (m14-status-bar T1.1)
+
+### Fixed
+
+- `AppStatusBar`: separators no longer shrink before the cwd slot (they collapsed under squeeze), the tokens slot clips VISIBLY with an ellipsis instead of silently showing a wrong limit, empty-string slots are treated as absent (no dangling `·`), and `tildeify` respects the path boundary (`/home/user-backup` is not inside `~`); per-axis token negatives + a width-fit oracle kill the two review-survived mutants (m14 review batch)
+
 ## [0.14.0] - 2026-07-08
 
 ### Added

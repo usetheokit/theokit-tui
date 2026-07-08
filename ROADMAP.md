@@ -297,7 +297,7 @@ The M9 D4 drawback is RECORDED with this exact flip condition; V2 is the moment 
 
 The M9 blueprint recorded the flip condition and the brand-moment value is peer-proven (Copilot CLI engineering post); rides the M10 base.
 
-### M13 — [ ] Markdown renderer for assistant text
+### M13 — [x] Markdown renderer for assistant text
 
 > Added 2026-07-08 by `/roadmap-feature` (slug: `m13-markdown-renderer`). See CHANGELOG `[Unreleased] § Added`.
 

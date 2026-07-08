@@ -105,3 +105,40 @@ describe("benchmark baseline M13 (T3.1)", () => {
     expect(baseline.runs.length).toBeGreaterThan(0);
   });
 });
+
+// M14 T2.2: the AppStatusBar OWN bench (ticking = the 1 Hz hook path under
+// real timers; static = rerender loop with the bar present).
+describe("benchmark baseline M14 (T2.2)", () => {
+  it("m14_status_bar_baseline_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m14-status-bar-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      stack: { ink: string };
+      load_1min_at_start: number;
+      ticking_wall_ms: { mean: number };
+      modes: {
+        mode: string;
+        runs: { mean_ms_per_frame: number }[];
+        aggregate: { mean_ms_per_frame: { mean: number; std_dev: number } };
+      }[];
+    };
+    expect(baseline.stack.ink).toBe("7.1.0");
+    const modeNames = baseline.modes.map((m) => m.mode);
+    expect(modeNames).toEqual(expect.arrayContaining(["ticking", "static"]));
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    // 10 real 1 s ticks: wall between 9 and 12 s (plan T2.2 AC).
+    expect(baseline.ticking_wall_ms.mean).toBeGreaterThan(9000);
+    expect(baseline.ticking_wall_ms.mean).toBeLessThan(12000);
+    for (const mode of baseline.modes) {
+      for (const run of mode.runs) {
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+      }
+    }
+  });
+});
