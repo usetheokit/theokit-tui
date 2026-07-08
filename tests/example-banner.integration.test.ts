@@ -27,5 +27,11 @@ it(
     // the dark theme → round corners (plan D3/EC-3).
     expect(out).toContain("╭");
     expect(out).toContain("cwd: ~/projects/demo"); // children slot
+    // M12 oracle h: the example passes `animated`, but a pipe is non-TTY —
+    // the gate stays closed and the STATIC scene prints exactly once
+    // (deterministic under the ink7 single-final-frame contract).
+    const once = out.split("Theo TUI").length - 1;
+    expect(once).toBe(1);
+    expect(out).toContain("/help for commands");
   },
 );

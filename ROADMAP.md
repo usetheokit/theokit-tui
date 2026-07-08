@@ -247,7 +247,7 @@ M8's dogfood (`examples/live-agent-tui` + TheoCode as consumer) will assemble ex
 
 V1 closed (10/10, v0.10.0 published); the M8 rehearsal PROVED the react-19 fresh-install break and recorded the flip condition ("flip on ink >= 6"); every V2 feature builds on the new base — validate once.
 
-### M11 — [ ] ChatThread/AgentTimeline header slot
+### M11 — [x] ChatThread/AgentTimeline header slot
 
 > Added 2026-07-07 by `/roadmap-feature` (slug: `m11-chatthread-header-slot`). See CHANGELOG `[Unreleased] § Added`.
 

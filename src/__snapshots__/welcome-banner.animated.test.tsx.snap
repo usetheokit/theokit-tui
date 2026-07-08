@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`WelcomeBanner animated reveal (M12) > mid_reveal_frame_matches_snapshot > banner-mid-reveal 1`] = `
+"[36m╭──────────────────────────────────────────────────────────╮[39m
+[36m│[39m [1m[36mThe[39m[22m                                                      [36m│[39m
+[36m╰──────────────────────────────────────────────────────────╯[39m"
+`;
