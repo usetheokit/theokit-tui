@@ -9,14 +9,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- M18 review fixes: `commitUpdate` now diffs old vs new style and resets **removed** style keys (Ink's diff-with-undefined-deletes — a key toggled out across renders no longer keeps its stale yoga value); the parity gate gained a vacuity guard (empty frames can't count as a match), 3 breadth scenes (flex-grow / justify-content / wrap, with Ink as the oracle for the layout math), and an **SGR byte-parity check** proving our colored output is byte-identical to Ink; the layout bench now drives the **real `ChatThread`** (the M1 workload, ~2.6× faster than Ink) instead of a synthetic proxy (review m18-yoga-layout)
-
-- M18 T3.1 (renderer Yoga paint + parity gate): `src/renderer/render-node.ts` (Ink's render-node-to-output + render-border + get-max-width ported — the laid-out-tree → cell-grid walk with borders and foreground colors) and a rewritten `renderer.ts` paint path (yoga `calculateLayout` at terminal width → `renderNodeToOutput` → cell grid → differential engine; the M17 `assembleLines` is deleted). Gated by `tests/renderer/parity-corpus.test.tsx`: **all 11 corpus scenes render byte-identical to Ink** (100%, exceeding the ≥ 90% DoD) — the M17 layout gaps (nested-row, padding, width/wrap, borders) are now correct; parity documented in `docs/renderer/m18-parity-report.md`. Bench: the full layout+render pipeline is **~3.9× faster than Ink** (5.2 vs 20.2 ms/frame on a 30-message thread). `<Box>`/`<Text>` now render on the own renderer with real flexbox layout (plan m18-yoga-layout, ADR D2/D4/D5)
-
-- M18 T2.1 (renderer text measurement + cell grid): `src/renderer/text-measure.ts` (Ink's measure-text / wrap-text / squash-text-nodes / measureTextNode ported over `widest-line`/`wrap-ansi`/`cli-truncate`/`string-width` — the yoga measure func + the wrap/truncate-end/truncate-start/CJK/`<1px`-guard behaviors) and `src/renderer/output-grid.ts` (Ink's `output.js` cell-grid ported, minus clips: a height×width styled-cell buffer that preserves trailing padding rows, handles wide chars, applies per-line transformers, and trims trailing space — byte-parity via `@alcalzone/ansi-tokenize`). host-config now binds the measure func to each `ink-text` yoga node, so `calculateLayout` sizes text. Both new files at 100% lines (plan m18-yoga-layout, ADR D2/D3)
-
-- M18 T1.1 (renderer Yoga tree): `src/renderer/yoga-style.ts` — a faithful port of Ink's `styles.js` (`applyStyles(yogaNode, style)`, the full flexbox prop set: position/margin/padding/flex/dimensions/display/border/gap) driving the same `yoga-layout@3.2.1` WASM engine Ink uses (parity by construction). The renderer's host-config now attaches a yoga node per Box/top-level-Text, mutates the yoga tree on append/insert/remove, frees WASM nodes on removal (no leak), and treats a `<Text>` nested inside `<Text>` as virtual (no yoga node). yoga-style + host-config at 100% lines; `yoga-layout` joins the runtime dep graph (plan m18-yoga-layout, ADR D1/D4)
-
 ### Changed
 
 ### Deprecated
@@ -25,9 +17,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- The exported `VERSION` constant now tracks the manifest (0.18.0). The v0.18.0 release bumped `package.json` but not `src/index.ts`, so the two briefly disagreed — caught by the `public_entry_exposes_version_constant` guardrail
-
 ### Security
+
+## [0.19.0] - 2026-07-08
+
+### Added
+
+- M18 review fixes: `commitUpdate` now diffs old vs new style and resets **removed** style keys (Ink's diff-with-undefined-deletes — a key toggled out across renders no longer keeps its stale yoga value); the parity gate gained a vacuity guard (empty frames can't count as a match), 3 breadth scenes (flex-grow / justify-content / wrap, with Ink as the oracle for the layout math), and an **SGR byte-parity check** proving our colored output is byte-identical to Ink; the layout bench now drives the **real `ChatThread`** (the M1 workload, ~2.6× faster than Ink) instead of a synthetic proxy (review m18-yoga-layout)
+
+- M18 T3.1 (renderer Yoga paint + parity gate): `src/renderer/render-node.ts` (Ink's render-node-to-output + render-border + get-max-width ported — the laid-out-tree → cell-grid walk with borders and foreground colors) and a rewritten `renderer.ts` paint path (yoga `calculateLayout` at terminal width → `renderNodeToOutput` → cell grid → differential engine; the M17 `assembleLines` is deleted). Gated by `tests/renderer/parity-corpus.test.tsx`: **all 11 corpus scenes render byte-identical to Ink** (100%, exceeding the ≥ 90% DoD) — the M17 layout gaps (nested-row, padding, width/wrap, borders) are now correct; parity documented in `docs/renderer/m18-parity-report.md`. Bench: the full layout+render pipeline is **~3.9× faster than Ink** (5.2 vs 20.2 ms/frame on a 30-message thread). `<Box>`/`<Text>` now render on the own renderer with real flexbox layout (plan m18-yoga-layout, ADR D2/D4/D5)
+
+- M18 T2.1 (renderer text measurement + cell grid): `src/renderer/text-measure.ts` (Ink's measure-text / wrap-text / squash-text-nodes / measureTextNode ported over `widest-line`/`wrap-ansi`/`cli-truncate`/`string-width` — the yoga measure func + the wrap/truncate-end/truncate-start/CJK/`<1px`-guard behaviors) and `src/renderer/output-grid.ts` (Ink's `output.js` cell-grid ported, minus clips: a height×width styled-cell buffer that preserves trailing padding rows, handles wide chars, applies per-line transformers, and trims trailing space — byte-parity via `@alcalzone/ansi-tokenize`). host-config now binds the measure func to each `ink-text` yoga node, so `calculateLayout` sizes text. Both new files at 100% lines (plan m18-yoga-layout, ADR D2/D3)
+
+- M18 T1.1 (renderer Yoga tree): `src/renderer/yoga-style.ts` — a faithful port of Ink's `styles.js` (`applyStyles(yogaNode, style)`, the full flexbox prop set: position/margin/padding/flex/dimensions/display/border/gap) driving the same `yoga-layout@3.2.1` WASM engine Ink uses (parity by construction). The renderer's host-config now attaches a yoga node per Box/top-level-Text, mutates the yoga tree on append/insert/remove, frees WASM nodes on removal (no leak), and treats a `<Text>` nested inside `<Text>` as virtual (no yoga node). yoga-style + host-config at 100% lines; `yoga-layout` joins the runtime dep graph (plan m18-yoga-layout, ADR D1/D4)
+
+### Fixed
+
+- The exported `VERSION` constant now tracks the manifest (0.18.0). The v0.18.0 release bumped `package.json` but not `src/index.ts`, so the two briefly disagreed — caught by the `public_entry_exposes_version_constant` guardrail
 
 ## [0.18.0] - 2026-07-08
 
