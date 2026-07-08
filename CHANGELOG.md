@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Renderer V4 image core: `src/renderer/terminal-image.ts` — kitty + iTerm2 inline
+  image encoders (with 4096-byte chunking), magic-byte dimension extraction
+  (PNG/JPEG/GIF/WebP, no decode), cell-fit sizing, an env-based capability matrix
+  (multiplexers + unknown terminals conservatively yield no-image → text
+  fallback), and the `[Image: …]` fallback. Pure, 100% lines, env-injected tests
+  (ported from pi) (M21 T1.1).
+
 ### Changed
 
 ### Deprecated
