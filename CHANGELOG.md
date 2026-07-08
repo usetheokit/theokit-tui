@@ -21,6 +21,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   composer's ESC-refocus relies on. InputSource now flushes a lone ESC after a
   short delay (Escape-key delivery). Plus an ink-testing-library-shaped test
   adapter over the new renderer (lastFrame = scrollback + live) (M20 T2.1).
+- Renderer V4 cutover evidence: 100% component parity (14/14 shipped components
+  render byte-identical to Ink on the new renderer) + a comparative Ink-vs-V4
+  benchmark showing V4 writes 21× fewer bytes (1026 vs 21840) and is ~13% faster
+  per streaming frame. Parity report, comparative-bench report, and the
+  conservative cutover ADR 0004 (Ink stays default+fallback, V4 opt-in, drop-Ink
+  deferred to an owner-signed future ADR) (M20 T3.1).
 
 ### Changed
 
