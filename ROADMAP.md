@@ -402,7 +402,7 @@ TheoCode dogfood against the 5 peers produced the gap table — `/` autocomplete
 
 TheoCode dogfood against the 5 peers produced the gap table — peers render tool calls richly by kind; we ship the pieces but not the composition.
 
-### M17 — [ ] Renderer V4: discover + walking skeleton (react-reconciler + CSI-2026)
+### M17 — [x] Renderer V4: discover + walking skeleton (react-reconciler + CSI-2026)
 
 > Added 2026-07-08 (V4 renderer program — owner decision after the pi/tui gap analysis; out-of-scope item removed, see note above).
 
