@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- SOTA reference for V4: `opentui` (sst, MIT) — the direct peer of the renderer program (custom TUI engine with react-reconciler ^0.33.0 bindings, the same pin as ink 7 and our M17 plan)
+
 - ROADMAP V4 (renderer program, owner decision — ADR 0003): M17 walking skeleton (react-reconciler + CSI-2026 + @xterm/headless harness), M18 Yoga layout + Box/Text parity, M19 input stack (bracketed paste, keybindings, PTY e2e), M20 scrollback + migration + cutover gate, M21 premium capabilities (inline images, rich editor, fuzzy+paths); the "no homegrown TUI framework" out-of-scope item removed with a dated note
 
 - SOTA references extended for the V4 gap analysis: `pi` (earendil-works, MIT — standalone TUI framework: differential rendering, CSI-2026, bracketed paste, rich Editor, fuzzy autocomplete), `agent-tui` (MIT — PTY automation harness for driving TUIs from agents), `conduit` (MIT, Rust/ratatui — team-of-agents UX)
