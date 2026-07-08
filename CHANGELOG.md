@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Renderer V4 scrollback: Static-equivalent graduated history written once above
+  the differential live frame — `OutputEngine.writeStatic` (relative-to-origin
+  positioning), the live pass skips `internal_static` subtrees, and the renderer
+  captures the static delta per-commit; Ink's `<Static>` works unchanged on the
+  new engine. Plus our own `useStdout` (Ink's context is un-importable) provided
+  by `createRenderer` (M20 T1.1).
+
 ### Changed
 
 ### Deprecated

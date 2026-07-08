@@ -14,16 +14,11 @@ const SYNC_BEGIN = "\x1b[?2026h";
 const SYNC_END = "\x1b[?2026l";
 const CLEAR_SCREEN_HOME = "\x1b[2J\x1b[H\x1b[3J"; // screen + home + scrollback
 const CLEAR_LINE = "\x1b[2K";
-const CURSOR_HOME = "\x1b[H";
+const CLEAR_TO_END = "\x1b[0J"; // erase from cursor to end of screen
 
 /** Wrap a buffer in synchronized-output so the frame paints atomically. */
 function synchronized(body: string): string {
   return SYNC_BEGIN + body + SYNC_END;
-}
-
-/** Move to an absolute row (1-based CSI row;1H) then column 0. */
-function moveToRow(row: number): string {
-  return `\x1b[${row + 1};1H`;
 }
 
 export class OutputEngine {
@@ -31,6 +26,13 @@ export class OutputEngine {
   private previousLines: string[] = [];
   private previousWidth = 0;
   private previousHeight = 0;
+  /**
+   * The absolute row (0-based) where the live frame begins. Advances as
+   * `writeStatic` emits graduated scrollback above it (M20 T1.1 / ADR D1).
+   * The differential engine positions every live row relative to this origin,
+   * so static history and the live frame never overwrite each other.
+   */
+  private liveOriginRow = 0;
   /** The reason for the most recent full-render (observability, D2). */
   lastRedrawReason: string | undefined;
   /** Count of full redraws — a spike signals a diff-strategy miss. */
@@ -38,6 +40,33 @@ export class OutputEngine {
 
   constructor(terminal: Terminal) {
     this.terminal = terminal;
+  }
+
+  /** Move to a live-frame row (offset by the scrollback origin), column 0. */
+  private moveToLive(row: number): string {
+    return `\x1b[${this.liveOriginRow + row + 1};1H`;
+  }
+
+  /**
+   * Emit graduated scrollback ABOVE the live frame — written ONCE, never
+   * tracked in `previousLines`, never re-rendered (Ink's dual-pass Static
+   * contract, M20 T1.1 / ADR D1). The current live frame is erased, the static
+   * lines are written at the live origin (pushing the origin down), and the
+   * next `render` fully repaints the live frame at the new origin.
+   */
+  writeStatic(staticLines: string[]): void {
+    if (staticLines.length === 0) {
+      return;
+    }
+    let buffer = SYNC_BEGIN;
+    buffer += this.moveToLive(0); // cursor to the top of the live frame
+    buffer += CLEAR_TO_END; // erase the live frame so static replaces it
+    buffer += staticLines.join("\r\n");
+    buffer += "\r\n"; // terminate the last static row (advance the cursor)
+    buffer += SYNC_END;
+    this.terminal.write(buffer);
+    this.liveOriginRow += staticLines.length;
+    this.previousLines = []; // force a full repaint of the live frame below
   }
 
   /**
@@ -95,9 +124,10 @@ export class OutputEngine {
     this.lastRedrawReason = reason;
     let buffer = SYNC_BEGIN;
     if (clear) {
+      this.liveOriginRow = 0; // a full clear resets the scrollback origin
       buffer += CLEAR_SCREEN_HOME;
     } else {
-      buffer += CURSOR_HOME;
+      buffer += this.moveToLive(0);
     }
     buffer += newLines.join("\r\n");
     buffer += SYNC_END;
@@ -150,7 +180,7 @@ export class OutputEngine {
   private deletedTailBody(newLines: string[]): string {
     const extra = this.previousLines.length - newLines.length;
     const cleared = Array.from({ length: extra }, () => CLEAR_LINE);
-    return moveToRow(newLines.length) + cleared.join("\r\n");
+    return this.moveToLive(newLines.length) + cleared.join("\r\n");
   }
 
   /** Rewrite the changed span, one cleared row per line. */
@@ -164,7 +194,7 @@ export class OutputEngine {
       const line = row < newLines.length ? newLines[row] : "";
       rows.push(CLEAR_LINE + line);
     }
-    return moveToRow(firstChanged) + rows.join("\r\n");
+    return this.moveToLive(firstChanged) + rows.join("\r\n");
   }
 
   /** Persist the frame as the new baseline. */
