@@ -68,10 +68,15 @@ describe("public entry surface (T0.2)", () => {
       peerDependencies: Record<string, string>;
     };
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
+      "@alcalzone/ansi-tokenize",
+      "cli-truncate",
       "ink",
       "ink-spinner",
       "parse-diff",
       "react-reconciler",
+      "string-width",
+      "widest-line",
+      "wrap-ansi",
       "yoga-layout",
     ]);
     expect(pkg.peerDependencies["react"]).toBeDefined();

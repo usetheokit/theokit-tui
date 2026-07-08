@@ -133,6 +133,22 @@ describe("host-config yoga tree (M18 T1.1)", () => {
     expect(box.yogaNode!.getFlexDirection()).toBe(Yoga.FLEX_DIRECTION_ROW);
   });
 
+  it("text_node_measure_func_sizes_text_on_layout", () => {
+    // The bound measure func (T2.1) lets yoga size a text node during
+    // calculateLayout — the ink-text computes to the text's width.
+    const { root } = mount(
+      <Box>
+        <Text>hello</Text>
+      </Box>,
+    );
+    root.yogaNode!.setWidth(40);
+    root.yogaNode!.calculateLayout(undefined, undefined, Yoga.DIRECTION_LTR);
+    const inkText = root.children[0]!.children[0]!;
+    expect(inkText.type).toBe("ink-text");
+    expect(inkText.yogaNode!.getComputedWidth()).toBe(5); // "hello"
+    expect(inkText.yogaNode!.getComputedHeight()).toBe(1);
+  });
+
   it("clear_container_children_removes_and_frees_all", () => {
     const { root } = mount(
       <Box>

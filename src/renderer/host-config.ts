@@ -3,6 +3,7 @@ import createReconciler from "react-reconciler";
 import { DefaultEventPriority } from "react-reconciler/constants.js";
 import Yoga, { type Node as YogaNode } from "yoga-layout";
 
+import { measureTextNode } from "./text-measure.js";
 import { applyStyles, type Style } from "./yoga-style.js";
 
 // M17 host-config (plan m17-renderer-skeleton, ADR D1 / 0003): the minimal
@@ -161,6 +162,10 @@ export function createHostReconciler(onCommit: () => void) {
       if (!isVirtualText) {
         node.yogaNode = Yoga.Node.create();
         applyStyles(node.yogaNode, styleOf(props));
+        if (type === "ink-text") {
+          // Yoga calls this to size the text during calculateLayout (T2.1).
+          node.yogaNode.setMeasureFunc((width) => measureTextNode(node, width));
+        }
       }
       return node;
     },

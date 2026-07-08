@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- M18 T2.1 (renderer text measurement + cell grid): `src/renderer/text-measure.ts` (Ink's measure-text / wrap-text / squash-text-nodes / measureTextNode ported over `widest-line`/`wrap-ansi`/`cli-truncate`/`string-width` — the yoga measure func + the wrap/truncate-end/truncate-start/CJK/`<1px`-guard behaviors) and `src/renderer/output-grid.ts` (Ink's `output.js` cell-grid ported, minus clips: a height×width styled-cell buffer that preserves trailing padding rows, handles wide chars, applies per-line transformers, and trims trailing space — byte-parity via `@alcalzone/ansi-tokenize`). host-config now binds the measure func to each `ink-text` yoga node, so `calculateLayout` sizes text. Both new files at 100% lines (plan m18-yoga-layout, ADR D2/D3)
+
 - M18 T1.1 (renderer Yoga tree): `src/renderer/yoga-style.ts` — a faithful port of Ink's `styles.js` (`applyStyles(yogaNode, style)`, the full flexbox prop set: position/margin/padding/flex/dimensions/display/border/gap) driving the same `yoga-layout@3.2.1` WASM engine Ink uses (parity by construction). The renderer's host-config now attaches a yoga node per Box/top-level-Text, mutates the yoga tree on append/insert/remove, frees WASM nodes on removal (no leak), and treats a `<Text>` nested inside `<Text>` as virtual (no yoga node). yoga-style + host-config at 100% lines; `yoga-layout` joins the runtime dep graph (plan m18-yoga-layout, ADR D1/D4)
 
 ### Changed
