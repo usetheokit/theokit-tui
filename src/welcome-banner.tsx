@@ -1,5 +1,6 @@
 import { Box, Text, useStdout } from "ink";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
@@ -23,6 +24,14 @@ export interface WelcomeBannerProps {
   hints?: readonly string[];
   /** Single free-composition slot inside the box (D1 — no layout props). */
   children?: ReactNode;
+  /** M12: opt-in < 2 s typewriter reveal (12 phases × 80 ms). MOUNT-TIME
+   * gate, evaluated once: runs ONLY when stdout is an interactive TTY with
+   * rows ≥ 15 and columns ≥ 44, the theme is not monochrome, and the
+   * end-user has not set `THEOKIT_TUI_NO_MOTION` (any non-empty value).
+   * Everywhere else — and at convergence — the render is the exact static
+   * banner tree (byte-identical by construction). Dims changing during the
+   * reveal do not abort it (the gate is frozen at mount). */
+  animated?: boolean;
 }
 
 /** D3: below this, border+padding no longer yield a legible line — the
@@ -30,6 +39,14 @@ export interface WelcomeBannerProps {
  * no-guard-below-tiny hole). */
 const FLOOR_COLUMNS = 24;
 const MAX_WIDTH = 60;
+
+/** M12 D1/D2: bounded reveal script — 12 × 80 ms = 0.96 s (< 2 s DoD) —
+ * behind a mount-time gate. MIN dims are ours (codex's 37/60 fit its huge
+ * art; the banner is ≤ 9 rows and clamps at 60 columns). */
+const REVEAL_PHASES = 12;
+const REVEAL_TICK_MS = 80;
+const MIN_ANIMATION_ROWS = 15;
+const MIN_ANIMATION_COLUMNS = 44;
 
 function assertSingleLine(
   prop: string,
@@ -64,45 +81,64 @@ function normalizeVersion(value: string | undefined): string | undefined {
   return value === undefined || value.trim() === "" ? undefined : value;
 }
 
-export function WelcomeBanner(props: WelcomeBannerProps) {
-  // Boundary validation FIRST, before hooks (house F10 idiom).
-  assertBannerProps(props);
+/** M12 D2: the full gate stack — pure, evaluated exactly once at mount by
+ * the caller (M11 mount-freeze precedent). */
+function isRevealEligible(
+  animated: boolean | undefined,
+  stdout: NodeJS.WriteStream | undefined,
+  monochrome: boolean,
+  columns: number,
+): boolean {
+  return (
+    animated === true &&
+    stdout?.isTTY === true &&
+    (stdout.rows ?? 0) >= MIN_ANIMATION_ROWS &&
+    columns >= MIN_ANIMATION_COLUMNS &&
+    !monochrome &&
+    (process.env["THEOKIT_TUI_NO_MOTION"] ?? "") === ""
+  );
+}
+
+/** M12 D1: the bounded phase driver — 12 × 80 ms, self-clearing at the
+ * final phase and torn down on unmount. */
+function useRevealPhase(active: boolean): number {
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+    const id = setInterval(() => {
+      setPhase((current) => {
+        const next = current + 1;
+        if (next >= REVEAL_PHASES) {
+          clearInterval(id);
+        }
+        return Math.min(next, REVEAL_PHASES);
+      });
+    }, REVEAL_TICK_MS);
+    return () => clearInterval(id);
+  }, [active]);
+  return phase;
+}
+
+/** The full static banner tree — the single source both the gate-closed
+ * path and the converged reveal return (byte-identity by construction).
+ * Plain function call (not a component) so the element tree is identical
+ * to the pre-M12 inline JSX. */
+function staticBannerTree(
+  props: WelcomeBannerProps,
+  version: string | undefined,
+  accent: string,
+  boxProps: ComponentProps<typeof Box>,
+) {
   const { name, tagline, hints, children } = props;
-  const version = normalizeVersion(props.version);
-  const theme = useTheoTheme();
-  const { stdout } = useStdout();
-
-  // WIDTH CONTRACT (review F-1 errata to ADR D3): columns are read at
-  // RENDER time and frozen until the next React re-render — ink 5.2.1's
-  // resize handler only re-runs yoga layout + repaint, it does NOT re-render
-  // React, and useStdout is a stable context value. For a startup-moment
-  // banner this is accepted; live-resize demand flips to a useTerminalSize
-  // hook (stdout.on("resize") → state — the gemini-cli pattern).
-  const columns = stdout?.columns ?? MAX_WIDTH;
-  if (columns < FLOOR_COLUMNS) {
-    // The plain-text final rung: nothing that can exceed `columns`.
-    return (
-      <Text wrap="truncate-end">
-        {name}
-        {version === undefined ? "" : ` v${version}`}
-      </Text>
-    );
-  }
-
-  const width = Math.min(columns, MAX_WIDTH);
   const taglineLines =
     tagline === undefined
       ? []
       : tagline.split("\n").filter((line) => line.trim() !== "");
   return (
-    <Box
-      flexDirection="column"
-      width={width}
-      paddingX={1}
-      borderStyle={isMonochrome(theme) ? "single" : "round"}
-      borderColor={theme.accent}
-    >
-      <Text wrap="truncate-end" color={theme.accent} bold>
+    <Box {...boxProps}>
+      <Text wrap="truncate-end" color={accent} bold>
         {name}
         {version === undefined ? "" : <Text dimColor> v{version}</Text>}
       </Text>
@@ -123,4 +159,68 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
       {children}
     </Box>
   );
+}
+
+export function WelcomeBanner(props: WelcomeBannerProps) {
+  // Boundary validation FIRST, before hooks (house F10 idiom).
+  assertBannerProps(props);
+  const { name } = props;
+  const version = normalizeVersion(props.version);
+  const theme = useTheoTheme();
+  const { stdout } = useStdout();
+
+  // WIDTH CONTRACT (review F-1 errata to ADR D3): columns are read at
+  // RENDER time and frozen until the next React re-render — ink 5.2.1's
+  // resize handler only re-runs yoga layout + repaint, it does NOT re-render
+  // React, and useStdout is a stable context value. For a startup-moment
+  // banner this is accepted; live-resize demand flips to a useTerminalSize
+  // hook (stdout.on("resize") → state — the gemini-cli pattern).
+  const columns = stdout?.columns ?? MAX_WIDTH;
+
+  // Frozen at mount — mid-reveal dim/env flips cannot strand a partial
+  // frame (M12 D2).
+  const revealActive = useRef(
+    isRevealEligible(props.animated, stdout, isMonochrome(theme), columns),
+  ).current;
+  const phase = useRevealPhase(revealActive);
+  const revealing = revealActive && phase < REVEAL_PHASES;
+
+  if (columns < FLOOR_COLUMNS) {
+    // The plain-text final rung: nothing that can exceed `columns`.
+    return (
+      <Text wrap="truncate-end">
+        {name}
+        {version === undefined ? "" : ` v${version}`}
+      </Text>
+    );
+  }
+
+  const width = Math.min(columns, MAX_WIDTH);
+  // One box definition shared by the reveal frame and the static tree.
+  const boxProps = {
+    flexDirection: "column" as const,
+    width,
+    paddingX: 1,
+    borderStyle: isMonochrome(theme) ? ("single" as const) : ("round" as const),
+    borderColor: theme.accent,
+  };
+  if (revealing) {
+    // Mid-reveal frame: name typewriter only — version/tagline/hints/
+    // children are withheld until convergence (phase === REVEAL_PHASES
+    // falls through to the static tree below, byte-identical by
+    // construction).
+    const shown = name.slice(
+      0,
+      Math.ceil((name.length * phase) / REVEAL_PHASES),
+    );
+    return (
+      <Box {...boxProps}>
+        <Text wrap="truncate-end" color={theme.accent} bold>
+          {shown}
+        </Text>
+      </Box>
+    );
+  }
+
+  return staticBannerTree(props, version, theme.accent, boxProps);
 }

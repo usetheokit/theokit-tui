@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `WelcomeBanner` `animated?: boolean` — opt-in < 2 s typewriter reveal (12 phases × 80 ms, bounded and self-clearing). Mount-time gate stack evaluated once: interactive TTY + rows ≥ 15 + columns ≥ 44 + non-monochrome theme + `THEOKIT_TUI_NO_MOTION` unset (any non-empty value disables motion — the end-user reduced-motion override). Everywhere the gate is closed — and at convergence — the render is the exact static banner tree, byte-identical by construction (m12-animated-banner T1.1)
+
 ### Changed
 
 ### Deprecated
