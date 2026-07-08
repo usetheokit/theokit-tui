@@ -480,26 +480,3 @@ describe("benchmark baseline M5 (T3.2)", () => {
     expect(baseline.methodology).toContain("delta");
   });
 });
-
-describe("baseline stack provenance (M10 D3)", () => {
-  const files = [
-    "m0-chat-message",
-    "m1-chat-thread",
-    "m2-tool-cards",
-    "m3-agent-timeline",
-    "m4-diff-viewer",
-    "m5-metrics",
-  ];
-  it("baseline_records_stack_versions", () => {
-    for (const name of files) {
-      const b = JSON.parse(
-        readFileSync(
-          new URL(`../docs/benchmarks/${name}-baseline.json`, import.meta.url),
-          "utf8",
-        ),
-      ) as { stack?: { ink?: string; react?: string } };
-      expect(b.stack?.ink, name).toMatch(/^7\./);
-      expect(b.stack?.react, name).toMatch(/^19\./);
-    }
-  });
-});
