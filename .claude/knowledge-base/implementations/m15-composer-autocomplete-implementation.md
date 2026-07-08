@@ -26,17 +26,22 @@
 
 ## Bench evidence (typing — the M9 flip condition fired)
 
-Load **1.30** (`load_1min_at_start` in the JSON), 120 keystrokes,
-50 commands, 1 warmup + 5 runs per mode:
+REVIEW CORRECTION (r1-F1, HIGH): the first baseline's script let the
+filter drift to "cc" (zero matches) — the menu was OPEN in only 3/120
+keystrokes and the published +0.30 ms delta measured a mostly-CLOSED
+menu. The script now STRICTLY alternates type/erase (filter oscillates
+c/empty — all 50 rows open on every keystroke) and the baseline was
+re-recorded:
 
 | Mode | mean ms/keystroke-frame | Reading |
 |---|---|---|
-| menu | 6.487 ± 0.188 | derive (filter+clamp+window) + menu render per keystroke |
-| plain | 6.191 ± 0.040 | the pre-M15 composer cost (same script, no commands) |
+| menu | 8.034 ± 0.629 | derive + 50-row menu render on EVERY keystroke (the honest open-menu cost; fail-fast guard asserts visible rows at script end — r2-F5) |
+| plain | 5.992 ± 0.031 | the pre-M15 composer cost (same script, no commands) |
 
-Delta +0.296 ms (+4.8%) — marginally > 1σ; CITABLE CAUSE: the menu
-re-derives and re-renders its rows on every keystroke by design (D1
-derived state — no memo; the model is allocation-light).
+Delta **+2.042 ms (+34%)** — the real per-keystroke cost of an open
+50-command menu (derive is cheap; the ROW RENDER dominates). Load at
+re-record: `load_1min_at_start` = 0.57 in the committed JSON (the earlier
+prose cited a shell reading instead of the JSON field — r1-F2).
 
 ## Empirical findings during implement
 
@@ -51,13 +56,18 @@ derived state — no memo; the model is allocation-light).
 
 ## Deviations (logged)
 
-- **DV-1 — composer LoC 415 vs plan 400.** The complexity≤10 lint forced
+- **DV-1 — composer LoC 417 vs plan 400** (the first log draft wrote 415 — corrected at review r1-F2). The complexity≤10 lint forced
   three extractions (useSlashMenuState, SlashMenuList, InputRow,
   handleBufferKey) — signatures/docblocks cost the overrun (M13 DV-3
   precedent).
 - **DV-2 — 2 snapshots re-recorded within the task** (cosmetic refactor
   of the menu render between first record and the extraction — same
   task, same feature; not a cross-era re-record).
+
+- **DV-3 — plan oracle d second half unimplementable as written**
+  (post-ESC ARROW_UP "moves the cursor in the buffer" — ↑ is not a buffer
+  motion in `motionAction`); the fall-through is exercised by insertion
+  and now ALSO by a post-ESC LEFT_ARROW assert (r1-F3).
 
 ## Review outcome
 

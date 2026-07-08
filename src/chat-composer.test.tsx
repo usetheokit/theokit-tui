@@ -310,7 +310,9 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
       <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
     );
     await type(instance, ["hi ", "/", "w"]);
-    expect(plain(instance.lastFrame())).not.toContain("show help");
+    const frame = plain(instance.lastFrame());
+    expect(frame).toContain("hi /w"); // the input DID land (r2-F8 anchor)
+    expect(frame).not.toContain("show help");
     instance.unmount();
   });
 
@@ -350,8 +352,10 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     const instance = await mount(
       <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
     );
-    await type(instance, ["/", "h", "e", TAB]);
-    expect(plain(instance.lastFrame())).toContain("/help ");
+    await type(instance, ["/", "h", "e", TAB, "x"]);
+    // Typing after Tab proves the REAL trailing space (r2-F6 — the cursor
+    // cell rendered a cosmetic space that masked the no-space mutant).
+    expect(plain(instance.lastFrame())).toContain("/help x");
     instance.unmount();
   });
 
@@ -398,8 +402,56 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     await settle();
     await settle();
     expect(plain(instance.lastFrame())).not.toContain("show help");
-    await type(instance, ["e"]); // filter change resets the latch
+    // r1-F3 (EC-4 second direction): with the menu dismissed, arrows reach
+    // the BUFFER again — cursor moves left, next char inserts before "h".
+    await type(instance, [LEFT_ARROW, "x"]);
+    expect(plain(instance.lastFrame())).toContain("/xh");
+    await type(instance, [RIGHT_ARROW, BACKSPACE, BACKSPACE, "h", "e"]);
     expect(plain(instance.lastFrame())).toContain("show help");
+    instance.unmount();
+  });
+
+  it("newline_chord_with_open_menu_closes_it_and_enter_submits", async () => {
+    // r2-F3 composer-level: a multiline draft leaves command mode.
+    const submitted: string[] = [];
+    const instance = await mount(
+      <ChatComposer
+        onSubmit={(text) => {
+          submitted.push(text);
+        }}
+        commands={COMMANDS}
+      />,
+    );
+    await type(instance, ["/", "h", "e", CTRL_J, "x", ENTER]);
+    expect(submitted).toEqual(["/he\nx"]);
+    expect(plain(instance.lastFrame())).not.toContain("show help");
+    instance.unmount();
+  });
+
+  it("long_description_truncates_instead_of_interleaving", async () => {
+    // r2-F4: at width 40 a long description must not wrap into the name
+    // column — one row per command.
+    const instance = await mount(
+      <ChatComposer
+        onSubmit={() => {}}
+        commands={[
+          {
+            name: "deploy",
+            description:
+              "deploys the current workspace to the remote environment with all checks",
+          },
+        ]}
+      />,
+    );
+    Object.defineProperty(instance.stdout, "columns", { get: () => 40 });
+    await type(instance, ["/"]);
+    const frame = plain(instance.lastFrame());
+    const menuRows = frame
+      .split("\n")
+      .filter((line) => line.includes("/deploy"));
+    expect(menuRows).toHaveLength(1);
+    // The single row FITS the 40 columns (truncation, not wrapping).
+    expect((menuRows[0] ?? "").length).toBeLessThanOrEqual(40);
     instance.unmount();
   });
 
@@ -408,7 +460,10 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
       <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
     );
     await type(instance, ["a", CTRL_J, "/", "h"]);
-    expect(plain(instance.lastFrame())).not.toContain("show help");
+    const frame = plain(instance.lastFrame());
+    expect(frame).toContain("a"); // the multiline draft landed (r2-F8)
+    expect(frame).toContain("/h");
+    expect(frame).not.toContain("show help");
     instance.unmount();
   });
 
@@ -445,8 +500,10 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     const instance = await mount(
       <ChatComposer onSubmit={() => {}} hint="esc cancels the turn" />,
     );
-    const frame = plain(instance.lastFrame());
-    expect(frame).toContain("esc cancels the turn");
+    const raw = instance.lastFrame() ?? "";
+    expect(plain(raw)).toContain("esc cancels the turn");
+    // The dimness itself (r2-F7): SGR 2 wraps the hint text.
+    expect(raw).toContain("\u001B[2mesc cancels the turn");
     instance.unmount();
   });
 });

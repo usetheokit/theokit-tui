@@ -30,9 +30,12 @@ export interface ChatComposerProps {
   multiLine?: boolean;
   autoFocus?: boolean;
   /** M15: slash-command menu. Typing `/` at the START of line 1 opens a
-   * prefix-filtered menu (↑↓ select, Tab/Enter complete to `/name `, Esc
-   * dismisses until the filter changes). Completion only edits the buffer
-   * — dispatch/execution stays with the app (declarative contract). */
+   * prefix-filtered menu (CASE-SENSITIVE, codex parity — r2-F9); ↑↓
+   * select, Tab/Enter complete to `/name `, Esc dismisses until the
+   * FILTER TOKEN changes (typing after the completed token does not
+   * reopen — erase back into the token does, r2-F10). A multiline draft
+   * closes the menu (Enter submits, never completes — r2-F3). Completion
+   * only edits the buffer — dispatch/execution stays with the app. */
   commands?: readonly SlashCommand[];
   /** M15: dim affordance line under the composer (e.g. cancel hint). */
   hint?: string;
@@ -217,15 +220,22 @@ function SlashMenuList({ menu, accent }: { menu: SlashMenu; accent: string }) {
         const active = menu.windowStart + index === menu.clampedIndex;
         return (
           <Box key={command.name}>
-            {/* exactOptionalPropertyTypes: omit `color`, never undefined
-                (the SEPA iteration-4 house idiom). */}
-            <Text {...(active ? { color: accent } : {})}>
-              {active ? "❯ " : "  "}/{command.name}
-            </Text>
-            <Text dimColor>
-              {"  "}
-              {command.description}
-            </Text>
+            {/* name column never shrinks; the description truncates —
+                a long description must not interleave with the name
+                (review r2-F4, the gemini SuggestionsDisplay shape). */}
+            <Box flexShrink={0}>
+              {/* exactOptionalPropertyTypes: omit `color`, never undefined
+                  (the SEPA iteration-4 house idiom). */}
+              <Text {...(active ? { color: accent } : {})}>
+                {active ? "❯ " : "  "}/{command.name}
+              </Text>
+            </Box>
+            <Box flexGrow={1} flexShrink={1}>
+              <Text dimColor wrap="truncate-end">
+                {"  "}
+                {command.description}
+              </Text>
+            </Box>
           </Box>
         );
       })}

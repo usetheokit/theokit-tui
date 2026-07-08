@@ -9,7 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `examples/chat.tsx` registers slash commands + hint on the composer (interactive-only — raw-mode stdin; unit fake-stdin scripts are the deterministic evidence); OWN typing bench (`benchmarks/chat-composer.bench.tsx`): menu 6.49 ± 0.19 vs plain 6.19 ± 0.04 ms/keystroke at load 1.30 — the +0.30 ms delta is the menu derive+render per keystroke (citable) (m15-composer-autocomplete T3.1)
+- `examples/chat.tsx` registers slash commands + hint on the composer (interactive-only — raw-mode stdin; unit fake-stdin scripts are the deterministic evidence); OWN typing bench (`benchmarks/chat-composer.bench.tsx`): menu 8.03 ± 0.63 vs plain 5.99 ± 0.03 ms/keystroke — the +2.04 ms delta is the honest cost of an OPEN 50-row menu on every keystroke (the first draft's script let the menu close and understated it ~7×; caught at review, workload fixed with a fail-fast open-menu guard and baseline re-recorded) (m15-composer-autocomplete T3.1 + review F-1)
 
 - `ChatComposer` slash-command menu: `commands` prop (`{name, description}`, declarative — completion only edits the buffer), prefix filter on the first `/`-token of line 1, ↑↓ selection with wrap + 5-row sliding window (▲/▼ + counter), Tab/Enter completion to `/name `, Esc dismissal latch (typing reopens; the composer re-takes focus — ink's global ESC-blur runs first by design), `hint` affordance line; menu keys never leak into the buffer (m15-composer-autocomplete T2.1)
 
@@ -22,6 +22,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 ### Fixed
+
+- `ChatComposer` slash menu: a multiline draft now CLOSES the menu (Enter submits — it hijacked the submit into a completion before); long descriptions truncate instead of interleaving with the name column; prefix matching gained its substring negative (review-survived mutant killed); hint dimness, tab trailing-space and negative-anchor oracles strengthened (m15 review batch)
 
 ### Security
 

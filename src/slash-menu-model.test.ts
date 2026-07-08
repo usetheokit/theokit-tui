@@ -32,6 +32,22 @@ describe("slash-menu-model (M15 T1.1)", () => {
     expect(spaced.filter).toBe("help");
   });
 
+  it("prefix_match_rejects_mid_name_substrings", () => {
+    // Review r2-F1 (survived mutant): "el" is a SUBSTRING of help/hello
+    // but a prefix of neither — the menu must not match.
+    const menu = deriveSlashMenu("/el", CMDS, 0, false);
+    expect(menu.open).toBe(false);
+    expect(menu.matches).toHaveLength(0);
+  });
+
+  it("multiline_buffer_closes_the_menu", () => {
+    // Review r2-F3: once the draft has a newline the user left command
+    // mode — Enter must SUBMIT, never complete (the menu derives from
+    // line 1 only and would stay stuck open otherwise).
+    const menu = deriveSlashMenu("/he\nxy", CMDS, 0, false);
+    expect(menu.open).toBe(false);
+  });
+
   it("slash_not_at_line_start_never_opens", () => {
     // EC-1 (codex first-char contract).
     const menu = deriveSlashMenu("hello /wo", CMDS, 0, false);

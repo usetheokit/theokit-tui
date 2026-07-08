@@ -32,11 +32,14 @@ const COMMANDS = Array.from({ length: N_COMMANDS }, (_, i) => ({
   description: `does the number ${i} thing`,
 }));
 
-// The script alternates a slash prefix with typing/erasing filter chars so
-// the menu stays OPEN and re-derives every keystroke.
+// The script STRICTLY alternates typing "c" and erasing it (DEL 0x7f) so
+// the filter oscillates between "c" and "" — every command-N name matches
+// BOTH, so the menu is OPEN with all 50 rows on EVERY keystroke (review
+// F-1: the first draft let the filter drift to "cc" — zero matches — and
+// silently benched a mostly-closed menu).
 const SCRIPT: string[] = ["/"];
 for (let i = SCRIPT.length; i < KEYSTROKES; i++) {
-  SCRIPT.push(i % 3 === 2 ? "" : "c");
+  SCRIPT.push(i % 2 === 0 ? "" : "c");
 }
 
 type Mode = "menu" | "plain";
@@ -50,7 +53,9 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
       />
     </TheoTUIProvider>,
   );
-  await sleep(10);
+  // 100 ms mount settle: a cold-start 10 ms window silently DROPPED the
+  // leading "/" (review r2-F5) — fail-fast guard below backs this up.
+  await sleep(100);
   const sampler = frameSampler(() => instance.frames.length);
   const framesAtMount = instance.frames.length;
   for (const key of SCRIPT) {
@@ -59,9 +64,16 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
     sampler.sample();
   }
   const framesAfter = instance.frames.length;
+  const lastFrame = instance.lastFrame() ?? "";
   instance.unmount();
   if (framesAfter <= framesAtMount) {
     throw new Error("bench: keystrokes produced no frames");
+  }
+  // Fail-fast (r2-F5): the menu mode MUST have an open menu at the end of
+  // the script (filter oscillates c/empty — rows always visible); a
+  // dropped "/" would silently bench a menuless composer.
+  if (mode === "menu" && !lastFrame.includes("command-")) {
+    throw new Error("bench: menu mode ended with no visible menu rows");
   }
   return sampler.finish();
 }
@@ -124,8 +136,10 @@ if (!smoke) {
     })),
     methodology:
       "ink-testing-library render; each keystroke written to the fake " +
-      "stdin with a 0-tick flush; menu mode registers 50 commands so the " +
-      "slash menu derives (filter+window) and re-renders per keystroke; " +
+      "stdin with a 0-tick flush; the script strictly alternates typing/" +
+      "erasing one filter char so the menu is OPEN with all 50 rows on " +
+      "EVERY keystroke (filter oscillates c/empty); menu mode registers " +
+      "50 commands so the derive AND the row render run per keystroke; " +
       "plain mode runs the SAME script without the commands prop — the " +
       "mode delta is the menu's per-keystroke cost. Frame-delta sampler; " +
       "FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup + N measured runs " +

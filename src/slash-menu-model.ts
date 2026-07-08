@@ -52,6 +52,10 @@ export function deriveSlashMenu(
   dismissed: boolean,
 ): SlashMenu {
   const firstLine = text.split("\n", 1)[0] ?? "";
+  // A multiline draft left command mode (review r2-F3): the menu derives
+  // from line 1 only and would sit stuck open while Enter hijacked the
+  // submit into a completion. The filter is still reported for the latch.
+  const multiline = text.includes("\n");
   if (!firstLine.startsWith("/") || commands.length === 0) {
     return CLOSED;
   }
@@ -59,7 +63,7 @@ export function deriveSlashMenu(
   // slash (leading spaces trimmed) — `/clear something` filters "clear".
   const filter = firstLine.slice(1).trimStart().split(/\s+/, 1)[0] ?? "";
   const matches = commands.filter((command) => command.name.startsWith(filter));
-  if (dismissed || matches.length === 0) {
+  if (dismissed || multiline || matches.length === 0) {
     return { ...CLOSED, filter };
   }
   const clampedIndex = Math.min(

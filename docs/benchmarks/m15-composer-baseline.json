@@ -1,6 +1,6 @@
 {
   "benchmark": "chat-composer-typing",
-  "date": "2026-07-08T05:55:22.072Z",
+  "date": "2026-07-08T11:12:16.596Z",
   "node_version": "v22.22.2",
   "stack": {
     "ink": "7.1.0",
@@ -14,7 +14,7 @@
   "color_env": {
     "FORCE_COLOR": "1"
   },
-  "load_1min_at_start": 1.44,
+  "load_1min_at_start": 0.57,
   "workload": {
     "keystrokes": 120,
     "commands": 50,
@@ -30,39 +30,39 @@
       "runs": [
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.631,
-          "peak_ms_per_frame": 26.754
+          "mean_ms_per_frame": 9.172,
+          "peak_ms_per_frame": 17.541
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.5,
-          "peak_ms_per_frame": 9.347
+          "mean_ms_per_frame": 7.656,
+          "peak_ms_per_frame": 9.135
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.142,
-          "peak_ms_per_frame": 11.035
+          "mean_ms_per_frame": 7.423,
+          "peak_ms_per_frame": 9.005
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.481,
-          "peak_ms_per_frame": 10.257
+          "mean_ms_per_frame": 7.683,
+          "peak_ms_per_frame": 10.174
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.679,
-          "peak_ms_per_frame": 16.693
+          "mean_ms_per_frame": 8.236,
+          "peak_ms_per_frame": 16.084
         }
       ],
       "aggregate": {
         "frames_mean": 120,
         "mean_ms_per_frame": {
-          "mean": 6.487,
-          "std_dev": 0.188
+          "mean": 8.034,
+          "std_dev": 0.629
         },
         "peak_ms_per_frame": {
-          "mean": 14.817,
-          "std_dev": 6.497
+          "mean": 12.388,
+          "std_dev": 3.664
         }
       }
     },
@@ -71,42 +71,42 @@
       "runs": [
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.227,
-          "peak_ms_per_frame": 9.201
+          "mean_ms_per_frame": 5.977,
+          "peak_ms_per_frame": 7.899
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.232,
-          "peak_ms_per_frame": 8.838
+          "mean_ms_per_frame": 6.045,
+          "peak_ms_per_frame": 8.873
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.143,
-          "peak_ms_per_frame": 9.641
+          "mean_ms_per_frame": 5.972,
+          "peak_ms_per_frame": 9.47
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.208,
-          "peak_ms_per_frame": 10.641
+          "mean_ms_per_frame": 5.958,
+          "peak_ms_per_frame": 8.377
         },
         {
           "frames": 120,
-          "mean_ms_per_frame": 6.143,
-          "peak_ms_per_frame": 7.627
+          "mean_ms_per_frame": 6.006,
+          "peak_ms_per_frame": 8.021
         }
       ],
       "aggregate": {
         "frames_mean": 120,
         "mean_ms_per_frame": {
-          "mean": 6.191,
-          "std_dev": 0.04
+          "mean": 5.992,
+          "std_dev": 0.031
         },
         "peak_ms_per_frame": {
-          "mean": 9.19,
-          "std_dev": 0.988
+          "mean": 8.528,
+          "std_dev": 0.58
         }
       }
     }
   ],
-  "methodology": "ink-testing-library render; each keystroke written to the fake stdin with a 0-tick flush; menu mode registers 50 commands so the slash menu derives (filter+window) and re-renders per keystroke; plain mode runs the SAME script without the commands prop — the mode delta is the menu's per-keystroke cost. Frame-delta sampler; FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup + N measured runs per mode; population std dev."
+  "methodology": "ink-testing-library render; each keystroke written to the fake stdin with a 0-tick flush; the script strictly alternates typing/erasing one filter char so the menu is OPEN with all 50 rows on EVERY keystroke (filter oscillates c/empty); menu mode registers 50 commands so the derive AND the row render run per keystroke; plain mode runs the SAME script without the commands prop — the mode delta is the menu's per-keystroke cost. Frame-delta sampler; FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup + N measured runs per mode; population std dev."
 }
