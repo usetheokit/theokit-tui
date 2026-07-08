@@ -507,6 +507,80 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 1. Image protocol detection matrix — mitigated by conservative capability probing + graceful text fallback.
 2. Editor state complexity (undo × paste-markers × graphemes) — mitigated by pi's segmenter precedent + property-style tests.
 
+### M22 — [ ] Renderer V4: interaction primitives (SelectList, overlay/modal, pager)
+
+> Added 2026-07-08 (V4 parity matrix — universal in 7/7 peers; see docs/v4-parity-matrix.md).
+
+**Objective:** The interaction foundation every peer ships: a fuzzy SelectList (single/multi), an overlay/modal layer, and a full-screen pager — the primitives apps compose every picker/dialog from.
+
+**Definition of done:**
+
+- [ ] `SelectList`: windowed list, fuzzy filter, single + multi-select, `❯` marker, ▲/▼ + counter (generalizes the M15 slash-menu recipe).
+- [ ] Overlay/modal layer: stacked surface above the thread with focus capture and Esc-dismiss (codex bottom-pane / gemini DialogManager patterns).
+- [ ] `Pager`: full-screen scrollable overlay (PgUp/PgDn/vim keys) for transcripts/long output.
+- [ ] Deterministic keyboard oracles (fake-stdin + PTY e2e); degrade ladder; ≤ 3 snapshots.
+- [ ] Example + smoke; gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M20
+
+**Top risks (new):** 1. Focus management across overlay stack (ink focus vs our input stack) — mitigated by the M15 ESC-refocus lesson + M19 keybindings. 2. Scope creep toward app-specific pickers — the lib ships PRIMITIVES; model/theme/session selectors are app compositions (parity matrix "OUT" list).
+
+### M23 — [ ] Renderer V4: agent decision surfaces (approval, question, plan)
+
+> Added 2026-07-08 (V4 parity matrix — approval flows in 6/7 peers).
+
+**Objective:** The agent-decision vocabulary: ApprovalPrompt (action preview + diff inline + always/once/reject), QuestionPrompt (structured options + free text), PlanApproval (proposed-plan cell with approve/reject).
+
+**Definition of done:**
+
+- [ ] `ApprovalPrompt`: renders the pending action (command / diff via DiffViewer / free body), choices always/once/reject, keyboard-driven, decision emitted via callback.
+- [ ] `QuestionPrompt`: options (single/multi via M22 SelectList) + optional free-text input, per-question header.
+- [ ] `PlanApproval`: plan markdown body + approve/revise choices (the Claude Code plan-mode idiom).
+- [ ] Deterministic oracles incl. keyboard-leak negatives; PTY e2e for one full approve flow.
+- [ ] Example (scripted decision round-trip) + smoke; gates/coverage/CHANGELOG.
+
+**Dependencies:** M22
+
+**Top risks (new):** 1. Decision-state API leaking app semantics into the lib — mitigated by callback-only contracts (the M15 declarative precedent). 2. Diff-in-prompt reuse coupling — composition via the existing DiffViewer slot, never prop forwarding (M16 D2 lesson).
+
+### M24 — [ ] Renderer V4: live progress surfaces (todo, progress, collapsible, toast)
+
+> Added 2026-07-08 (V4 parity matrix — live checklists/progress in 5+/7 peers).
+
+**Objective:** The live-turn surfaces: TodoList (☐/☑ updating mid-turn), MultiStepProgress (+ subagent variant), CollapsibleBlock (thinking/reasoning + expandable long output), Toast + desktop notify (OSC-9/BEL), spinner phrase-cycler + shimmer.
+
+**Definition of done:**
+
+- [ ] `TodoList`: live checklist keyed by stable ids (☐/◐/☑), streaming-safe replace-item contract (the ChatThread ordering precedent).
+- [ ] `MultiStepProgress`: n-of-m steps with per-step status; subagent-labelled variant.
+- [ ] `CollapsibleBlock`: collapsed summary line + expanded body, controlled or key-toggled; ThinkingBlock preset.
+- [ ] `Toast` (transient, auto-dismiss timer — M12 bounded-driver idiom) + `notify()` helper (OSC-9 with BEL fallback).
+- [ ] `AgentStreaming` phrase-cycler + shimmer opt-ins (reduced-motion respected — M12 gate reuse).
+- [ ] Deterministic fake-timer oracles; OWN bench for any per-frame path (M9 flip condition); example + smoke; gates/CHANGELOG.
+
+**Dependencies:** M22
+
+**Top risks (new):** 1. Toast timers × render loop flake surface — the M12/M14 fake-timer discipline applies. 2. OSC-9 support matrix — conservative BEL fallback + capability note.
+
+### M25 — [ ] Renderer V4: parity polish + matrix re-audit (exit gate)
+
+> Added 2026-07-08 (V4 parity matrix closure).
+
+**Objective:** Close the remaining universal rows and re-audit the matrix as the V4 exit gate: markdown tables, intra-line diff word highlight, interactive expand/collapse on capped outputs (ctrl+o idiom), terminal-title + OSC-8 hyperlink helpers.
+
+**Definition of done:**
+
+- [ ] Markdown tables in MarkdownText (gemini TableRenderer recipe; degrade to aligned plain text).
+- [ ] DiffViewer intra-line word highlight (pi/codex recipe) behind an opt-in prop.
+- [ ] Interactive expand/collapse on ToolResult/CodeBlock caps (key-toggled, ctrl+o idiom) built on M24 CollapsibleBlock.
+- [ ] `setTerminalTitle()` + OSC-8 hyperlink helper (graceful no-op off-TTY).
+- [ ] **Matrix re-audit:** docs/v4-parity-matrix.md re-scored — every universal row ✓ for lib scope; the re-audit report is the release artifact.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M21, M23, M24
+
+**Top risks (new):** 1. Table layout under narrow widths — width-matrix oracles (M9 idiom). 2. Re-audit temptation to self-grade leniently — the audit runs as an adversarial review panel, not a checkbox pass.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
@@ -525,6 +599,8 @@ Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full c
 | `pi` (`packages/tui`) | MIT | SOTA standalone TUI framework — differential rendering, CSI-2026, bracketed paste, rich editor, @xterm/headless test harness | M17, M18, M19, M20, M21 |
 | `agent-tui` | MIT | PTY automation harness for driving TUIs — e2e angle | M19, M20 |
 | `conduit` | MIT | Multi-agent terminal app (Rust/ratatui) — team-of-agents UX | M21 |
+| `tau` | MIT | Minimalist coding agent (Python) with TUI — 7th parity peer | M22, M24 |
+| `opentui` | MIT | Custom TUI renderer with react-reconciler 0.33 bindings — direct V4 peer | M17, M18, M20 |
 | `mastra` (`mastracode/`) | Apache-2.0 (root dual: `ee/` dirs enterprise-licensed — avoid) | Production agent CLI (mastracode) — markdown/status/slash/tool-render patterns | M13, M14, M15, M16 |
 | `oh-my-logo` | MIT + CC0-1.0 | Claude-Code/Gemini-CLI-style gradient ASCII logo pattern (TypeScript) | M9 |
 | `ascii-motion` | MIT | Animated ASCII banner authoring — by the GitHub Copilot CLI banner designer | M9 |

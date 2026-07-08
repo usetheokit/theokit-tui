@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- ROADMAP V4 expanded from the 7-peer parity matrix (`docs/v4-parity-matrix.md`): added M22 interaction primitives (SelectList/overlay/pager), M23 agent decision surfaces (approval/question/plan), M24 live progress surfaces (todo/progress/collapsible/toast), M25 parity polish + matrix re-audit (exit gate); tau + opentui reference rows added
+
 - SOTA reference: `tau` (huggingface, MIT) — the 7th parity peer named for the V4 component-parity criterion (Python coding agent, src/tau_coding/tui)
 
 - SOTA reference for V4: `opentui` (sst, MIT) — the direct peer of the renderer program (custom TUI engine with react-reconciler ^0.33.0 bindings, the same pin as ink 7 and our M17 plan)
@@ -26,6 +28,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 ### Fixed
+
+- M16 `ToolCallCard` snapshot tests: eliminated a [NEEDS-REPRO] flake (review r1-F1) where the diff/preview-with-language variants captured plain-vs-highlighted output nondeterministically — CodeBlock/DiffViewer async-load lowlight via a module-cached promise, and whether the re-render flushed inside `renderFrame`'s 0ms tick depended on cross-worker cache warming; a `beforeAll(preloadHighlighter)` now forces the highlight state deterministic (0/10 full-suite runs flaked, verified under load)
 
 ### Security
 
