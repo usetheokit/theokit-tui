@@ -139,3 +139,17 @@ describe("never-weaken migration guard (M10 D2)", () => {
     }
   });
 });
+
+describe("platform coherence (M10 T2.3)", () => {
+  it("readme_and_ci_declare_new_platform", () => {
+    const ci = readFileSync(
+      new URL("../.github/workflows/ci.yml", import.meta.url),
+      "utf8",
+    );
+    expect(ci).toContain("22.x");
+    expect(ci).not.toContain("20.x");
+    const md = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+    expect(md).toMatch(/Node ≥ 22|node >= ?22|Node 22/i);
+    expect(md).toContain("react@19");
+  });
+});
