@@ -11,7 +11,7 @@ the M18 parity-corpus (primitives + 9 components) to the full public surface,
 including the Static-driven `ChatThread`/`AgentTimeline` (scrollback on the new
 engine).
 
-## Result: 14 / 14 (100.0%) — 0 divergences
+## Result: 16 / 16 (100.0%) — 0 divergences
 
 | #   | Component        | Parity            | Notes                                                                                                 |
 | --- | ---------------- | ----------------- | ----------------------------------------------------------------------------------------------------- |
@@ -29,18 +29,36 @@ engine).
 | 12  | CostMeter        | ✅ byte-identical |                                                                                                       |
 | 13  | TokenUsageChart  | ✅ byte-identical |                                                                                                       |
 | 14  | ChatComposer     | ✅ byte-identical | plain-text layout parity; the focus cursor is SGR-styled (stripped in the plain compare) — see caveat |
+| 15  | ToolCall         | ✅ byte-identical | tool-call header (standalone)                                                                         |
+| 16  | ToolResult       | ✅ byte-identical | tool-result body (standalone; also rendered transitively via ToolCallCard)                            |
 
 ## M11 scrollback oracles on the new renderer
 
 Verified in `tests/renderer/component-parity.test.tsx` (+ `scrollback-corpus.test.tsx`):
 
-- `ChatThread` graduated history prints ONCE above the live tail (`"first question"`
-  / `"first answer"` each reach the wire exactly once).
-- `AgentTimeline` graduated events appear on screen (`planning` / `shipped`).
+- `header_stays_above_graduated_history_and_prints_once` — header printed once,
+  above `msg-0`, history ordered.
+- `window_keeps_the_live_tail_bounded_on_the_new_renderer` — newest message live,
+  oldest graduated + scrolled off.
+- `agenttimeline_graduated_events_appear_on_screen`.
 
-This confirms DoD-1: the Static-equivalent append-once scrollback holds on the
-new renderer, and the M11 header-slot / windowing / print-once contract survives
-the port.
+These are GENUINE M11 oracles on the new renderer: the header oracle grows the
+thread incrementally (6 → 12 → 20) so rows actually graduate, then asserts the
+header prints once ABOVE the ordered graduated history; the windowing oracle
+grows to 20 on a short terminal and asserts the live tail is bounded (newest
+message present, oldest graduated + scrolled off). This confirms DoD-1: the
+Static-equivalent append-once scrollback holds on the new renderer, and the M11
+header-slot / windowing / print-once contract survives the port.
+
+### Scrollback correctness under scroll (review B1)
+
+The engine positions the live frame RELATIVE to a tracked cursor row, not by
+absolute screen rows. A regression test (`scrollback-corpus.test.tsx`
+`patches_the_live_frame_correctly_after_static_overflows_the_screen`) proves a
+differential patch lands on the correct live row even after graduated history has
+scrolled the terminal (3 static + 4 live on a 5-row terminal). Absolute
+positioning corrupted this (the patch landed on the wrong row); relative
+positioning is scroll-invariant.
 
 ## Caveats (scoped, non-blocking)
 

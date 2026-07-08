@@ -13,13 +13,16 @@ for Ink: a react-reconciler host (M17), Yoga layout + differential CSI-2026 engi
 (M18), an input stack (M19), and Static scrollback + the focus manager (M20). As
 of M20 the evidence is in:
 
-- **Parity (DoD-2):** 14 / 14 shipped components render **byte-identical** to Ink
+- **Parity (DoD-2):** 16 / 16 shipped components render **byte-identical** to Ink
   on the new renderer (`docs/renderer/m20-parity-report.md`).
 - **Scrollback (DoD-1):** the M11 header-slot / windowing / print-once oracles pass
-  on the new engine; graduated history is written once above the live frame.
-- **Performance (DoD-3):** on a streaming `ChatThread`, V4 writes **21× fewer
-  bytes** (1 026 vs 21 840) and is ~13% faster per frame
-  (`docs/renderer/m20-comparative-bench.md`).
+  on the new engine; graduated history is written once above the live frame. The
+  live frame is positioned relative to a tracked cursor row, so scrollback stays
+  correct even after the terminal scrolls (M20 review B1 fix).
+- **Performance (DoD-3):** on a streaming `ChatThread`, V4 writes **~20× fewer
+  bytes** (1 063 vs 21 840); ms/frame at parity with Ink
+  (`docs/renderer/m20-comparative-bench.md`). The bytes ratio is the portable
+  signal.
 
 The renderer is currently reachable ONLY via the `./renderer` subpath export; the
 package root still ships the Ink-backed components. Nothing forces a cutover — the

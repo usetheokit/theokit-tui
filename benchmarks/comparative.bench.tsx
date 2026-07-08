@@ -77,9 +77,11 @@ interface Sample {
 async function runOwn(): Promise<Sample> {
   const term = new ByteTerminal();
   const r = createRenderer(term);
-  const start = performance.now();
+  // Symmetric with runInk: mount BEFORE the timer, measure only the update
+  // frames (review L1). Bytes are counted across the whole run either way.
   r.render(scene(MESSAGES, 0));
   await tick();
+  const start = performance.now();
   for (let f = 0; f < UPDATE_FRAMES; f++) {
     r.render(scene(MESSAGES, f));
     await tick();
@@ -87,7 +89,7 @@ async function runOwn(): Promise<Sample> {
   const elapsed = performance.now() - start;
   r.unmount();
   return {
-    mean_ms_per_frame: elapsed / (UPDATE_FRAMES + 1),
+    mean_ms_per_frame: elapsed / UPDATE_FRAMES,
     bytes_written: term.bytes,
   };
 }
@@ -104,7 +106,7 @@ async function runInk(): Promise<Sample> {
   const elapsed = performance.now() - start;
   instance.unmount();
   return {
-    mean_ms_per_frame: elapsed / (UPDATE_FRAMES + 1),
+    mean_ms_per_frame: elapsed / UPDATE_FRAMES,
     bytes_written: stdout.bytes,
   };
 }

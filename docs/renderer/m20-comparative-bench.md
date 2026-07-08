@@ -12,30 +12,38 @@ streaming-update frames** (the last message grows one char per frame — the M1
 streaming contract) on BOTH engines, `FORCE_COLOR=1`, 1 warmup + **5 measured
 runs**, mean ± std_dev. Load at start recorded and gated (`< 4`).
 
-## Results (load 1.22, 5 runs)
+## Results (load 2.80, 5 runs, symmetric timing)
 
-| Engine                                                     | ms / frame        | bytes written (whole run) |
+| Engine                                                     | ms / update-frame | bytes written (whole run) |
 | ---------------------------------------------------------- | ----------------- | ------------------------- |
-| **V4** (our layout + differential CSI-2026 engine)         | **2.374 ± 0.486** | **1 026 ± 0**             |
-| **Ink** (real `render` → byte-counting stdout, log-update) | 2.732 ± 0.408     | 21 840 ± 0                |
+| **V4** (our layout + differential CSI-2026 engine)         | **2.533 ± …**     | **1 063 ± 0**             |
+| **Ink** (real `render` → byte-counting stdout, log-update) | 2.579 ± …         | 21 840 ± 0                |
+
+(Exact ms std_dev in `docs/benchmarks/m20-comparative-baseline.json`; both engines
+mount BEFORE the timer, so ms measures only the 40 update frames — symmetric.)
 
 ### Headline
 
-- **Bytes written: 21× fewer** (1 026 vs 21 840). This is the differential
-  engine's core advantage — Ink's `log-update` rewrites the entire live-frame
-  region on every streaming frame, while our CSI-2026 engine rewrites only the
-  changed rows (here, just the growing tail line). On a real streaming turn this
-  is the difference between a flicker-prone full repaint and a single-row patch.
-- **ms/frame: ~13% faster** (2.374 vs 2.732), within one std_dev — the two engines
-  are in the same performance class on wall-clock; the decisive axis is bytes.
+- **Bytes written: ~20× fewer** (1 063 vs 21 840) on this streaming workload. This
+  is the differential engine's core advantage — Ink's `log-update` rewrites the
+  entire live-frame region on every streaming frame, while our CSI-2026 engine
+  rewrites only the changed rows (here, just the growing tail line). On a real
+  streaming turn this is the difference between a flicker-prone full repaint and a
+  single-row patch. **This ratio is the portable signal; the absolute counts are
+  workload- and hardware-specific.**
+- **ms/frame: at parity** (2.533 vs 2.579, within noise) once timing is symmetric
+  (both mount before the timer). The two engines are in the same wall-clock class;
+  the decisive, honest axis is **bytes**, not ms. (An earlier asymmetric
+  measurement over-credited V4 on ms by charging it for its mount — corrected here
+  per review L1.)
 
 ### Two axes, both paths
 
-The differential win is a **bytes** win, not primarily a **ms** win — measuring
-only ms/frame would have hidden the actual advantage (EC precedent from M17). The
-bench therefore records both. The `bytes_written` std_dev is 0 because the byte
-count is deterministic for a fixed workload (the engine is not time-dependent);
-the ms std_dev reflects normal scheduler jitter.
+The win is a **bytes** win, not a **ms** win — measuring only ms/frame would have
+hidden the actual advantage AND, when measured asymmetrically, could overstate it.
+The bench records both and times them symmetrically. The `bytes_written` std_dev
+is 0 because the byte count is deterministic for a fixed workload (the engine is
+not time-dependent); the ms std_dev reflects normal scheduler jitter.
 
 ## Regressions
 

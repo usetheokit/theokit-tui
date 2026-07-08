@@ -184,20 +184,35 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     isFocusEnabledRef.current = isFocusEnabled;
   }, [isFocusEnabled]);
 
-  // The arbiter — priority channel, so it runs before component useInput.
+  // ESC-blur runs on the PRIORITY channel (before component useInput) — the
+  // composer's ESC-refocus depends on seeing an already-blurred state
+  // (chat-composer.tsx:322-328). This mirrors Ink's App, which handles ESC
+  // synchronously ahead of the input emit (App.js:156).
   useEffect(() => {
     if (!source) {
       return;
     }
     return source.onKeyPriority((_input, key) => {
-      if (!isFocusEnabledRef.current) {
+      if (isFocusEnabledRef.current && key.escape) {
+        setActiveId(undefined);
+      }
+    });
+  }, [source]);
+
+  // Tab / Shift+Tab navigation runs on the REGULAR channel — same precedence as
+  // a component's useInput, exactly as Ink wires Tab navigation (App.js:369-385),
+  // NOT ahead of it.
+  useEffect(() => {
+    if (!source) {
+      return;
+    }
+    return source.onKey((_input, key) => {
+      if (!isFocusEnabledRef.current || !key.tab) {
         return;
       }
-      if (key.escape) {
-        setActiveId(undefined);
-      } else if (key.tab && key.shift) {
+      if (key.shift) {
         focusPrevious();
-      } else if (key.tab) {
+      } else {
         focusNext();
       }
     });

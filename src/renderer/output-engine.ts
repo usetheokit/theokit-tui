@@ -9,10 +9,20 @@ import type { Terminal } from "./terminal.js";
 // records a human-readable reason (a renderer bug is undebuggable without
 // it). The engine is Terminal-agnostic: it emits strings, so the real
 // ProcessTerminal and the @xterm/headless VirtualTerminal both drive it.
+//
+// M20 (review B1): the live frame is positioned RELATIVE to a tracked cursor
+// row, not by absolute `\x1b[row;1H`. Absolute addressing breaks the moment the
+// terminal scrolls (graduated scrollback pushing the live frame past the screen
+// bottom — the chat steady state): the frame's absolute rows go stale and a
+// differential patch lands on the wrong line. Relative moves (`\x1b[nA`/`\x1b[nB`)
+// are scroll-invariant — the cursor and the frame's top scroll together — so the
+// live frame stays consistent no matter how much history has scrolled above it
+// (Ink's log-update uses relative movement for exactly this reason).
 
 const SYNC_BEGIN = "\x1b[?2026h";
 const SYNC_END = "\x1b[?2026l";
-const CLEAR_SCREEN_HOME = "\x1b[2J\x1b[H\x1b[3J"; // screen + home + scrollback
+const CLEAR_SCREEN_HOME = "\x1b[2J\x1b[H"; // clear screen + home (keep scrollback)
+const CURSOR_HOME = "\x1b[H";
 const CLEAR_LINE = "\x1b[2K";
 const CLEAR_TO_END = "\x1b[0J"; // erase from cursor to end of screen
 
@@ -26,13 +36,15 @@ export class OutputEngine {
   private previousLines: string[] = [];
   private previousWidth = 0;
   private previousHeight = 0;
+  /** Whether the first frame has been anchored (absolute) at the screen top. */
+  private started = false;
   /**
-   * The absolute row (0-based) where the live frame begins. Advances as
-   * `writeStatic` emits graduated scrollback above it (M20 T1.1 / ADR D1).
-   * The differential engine positions every live row relative to this origin,
-   * so static history and the live frame never overwrite each other.
+   * The cursor's row index (0-based) WITHIN the current live frame — i.e.
+   * relative to the frame's top line, NOT an absolute screen row. Every seek is
+   * a relative move from here, so scrolling (graduated scrollback above the
+   * frame) never invalidates a position (review B1).
    */
-  private liveOriginRow = 0;
+  private cursorRow = 0;
   /** The reason for the most recent full-render (observability, D2). */
   lastRedrawReason: string | undefined;
   /** Count of full redraws — a spike signals a diff-strategy miss. */
@@ -42,37 +54,49 @@ export class OutputEngine {
     this.terminal = terminal;
   }
 
-  /** Move to a live-frame row (offset by the scrollback origin), column 0. */
-  private moveToLive(row: number): string {
-    return `\x1b[${this.liveOriginRow + row + 1};1H`;
+  /** Relative move from the tracked cursor row to `target` (column 0). */
+  private seekTo(target: number): string {
+    const delta = target - this.cursorRow;
+    this.cursorRow = target;
+    if (delta > 0) {
+      return `\x1b[${delta}B\r`;
+    }
+    if (delta < 0) {
+      return `\x1b[${-delta}A\r`;
+    }
+    return "\r";
   }
 
   /**
    * Emit graduated scrollback ABOVE the live frame — written ONCE, never
    * tracked in `previousLines`, never re-rendered (Ink's dual-pass Static
-   * contract, M20 T1.1 / ADR D1). The current live frame is erased, the static
-   * lines are written at the live origin (pushing the origin down), and the
-   * next `render` fully repaints the live frame at the new origin.
+   * contract, M20 T1.1 / ADR D1). The current live frame is erased at its top,
+   * the static lines are written there (scrolling older history off into the
+   * terminal's native scrollback), and the next `render` repaints the live frame
+   * at the current — physically lower, possibly scrolled — cursor position.
    */
   writeStatic(staticLines: string[]): void {
     if (staticLines.length === 0) {
       return;
     }
     let buffer = SYNC_BEGIN;
-    buffer += this.moveToLive(0); // cursor to the top of the live frame
+    buffer += this.seekTo(0); // to the top of the current live frame (relative)
     buffer += CLEAR_TO_END; // erase the live frame so static replaces it
     buffer += staticLines.join("\r\n");
     buffer += "\r\n"; // terminate the last static row (advance the cursor)
     buffer += SYNC_END;
     this.terminal.write(buffer);
-    this.liveOriginRow += staticLines.length;
-    this.previousLines = []; // force a full repaint of the live frame below
+    // The live frame restarts at the current physical cursor (wherever the
+    // static writes + any scroll left it) — relative tracking makes that "row 0".
+    this.cursorRow = 0;
+    this.started = true; // output is anchored here; the next render is relative
+    this.previousLines = []; // force a repaint of the live frame below
   }
 
   /**
    * Render `newLines` to the terminal, writing only what changed. Picks a
-   * strategy in pi's order; falls back to a full clear+redraw (with a
-   * logged reason) when a differential update cannot preserve correctness.
+   * strategy in pi's order; falls back to a full redraw (with a logged reason)
+   * when a differential update cannot preserve correctness.
    */
   render(newLines: string[]): void {
     const width = this.terminal.columns;
@@ -82,60 +106,73 @@ export class OutputEngine {
     const heightChanged =
       this.previousHeight !== 0 && this.previousHeight !== height;
 
-    if (this.previousLines.length === 0 && !widthChanged && !heightChanged) {
-      this.fullRender(newLines, width, height, false, "first render");
-      return;
-    }
-    if (widthChanged) {
-      this.fullRender(
+    if (widthChanged || heightChanged) {
+      const which = widthChanged ? "width" : "height";
+      const from = widthChanged ? this.previousWidth : this.previousHeight;
+      const to = widthChanged ? width : height;
+      // A resize re-anchors the live frame at the screen top. Graduated history
+      // already scrolled into native scrollback is NOT re-emitted (the
+      // fullStaticOutput accumulator is the tracked follow-up — review H1).
+      this.resizeRender(
         newLines,
         width,
         height,
-        true,
-        `terminal width changed (${this.previousWidth} -> ${width})`,
+        `terminal ${which} changed (${from} -> ${to})`,
       );
       return;
     }
-    if (heightChanged) {
-      this.fullRender(
-        newLines,
-        width,
-        height,
-        true,
-        `terminal height changed (${this.previousHeight} -> ${height})`,
-      );
+    if (this.previousLines.length === 0) {
+      if (!this.started) {
+        this.firstRender(newLines, width, height);
+      } else {
+        this.relativeFullRender(newLines, width, height);
+      }
       return;
     }
-    // Shrink is handled by the differential deleted-tail path (rows removed
-    // off the end are cleared individually) — no full redraw needed while we
-    // hold the exact previous frame. Viewport-scroll shrink is M18 territory.
     this.differentialRender(newLines, width, height);
   }
 
-  /** Full clear + redraw; records the reason and bumps the counter. */
-  private fullRender(
+  /** First-ever frame: anchor absolutely at the screen top, then track relative. */
+  private firstRender(newLines: string[], width: number, height: number): void {
+    this.started = true;
+    this.fullRedrawCount += 1;
+    this.lastRedrawReason = "first render";
+    this.terminal.write(synchronized(CURSOR_HOME + newLines.join("\r\n")));
+    this.cursorRow = Math.max(0, newLines.length - 1);
+    this.commit(newLines, width, height);
+  }
+
+  /** Resize: clear the visible screen (keep native scrollback) and redraw. */
+  private resizeRender(
     newLines: string[],
     width: number,
     height: number,
-    clear: boolean,
     reason: string,
   ): void {
     this.fullRedrawCount += 1;
     this.lastRedrawReason = reason;
-    let buffer = SYNC_BEGIN;
-    if (clear) {
-      this.liveOriginRow = 0; // a full clear resets the scrollback origin
-      buffer += CLEAR_SCREEN_HOME;
-    } else {
-      buffer += this.moveToLive(0);
-    }
-    buffer += newLines.join("\r\n");
-    buffer += SYNC_END;
-    this.terminal.write(buffer);
+    this.terminal.write(
+      synchronized(CLEAR_SCREEN_HOME + newLines.join("\r\n")),
+    );
+    this.cursorRow = Math.max(0, newLines.length - 1);
     this.commit(newLines, width, height);
   }
 
-  /** Line-diff: rewrite only the changed row range (pi :1370-1440). */
+  /** Repaint the whole live frame at the current (relative) cursor — post-static. */
+  private relativeFullRender(
+    newLines: string[],
+    width: number,
+    height: number,
+  ): void {
+    this.fullRedrawCount += 1;
+    this.lastRedrawReason = "static graduated — repaint live frame";
+    const rows = newLines.map((line) => CLEAR_LINE + line);
+    this.terminal.write(synchronized(this.seekTo(0) + rows.join("\r\n")));
+    this.cursorRow = Math.max(0, newLines.length - 1);
+    this.commit(newLines, width, height);
+  }
+
+  /** Line-diff: rewrite only the changed row range (pi :1370-1440), relative. */
   private differentialRender(
     newLines: string[],
     width: number,
@@ -176,25 +213,29 @@ export class OutputEngine {
     return [firstChanged, lastChanged];
   }
 
-  /** Clear the rows removed off the end (pi :1420-1440 reduced). */
+  /** Clear the rows removed off the end (pi :1420-1440 reduced), relative. */
   private deletedTailBody(newLines: string[]): string {
     const extra = this.previousLines.length - newLines.length;
+    const seek = this.seekTo(newLines.length);
     const cleared = Array.from({ length: extra }, () => CLEAR_LINE);
-    return this.moveToLive(newLines.length) + cleared.join("\r\n");
+    this.cursorRow = newLines.length + extra - 1;
+    return seek + cleared.join("\r\n");
   }
 
-  /** Rewrite the changed span, one cleared row per line. */
+  /** Rewrite the changed span, one cleared row per line, relative. */
   private changedSpanBody(
     newLines: string[],
     firstChanged: number,
     lastChanged: number,
   ): string {
+    const seek = this.seekTo(firstChanged);
     const rows: string[] = [];
     for (let row = firstChanged; row <= lastChanged; row++) {
       const line = row < newLines.length ? newLines[row] : "";
       rows.push(CLEAR_LINE + line);
     }
-    return this.moveToLive(firstChanged) + rows.join("\r\n");
+    this.cursorRow = lastChanged;
+    return seek + rows.join("\r\n");
   }
 
   /** Persist the frame as the new baseline. */

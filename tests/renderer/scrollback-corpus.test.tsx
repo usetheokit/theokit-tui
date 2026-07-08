@@ -61,6 +61,22 @@ describe("output engine — writeStatic (M20 T1.1)", () => {
     await term.flush();
     expect(term.screenLines()).toEqual(["one", "two", "L2"]);
   });
+
+  it("patches_the_live_frame_correctly_after_static_overflows_the_screen", async () => {
+    // Review B1 regression: once static + live exceeds the terminal height, the
+    // terminal scrolls. A differential patch must still land on the RIGHT live
+    // row — relative positioning (not stale absolute rows) guarantees it.
+    const term = new VirtualTerminal(10, 5); // only 5 rows
+    const engine = new OutputEngine(term);
+    engine.writeStatic(["S1", "S2", "S3"]);
+    engine.render(["A", "B", "C", "D"]); // 3 static + 4 live = 8 > 5 → scrolls
+    await term.flush();
+    expect(term.screenLines()).toEqual(["S3", "A", "B", "C", "D"]);
+    engine.render(["A", "Bx", "C", "D"]); // patch the 2nd live row
+    await term.flush();
+    // "Bx" replaces "B" in place — NOT painted on the wrong (bottom) row.
+    expect(term.screenLines()).toEqual(["S3", "A", "Bx", "C", "D"]);
+  });
 });
 
 describe("Static scrollback through the renderer (M20 T1.1)", () => {

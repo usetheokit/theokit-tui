@@ -1,3 +1,4 @@
+import { Box, Text } from "ink";
 import { render as inkRender } from "ink-testing-library";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
@@ -15,7 +16,9 @@ import {
   DiffViewer,
   MarkdownText,
   TokenUsageChart,
+  ToolCall,
   ToolCallCard,
+  ToolResult,
   WelcomeBanner,
   type ChatThreadMessage,
 } from "../../src/index.js";
@@ -163,6 +166,11 @@ const scenes: Scene[] = [
     element: <ChatComposer onSubmit={() => {}} />,
     rows: 8,
   },
+  { name: "ToolCall", element: <ToolCall name="search" status="success" /> },
+  {
+    name: "ToolResult",
+    element: <ToolResult lines={["line one", "line two"]} />,
+  },
 ];
 
 describe("component parity — full suite on the new renderer (M20 T3.1)", () => {
@@ -202,22 +210,100 @@ describe("component parity — full suite on the new renderer (M20 T3.1)", () =>
     console.log(
       `COMPONENT PARITY: ${passed.length}/${results.length} (${(rate * 100).toFixed(1)}%) — diverged: ${failed.map((f) => f.name).join(", ") || "none"}`,
     );
-    expect(rate).toBeGreaterThanOrEqual(0.9);
+    // Pin the actual state: 100% today, so a future single-component regression
+    // FAILS the gate instead of coasting on a 10% margin (review M1). Any real
+    // divergence must be individually documented + this list narrowed.
+    expect(failed.map((f) => f.name)).toEqual([]);
   });
 });
 
+// A thread long enough to ACTUALLY graduate rows into Static (windowSize=4,
+// overscan=2 keeps 6 live; the rest graduate) — the earlier 3-message oracle was
+// vacuous because nothing crossed the window boundary (review H2).
+const bigThread = (n: number): ChatThreadMessage[] =>
+  Array.from({ length: n }, (_, i) => ({
+    id: `m${i}`,
+    role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
+    content: `msg-${i} content`,
+  }));
+
+const HEADER = (
+  <Box>
+    <Text>BANNER</Text>
+  </Box>
+);
+
 describe("M11 scrollback oracles on the new renderer (M20 T3.1)", () => {
-  it("chatthread_graduated_history_prints_once_above_the_live_tail", async () => {
-    const term = new VirtualTerminal(50, 20);
+  it("header_stays_above_graduated_history_and_prints_once", async () => {
+    // Genuine M11 header-slot oracle on the new renderer: a growing thread that
+    // graduates rows; the header prints ONCE into scrollback, above every
+    // graduated row, in order (mirrors chat-thread.test.tsx:239).
+    const term = new VirtualTerminal(60, 30);
     const r = createRenderer(term);
-    r.render(<ChatThread messages={threadMessages} />);
+    r.render(
+      <ChatThread
+        header={HEADER}
+        messages={bigThread(6)}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
     await tick();
     await tick();
+    for (const n of [12, 20]) {
+      r.render(
+        <ChatThread
+          header={HEADER}
+          messages={bigThread(n)}
+          windowSize={4}
+          windowOverscan={2}
+        />,
+      );
+      await tick();
+      await tick();
+    }
     await term.flush();
     const stream = term.writeStream();
-    // Each graduated message body reaches the wire exactly once (print-once).
-    expect(stream.split("first question").length - 1).toBe(1);
-    expect(stream.split("first answer").length - 1).toBe(1);
+    // Header printed exactly once (print-once), above msg-0, and history ordered.
+    expect(stream.split("BANNER").length - 1).toBe(1);
+    expect(stream.indexOf("BANNER")).toBeLessThan(
+      stream.indexOf("msg-0 content"),
+    );
+    expect(stream.indexOf("msg-0 content")).toBeLessThan(
+      stream.indexOf("msg-13 content"),
+    );
+    r.unmount();
+  });
+
+  it("window_keeps_the_live_tail_bounded_on_the_new_renderer", async () => {
+    // Windowing oracle: grow the thread incrementally so rows graduate (M11
+    // graduation is append-driven, not mount-driven), on a SHORT terminal so
+    // graduated history scrolls off the viewport — the live tail (last
+    // windowSize+overscan) remains, the oldest message does not.
+    const term = new VirtualTerminal(40, 8);
+    const r = createRenderer(term);
+    r.render(
+      <ChatThread messages={bigThread(6)} windowSize={4} windowOverscan={2} />,
+    );
+    await tick();
+    await tick();
+    for (const n of [12, 20]) {
+      r.render(
+        <ChatThread
+          messages={bigThread(n)}
+          windowSize={4}
+          windowOverscan={2}
+        />,
+      );
+      await tick();
+      await tick();
+    }
+    await term.flush();
+    const screen = term.screenLines().join("\n");
+    // The newest message is in the live tail; the oldest has graduated + scrolled
+    // off the viewport — the live frame is bounded, not the whole thread.
+    expect(screen).toContain("msg-19 content");
+    expect(screen).not.toContain("msg-0 content");
     r.unmount();
   });
 
