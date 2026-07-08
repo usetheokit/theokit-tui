@@ -41,11 +41,12 @@ export interface ToolCallProps {
   status: ToolCallStatus;
   /**
    * Optional dim one-line summary after the name (newlines sanitized).
-   * KNOWN RENDER TRADE-OFF (SEPA phase-1 F9): Ink's SGR merger does not close
-   * the name's bold before opening dim (`[1m…[2m…[22m`), so bold-capable
-   * terminals render the summary bold+faint — faint dominates visually; same
-   * output shape as the gemini-cli header. SETTLED at M6 (plan D1:
-   * attributes stay component-level, never tokens) — accepted gemini-parity.
+   * RENDER NOTE (updated M10): ink7 closes the name's bold BEFORE opening
+   * dim (`[1m…[22m[2m…[22m`) — the summary renders dim-only on
+   * bold-capable terminals. The former ink5 bold+faint overlap (SEPA
+   * phase-1 F9, `[1m…[2m…[22m`) is extinct; snapshots re-recorded at M10
+   * pin the new sequencing. Attributes stay component-level, never tokens
+   * (M6 plan D1) — still gemini-parity in shape.
    */
   summary?: string;
 }

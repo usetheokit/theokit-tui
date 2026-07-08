@@ -18,6 +18,8 @@ jobs:
         node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history — the never-weaken guard diffs against the M10 base SHA
 
       - uses: pnpm/action-setup@v4
         # pnpm version resolved from package.json "packageManager" (corepack).

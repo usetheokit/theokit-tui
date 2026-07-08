@@ -21,6 +21,10 @@ describe("baseline stack provenance (M10 D3)", () => {
       ) as { stack?: { ink?: string; react?: string } };
       expect(b.stack?.ink, name).toMatch(/^7\./);
       expect(b.stack?.react, name).toMatch(/^19\./);
+      expect(
+        (b.stack as { ink_testing_library?: string })?.ink_testing_library,
+        name,
+      ).toMatch(/^4\./);
     }
   });
 });

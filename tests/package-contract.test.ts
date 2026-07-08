@@ -103,11 +103,14 @@ describe("TTFATT record (M8 T2.2)", () => {
       "utf8",
     );
     expect(md).toMatch(/@theokit\/tui@0\.10\.0/);
+    expect(md).toMatch(/@theokit\/tui@0\.11\.0/);
     expect(md).toMatch(/\d+(\.\d+)?\s?(s|seconds|min)/);
     expect(md).toContain("npm i");
   });
 });
 
+// SUNSET: migration-window guard — retire (or re-base) at the 0.12.0 cut;
+// legitimate it.each refactors after M10 should re-base M10_BASE instead.
 describe("never-weaken migration guard (M10 D2)", () => {
   it("it_count_never_decreases", () => {
     const M10_BASE = "035ae09";
@@ -125,10 +128,17 @@ describe("never-weaken migration guard (M10 D2)", () => {
         before = (
           execFileSync("git", ["show", `${M10_BASE}:${f}`], {
             encoding: "utf8",
+            stdio: ["pipe", "pipe", "pipe"],
           }).match(/\bit\(/g) ?? []
         ).length;
-      } catch {
-        continue; // new file — nothing to weaken
+      } catch (thrown) {
+        // Only "file did not exist at the base" means new-file; anything
+        // else (bad revision, shallow clone) must fail LOUD.
+        const msg = String((thrown as { stderr?: unknown }).stderr ?? thrown);
+        if (/exists on disk, but not in|does not exist in/.test(msg)) {
+          continue;
+        }
+        throw thrown;
       }
       const after = (
         readFileSync(new URL(`../${f}`, import.meta.url), "utf8").match(
@@ -151,5 +161,37 @@ describe("platform coherence (M10 T2.3)", () => {
     const md = readFileSync(new URL("../README.md", import.meta.url), "utf8");
     expect(md).toMatch(/Node ≥ 22|node >= ?22|Node 22/i);
     expect(md).toContain("react@19");
+  });
+});
+
+describe("snapshot re-record review guard (M10 T1.4)", () => {
+  it("rerecorded_snapshots_all_reviewed", () => {
+    const M10_BASE = "035ae09";
+    const table = readFileSync(
+      new URL(
+        "../.claude/knowledge-base/implementations/m10-snapshot-review.md",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const changed = execFileSync(
+      "git",
+      [
+        "diff",
+        "--name-only",
+        M10_BASE,
+        "--",
+        "src/__snapshots__",
+        "tests/__snapshots__",
+      ],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    for (const f of changed) {
+      const base = f.split("/").pop() ?? f;
+      expect(table, f).toContain(base);
+    }
   });
 });

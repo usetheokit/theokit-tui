@@ -39,6 +39,9 @@ async function ticks(count = 5): Promise<void> {
 
 describe("strict-effects canary (M10 D5)", () => {
   it("strict_mode_effect_invocation_pinned_on_ink7", async () => {
+    // Sentinel power requires the DEV react build (prod never
+    // double-invokes — the flip would be undetectable).
+    expect(process.env["NODE_ENV"]).not.toBe("production");
     const counts: Counts = { creates: 0, destroys: 0 };
     const instance = render(
       <StrictMode>
