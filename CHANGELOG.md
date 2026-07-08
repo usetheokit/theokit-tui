@@ -19,6 +19,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.21.0] - 2026-07-08
+
+### Added
+
+- Renderer V4 scrollback: Static-equivalent graduated history written once above
+  the differential live frame — `OutputEngine.writeStatic` (relative-to-origin
+  positioning), the live pass skips `internal_static` subtrees, and the renderer
+  captures the static delta per-commit; Ink's `<Static>` works unchanged on the
+  new engine. Plus our own `useStdout` (Ink's context is un-importable) provided
+  by `createRenderer` (M20 T1.1).
+- Renderer V4 focus manager: `useFocus`/`useFocusManager` + `FocusProvider` over
+  our M19 InputSource — the ESC/Tab/Shift+Tab arbiter runs on a new priority
+  input channel (before component `useInput`), matching Ink's App ordering the
+  composer's ESC-refocus relies on. InputSource now flushes a lone ESC after a
+  short delay (Escape-key delivery). Plus an ink-testing-library-shaped test
+  adapter over the new renderer (lastFrame = scrollback + live) (M20 T2.1).
+- Renderer V4 cutover evidence: 100% component parity (16/16 shipped components
+  render byte-identical to Ink on the new renderer) + a comparative Ink-vs-V4
+  benchmark showing V4 writes ~20× fewer bytes on a streaming ChatThread (1063 vs
+  21840; ms/frame at parity). Parity report, comparative-bench report, and the
+  conservative cutover ADR 0004 (Ink stays default+fallback, V4 opt-in, drop-Ink
+  deferred to an owner-signed future ADR) (M20 T3.1).
+- Renderer V4 scrollback correctness: the live frame is now positioned RELATIVE
+  to a tracked cursor row instead of absolute screen rows, so a differential
+  patch lands correctly even after graduated history has scrolled the terminal
+  (the chat steady state) — fixes a frame-corruption defect found in M20 review
+  (B1); regression test included.
+
 ## [0.20.0] - 2026-07-08
 
 ### Added

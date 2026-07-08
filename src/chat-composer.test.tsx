@@ -421,11 +421,10 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
       <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
     );
     await type(instance, ["/", "h", ESC]);
-    // ink's escape parser holds a lone ESC briefly (meta-prefix window) —
-    // give it time to emit key.escape before the next byte.
-    await settle();
-    await settle();
-    expect(plain(instance.lastFrame())).not.toContain("show help");
+    // ink's escape parser holds a lone ESC briefly (meta-prefix window) — poll
+    // until the menu is gone rather than a fixed sleep (flaky under load,
+    // testing.md §6).
+    await waitForFrame(instance, "show help", false);
     // r1-F3 (EC-4 second direction): with the menu dismissed, arrows reach
     // the BUFFER again — cursor moves left, next char inserts before "h".
     await type(instance, [LEFT_ARROW, "x"]);

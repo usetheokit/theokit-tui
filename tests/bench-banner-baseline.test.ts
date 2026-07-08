@@ -250,3 +250,52 @@ describe("benchmark baseline M18 (T3.1)", () => {
     }
   });
 });
+
+// M20 T3.1 (plan m20-scrollback-cutover, ADR D5): the comparative cutover
+// baseline — BOTH engines on the same streaming ChatThread, on ms/frame AND
+// bytes_written axes. bytes_written is the differential engine's headline
+// (Ink's log-update rewrites the frame region; our engine rewrites only changed
+// rows). The committed baseline is the cutover ADR's runtime evidence.
+describe("benchmark baseline M20 (T3.1)", () => {
+  it("m20_comparative_baseline_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m20-comparative-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      load_1min_at_start: number;
+      modes: {
+        mode: string;
+        runs: { mean_ms_per_frame: number; bytes_written: number }[];
+        aggregate: {
+          mean_ms_per_frame: { mean: number; std_dev: number };
+          bytes_written: { mean: number; std_dev: number };
+        };
+      }[];
+    };
+    const modeNames = baseline.modes.map((m) => m.mode);
+    expect(modeNames).toEqual(expect.arrayContaining(["v4", "ink"]));
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    for (const mode of baseline.modes) {
+      for (const run of mode.runs) {
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+        expect(Number.isFinite(run.bytes_written)).toBe(true);
+      }
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.mean)).toBe(true);
+      expect(mode.aggregate.mean_ms_per_frame.mean).toBeGreaterThan(0);
+      expect(Number.isFinite(mode.aggregate.bytes_written.mean)).toBe(true);
+      expect(mode.aggregate.bytes_written.mean).toBeGreaterThan(0);
+    }
+    // The differential engine writes materially fewer bytes than Ink's
+    // log-update on the streaming workload (the cutover's headline advantage).
+    const v4 = baseline.modes.find((m) => m.mode === "v4")!;
+    const ink = baseline.modes.find((m) => m.mode === "ink")!;
+    expect(v4.aggregate.bytes_written.mean).toBeLessThan(
+      ink.aggregate.bytes_written.mean,
+    );
+  });
+});

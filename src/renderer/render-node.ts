@@ -20,6 +20,12 @@ interface WalkOptions {
   offsetX: number;
   offsetY: number;
   transformers: Transformer[];
+  /**
+   * When true, subtrees marked `internal_static` are skipped — the live pass
+   * omits graduated scrollback (rendered separately, ONCE, via the engine's
+   * `writeStatic`). Ink's render-node-to-output.js:73 (M20 T1.1 / ADR D1).
+   */
+  skipStaticElements?: boolean | undefined;
 }
 
 /** Content width available to text = computed width minus padding + border (Ink get-max-width.js). */
@@ -190,6 +196,21 @@ function renderTextNode(
   output.write(x, y, text, { transformers });
 }
 
+/**
+ * A node is skipped when it is display:none, or (in the live pass) when it is
+ * graduated scrollback — the latter is emitted once by the engine's writeStatic.
+ */
+function isSkipped(
+  node: RendererNode,
+  yogaNode: YogaNode,
+  options: WalkOptions,
+): boolean {
+  return (
+    yogaNode.getDisplay() === Yoga.DISPLAY_NONE ||
+    (options.skipStaticElements === true && node.props.internal_static === true)
+  );
+}
+
 /** Walk the laid-out tree, writing each node's output to the cell grid. */
 export function renderNodeToOutput(
   node: RendererNode,
@@ -197,7 +218,7 @@ export function renderNodeToOutput(
   options: WalkOptions,
 ): void {
   const { yogaNode } = node;
-  if (!yogaNode || yogaNode.getDisplay() === Yoga.DISPLAY_NONE) {
+  if (!yogaNode || isSkipped(node, yogaNode, options)) {
     return;
   }
   const x = options.offsetX + yogaNode.getComputedLeft();
@@ -221,6 +242,7 @@ export function renderNodeToOutput(
         offsetX: x,
         offsetY: y,
         transformers,
+        skipStaticElements: options.skipStaticElements,
       });
     }
   }

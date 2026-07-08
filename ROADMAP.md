@@ -444,7 +444,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 1. Yoga measure-functions for text wrapping are the hard 10% — mitigated by porting Ink's measure approach (MIT, studied not copied).
 2. Snapshot-parity may hide semantic diffs — mitigated by the @xterm/headless render harness comparing final screens, not just streams.
 
-### M19 — [ ] Renderer V4: input stack (raw stdin, keybindings, bracketed paste)
+### M19 — [x] Renderer V4: input stack (raw stdin, keybindings, bracketed paste)
 
 > Added 2026-07-08 (V4 renderer program).
 
