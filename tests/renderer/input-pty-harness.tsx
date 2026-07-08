@@ -1,20 +1,21 @@
 import {
-  initialTextBuffer,
-  textBufferReducer,
-  type TextBufferAction,
-  type TextBufferState,
-} from "../../src/text-buffer.js";
+  editorActionForChord,
+  editorReducer,
+  initialEditorState,
+  type EditorState,
+} from "../../src/composer-editor.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
 import type { Key } from "../../src/renderer/input/key.js";
+import type { TextBufferAction } from "../../src/text-buffer.js";
 
 // M19 T3.1 PTY harness (plan §6): a standalone program node-pty spawns in a REAL
 // pseudo-terminal. It reads process.stdin through OUR InputSource in RAW MODE
-// (stdin.isTTY === true, real setRawMode), folds keys into the composer's
-// text-buffer reducer, and echoes state markers to stdout so the e2e can assert
-// the real raw-mode path. Exercises the M15 EC-5 flow: a submit whose handler
-// throws is caught at the top level (draft survives, process stays alive).
+// (stdin.isTTY === true, real setRawMode), folds keys into the pure EDITOR
+// reducer (M21 — kill-ring/undo/yank via the M19 keymap), and echoes state
+// markers to stdout so the e2e can assert the real raw-mode path. Exercises the
+// M15 EC-5 flow: a submit whose handler throws is caught at the top level.
 
-function keyToAction(input: string, key: Key): TextBufferAction | undefined {
+function bufferAction(input: string, key: Key): TextBufferAction | undefined {
   if (key.leftArrow) return { type: "move-left" };
   if (key.rightArrow) return { type: "move-right" };
   if (key.backspace || key.delete) return { type: "delete-backward" };
@@ -24,7 +25,7 @@ function keyToAction(input: string, key: Key): TextBufferAction | undefined {
   return undefined;
 }
 
-let state: TextBufferState = initialTextBuffer;
+let state: EditorState = initialEditorState;
 const stdin = process.stdin as unknown as Parameters<
   typeof createInputSource
 >[0];
@@ -48,13 +49,21 @@ source.onKey((input, key) => {
       throw new Error("submit exploded");
     } catch (error) {
       process.stdout.write(`SUBMIT_ERROR:${(error as Error).message}\n`);
-      process.stdout.write(`DRAFT:${state.text}\n`);
+      process.stdout.write(`DRAFT:${state.buffer.text}\n`);
     }
     return;
   }
-  const action = keyToAction(input, key);
+  // M21: an emacs editor chord (kill/yank/word-nav/undo) takes precedence;
+  // otherwise a plain buffer action (insert/motion/delete).
+  const editorAction = editorActionForChord(input, key);
+  if (editorAction) {
+    state = editorReducer(state, editorAction);
+    process.stdout.write(`BUF:${state.buffer.text}\n`);
+    return;
+  }
+  const action = bufferAction(input, key);
   if (action) {
-    state = textBufferReducer(state, action);
-    process.stdout.write(`BUF:${state.text}\n`);
+    state = editorReducer(state, { type: "buffer", action });
+    process.stdout.write(`BUF:${state.buffer.text}\n`);
   }
 });

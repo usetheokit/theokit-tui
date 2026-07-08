@@ -299,3 +299,27 @@ describe("benchmark baseline M20 (T3.1)", () => {
     );
   });
 });
+
+// M21 T3.1: the OWN editor-path bench — the pure editor reducer per keystroke.
+describe("benchmark baseline M21 editor (T3.1)", () => {
+  it("m21_editor_baseline_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL("../docs/benchmarks/m21-editor-baseline.json", import.meta.url),
+        "utf8",
+      ),
+    ) as {
+      load_1min_at_start: number;
+      workload: { keystrokes: number };
+      runs: { us_per_op: number }[];
+      aggregate: { us_per_op: { mean: number; std_dev: number } };
+    };
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    expect(baseline.workload.keystrokes).toBeGreaterThan(0);
+    for (const run of baseline.runs) {
+      expect(Number.isFinite(run.us_per_op)).toBe(true);
+    }
+    expect(Number.isFinite(baseline.aggregate.us_per_op.mean)).toBe(true);
+    expect(baseline.aggregate.us_per_op.mean).toBeGreaterThan(0);
+  });
+});

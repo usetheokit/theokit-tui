@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- ChatComposer readline-grade editor upgrade: Emacs kill-ring (C-w/C-u/C-k/M-d +
+  C-y yank, M-y yank-pop, with consecutive-kill coalescing), word navigation
+  (M-b/M-f over graphemes), coalesced undo (C-_), and input history recall (↑/↓,
+  gated to the first/last visual line). Built on a new PURE editor reducer
+  (`composer-editor.ts`) bundling buffer + kill-ring + undo + history — 100% unit
+  tested, no refs/timers; the composer is a thin dispatcher over the M19 keymap.
+  Real-raw-mode PTY e2e drives the editor chords; an OWN editor micro-bench
+  (`~3.8 µs/op`) is committed (M21 T3.1).
+
 - Renderer V4 image core: `src/renderer/terminal-image.ts` — kitty + iTerm2 inline
   image encoders (with 4096-byte chunking), magic-byte dimension extraction
   (PNG/JPEG/GIF/WebP, no decode), cell-fit sizing, an env-based capability matrix

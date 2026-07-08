@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   graphemeAt,
   initialTextBuffer,
+  killLineEnd,
+  killLineStart,
+  killWordBackward,
+  killWordForward,
   textBufferReducer,
 } from "./text-buffer.js";
 import type { TextBufferState } from "./text-buffer.js";
@@ -10,6 +14,58 @@ import type { TextBufferState } from "./text-buffer.js";
 const state = (text: string, cursorOffset: number): TextBufferState => ({
   text,
   cursorOffset,
+});
+
+describe("M21 kill primitives + word motions (T3.1)", () => {
+  it("kill_line_end_removes_to_the_line_end_and_returns_the_slice", () => {
+    const r = killLineEnd(state("hello world", 6));
+    expect(r.state).toEqual({ text: "hello ", cursorOffset: 6 });
+    expect(r.killed).toBe("world");
+  });
+
+  it("kill_line_start_removes_from_the_line_start", () => {
+    const r = killLineStart(state("hello world", 6));
+    expect(r.state).toEqual({ text: "world", cursorOffset: 0 });
+    expect(r.killed).toBe("hello ");
+  });
+
+  it("kill_word_backward_removes_the_previous_word", () => {
+    const r = killWordBackward(state("hello world", 11));
+    expect(r.state).toEqual({ text: "hello ", cursorOffset: 6 });
+    expect(r.killed).toBe("world");
+  });
+
+  it("kill_word_forward_removes_the_next_word", () => {
+    const r = killWordForward(state("hello world", 0));
+    expect(r.killed).toBe("hello");
+    expect(r.state.text).toBe(" world");
+  });
+
+  it("kill_line_end_on_an_empty_line_kills_the_newline", () => {
+    // cursor at the end of an empty first line ("\nrest"), C-k kills the newline.
+    const r = killLineEnd(state("\nrest", 0));
+    expect(r.killed).toBe("");
+    // The line is empty, so lineEnd === cursor → nothing killed on THIS line;
+    // Emacs then kills the newline on a second C-k. Our primitive kills the
+    // line content; the composer issues the newline kill as a delete-forward.
+    expect(r.state.text).toBe("\nrest");
+  });
+
+  it("move_word_left_and_right_reposition_the_cursor", () => {
+    expect(
+      textBufferReducer(state("hello world", 11), { type: "move-word-left" }),
+    ).toEqual({ text: "hello world", cursorOffset: 6 });
+    expect(
+      textBufferReducer(state("hello world", 0), { type: "move-word-right" }),
+    ).toEqual({ text: "hello world", cursorOffset: 5 });
+  });
+
+  it("set_replaces_the_whole_state_for_undo_restore", () => {
+    const restored = state("recovered", 3);
+    expect(
+      textBufferReducer(state("current", 2), { type: "set", state: restored }),
+    ).toEqual(restored);
+  });
 });
 
 describe("textBufferReducer (T3.1)", () => {

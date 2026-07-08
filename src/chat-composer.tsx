@@ -3,12 +3,14 @@ import { useId, useReducer, useState } from "react";
 
 import { SLASH_MENU_WINDOW, deriveSlashMenu } from "./slash-menu-model.js";
 import type { SlashCommand, SlashMenu } from "./slash-menu-model.js";
-import {
-  graphemeAt,
-  initialTextBuffer,
-  textBufferReducer,
-} from "./text-buffer.js";
+import { graphemeAt } from "./text-buffer.js";
 import type { TextBufferAction } from "./text-buffer.js";
+import {
+  editorActionForChord,
+  editorReducer,
+  initialEditorState,
+} from "./composer-editor.js";
+import type { Key } from "./renderer/input/key.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
 export type { SlashCommand as ChatComposerCommand } from "./slash-menu-model.js";
@@ -289,14 +291,21 @@ export function ChatComposer({
   commands = [],
   hint,
 }: ChatComposerProps) {
-  const [buffer, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
+  const [editor, dispatchEditor] = useReducer(
+    editorReducer,
+    initialEditorState,
+  );
+  const buffer = editor.buffer;
   const focusId = useId();
   const { isFocused } = useFocus({ autoFocus, id: focusId });
   const { focus } = useFocusManager();
   const theme = useTheoTheme();
   const { menu, setSelectionIndex, setDismissedFilter, completeSelection } =
     useSlashMenuState(buffer.text, commands, (name) => {
-      dispatch({ type: "complete-command", name });
+      dispatchEditor({
+        type: "buffer",
+        action: { type: "complete-command", name },
+      });
     });
 
   // M15 D2: menu keys intercept BEFORE buffer actions and never leak.
@@ -331,29 +340,62 @@ export function ChatComposer({
     return false;
   };
 
+  // M21: the emacs editor chords (kill-ring, word-nav, yank, undo) + history
+  // recall, resolved via the M19 keymap and applied to the pure editor reducer.
+  // Runs after the menu, before the plain buffer keys. Returns true when consumed.
+  const handleEditorKey = (input: string, key: ComposerKey): boolean => {
+    // History recall on arrows, gated to the first/last visual line (multiline
+    // drafts keep the arrow for cursor movement — the composer owns this gate).
+    if (
+      key.upArrow &&
+      !buffer.text.slice(0, buffer.cursorOffset).includes("\n")
+    ) {
+      dispatchEditor({ type: "history-prev" });
+      return true;
+    }
+    if (
+      key.downArrow &&
+      !buffer.text.slice(buffer.cursorOffset).includes("\n")
+    ) {
+      dispatchEditor({ type: "history-next" });
+      return true;
+    }
+    const editorAction = editorActionForChord(input, key as unknown as Key);
+    if (!editorAction) {
+      return false;
+    }
+    dispatchEditor(editorAction);
+    return true;
+  };
+
   const handleBufferKey = (input: string, key: ComposerKey): void => {
     if (key.return && !isNewlineChord(input, key, multiLine)) {
       const text = buffer.text.trim();
       if (text.length > 0) {
         // onSubmit BEFORE clear: a throwing handler propagates (EC-5) AND
-        // the user's draft survives (review F-dom-6).
+        // the user's draft survives (review F-dom-6). `submit` also records the
+        // entry in the input history (M21).
         onSubmit(text);
-        dispatch({ type: "clear" });
+        dispatchEditor({ type: "submit", entry: text });
       }
       return;
     }
     const action = actionForKey(input, key, multiLine);
     if (action !== undefined) {
-      dispatch(action);
+      dispatchEditor({ type: "buffer", action });
     }
   };
 
   useInput(
     (input, key) => {
       const composerKey = key as unknown as ComposerKey;
-      if (!handleMenuKey(input, composerKey)) {
-        handleBufferKey(input, composerKey);
+      if (handleMenuKey(input, composerKey)) {
+        return;
       }
+      if (handleEditorKey(input, composerKey)) {
+        return;
+      }
+      handleBufferKey(input, composerKey);
     },
     { isActive: isFocused },
   );
