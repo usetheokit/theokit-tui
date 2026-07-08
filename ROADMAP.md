@@ -423,7 +423,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 1. react-reconciler API churn/complexity (undocumented internals) — mitigated by pinning the version Ink 7 uses and studying its host config first.
 2. @xterm/headless as the test oracle is new infra — mitigated by adopting pi's exact harness patterns (MIT, cited).
 
-### M18 — [ ] Renderer V4: layout engine + Box/Text parity
+### M18 — [x] Renderer V4: layout engine + Box/Text parity
 
 > Added 2026-07-08 (V4 renderer program).
 

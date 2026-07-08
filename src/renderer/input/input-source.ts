@@ -1,0 +1,125 @@
+import { EventEmitter } from "node:events";
+
+import { createInputParser } from "./input-parser.js";
+import { projectKey, type Key } from "./key.js";
+import { KITTY_DISABLE, KITTY_ENABLE, detectKittyActive } from "./kitty.js";
+
+// M19 InputSource (plan m19-input-stack, ADR D1/D3): the raw-stdin lifecycle —
+// a symmetric sibling to the output Terminal seam. Reads a stdin stream, frames
+// bytes through the parser, and emits key events (input, key) + paste events
+// (content) on SEPARATE channels to any number of subscribers (Ink's emitter
+// model). setRawMode is ref-counted (App.js:208-256) so mounting/unmounting
+// components never thrashes raw mode. Injecting the stream keeps it testable.
+
+/** The minimal stdin surface the InputSource needs (real stdin or a fake). */
+export interface InputStream {
+  isTTY?: boolean;
+  setRawMode?(enabled: boolean): void;
+  on(event: "data", listener: (chunk: Buffer) => void): void;
+  off(event: "data", listener: (chunk: Buffer) => void): void;
+  resume?(): void;
+  pause?(): void;
+}
+
+export type KeyHandler = (input: string, key: Key) => void;
+export type PasteHandler = (content: string) => void;
+
+export interface InputSource {
+  start(): void;
+  stop(): void;
+  /** Subscribe to key events; returns an unsubscribe function. */
+  onKey(handler: KeyHandler): () => void;
+  /** Subscribe to paste events; returns an unsubscribe function. */
+  onPaste(handler: PasteHandler): () => void;
+  /** Ref-counted raw mode: raw is on while ≥ 1 consumer holds it. */
+  setRawMode(enabled: boolean): void;
+  /** True once a kitty keyboard-protocol reply has been seen (awareness). */
+  isKittyActive(): boolean;
+}
+
+/**
+ * @param stdin the input stream to read.
+ * @param writeToTerminal optional output writer — when provided, `start` emits
+ *   the kitty enable handshake and `stop` emits the disable pop (the query the
+ *   terminal replies to, so `isKittyActive()` can ever become true). Without it
+ *   the source is read-only (awareness detection still works if some other layer
+ *   already sent the query).
+ */
+export function createInputSource(
+  stdin: InputStream,
+  writeToTerminal?: (data: string) => void,
+): InputSource {
+  const parser = createInputParser();
+  const emitter = new EventEmitter();
+  emitter.setMaxListeners(0);
+  let rawModeRefCount = 0;
+  let listener: ((chunk: Buffer) => void) | undefined;
+  let kittyActive = false;
+
+  const dispatch = (chunk: Buffer): void => {
+    for (const event of parser.push(chunk.toString("utf8"))) {
+      if (typeof event === "string") {
+        // A kitty handshake reply is awareness state — not a key event.
+        if (detectKittyActive(event)) {
+          kittyActive = true;
+          continue;
+        }
+        const { input, key } = projectKey(event);
+        emitter.emit("key", input, key);
+      } else if (emitter.listenerCount("paste") > 0) {
+        emitter.emit("paste", event.paste);
+      } else {
+        // No paste listener — fall through to the key channel (Ink's fallback).
+        emitter.emit("key", event.paste, projectKey("").key);
+      }
+    }
+  };
+
+  return {
+    start(): void {
+      if (listener) {
+        return;
+      }
+      listener = dispatch;
+      stdin.on("data", listener);
+      stdin.resume?.();
+      writeToTerminal?.(KITTY_ENABLE); // query kitty support (awareness handshake)
+    },
+    stop(): void {
+      if (listener) {
+        stdin.off("data", listener);
+        listener = undefined;
+      }
+      writeToTerminal?.(KITTY_DISABLE); // pop the kitty flag stack on teardown
+      emitter.removeAllListeners();
+      if (rawModeRefCount > 0) {
+        rawModeRefCount = 0;
+        stdin.setRawMode?.(false);
+      }
+    },
+    onKey(handler: KeyHandler): () => void {
+      emitter.on("key", handler);
+      return () => emitter.off("key", handler);
+    },
+    onPaste(handler: PasteHandler): () => void {
+      emitter.on("paste", handler);
+      return () => emitter.off("paste", handler);
+    },
+    setRawMode(enabled: boolean): void {
+      if (enabled) {
+        rawModeRefCount += 1;
+        if (rawModeRefCount === 1) {
+          stdin.setRawMode?.(true);
+        }
+      } else if (rawModeRefCount > 0) {
+        rawModeRefCount -= 1;
+        if (rawModeRefCount === 0) {
+          stdin.setRawMode?.(false);
+        }
+      }
+    },
+    isKittyActive(): boolean {
+      return kittyActive;
+    },
+  };
+}

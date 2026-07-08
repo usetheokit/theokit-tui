@@ -1,6 +1,6 @@
 {
   "name": "@theokit/tui",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "AI-native TUI primitives for agent CLIs \u2014 streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
@@ -84,6 +84,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "ink-testing-library": "^4.0.0",
     "lowlight": "3.3.0",
+    "node-pty": "1.1.0",
     "prettier": "^3.3.0",
     "publint": "^0.3.21",
     "react": "^19.2.7",
