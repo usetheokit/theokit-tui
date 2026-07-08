@@ -272,7 +272,7 @@ V1 closed (10/10, v0.10.0 published); the M8 rehearsal PROVED the react-19 fresh
 
 The M9 D4 drawback is RECORDED with this exact flip condition; V2 is the moment to honor it on the upgraded base.
 
-### M12 — [ ] Animated welcome banner
+### M12 — [x] Animated welcome banner
 
 > Added 2026-07-07 by `/roadmap-feature` (slug: `m12-animated-banner`). See CHANGELOG `[Unreleased] § Added`.
 
