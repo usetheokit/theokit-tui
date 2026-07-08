@@ -1,7 +1,6 @@
 import { Box, Text, useStdout } from "ink";
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
@@ -34,15 +33,12 @@ export interface WelcomeBannerProps {
   animated?: boolean;
 }
 
-/** D3: below this, border+padding no longer yield a legible line — the
- * final rung renders one plain Text (codex idiom, closing gemini's
- * no-guard-below-tiny hole). */
+/** D3: below this the final rung renders one plain Text (codex idiom). */
 const FLOOR_COLUMNS = 24;
 const MAX_WIDTH = 60;
 
-/** M12 D1/D2: bounded reveal script — 12 × 80 ms = 0.96 s (< 2 s DoD) —
- * behind a mount-time gate. MIN dims are ours (codex's 37/60 fit its huge
- * art; the banner is ≤ 9 rows and clamps at 60 columns). */
+/** M12 D1/D2: bounded reveal — 12 × 80 ms = 0.96 s (< 2 s DoD); MIN dims
+ * ours (codex's 37/60 fit its huge art; this banner is ≤ 9 rows). */
 const REVEAL_PHASES = 12;
 const REVEAL_TICK_MS = 80;
 const MIN_ANIMATION_ROWS = 15;
@@ -75,8 +71,7 @@ function assertBannerProps(props: WelcomeBannerProps): void {
   }
 }
 
-/** Empty/whitespace version renders as ABSENT — never a dangling " v"
- * (review F-2; validation allows "" since D5 only forbids newlines). */
+/** Empty/whitespace version renders as ABSENT — never a dangling " v". */
 function normalizeVersion(value: string | undefined): string | undefined {
   return value === undefined || value.trim() === "" ? undefined : value;
 }
@@ -169,16 +164,13 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
   const theme = useTheoTheme();
   const { stdout } = useStdout();
 
-  // WIDTH CONTRACT (review F-1 errata to ADR D3): columns are read at
-  // RENDER time and frozen until the next React re-render — ink 5.2.1's
-  // resize handler only re-runs yoga layout + repaint, it does NOT re-render
-  // React, and useStdout is a stable context value. For a startup-moment
-  // banner this is accepted; live-resize demand flips to a useTerminalSize
-  // hook (stdout.on("resize") → state — the gemini-cli pattern).
+  // WIDTH CONTRACT (M9 review errata to ADR D3): columns are read at
+  // RENDER time and frozen until the next React re-render (ink resize does
+  // not re-render React). Live-resize demand flips to a useTerminalSize
+  // hook (the gemini-cli pattern).
   const columns = stdout?.columns ?? MAX_WIDTH;
 
-  // Frozen at mount — mid-reveal dim/env flips cannot strand a partial
-  // frame (M12 D2).
+  // Frozen at mount — mid-reveal flips cannot strand a partial frame (D2).
   const revealActive = useRef(
     isRevealEligible(props.animated, stdout, isMonochrome(theme), columns),
   ).current;
@@ -216,7 +208,9 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
     return (
       <Box {...boxProps}>
         <Text wrap="truncate-end" color={theme.accent} bold>
-          {shown}
+          {/* single space at phase 0: an empty Text collapses to height 0
+          and the box would jump 2->3 lines on the first tick (review F-1) */}
+          {shown === "" ? " " : shown}
         </Text>
       </Box>
     );

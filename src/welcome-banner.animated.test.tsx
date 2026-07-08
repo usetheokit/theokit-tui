@@ -1,5 +1,6 @@
 import { Text } from "ink";
 import { render } from "ink-testing-library";
+import type { ReactElement } from "react";
 import { act } from "react";
 import {
   afterAll,
@@ -11,6 +12,7 @@ import {
   vi,
 } from "vitest";
 
+import { TheoTUIProvider, themes } from "./theme.js";
 import { WelcomeBanner } from "./welcome-banner.js";
 import type { WelcomeBannerProps } from "./welcome-banner.js";
 
@@ -32,8 +34,9 @@ const REVEAL_PROPS: WelcomeBannerProps = {
  * instance, and a keyed rerender remounts the banner so its mount-time
  * gate (D2 evaluate-once) sees the shadowed values. */
 function mountGated(
-  tty: { isTTY?: boolean; rows?: number },
+  tty: { isTTY?: boolean; rows?: number; columns?: number },
   props: WelcomeBannerProps,
+  wrap?: (banner: ReactElement) => ReactElement,
 ) {
   const instance = render(<Text>probe</Text>);
   Object.defineProperty(instance.stdout, "isTTY", {
@@ -44,7 +47,21 @@ function mountGated(
     get: () => tty.rows ?? 30,
     configurable: true,
   });
-  instance.rerender(<WelcomeBanner {...props} key="gated" />);
+  if (tty.columns !== undefined) {
+    Object.defineProperty(instance.stdout, "columns", {
+      get: () => tty.columns as number,
+      configurable: true,
+    });
+  }
+  const banner = <WelcomeBanner {...props} key="gated" />;
+  act(() => {
+    instance.rerender(wrap === undefined ? banner : wrap(banner));
+  });
+  // Diagnostic guard (review F-2 [NEEDS-REPRO] flake watch): the remount
+  // must have painted a bordered box — a blank frame here means the mount
+  // itself misbehaved, which would otherwise surface as a confusing
+  // downstream oracle failure.
+  expect(instance.lastFrame() ?? "").toMatch(/[╭┌]/);
   return instance;
 }
 
@@ -118,7 +135,9 @@ describe("WelcomeBanner animated reveal (M12)", () => {
   });
 
   it("reduced_motion_env_forces_static_path", () => {
-    // Oracle d: THEOKIT_TUI_NO_MOTION (any non-empty value) wins.
+    // Oracle d: THEOKIT_TUI_NO_MOTION (any non-empty value) wins — and the
+    // frame is byte-equal to a live static render (review F-4: the FULL
+    // static path, not merely "hints present").
     vi.useFakeTimers();
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "1");
     const instance = mountGated(
@@ -127,7 +146,10 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     );
     expect(instance.lastFrame()).toContain("h1 hint row");
     expect(vi.getTimerCount()).toBe(0);
+    const staticRender = render(<WelcomeBanner {...REVEAL_PROPS} />);
+    expect(instance.lastFrame()).toBe(staticRender.lastFrame());
     instance.unmount();
+    staticRender.unmount();
   });
 
   it("below_min_dims_renders_static_immediately", () => {
@@ -139,6 +161,54 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     );
     expect(instance.lastFrame()).toContain("h1 hint row");
     expect(vi.getTimerCount()).toBe(0);
+    const staticRender = render(<WelcomeBanner {...REVEAL_PROPS} />);
+    expect(instance.lastFrame()).toBe(staticRender.lastFrame());
+    instance.unmount();
+    staticRender.unmount();
+  });
+
+  it("below_min_columns_renders_static_immediately", () => {
+    // Review F-2 (survived mutant): the columns >= 44 gate leg. 40 < 44
+    // but well above FLOOR_COLUMNS 24 — the bordered static box renders.
+    vi.useFakeTimers();
+    const instance = mountGated(
+      { isTTY: true, rows: 30, columns: 40 },
+      { ...REVEAL_PROPS, animated: true },
+    );
+    expect(instance.lastFrame()).toContain("h1 hint row");
+    expect(vi.getTimerCount()).toBe(0);
+    instance.unmount();
+  });
+
+  it("monochrome_theme_forces_static_path", () => {
+    // Review F-3 (survived mutant): the !isMonochrome gate leg — a
+    // typewriter without an accent color is pure flicker (degrade ladder).
+    vi.useFakeTimers();
+    const instance = mountGated(
+      { isTTY: true, rows: 30 },
+      { ...REVEAL_PROPS, animated: true },
+      (banner) => (
+        <TheoTUIProvider theme={themes["no-color"]}>{banner}</TheoTUIProvider>
+      ),
+    );
+    expect(instance.lastFrame()).toContain("h1 hint row");
+    expect(instance.lastFrame()).toContain("┌"); // single border — monochrome
+    expect(vi.getTimerCount()).toBe(0);
+    instance.unmount();
+  });
+
+  it("mount_frame_has_full_box_height_at_phase_zero", () => {
+    // Review F-1: phase 0 must NOT collapse to a 2-line box (empty Text
+    // has height 0) — the name row renders a space placeholder so the box
+    // is born at its 3-line minimum and never layout-shifts on tick 1.
+    vi.useFakeTimers();
+    const instance = mountGated(
+      { isTTY: true, rows: 30 },
+      { ...REVEAL_PROPS, animated: true },
+    );
+    const mountFrame = instance.lastFrame() ?? "";
+    expect(mountFrame.split("\n")).toHaveLength(3);
+    expect(mountFrame).toContain("│");
     instance.unmount();
   });
 

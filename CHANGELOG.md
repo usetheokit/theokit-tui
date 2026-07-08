@@ -21,6 +21,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `WelcomeBanner` animated: phase-0 frame no longer collapses to a 2-line box (empty name row now renders a space placeholder — no layout shift on the first tick); gate legs `columns >= 44` and monochrome-theme now each have a dedicated oracle (both had empirically survived mutation at review) (m12 review batch)
+
 ### Security
 
 ## [0.12.0] - 2026-07-08
