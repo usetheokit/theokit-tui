@@ -1,6 +1,6 @@
 # M0 gate chain (plan T4.1): each gate is its own step so CI reports exactly
 # which stage failed (ADR D7 — observable exit codes, fail-fast fail-clear).
-# Node matrix proves the engines floor (20) and the dev target (22).
+# Node matrix proves the engines floor (22, ink7 requires node>=22) and the forward leg (24).
 name: ci
 
 on:
@@ -15,9 +15,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history — the never-weaken guard diffs against the M10 base SHA
 
       - uses: pnpm/action-setup@v4
         # pnpm version resolved from package.json "packageManager" (corepack).

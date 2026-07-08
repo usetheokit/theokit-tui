@@ -41,3 +41,10 @@ Rendered output (piped, exit 0):
 - Human-typing time (creating consumer.tsx from the README quickstart) is
   excluded; even at a leisurely 5 minutes it stays an order of magnitude
   under the 10-minute target.
+
+## 0.11.0 re-measure (ink 7 / react 19 stack — 2026-07-07)
+
+`@theokit/tui@0.11.0` from the registry, same method (fresh dir, `npm i
+@theokit/tui@0.11.0 react@19 tsx`, 25-line consumer): **5.4 s total**
+(install 4.4 s + first rendered turn 1.0 s; warm cache). The 0.10.0 section
+above documents the ink5/react18 line.

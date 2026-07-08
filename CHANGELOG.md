@@ -19,6 +19,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.11.1] - 2026-07-08
+
+### Changed
+
+- `ToolCall` summary now renders dim-only (not bold+faint) on bold-capable terminals — ink 7 closes bold before opening dim; docblock updated, snapshots pinned at M10 (m10 review LOW)
+
+### Fixed
+
+- CI: full-history checkout (`fetch-depth: 0`) — the never-weaken migration guard diffs against the M10 base SHA and errored on shallow clones (m10 review HIGH)
+- Review-batch guards: snapshot re-record review guard test, TTFATT 0.11.0 pin, strict-effects canary NODE_ENV precondition, stack-provenance itl assert, never-weaken guard fails loud on unexpected git errors + sunset note (m10 review batch)
+
 ## [0.11.0] - 2026-07-07
 
 ### Added

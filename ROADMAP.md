@@ -217,7 +217,7 @@ rendering in a terminal, built + tested + snapshot-covered.
 
 M8's dogfood (`examples/live-agent-tui` + TheoCode as consumer) will assemble exactly this pattern; shipping the primitive first prevents each consumer from reinventing it. User opted for the slots variant for free composition.
 
-### M10 — [ ] Foundation upgrade: ink 7 + dual React peer
+### M10 — [x] Foundation upgrade: ink 7 + dual React peer
 
 > Added 2026-07-07 by `/roadmap-feature` (slug: `m10-react19-ink7`). See CHANGELOG `[Unreleased] § Added`.
 
