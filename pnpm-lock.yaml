@@ -23,6 +23,9 @@ importers:
       react-reconciler:
         specifier: ^0.33.0
         version: 0.33.0(react@19.2.7)
+      yoga-layout:
+        specifier: 3.2.1
+        version: 3.2.1
     devDependencies:
       '@eslint/js':
         specifier: ^9

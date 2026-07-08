@@ -1,6 +1,9 @@
 import { createContext } from "react";
 import createReconciler from "react-reconciler";
 import { DefaultEventPriority } from "react-reconciler/constants.js";
+import Yoga, { type Node as YogaNode } from "yoga-layout";
+
+import { applyStyles, type Style } from "./yoga-style.js";
 
 // M17 host-config (plan m17-renderer-skeleton, ADR D1 / 0003): the minimal
 // react-reconciler 0.33 mutation-mode host — Ink 7's hook subset reduced to
@@ -10,7 +13,7 @@ import { DefaultEventPriority } from "react-reconciler/constants.js";
 // the injected onCommit). Everything React 19 requires but the skeleton does
 // not use is stubbed honestly — no NotImplemented throws (LSP).
 
-/** A renderable node in the M17 skeleton tree. */
+/** A renderable node in the renderer tree (M18: carries a yoga node). */
 export interface RendererNode {
   type: string;
   props: Record<string, unknown>;
@@ -18,6 +21,12 @@ export interface RendererNode {
   /** Only set on text instances (type === "#text"). */
   text?: string;
   parent?: RendererNode | undefined;
+  /**
+   * The yoga layout node. Absent for `#text` and for a `<Text>` nested inside
+   * another `<Text>` (virtual text — it participates only through its parent's
+   * measure func). M18 T1.1 wires the tree; the measure func binding is T2.1.
+   */
+  yogaNode?: YogaNode | undefined;
 }
 
 export interface RootNode extends RendererNode {
@@ -25,9 +34,34 @@ export interface RootNode extends RendererNode {
 }
 
 export function createRootNode(): RootNode {
-  return { type: "#root", props: {}, children: [] };
+  return {
+    type: "#root",
+    props: {},
+    children: [],
+    yogaNode: Yoga.Node.create(),
+  };
 }
 
+/** The style object React passes on `props.style` (Ink's Box/Text convention). */
+function styleOf(props: Record<string, unknown>): Style {
+  return (props.style as Style | undefined) ?? {};
+}
+
+/** The yoga index of `child` = count of yoga-having siblings before it. */
+function yogaIndexOf(parent: RendererNode, child: RendererNode): number {
+  let index = 0;
+  for (const sibling of parent.children) {
+    if (sibling === child) {
+      break;
+    }
+    if (sibling.yogaNode) {
+      index += 1;
+    }
+  }
+  return index;
+}
+
+/** Remove from the child array AND yoga tree (no free — moves reuse this). */
 function detach(child: RendererNode): void {
   const parent = child.parent;
   if (!parent) {
@@ -37,6 +71,9 @@ function detach(child: RendererNode): void {
   if (index !== -1) {
     parent.children.splice(index, 1);
   }
+  if (parent.yogaNode && child.yogaNode) {
+    parent.yogaNode.removeChild(child.yogaNode);
+  }
   child.parent = undefined;
 }
 
@@ -44,6 +81,12 @@ function append(parent: RendererNode, child: RendererNode): void {
   detach(child);
   parent.children.push(child);
   child.parent = parent;
+  if (parent.yogaNode && child.yogaNode) {
+    parent.yogaNode.insertChild(
+      child.yogaNode,
+      parent.yogaNode.getChildCount(),
+    );
+  }
 }
 
 function insert(
@@ -55,6 +98,28 @@ function insert(
   const at = parent.children.indexOf(before);
   parent.children.splice(at === -1 ? parent.children.length : at, 0, child);
   child.parent = parent;
+  if (parent.yogaNode && child.yogaNode) {
+    parent.yogaNode.insertChild(child.yogaNode, yogaIndexOf(parent, child));
+  }
+}
+
+/** Detach then free the subtree's yoga nodes (reconciler removal, not a move). */
+function remove(child: RendererNode): void {
+  detach(child);
+  child.yogaNode?.freeRecursive();
+  child.yogaNode = undefined;
+}
+
+/** Remove + free every child of a container (leak-safe bulk clear). */
+export function clearContainerChildren(container: RendererNode): void {
+  for (const child of [...container.children]) {
+    remove(child);
+  }
+}
+
+/** Host context: whether we are inside a `<Text>` (nested text = virtual, no yoga node). */
+interface HostContext {
+  isInsideText: boolean;
 }
 
 /**
@@ -72,7 +137,7 @@ export function createHostReconciler(onCommit: () => void) {
     never, // HydratableInstance
     never, // FormInstance
     RendererNode, // PublicInstance
-    object, // HostContext
+    HostContext, // HostContext
     true, // ChildSet (unused in mutation mode)
     ReturnType<typeof setTimeout>, // TimeoutHandle
     -1, // NoTimeout
@@ -88,20 +153,29 @@ export function createHostReconciler(onCommit: () => void) {
     supportsMicrotasks: true,
     scheduleMicrotask: queueMicrotask,
 
-    createInstance(type, props): RendererNode {
-      return { type, props, children: [] };
+    createInstance(type, props, _root, hostContext): RendererNode {
+      // A <Text> nested inside another <Text> is virtual — it participates via
+      // its parent's measure func and gets NO yoga node (Ink dom.js:12).
+      const isVirtualText = type === "ink-text" && hostContext.isInsideText;
+      const node: RendererNode = { type, props, children: [] };
+      if (!isVirtualText) {
+        node.yogaNode = Yoga.Node.create();
+        applyStyles(node.yogaNode, styleOf(props));
+      }
+      return node;
     },
     createTextInstance(text): RendererNode {
       return { type: "#text", props: {}, children: [], text };
     },
     getPublicInstance: (instance) => instance,
     shouldSetTextContent: () => false,
-    getRootHostContext: () => ({}),
-    getChildHostContext: (parentContext) => parentContext,
+    getRootHostContext: (): HostContext => ({ isInsideText: false }),
+    getChildHostContext: (parentContext, type): HostContext =>
+      type === "ink-text" ? { isInsideText: true } : parentContext,
     prepareForCommit: () => null,
     preparePortalMount: () => {},
     clearContainer: (container) => {
-      container.children = [];
+      clearContainerChildren(container);
       return false;
     },
 
@@ -110,12 +184,15 @@ export function createHostReconciler(onCommit: () => void) {
     appendChildToContainer: append,
     insertBefore: insert,
     insertInContainerBefore: insert,
-    removeChild: (parent, child) => detach(child),
-    removeChildFromContainer: (_container, child) => detach(child),
+    removeChild: (_parent, child) => remove(child),
+    removeChildFromContainer: (_container, child) => remove(child),
 
     finalizeInitialChildren: () => false,
     commitUpdate(instance, _type, _prevProps, nextProps): void {
       instance.props = nextProps;
+      if (instance.yogaNode) {
+        applyStyles(instance.yogaNode, styleOf(nextProps));
+      }
     },
     commitTextUpdate(textInstance, _oldText, newText): void {
       textInstance.text = newText;

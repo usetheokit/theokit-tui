@@ -72,6 +72,7 @@ describe("public entry surface (T0.2)", () => {
       "ink-spinner",
       "parse-diff",
       "react-reconciler",
+      "yoga-layout",
     ]);
     expect(pkg.peerDependencies["react"]).toBeDefined();
   });

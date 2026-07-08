@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- M18 T1.1 (renderer Yoga tree): `src/renderer/yoga-style.ts` — a faithful port of Ink's `styles.js` (`applyStyles(yogaNode, style)`, the full flexbox prop set: position/margin/padding/flex/dimensions/display/border/gap) driving the same `yoga-layout@3.2.1` WASM engine Ink uses (parity by construction). The renderer's host-config now attaches a yoga node per Box/top-level-Text, mutates the yoga tree on append/insert/remove, frees WASM nodes on removal (no leak), and treats a `<Text>` nested inside `<Text>` as virtual (no yoga node). yoga-style + host-config at 100% lines; `yoga-layout` joins the runtime dep graph (plan m18-yoga-layout, ADR D1/D4)
+
 ### Changed
 
 ### Deprecated
@@ -16,6 +18,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 ### Fixed
+
+- The exported `VERSION` constant now tracks the manifest (0.18.0). The v0.18.0 release bumped `package.json` but not `src/index.ts`, so the two briefly disagreed — caught by the `public_entry_exposes_version_constant` guardrail
 
 ### Security
 
