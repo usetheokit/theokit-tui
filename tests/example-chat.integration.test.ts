@@ -26,6 +26,12 @@ describe("examples/chat.tsx (T4.2)", () => {
       expect(out.indexOf("Theo TUI")).toBeLessThan(
         out.indexOf("What ships in M1?"),
       );
+      // M13: the markdown assistant message renders SHAPES, not markers —
+      // the fence CONTENT is present, the ** and ``` markers are not.
+      expect(out).not.toContain("**");
+      expect(out).not.toContain("```");
+      expect(out).toContain("npm install @theokit/tui");
+      expect(out).toContain("M1 highlights");
       const bannerCount = out.split("Theo TUI").length - 1;
       expect(bannerCount).toBe(1);
     },

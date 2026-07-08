@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ChatThreadMessage.markdown?` — per-message opt-in routed to the row's ChatMessage (unflagged rows byte-identical); `examples/chat.tsx` ships a markdown-rich assistant reply (smoke pins rendered shapes, not markers); chat-message bench gains a `markdown` mode (markdown-rich streaming tail re-parses per repaint — plain 32.1±1.7 vs markdown 42.0±2.1 ms/frame at load 0.82, honest per-frame parse+highlight cost) with the legacy plain shape preserved (m13-markdown-renderer T3.1)
+
 - `MarkdownText` — assistant-text Markdown renderer (AI-chat subset: headings 1-4, ul/ol lists, hr, paragraphs, fenced code via the existing `CodeBlock`; inline bold/italic/bold-italic/strikethrough/verbatim code spans/links/bare URLs), theme-token styled (monochrome themes keep bold/italic SGR, drop color); exported from the package entry. `ChatMessage` gains opt-in `markdown` (default false — raw text stays byte-identical; requires string children, TypeError otherwise) (m13-markdown-renderer T2.1)
 
 - `markdown-model` (internal): pure AI-chat markdown subset parser — headings 1-4, ul/ol, hr, paragraphs, length-matched code fences (unclosed fence at EOF still emits code — streaming-safe), inline bold/italic/bold-italic/strikethrough/verbatim code spans (backreference-matched, handles ``a`b``)/links/bare URLs; malformed markers fall through as literal, never throw; zero deps, zero ink imports (m13-markdown-renderer T1.1)

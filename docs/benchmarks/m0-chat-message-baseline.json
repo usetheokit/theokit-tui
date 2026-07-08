@@ -1,6 +1,6 @@
 {
   "benchmark": "chat-message-render",
-  "date": "2026-07-07T23:49:10.579Z",
+  "date": "2026-07-08T04:34:45.060Z",
   "node_version": "v22.22.2",
   "stack": {
     "ink": "7.1.0",
@@ -22,43 +22,128 @@
     "warmup_runs": 1,
     "measured_runs": 5
   },
+  "load_1min_at_start": 0.83,
   "runs": [
     {
       "frames": 300,
-      "mean_ms_per_frame": 29.015,
-      "peak_ms_per_frame": 62.338
+      "mean_ms_per_frame": 29.287,
+      "peak_ms_per_frame": 60.628
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 30.366,
-      "peak_ms_per_frame": 56.362
+      "mean_ms_per_frame": 31.333,
+      "peak_ms_per_frame": 71.87
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 29.961,
-      "peak_ms_per_frame": 52.61
+      "mean_ms_per_frame": 32.107,
+      "peak_ms_per_frame": 92.396
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 34.454,
-      "peak_ms_per_frame": 71.757
+      "mean_ms_per_frame": 33.603,
+      "peak_ms_per_frame": 80.899
     },
     {
       "frames": 300,
-      "mean_ms_per_frame": 38.184,
-      "peak_ms_per_frame": 160.009
+      "mean_ms_per_frame": 34.206,
+      "peak_ms_per_frame": 85.967
     }
   ],
   "aggregate": {
     "frames_mean": 300,
     "mean_ms_per_frame": {
-      "mean": 32.396,
-      "std_dev": 3.441
+      "mean": 32.107,
+      "std_dev": 1.743
     },
     "peak_ms_per_frame": {
-      "mean": 80.615,
-      "std_dev": 40.22
+      "mean": 78.352,
+      "std_dev": 11.116
     }
   },
-  "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means."
+  "modes": [
+    {
+      "mode": "plain",
+      "runs": [
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 29.287,
+          "peak_ms_per_frame": 60.628
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 31.333,
+          "peak_ms_per_frame": 71.87
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 32.107,
+          "peak_ms_per_frame": 92.396
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 33.603,
+          "peak_ms_per_frame": 80.899
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 34.206,
+          "peak_ms_per_frame": 85.967
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 300,
+        "mean_ms_per_frame": {
+          "mean": 32.107,
+          "std_dev": 1.743
+        },
+        "peak_ms_per_frame": {
+          "mean": 78.352,
+          "std_dev": 11.116
+        }
+      }
+    },
+    {
+      "mode": "markdown",
+      "runs": [
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 38.836,
+          "peak_ms_per_frame": 114.934
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 41.729,
+          "peak_ms_per_frame": 68.969
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 42.223,
+          "peak_ms_per_frame": 123.733
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 42.036,
+          "peak_ms_per_frame": 62.428
+        },
+        {
+          "frames": 300,
+          "mean_ms_per_frame": 45.305,
+          "peak_ms_per_frame": 222.585
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 300,
+        "mean_ms_per_frame": {
+          "mean": 42.026,
+          "std_dev": 2.052
+        },
+        "peak_ms_per_frame": {
+          "mean": 118.53,
+          "std_dev": 57.395
+        }
+      }
+    }
+  ],
+  "methodology": "ink-testing-library render + rerender loop (one event-loop tick between rerenders so Ink flushes); per-frame ms = wall time distributed evenly across stdout.frames deltas (react-ink heuristic — includes tick overhead, not true per-frame instrumentation); color env pinned by benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; std_dev is population std dev over run-level means. M13: modes[] adds a markdown mode (identical token cadence; the tail message carries a markdown-rich prefix and the markdown flag — parse runs per repaint); top-level runs/aggregate REMAIN the plain mode (baseline-contract compatibility)."
 }

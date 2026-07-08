@@ -1,4 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
+import { loadavg } from "node:os";
 import { cpus } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,8 +28,18 @@ const WARMUP_RUNS = 1;
 const MEASURED_RUNS = 5;
 
 const smoke = process.argv.includes("--smoke");
+const loadAtStart = loadavg()[0] ?? -1;
 
-function App({ streamed }: { streamed: string }) {
+type Mode = "plain" | "markdown";
+
+// M13 markdown mode: the streamed tail is markdown-rich and re-parses on
+// every repaint — the per-frame path the M9 flip condition points at. The
+// token feed is IDENTICAL in both modes (cadence symmetry); only the tail
+// message's markdown flag differs.
+const MD_PREFIX =
+  "## Reply\n**bold** step, `code span`\n```ts\nconst x = 1;\n```\n";
+
+function App({ streamed, mode }: { streamed: string; mode: Mode }) {
   const history = Array.from({ length: N_MESSAGES }, (_, i) => (
     <ChatMessage key={i} role={i % 2 === 0 ? "user" : "assistant"}>
       {`message ${i} — the quick brown fox jumps over the lazy dog`}
@@ -38,23 +49,25 @@ function App({ streamed }: { streamed: string }) {
     <TheoTUIProvider>
       <Box flexDirection="column">
         {history}
-        <ChatMessage role="assistant">{streamed}</ChatMessage>
+        <ChatMessage role="assistant" markdown={mode === "markdown"}>
+          {mode === "markdown" ? MD_PREFIX + streamed : streamed}
+        </ChatMessage>
       </Box>
     </TheoTUIProvider>
   );
 }
 
-async function runOnce(): Promise<RunMetrics> {
+async function runOnce(mode: Mode): Promise<RunMetrics> {
   // Sampling via shared helpers (review arch-1/dom-testing-2 migration) —
   // identical frame-delta heuristic as the original inline loop.
-  const instance = render(<App streamed="" />);
+  const instance = render(<App streamed="" mode={mode} />);
   await tick();
   const sampler = frameSampler(() => instance.frames.length);
   let text = "";
 
   for (let i = 0; i < N_TOKENS; i++) {
     text += "tok ";
-    instance.rerender(<App streamed={text} />);
+    instance.rerender(<App streamed={text} mode={mode} />);
     await tick();
     sampler.sample();
   }
@@ -67,31 +80,43 @@ console.log(
     (smoke ? " [SMOKE: 1 run, no file write]" : ""),
 );
 
-for (let i = 0; i < WARMUP_RUNS; i++) {
-  const w = await runOnce();
-  console.log(fmt(`warmup #${i + 1}`, w) + "  (discarded)");
-}
-
 const measured = smoke ? 1 : MEASURED_RUNS;
-const runs: RunMetrics[] = [];
-for (let i = 0; i < measured; i++) {
-  const r = await runOnce();
-  runs.push(r);
-  console.log(fmt(`run #${i + 1}`, r));
+const aggregate = (modeRuns: RunMetrics[]) => ({
+  frames_mean: round(
+    modeRuns.reduce((a, r) => a + r.frames, 0) / modeRuns.length,
+  ),
+  mean_ms_per_frame: stats(modeRuns.map((r) => r.mean_ms_per_frame)),
+  peak_ms_per_frame: stats(modeRuns.map((r) => r.peak_ms_per_frame)),
+});
+
+const MODES: Mode[] = smoke ? ["plain"] : ["plain", "markdown"];
+const modeResults: { mode: Mode; runs: RunMetrics[] }[] = [];
+for (const mode of MODES) {
+  for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
+    const w = await runOnce(mode);
+    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+  }
+  const modeRuns: RunMetrics[] = [];
+  for (let i = 0; i < measured; i++) {
+    const r = await runOnce(mode);
+    modeRuns.push(r);
+    console.log(fmt(`${mode} #${i + 1}`, r));
+  }
+  modeResults.push({ mode, runs: modeRuns });
 }
 
-const aggregate = {
-  frames_mean: round(runs.reduce((a, r) => a + r.frames, 0) / runs.length),
-  mean_ms_per_frame: stats(runs.map((r) => r.mean_ms_per_frame)),
-  peak_ms_per_frame: stats(runs.map((r) => r.peak_ms_per_frame)),
-};
+// Legacy top-level shape stays = the PLAIN mode (existing baseline
+// contract tests keep passing; modes[] is additive).
+const runs = modeResults[0]?.runs ?? [];
+const aggregatePlain = aggregate(runs);
 
-console.log("=== aggregate ===");
-console.log(
-  `frames_mean=${aggregate.frames_mean}  ` +
-    `mean=${aggregate.mean_ms_per_frame.mean}±${aggregate.mean_ms_per_frame.std_dev}ms  ` +
-    `peak=${aggregate.peak_ms_per_frame.mean}±${aggregate.peak_ms_per_frame.std_dev}ms`,
-);
+console.log("=== aggregates ===");
+for (const m of modeResults) {
+  const agg = aggregate(m.runs);
+  console.log(
+    `${m.mode.padEnd(9)} mean=${agg.mean_ms_per_frame.mean}±${agg.mean_ms_per_frame.std_dev}ms  peak=${agg.peak_ms_per_frame.mean}±${agg.peak_ms_per_frame.std_dev}ms`,
+  );
+}
 
 if (!smoke) {
   const baseline = {
@@ -106,15 +131,25 @@ if (!smoke) {
     workload: { messages: N_MESSAGES, streamed_tokens: N_TOKENS },
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
     protocol: { warmup_runs: WARMUP_RUNS, measured_runs: measured },
+    load_1min_at_start: round(loadAtStart),
     runs,
-    aggregate,
+    aggregate: aggregatePlain,
+    modes: modeResults.map((m) => ({
+      mode: m.mode,
+      runs: m.runs,
+      aggregate: aggregate(m.runs),
+    })),
     methodology:
       "ink-testing-library render + rerender loop (one event-loop tick between " +
       "rerenders so Ink flushes); per-frame ms = wall time distributed evenly " +
       "across stdout.frames deltas (react-ink heuristic — includes tick " +
       "overhead, not true per-frame instrumentation); color env pinned by " +
       "benchmarks/run.ts (FORCE_COLOR=1); 1 discarded warmup + N measured runs; " +
-      "std_dev is population std dev over run-level means.",
+      "std_dev is population std dev over run-level means. M13: modes[] " +
+      "adds a markdown mode (identical token cadence; the tail message " +
+      "carries a markdown-rich prefix and the markdown flag — parse runs " +
+      "per repaint); top-level runs/aggregate REMAIN the plain mode " +
+      "(baseline-contract compatibility).",
   };
   const outPath = join(
     dirname(fileURLToPath(import.meta.url)),
