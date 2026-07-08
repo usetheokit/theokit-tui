@@ -220,3 +220,33 @@ describe("benchmark baseline M17 (T3.1)", () => {
     expect(pkg.exports["./renderer"]).toBeDefined();
   });
 });
+
+// M18 T3.1 (plan m18-yoga-layout, ADR D4): the layout+render bench vs Ink on
+// the thread workload — the committed baseline is the milestone's runtime
+// evidence.
+describe("benchmark baseline M18 (T3.1)", () => {
+  it("m18_layout_baseline_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m18-renderer-layout-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      load_1min_at_start: number;
+      modes: {
+        mode: string;
+        aggregate: { mean_ms_per_frame: { mean: number; std_dev: number } };
+      }[];
+    };
+    const modeNames = baseline.modes.map((m) => m.mode);
+    expect(modeNames).toEqual(expect.arrayContaining(["own", "ink"]));
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    for (const mode of baseline.modes) {
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.mean)).toBe(true);
+      expect(mode.aggregate.mean_ms_per_frame.mean).toBeGreaterThan(0);
+    }
+  });
+});

@@ -98,13 +98,22 @@ describe("sdk drift tripwire (D3)", () => {
       peerDependencies: Record<string, string>;
       devDependencies: Record<string, string>;
     };
-    // M17 T2.1 added react-reconciler to the runtime graph (renderer host);
-    // the sdk stays devDependency-only — that is the invariant this guards.
+    // M17 added react-reconciler; M18 added yoga-layout + Ink's text libs
+    // (wrap/truncate/width/tokenize) to the runtime graph — the renderer's
+    // layout + measurement engine. The sdk stays devDependency-only.
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
+      "@alcalzone/ansi-tokenize",
+      "chalk",
+      "cli-boxes",
+      "cli-truncate",
       "ink",
       "ink-spinner",
       "parse-diff",
       "react-reconciler",
+      "string-width",
+      "widest-line",
+      "wrap-ansi",
+      "yoga-layout",
     ]);
     expect(pkg.peerDependencies).not.toHaveProperty("@theokit/sdk");
     expect(pkg.devDependencies["@theokit/sdk"]).toMatch(/^\^2\./);
