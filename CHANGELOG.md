@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- M17 T2.1 (renderer reconciler host): a custom `react-reconciler` ^0.33.0 host (`src/renderer/host-config.ts`, Ink 7's mutation-mode hook subset reduced to text) and `createRenderer(terminal)` (`src/renderer/renderer.ts`) that mounts a React tree through the differential engine — commits coalesce via a microtask (N commits/tick → one paint), `unmount` restores the cursor. Verified against the `@xterm/headless` screen oracle, including a **byte-parity gate vs Ink** on a `<Box flexDirection="column">` Text scene (passes line-by-line). Exposed at the `@theokit/tui/renderer` subpath only — the root entry is unchanged. `react-reconciler` joins the runtime dep graph (plan m17-renderer-skeleton, ADR D1 / 0003)
+
 - M17 T1.1 (renderer walking skeleton): the `src/renderer/` island — a `Terminal` seam (interface + `ProcessTerminal`), a differential `OutputEngine` porting pi/tui's strategy ladder (first-render / line-diff / deleted-tail / width-and-height full-redraw with logged reason), all writes wrapped in CSI-2026 synchronized output, and a `@xterm/headless` `VirtualTerminal` test oracle that asserts on REAL emulator screen state. Engine at 100% line/branch/func coverage, 180 LoC, zero Ink imports (M17 renderer program — ADR 0003, plan m17-renderer-skeleton)
 
 - ROADMAP V4 expanded from the 7-peer parity matrix (`docs/v4-parity-matrix.md`): added M22 interaction primitives (SelectList/overlay/pager), M23 agent decision surfaces (approval/question/plan), M24 live progress surfaces (todo/progress/collapsible/toast), M25 parity polish + matrix re-audit (exit gate); tau + opentui reference rows added

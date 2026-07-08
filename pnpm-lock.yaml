@@ -20,6 +20,9 @@ importers:
       parse-diff:
         specifier: ^0.12.0
         version: 0.12.0
+      react-reconciler:
+        specifier: ^0.33.0
+        version: 0.33.0(react@19.2.7)
     devDependencies:
       '@eslint/js':
         specifier: ^9
@@ -33,6 +36,9 @@ importers:
       '@types/react':
         specifier: ^19.2.17
         version: 19.2.17
+      '@types/react-reconciler':
+        specifier: ^0.33.0
+        version: 0.33.0(@types/react@19.2.17)
       '@vitest/coverage-v8':
         specifier: ^3.0.0
         version: 3.2.6(vitest@3.2.6(@types/node@22.20.0)(tsx@4.23.0))
@@ -536,6 +542,11 @@ packages:
 
   '@types/node@22.20.0':
     resolution: {integrity: sha512-QWlFW2wf3nTjC13/DqRnBpR4ZO36VJH/JVBkA/vcnmbTBNQIlnObqyqZE1tUR7+Ni23Lda8R1BxMfbXRpCUx5g==}
+
+  '@types/react-reconciler@0.33.0':
+    resolution: {integrity: sha512-HZOXsKT0tGI9LlUw2LuedXsVeB88wFa536vVL0M6vE8zN63nI+sSr1ByxmPToP5K5bukaVscyeCJcF9guVNJ1g==}
+    peerDependencies:
+      '@types/react': '*'
 
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
@@ -1951,6 +1962,10 @@ snapshots:
   '@types/node@22.20.0':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/react-reconciler@0.33.0(@types/react@19.2.17)':
+    dependencies:
+      '@types/react': 19.2.17
 
   '@types/react@19.2.17':
     dependencies:
