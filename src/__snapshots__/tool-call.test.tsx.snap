@@ -8,6 +8,33 @@ exports[`ToolCall — status lifecycle (T1.1) > each_status_frame_matches_snapsh
 
 exports[`ToolCall — status lifecycle (T1.1) > each_status_frame_matches_snapshot > tool-call-success 1`] = `"[32m✓[39m  [1mgrep[22m[2m src/**[22m"`;
 
+exports[`ToolCallCard result variants (M16 T1.1) > diff_result_renders_patch_inside_card_indent > tool-card-diff 1`] = `
+"[32m✓[39m  [1medit[22m
+   [1mbasic.ts[22m[32m +1[31m -1[39m
+   [2m1 [22m  line one
+   [2m2 [22m[31m- removed line[39m
+   [2m2 [22m[32m+ added line[39m
+   [2m3 [22m  line three"
+`;
+
+exports[`ToolCallCard result variants (M16 T1.1) > output_result_renders_shell_envelope > tool-card-output 1`] = `
+"[1m[31mx[39m[22m  [1mbash[22m
+   ok line
+   [2mstderr:[22m
+   [31mwarn line[39m
+   [1m[31mexited 1[39m[22m"
+`;
+
+exports[`ToolCallCard result variants (M16 T1.1) > preview_result_caps_with_language_routing > tool-card-preview 1`] = `
+"[32m✓[39m  [1mread[22m
+   const line0 = 0;
+   const line1 = 1;
+   const line2 = 2;
+   const line3 = 3;
+   const line4 = 4;
+   [2m… (+15 more lines)[22m"
+`;
+
 exports[`ToolCallCard — header + indented body (T1.2) > card_frame_matches_snapshot > tool-call-card 1`] = `
 "[1m[31mx[39m[22m  [1mgrep[22m[2m src/**[22m
    no matches found"

@@ -24,5 +24,12 @@ it(
     // M11: timeline header slot in a production caller.
     expect(out).toContain("Theo Stream");
     expect(out.indexOf("Theo Stream")).toBeLessThan(out.indexOf("inspecting")); // streamed final message
+    // M16: the per-kind tool-detail cards render their shapes (SGR codes
+    // sit between gutter and sign — strip before matching).
+    // eslint-disable-next-line no-control-regex
+    const plainOut = out.replace(/\u001B\[[0-9;]*m/g, "");
+    expect(plainOut).toMatch(/\d+ \+ added retry/); // diff kind
+    expect(plainOut).toContain("stderr:"); // output kind envelope label
+    expect(plainOut).toMatch(/hidden/); // preview cap trailer (ToolResult tail-retention)
   },
 );

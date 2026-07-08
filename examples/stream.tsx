@@ -5,6 +5,7 @@ import {
   AgentStreaming,
   AgentTimeline,
   TheoTUIProvider,
+  ToolCallCard,
   VERSION,
   WelcomeBanner,
   useAgentStream,
@@ -60,8 +61,16 @@ function Demo() {
 
   useEffect(() => {
     if (status === "done" || status === "error") {
-      exit();
+      // One breath before exit so the post-stream frame (with the M16
+      // tool-detail cards) is the final piped frame.
+      const handle = setTimeout(() => {
+        exit();
+      }, 100);
+      return () => {
+        clearTimeout(handle);
+      };
     }
+    return undefined;
   }, [status, exit]);
 
   return (
@@ -71,6 +80,53 @@ function Demo() {
           header={<WelcomeBanner name="Theo Stream" version={VERSION} />}
           events={events}
         />
+        {/* M16: per-kind tool detail cards — the direct-composition route
+            for ToolCallCard.result (the timeline's AgentEvent carries the
+            coarse envelope; rich detail is app-side composition). */}
+        {!streaming.active && (
+          <Box flexDirection="column" marginTop={1}>
+            <ToolCallCard
+              name="edit retry.ts"
+              status="success"
+              result={{
+                kind: "diff",
+                patch: [
+                  "--- a/retry.ts",
+                  "+++ b/retry.ts",
+                  "@@ -1,2 +1,2 @@",
+                  " const attempts = 3;",
+                  "-const backoff = 0;",
+                  "+added retry backoff",
+                  "",
+                ].join("\n"),
+              }}
+            />
+            <ToolCallCard
+              name="bash pnpm test"
+              status="failed"
+              result={{
+                kind: "output",
+                shell: {
+                  stdout: "434 passed",
+                  stderr: "1 flaky retry",
+                  exitCode: 1,
+                },
+              }}
+            />
+            <ToolCallCard
+              name="read retry.ts"
+              status="success"
+              result={{
+                kind: "preview",
+                text: Array.from(
+                  { length: 12 },
+                  (_, i) => `line ${i} of the file`,
+                ).join("\n"),
+                maxLines: 4,
+              }}
+            />
+          </Box>
+        )}
         {streaming.active ? (
           <AgentStreaming
             {...(streaming.thought === undefined

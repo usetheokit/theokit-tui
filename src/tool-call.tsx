@@ -4,6 +4,12 @@ import type { ReactNode } from "react";
 
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
+import { CodeBlock } from "./code-block.js";
+import { parseUnifiedDiff } from "./diff-model.js";
+import { DiffViewer } from "./diff-viewer.js";
+import { assertToolCardResult } from "./tool-card-result.js";
+import type { ToolCardResult } from "./tool-card-result.js";
+import { ToolResult } from "./tool-result.js";
 import { unionMessage } from "./union-message.js";
 
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
@@ -109,6 +115,13 @@ export function ToolCall({ name, status, summary }: ToolCallProps) {
 }
 
 export interface ToolCallCardProps extends ToolCallProps {
+  /** M16: per-kind result body — `{kind:"diff"}` renders the patch via
+   * DiffViewer (its malformed-patch TypeError PROPAGATES — fail-fast),
+   * `{kind:"output"}` the shell envelope via ToolResult, `{kind:"preview"}`
+   * a capped CodeBlock (with `language`) or plain lines. Renders in the
+   * SAME indented slot as children; when both are present the result body
+   * comes FIRST, children below (EC-3). */
+  result?: ToolCardResult;
   /**
    * Card body, indented under the name (no borders at M2 — ADR D3).
    * Plain STRING children are auto-wrapped in `<Text>` (a raw string inside
@@ -121,7 +134,75 @@ export interface ToolCallCardProps extends ToolCallProps {
  * Tool-call card: `ToolCall` header + body indented by the indicator width.
  * Without children (or with an empty string) it renders exactly the row.
  */
-export function ToolCallCard({ children, ...row }: ToolCallCardProps) {
+/** Drops undefined entries so optional props are OMITTED, never passed as
+ * explicit undefined (exactOptionalPropertyTypes — SEPA iteration-4). */
+function defined<T extends Record<string, unknown>>(entries: T): Partial<T> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(entries)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out as Partial<T>;
+}
+
+/** M16 per-kind result body (ADR D1 explicit union — no shape sniffing). */
+function ResultBody({ result }: { result: ToolCardResult }) {
+  switch (result.kind) {
+    case "diff":
+      return (
+        <DiffViewer
+          patch={result.patch}
+          {...defined({
+            maxLines: result.maxLines,
+            contextLines: result.contextLines,
+          })}
+        />
+      );
+    case "output":
+      return (
+        <ToolResult
+          shell={result.shell}
+          {...defined({
+            maxLines: result.maxLines,
+            expanded: result.expanded,
+          })}
+        />
+      );
+    case "preview":
+      if (result.language !== undefined) {
+        return (
+          <CodeBlock
+            code={result.text}
+            language={result.language}
+            {...defined({ maxLines: result.maxLines })}
+          />
+        );
+      }
+      return (
+        <ToolResult {...defined({ maxLines: result.maxLines })}>
+          {result.text}
+        </ToolResult>
+      );
+  }
+}
+
+export function ToolCallCard({ children, result, ...row }: ToolCallCardProps) {
+  // Boundary validation (fail-fast, before any hook in ToolCall).
+  if (result !== undefined) {
+    assertToolCardResult(result);
+    if (result.kind === "diff") {
+      // EC-1 (contract as PROVED at review r2-F3): this synchronous parse
+      // makes the typed error testable via plain-call with a stack at the
+      // card boundary — under a MOUNTED ink render ANY throw (here or in a
+      // child) is absorbed by ink's error boundary (apps observe it via
+      // waitUntilExit). Only the diff kind carries runtime DATA (a patch
+      // string); output/preview payload shapes are programmer errors the
+      // type system covers (r1-F6 — recorded decision). The duplicate
+      // parse is the price on a render-once card.
+      parseUnifiedDiff(result.patch);
+    }
+  }
   // SEPA phase-1 F5: numbers crash Ink like strings do (auto-wrap both);
   // booleans are the `{cond && <X/>}` idiom's residue — no body.
   const body =
@@ -138,6 +219,11 @@ export function ToolCallCard({ children, ...row }: ToolCallCardProps) {
   return (
     <Box flexDirection="column">
       <ToolCall {...row} />
+      {result !== undefined && (
+        <Box paddingLeft={STATUS_INDICATOR_WIDTH}>
+          <ResultBody result={result} />
+        </Box>
+      )}
       {hasBody && <Box paddingLeft={STATUS_INDICATOR_WIDTH}>{body}</Box>}
     </Box>
   );

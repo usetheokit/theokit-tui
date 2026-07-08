@@ -1,4 +1,4 @@
-export const VERSION = "0.16.0";
+export const VERSION = "0.17.0";
 
 export {
   TheoTUIProvider,
@@ -32,6 +32,7 @@ export type {
 
 // truncateLines stays module-internal (ADR D7 — SEPA phase-2 F1).
 export { MAX_RESULT_CHARS, ToolResult } from "./tool-result.js";
+export type { ToolCardResult } from "./tool-card-result.js";
 export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";
 
 // ensureHighlighter stays module-internal (EC-10 — D7 precedent);
