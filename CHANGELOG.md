@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.21.0] - 2026-07-08
+
+### Added
+
 - Renderer V4 scrollback: Static-equivalent graduated history written once above
   the differential live frame — `OutputEngine.writeStatic` (relative-to-origin
   positioning), the live pass skips `internal_static` subtrees, and the renderer
@@ -32,16 +46,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   patch lands correctly even after graduated history has scrolled the terminal
   (the chat steady state) — fixes a frame-corruption defect found in M20 review
   (B1); regression test included.
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.20.0] - 2026-07-08
 
