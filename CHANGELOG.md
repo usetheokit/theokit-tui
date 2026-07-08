@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.18.0] - 2026-07-08
+
+### Added
+
 - M17 review fixes: `Renderer.stats()` exposes the differential engine's `fullRedrawCount` + `lastRedrawReason` through the public seam (the D2 observability pillar); `host-config` gained the Offscreen/Suspense `hide/unhide` stubs (no swallowed commit-phase throw). The `m17-parity-report.md` now enumerates the nested-box / newline-in-row / over-viewport divergences as reachable-but-deferred-to-M18 (review m17-renderer-skeleton, wiring + domain findings)
 
 - M17 T3.1 (renderer wiring + evidence): the `@theokit/tui/renderer` subpath export (types-first ESM, `publint`-clean), an `examples/renderer-skeleton.tsx` live ticker mounted through the own renderer (`pnpm example:renderer`), and the first **dual-engine bytes benchmark** (`benchmarks/renderer-skeleton.bench.tsx` + committed baseline): on a 200-line + 60-update script the differential engine writes **29× fewer bytes** than Ink's full-frame model (20 000 vs 584 472) and renders ~6× faster (7.9 vs 48.0 ms/frame). A `docs/renderer/m17-parity-report.md` documents the line-by-line Ink parity on the text scene and the divergences deferred to M18 (Yoga layout) (plan m17-renderer-skeleton, ADR D4)
@@ -29,17 +43,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `examples/showcase.tsx` (`pnpm example:showcase`) — every shipped primitive in ONE scripted agent turn: animated WelcomeBanner in the ChatThread header slot, markdown assistant reply, per-kind ToolCallCards (diff/output/preview), AgentStreaming driven by useTurnElapsed, ContextWindowBar + CostMeter, AppStatusBar and the slash-command ChatComposer (interactive runs); piped runs play the script deterministically and exit — pinned by a per-surface smoke
 
-### Changed
-
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - M16 `ToolCallCard` snapshot tests: eliminated a [NEEDS-REPRO] flake (review r1-F1) where the diff/preview-with-language variants captured plain-vs-highlighted output nondeterministically — CodeBlock/DiffViewer async-load lowlight via a module-cached promise, and whether the re-render flushed inside `renderFrame`'s 0ms tick depended on cross-worker cache warming; a `beforeAll(preloadHighlighter)` now forces the highlight state deterministic (0/10 full-suite runs flaked, verified under load)
-
-### Security
 
 ## [0.17.0] - 2026-07-08
 
