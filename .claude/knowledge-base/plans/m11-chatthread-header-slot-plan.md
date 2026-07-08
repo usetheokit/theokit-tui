@@ -2,7 +2,7 @@
 slug: m11-chatthread-header-slot
 milestone_id: M11
 created_at: 2026-07-08
-goal: header? mount-time slot folded as the first item of the existing single Static on ChatThread + AgentTimeline, resolving the M9 D4 drawback with the mount-freeze design; zero new deps; headerless bench re-run evidence.
+goal: header? mount-time slot folded as the first item of the existing single Static on ChatThread + AgentTimeline, resolving the recorded M9 banner-sinking drawback with the mount-freeze design; zero new deps; headerless bench re-run evidence.
 ---
 
 # Plan: m11-chatthread-header-slot
@@ -12,8 +12,8 @@ goal: header? mount-time slot folded as the first item of the existing single St
 Add `header?: ReactElement` to ChatThread and AgentTimeline per blueprint
 `.claude/knowledge-base/discoveries/blueprints/m11-chatthread-header-slot-blueprint.md`
 (mount-freeze design — two corruption traps numerically traced and closed),
-prove the M9 D4 drawback resolved (header pinned above graduated
-scrollback), keep the single-`<Static>` invariant, ship the example/smoke/
+prove the recorded M9 banner-sinking drawback resolved (header pinned
+above graduated scrollback), keep the single-`<Static>` invariant, ship the example/smoke/
 degrade evidence and the headerless bench re-run. Release (0.12.0) follows
 READY_TO_MERGE — NEVER a plan task (M10 DV-1 rule).
 
@@ -134,7 +134,7 @@ src/chat-thread.tsx / src/chat-thread.test.tsx / CHANGELOG.md
 
 #### TDD
 ```
-RED:     header_stays_above_graduated_history() — mount <ChatThread header={<Text>BANNER</Text>} messages={thread(6)} windowSize={4} windowOverscan={2}/>; append via rerender to thread(20) with ticks; const frame = lastFrame(); expect(frame.indexOf("BANNER")).toBeGreaterThanOrEqual(0); expect(frame.indexOf("BANNER")).toBeLessThan(frame.indexOf("msg 0")); expect(frame.indexOf("msg 0")).toBeLessThan(frame.indexOf("msg 19")); expect(frame.split("BANNER").length - 1).toBe(1) (oracle a+b — the M9 D4 drawback proof)
+RED:     header_stays_above_graduated_history() — mount <ChatThread header={<Text>BANNER</Text>} messages={thread(6)} windowSize={4} windowOverscan={2}/>; append via rerender to thread(20) with ticks; const frame = lastFrame(); expect(frame.indexOf("BANNER")).toBeGreaterThanOrEqual(0); expect(frame.indexOf("BANNER")).toBeLessThan(frame.indexOf("msg 0")); expect(frame.indexOf("msg 0")).toBeLessThan(frame.indexOf("msg 19")); expect(frame.split("BANNER").length - 1).toBe(1) (oracle a+b — the banner-sinking drawback proof)
 RED:     header_change_is_ignored_after_mount() — after graduation, rerender with header={<Text>CHANGED</Text>}; expect(frame).toContain("BANNER"); expect(frame).not.toContain("CHANGED"); row-render spy count unchanged by the header swap (oracle c)
 RED:     header_removal_is_ignored_and_loses_no_rows() — after graduation, ONE rerender with header={undefined} AND one more message appended (the same-length trap); then more appends; every message text appears exactly once and "BANNER" appears exactly once (oracle d — kills a non-frozen design)
 RED:     late_header_is_ignored() — mount WITHOUT header, graduate rows, rerender WITH header={<Text>LATE</Text>}; expect(frame).not.toContain("LATE"); no duplicated rows (mount-freeze contract, blueprint late-arrival trap)
@@ -174,10 +174,10 @@ src/agent-timeline.tsx / src/agent-timeline.test.tsx / CHANGELOG.md
 
 #### TDD
 ```
-RED:     header_above_heterogeneous_graduated_events() — extend the heterogeneous_graduation template with header={<Text>BANNER</Text>}; expect BANNER above the graduated tool card AND messages; count === 1 (oracle a/f for the timeline)
-RED:     timeline_header_mount_freeze_mirrors_chatthread() — late header ignored + removal loses no events (compact mirror of c/d)
-RED:     timeline_header_scene_matches_snapshot() — representative turn WITH header at fixed width; anchors FIRST (BANNER, tool glyph, message); toMatchSnapshot("timeline-header-scene") (oracle g — the ONE new snapshot)
-RED:     reserved_event_id_throws_typed() — event id "__theokit_tui_header__" with header present → TypeError (oracle e mirror)
+RED:     header_above_heterogeneous_graduated_events() — heterogeneous events + header={<Text>BANNER</Text>}; graduate past the window; const frame = lastFrame(); expect(frame.indexOf("BANNER")).toBeLessThan(frame.indexOf(firstGraduatedText)); const count = frame.split("BANNER").length - 1; expect(count).toBe(1) (oracle a/f)
+RED:     timeline_header_mount_freeze_mirrors_chatthread() — mount headerless, graduate, rerender with header={<Text>LATE</Text>}; expect(lastFrame()).not.toContain("LATE"); then a mounted-header instance: rerender header={undefined} + one append; every event text appears exactly once (compact c/d mirror)
+RED:     timeline_header_scene_matches_snapshot() — const frame = await renderFrame(scene with header at width 60); expect(frame).toContain("BANNER"); expect(frame).toContain("✓"); expect(frame).toMatchSnapshot("timeline-header-scene") (oracle g — the ONE new snapshot)
+RED:     reserved_event_id_throws_typed() — const bad = () => AgentTimeline({ header: <Text>B</Text>, events: [{ id: "__theokit_tui_header__", kind: "message", role: "user", text: "x" }] }); expect(bad).toThrow(TypeError) (oracle e mirror)
 VERIFY:  pnpm vitest run src/agent-timeline.test.tsx
 ```
 
@@ -248,7 +248,7 @@ to an oracle above)
 | 3 | M11 DoD-3: immutable-header contract decided + documented (ROADMAP § M11) | T1.1 | D2 mount-freeze + oracles (c)/(d) + late-arrival |
 | 4 | M11 DoD-3b: single-Static invariant pinned (ROADMAP § M11) | T1.1, T1.2 | design uses the existing Static; no new Static import (review guard) |
 | 5 | M11 DoD-4: example + snapshot within budget (ROADMAP § M11) | T1.2, T2.1 | 1 snapshot; chat example slot + smoke |
-| 6 | M11 DoD-5: gates/coverage/CHANGELOG (ROADMAP § M11) | all | per-task |
+| 6 | M11 DoD-5: gates/coverage/CHANGELOG (ROADMAP § M11) | T1.1, T1.2, T2.1 | per-task gates-gated commits + CHANGELOG entries |
 | 7 | Windowing suite extended with header scenarios (ROADMAP § M11 risks) | T1.1, T1.2 | oracles a–f extend the graduation suites |
 | 8 | Bench evidence (M9 flip condition fires — benched file touched) | T2.1 | headerless re-run + table |
 
@@ -269,7 +269,7 @@ to an oracle above)
 
 ## Unresolved Questions
 
-(none — resolved by blueprint D1–D3.)
+(none — every decision is resolved at plan time by blueprint ADRs D1–D3.)
 
 ## Test Plan
 
