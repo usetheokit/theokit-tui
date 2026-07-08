@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "default": "./dist/renderer/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -45,6 +49,7 @@
     "example:banner": "tsx examples/banner.tsx",
     "example:live": "tsx examples/live-agent-tui.tsx",
     "example:showcase": "tsx examples/showcase.tsx",
+    "example:renderer": "tsx examples/renderer-skeleton.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "prepublishOnly": "pnpm gates && pnpm build"
   },

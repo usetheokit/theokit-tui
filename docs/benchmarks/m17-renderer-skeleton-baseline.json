@@ -1,0 +1,84 @@
+{
+  "benchmark": "renderer-skeleton",
+  "date": "2026-07-08T16:28:19.265Z",
+  "node_version": "v22.22.2",
+  "stack": {
+    "ink": "7.1.0",
+    "react": "19.2.7",
+    "ink_testing_library": "4.0.0"
+  },
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cores": 12
+  },
+  "color_env": {
+    "FORCE_COLOR": "1"
+  },
+  "load_1min_at_start": 3.78,
+  "workload": {
+    "lines": 200,
+    "update_frames": 60
+  },
+  "protocol": {
+    "warmup_runs": 1,
+    "measured_runs": 5
+  },
+  "bytes_delta_ink_over_own": 29.224,
+  "modes": [
+    {
+      "mode": "ink",
+      "bytes_written": 584472,
+      "runs": [
+        {
+          "mean_ms_per_frame": 39.548
+        },
+        {
+          "mean_ms_per_frame": 44.281
+        },
+        {
+          "mean_ms_per_frame": 48.228
+        },
+        {
+          "mean_ms_per_frame": 52.168
+        },
+        {
+          "mean_ms_per_frame": 55.636
+        }
+      ],
+      "aggregate": {
+        "mean_ms_per_frame": {
+          "mean": 47.972,
+          "std_dev": 5.674
+        }
+      }
+    },
+    {
+      "mode": "own",
+      "bytes_written": 20000,
+      "runs": [
+        {
+          "mean_ms_per_frame": 6.623
+        },
+        {
+          "mean_ms_per_frame": 7.522
+        },
+        {
+          "mean_ms_per_frame": 7.278
+        },
+        {
+          "mean_ms_per_frame": 9.562
+        },
+        {
+          "mean_ms_per_frame": 8.355
+        }
+      ],
+      "aggregate": {
+        "mean_ms_per_frame": {
+          "mean": 7.868,
+          "std_dev": 1.012
+        }
+      }
+    }
+  ],
+  "methodology": "ink bytes = sum of committed frame byte-lengths (full-frame log-update model); own bytes = real differential Terminal writes. Same 200-line + 60-update script. FORCE_COLOR pinned. Order-of-magnitude bytes gap is the diff-engine win (EC-5)."
+}

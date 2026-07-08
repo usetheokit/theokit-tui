@@ -27,12 +27,18 @@ const pkg = JSON.parse(
 describe("package manifest contract (T0.1)", () => {
   it("package_manifest_declares_esm_only_types_first_exports", () => {
     expect(pkg.type).toBe("module");
-    expect(Object.keys(pkg.exports)).toEqual(["."]);
+    // M17 T3.1: the renderer ships at the `./renderer` subpath (ADR 0003);
+    // the root entry stays first. Both entries are types-first ESM.
+    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer"]);
     const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);
     expect(dot["types"]).toBe("./dist/index.d.ts");
     expect(dot["default"]).toBe("./dist/index.js");
+    const renderer = pkg.exports["./renderer"] ?? {};
+    expect(Object.keys(renderer)).toEqual(["types", "default"]);
+    expect(renderer["types"]).toBe("./dist/renderer/index.d.ts");
+    expect(renderer["default"]).toBe("./dist/renderer/index.js");
     expect(pkg.files).toEqual(["dist"]);
     // Legacy resolution fields must point at the same ESM artifacts
     // (review F-arch-3 — a stale "main" passes exports-only assertions).

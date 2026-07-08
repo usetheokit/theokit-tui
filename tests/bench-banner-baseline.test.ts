@@ -175,3 +175,48 @@ describe("benchmark baseline M15 (T3.1)", () => {
     }
   });
 });
+
+// M17 T3.1 (plan m17-renderer-skeleton, ADR D4): the OWN renderer bench — the
+// FIRST dual-engine baseline with a BYTES-written axis (EC-5: the diff win IS
+// bytes, not just ms). Two modes: `ink` (full-frame log-update) vs `own` (the
+// differential engine). Both drive a byte-counting sink over the same
+// 200-line append+update scene.
+describe("benchmark baseline M17 (T3.1)", () => {
+  it("m17_renderer_baseline_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m17-renderer-skeleton-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      load_1min_at_start: number;
+      modes: {
+        mode: string;
+        bytes_written: number;
+        aggregate: { mean_ms_per_frame: { mean: number; std_dev: number } };
+      }[];
+    };
+    const modeNames = baseline.modes.map((m) => m.mode);
+    expect(modeNames).toEqual(expect.arrayContaining(["ink", "own"]));
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    for (const mode of baseline.modes) {
+      expect(Number.isFinite(mode.bytes_written)).toBe(true);
+      expect(mode.bytes_written).toBeGreaterThan(0);
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.mean)).toBe(true);
+    }
+  });
+
+  it("renderer_subpath_export_resolves", async () => {
+    // The renderer is reachable AND the package.json export map declares the
+    // ./renderer subpath (the real deliverable — root entry stays clean).
+    const mod = await import("../src/renderer/index.js");
+    expect(typeof mod.createRenderer).toBe("function");
+    const pkg = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as { exports: Record<string, unknown> };
+    expect(pkg.exports["./renderer"]).toBeDefined();
+  });
+});
