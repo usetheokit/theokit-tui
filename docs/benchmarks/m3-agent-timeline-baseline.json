@@ -1,7 +1,12 @@
 {
   "benchmark": "agent-timeline-render",
-  "date": "2026-07-07T18:44:29.366Z",
+  "date": "2026-07-07T23:48:10.895Z",
   "node_version": "v22.22.2",
+  "stack": {
+    "ink": "7.1.0",
+    "react": "19.2.7",
+    "ink_testing_library": "4.0.0"
+  },
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
     "cores": 12
@@ -31,39 +36,39 @@
       "runs": [
         {
           "frames": 300,
-          "mean_ms_per_frame": 2.154,
-          "peak_ms_per_frame": 4.73
+          "mean_ms_per_frame": 10.566,
+          "peak_ms_per_frame": 17.252
+        },
+        {
+          "frames": 302,
+          "mean_ms_per_frame": 10.526,
+          "peak_ms_per_frame": 16.231
+        },
+        {
+          "frames": 301,
+          "mean_ms_per_frame": 10.56,
+          "peak_ms_per_frame": 17.508
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 2.1,
-          "peak_ms_per_frame": 4.597
+          "mean_ms_per_frame": 10.474,
+          "peak_ms_per_frame": 16.499
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 2.088,
-          "peak_ms_per_frame": 4.663
-        },
-        {
-          "frames": 300,
-          "mean_ms_per_frame": 2.291,
-          "peak_ms_per_frame": 5.462
-        },
-        {
-          "frames": 300,
-          "mean_ms_per_frame": 2.149,
-          "peak_ms_per_frame": 5.764
+          "mean_ms_per_frame": 10.783,
+          "peak_ms_per_frame": 19.337
         }
       ],
       "aggregate": {
-        "frames_mean": 300,
+        "frames_mean": 300.6,
         "mean_ms_per_frame": {
-          "mean": 2.156,
-          "std_dev": 0.072
+          "mean": 10.582,
+          "std_dev": 0.106
         },
         "peak_ms_per_frame": {
-          "mean": 5.043,
-          "std_dev": 0.477
+          "mean": 17.365,
+          "std_dev": 1.092
         }
       }
     },
@@ -71,40 +76,40 @@
       "mode": "unbounded",
       "runs": [
         {
-          "frames": 300,
-          "mean_ms_per_frame": 3.688,
-          "peak_ms_per_frame": 34.609
+          "frames": 301,
+          "mean_ms_per_frame": 17.185,
+          "peak_ms_per_frame": 63.58
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 4.125,
-          "peak_ms_per_frame": 34.482
+          "mean_ms_per_frame": 13.531,
+          "peak_ms_per_frame": 53
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 3.905,
-          "peak_ms_per_frame": 38.116
+          "mean_ms_per_frame": 14.221,
+          "peak_ms_per_frame": 57.761
+        },
+        {
+          "frames": 302,
+          "mean_ms_per_frame": 14.017,
+          "peak_ms_per_frame": 55.385
         },
         {
           "frames": 300,
-          "mean_ms_per_frame": 3.978,
-          "peak_ms_per_frame": 36.866
-        },
-        {
-          "frames": 300,
-          "mean_ms_per_frame": 3.607,
-          "peak_ms_per_frame": 33.5
+          "mean_ms_per_frame": 13.998,
+          "peak_ms_per_frame": 56.866
         }
       ],
       "aggregate": {
-        "frames_mean": 300,
+        "frames_mean": 300.6,
         "mean_ms_per_frame": {
-          "mean": 3.861,
-          "std_dev": 0.19
+          "mean": 14.59,
+          "std_dev": 1.317
         },
         "peak_ms_per_frame": {
-          "mean": 35.515,
-          "std_dev": 1.705
+          "mean": 57.318,
+          "std_dev": 3.521
         }
       }
     }

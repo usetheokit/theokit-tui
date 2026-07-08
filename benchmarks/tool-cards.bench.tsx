@@ -12,7 +12,7 @@ import {
   ToolResult,
 } from "../src/index.js";
 import type { ChatThreadMessage, ToolCallStatus } from "../src/index.js";
-import { fmt, frameSampler, stats, tick } from "./sampling.js";
+import { fmt, frameSampler, stats, tick, stackVersions } from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
 
 // M2 tool-cards benchmark (plan T3.2, Blueprint Corner 3): thread + mixed
@@ -156,6 +156,7 @@ if (!smoke) {
     benchmark: "tool-cards-render",
     date: new Date().toISOString(),
     node_version: process.version,
+    stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
     workload: {

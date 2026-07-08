@@ -7,7 +7,14 @@ import { render } from "ink-testing-library";
 
 import { ChatThread, TheoTUIProvider } from "../src/index.js";
 import type { ChatThreadMessage } from "../src/index.js";
-import { fmt, frameSampler, round, stats, tick } from "./sampling.js";
+import {
+  fmt,
+  frameSampler,
+  round,
+  stats,
+  tick,
+  stackVersions,
+} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
 
 // M1 thread benchmark (plan T4.1, ADR D6): plain vs windowed mode matrix.
@@ -132,6 +139,7 @@ if (!smoke) {
     benchmark: "chat-thread-render",
     date: new Date().toISOString(),
     node_version: process.version,
+    stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
     workload: {

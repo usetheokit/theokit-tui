@@ -107,13 +107,20 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
       // M9 EC-3: the banner border differs BY DESIGN between the scenes
       // (dark→round vs no-color→single) — normalize the 4 corner glyphs
       // alongside the marker (─/│ are shared between round and single).
+      // M10: with ink7's single-final-frame pipe contract, the running
+      // spinner's PHASE at unmount is process-timing-dependent — the two
+      // spawns may freeze different dots glyphs. The phase was never the
+      // oracle; normalize all cli-spinners dots glyphs on BOTH sides.
+      const SPINNER = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/g;
+      const outDumbNorm = outDumb.replace(SPINNER, "⠿");
       const normalized = outNoColor
+        .replace(SPINNER, "⠿")
         .replaceAll("▏", " ")
         .replaceAll("┌", "╭")
         .replaceAll("┐", "╮")
         .replaceAll("└", "╰")
         .replaceAll("┘", "╯");
-      expect(outDumb).toBe(normalized);
+      expect(outDumbNorm).toBe(normalized);
     },
   );
 
