@@ -259,6 +259,7 @@ Wiring pillars + the D3 bench evidence.
 #### Files to edit
 
 ```
+src/chat-thread.tsx / src/chat-thread.test.tsx (ChatThreadMessage.markdown? routed to the row's ChatMessage — the thread-level wiring the example needs)
 examples/chat.tsx / tests/example-chat.integration.test.ts
 benchmarks/chat-message.bench.tsx / docs/benchmarks/m0-chat-message-baseline.json
 tests/bench-baseline.test.ts (or the banner-baseline suite file if budget) / CHANGELOG.md
@@ -267,6 +268,7 @@ tests/bench-baseline.test.ts (or the banner-baseline suite file if budget) / CHA
 #### TDD
 
 ```
+RED:     thread_message_markdown_flag_routes_to_row() — render ChatThread with one message {markdown: true, content: "**b**"} and one without; const frame = lastFrame(); expect(frame).not.toContain("**"); expect(frame).toContain("b"); the unflagged message with markers renders them literally (per-message opt-in; default-off byte-identity holds for unflagged rows)
 RED:     chat_example_markdown_asserts() — extend the smoke: expect(out).not.toContain("**"); expect(out).toContain("What ships in M1?"); const fenced = out.includes("npm install @theokit/tui"); expect(fenced).toBe(true) (the fence CONTENT renders; markers do not)
 RED:     m13_baseline_contract() — baseline JSON gains a markdown mode entry; const modeNames = baseline.modes.map(pick mode); expect(modeNames).toContain("markdown"); load_1min_at_start finite (M12 convention)
 GREEN:   example message rewritten as markdown-rich; bench mode added; ONE load-gated (< 4, FORCE_COLOR=1) re-record of all chat-message modes
