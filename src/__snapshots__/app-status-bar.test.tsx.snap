@@ -1,0 +1,5 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppStatusBar (M14 T1.2) > full_bar_scene_snapshot > status-bar-full 1`] = `"[36mgpt-x[39m[2m · [22m/tmp/demo/project[2m · 12.3k/128k · [22mstreaming"`;
+
+exports[`AppStatusBar (M14 T1.2) > monochrome_theme_keeps_separators_drops_color > status-bar-monochrome 1`] = `"gpt-x[2m · [22m/tmp/demo/project[2m · 12.3k/128k · [22mstreaming"`;

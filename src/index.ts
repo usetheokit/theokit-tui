@@ -62,6 +62,12 @@ export type { AgentStreamingProps } from "./agent-streaming.js";
 
 // renderFillBar/formatPercent/displayPercent/formatTokens/formatCost stay
 // module-internal (M5 ADR D7 — truncateLines/foldDiffLines precedent).
+export { AppStatusBar } from "./app-status-bar.js";
+export type {
+  AppStatusBarProps,
+  AppStatusBarTokens,
+} from "./app-status-bar.js";
+export { useTurnElapsed } from "./use-turn-elapsed.js";
 export { ContextWindowBar } from "./context-window-bar.js";
 export type { ContextWindowBarProps } from "./context-window-bar.js";
 export { TokenUsageChart } from "./token-usage-chart.js";
