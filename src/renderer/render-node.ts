@@ -211,6 +211,23 @@ function isSkipped(
   );
 }
 
+/**
+ * Write an image node's lines: each non-blank line is a verbatim escape
+ * (width-exempt via writeRaw); blank filler lines are ordinary grid rows
+ * (M21 T2.1 / ADR A2).
+ */
+function renderImageNode(node: RendererNode, y: number, output: Output): void {
+  const lines = node.props.internal_image_lines as string[] | undefined;
+  if (!lines) {
+    return;
+  }
+  lines.forEach((line, i) => {
+    if (line) {
+      output.writeRaw(y + i, line);
+    }
+  });
+}
+
 /** Walk the laid-out tree, writing each node's output to the cell grid. */
 export function renderNodeToOutput(
   node: RendererNode,
@@ -229,6 +246,10 @@ export function renderNodeToOutput(
       ? [transform as Transformer, ...options.transformers]
       : options.transformers;
 
+  if (node.type === "ink-image") {
+    renderImageNode(node, y, output);
+    return;
+  }
   if (node.type === "ink-text") {
     renderTextNode(node, yogaNode, x, y, output, transformers);
     return;

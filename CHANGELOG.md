@@ -15,6 +15,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (multiplexers + unknown terminals conservatively yield no-image → text
   fallback), and the `[Image: …]` fallback. Pure, 100% lines, env-injected tests
   (ported from pi) (M21 T1.1).
+- Renderer V4 `<Image>` component + a raw-passthrough line convention: an image
+  emits an `ink-image` host node carrying the protocol escape sequence + blank
+  filler rows, routed to a new `Output.writeRaw` (width-exempt, emitted verbatim
+  — an image escape would otherwise be corrupted by the cell-grid tokenizer). The
+  image reserves the correct vertical space and a differential update BELOW it
+  lands correctly (regression-tested, mirroring the M20 scroll-invariant engine);
+  unsupported terminals get the text fallback (M21 T2.1).
 
 ### Changed
 
