@@ -142,3 +142,36 @@ describe("benchmark baseline M14 (T2.2)", () => {
     }
   });
 });
+
+// M15 T3.1: the composer typing bench (menu vs plain keystroke modes).
+describe("benchmark baseline M15 (T3.1)", () => {
+  it("m15_composer_baseline_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m15-composer-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      stack: { ink: string };
+      load_1min_at_start: number;
+      modes: {
+        mode: string;
+        runs: { mean_ms_per_frame: number }[];
+        aggregate: { mean_ms_per_frame: { mean: number; std_dev: number } };
+      }[];
+    };
+    expect(baseline.stack.ink).toBe("7.1.0");
+    const modeNames = baseline.modes.map((m) => m.mode);
+    expect(modeNames).toEqual(expect.arrayContaining(["menu", "plain"]));
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    for (const mode of baseline.modes) {
+      for (const run of mode.runs) {
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+      }
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.mean)).toBe(true);
+    }
+  });
+});

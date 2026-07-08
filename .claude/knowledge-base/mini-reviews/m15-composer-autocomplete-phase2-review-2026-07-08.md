@@ -45,14 +45,14 @@ Cross-layer cohesion detection requires per-project layer config in rules/archit
 ### 2. Diff cohesion
 
 - declared_files: 0
-- modified_files: 6
+- modified_files: 7
 - drift_files: 0
 - diff_source: `git`
 
 ### 3. Wiring summary
 
 - status: `PASS`
-- symbols_checked: 24
+- symbols_checked: 29
 - pillar_a_fails: 0
 
 ### 4. Code-quality delta

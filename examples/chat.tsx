@@ -14,6 +14,9 @@ import {
 import type { ChatThreadMessage } from "../src/index.js";
 
 // Interactive M1 demo (plan T4.2, ADR D8): thread + composer + fake streaming.
+// M15: the composer registers slash commands — the menu is INTERACTIVE-only
+// (raw-mode stdin; a pipe cannot drive it — manually verifiable, the unit
+// fake-stdin scripts are the deterministic evidence).
 // In non-TTY runs (pnpm example:chat | cat) the composer is NOT MOUNTED —
 // ink's useInput requires raw-mode stdin (SEPA brief) — and a scripted
 // streaming reply plays instead, so the piped smoke stays honest.
@@ -145,7 +148,13 @@ function App() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message (Enter sends, Ctrl+J newline, Ctrl+C quits)"
+            placeholder="Type a message (Enter sends, Ctrl+J newline, / commands)"
+            commands={[
+              { name: "help", description: "show available commands" },
+              { name: "clear", description: "clear the thread" },
+              { name: "model", description: "switch the model" },
+            ]}
+            hint="esc dismisses the menu / cancels"
             onSubmit={(text) => {
               setMessages((current) => [
                 ...current,
