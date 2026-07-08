@@ -1,3 +1,4 @@
+import { Text } from "ink";
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
@@ -221,5 +222,150 @@ describe("ChatThread streaming (T2.2)", () => {
     expect(frame).toContain("msg-1 content");
     expect(frame).not.toContain("EDITED CONTENT");
     instance.unmount();
+  });
+});
+
+describe("ChatThread header slot (M11 T1.1)", () => {
+  const HEADER = <Text>BANNER</Text>;
+
+  async function ticks(count = 3): Promise<void> {
+    for (let index = 0; index < count; index += 1) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    }
+  }
+
+  it("header_stays_above_graduated_history", async () => {
+    // The recorded M9 banner-sinking drawback proof (oracle a+b): the
+    // header lives in the Static segment, above EVERY graduated row, even
+    // though the prefix only grows after mount.
+    const instance = render(
+      <ChatThread
+        header={HEADER}
+        messages={thread(6)}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    for (const n of [12, 20]) {
+      instance.rerender(
+        <ChatThread
+          header={HEADER}
+          messages={thread(n)}
+          windowSize={4}
+          windowOverscan={2}
+        />,
+      );
+      await ticks();
+    }
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    const iBanner = frame.indexOf("BANNER");
+    expect(iBanner).toBeGreaterThanOrEqual(0);
+    expect(iBanner).toBeLessThan(frame.indexOf("msg-0 content"));
+    expect(frame.indexOf("msg-0 content")).toBeLessThan(
+      frame.indexOf("msg-19 content"),
+    );
+    // print-once across successive graduation batches (oracle b).
+    expect(frame.split("BANNER").length - 1).toBe(1);
+  });
+
+  it("header_change_is_ignored_after_mount", async () => {
+    // SAME array both renders — isolates the header swap (rows memoized by
+    // object identity would legitimately repaint on fresh objects).
+    const msgs = thread(20);
+    const instance = render(
+      <ChatThread
+        header={HEADER}
+        messages={msgs}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    const rowsBefore = rowRenders.count;
+    instance.rerender(
+      <ChatThread
+        header={<Text>CHANGED</Text>}
+        messages={msgs}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(frame).toContain("BANNER");
+    expect(frame).not.toContain("CHANGED");
+    // Swapping the header element must not repaint rows (memo scope).
+    expect(rowRenders.count).toBe(rowsBefore);
+  });
+
+  it("header_removal_is_ignored_and_loses_no_rows", async () => {
+    // THE same-length trap (blueprint Corner 4): removal + graduation in
+    // ONE rerender keeps items.length constant — a non-frozen design skips
+    // the newly graduated row permanently.
+    const instance = render(
+      <ChatThread
+        header={HEADER}
+        messages={thread(10)}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    instance.rerender(
+      <ChatThread messages={thread(11)} windowSize={4} windowOverscan={2} />,
+    );
+    await ticks();
+    instance.rerender(
+      <ChatThread messages={thread(14)} windowSize={4} windowOverscan={2} />,
+    );
+    await ticks();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    for (let i = 0; i < 14; i += 1) {
+      const count = frame.split(`msg-${i} content`).length - 1;
+      expect(count, `msg-${i}`).toBe(1);
+    }
+    expect(frame.split("BANNER").length - 1).toBe(1);
+  });
+
+  it("late_header_is_ignored", async () => {
+    // Mount-freeze contract: a header arriving AFTER mount never prepends
+    // (the blueprint's late-arrival duplication trap).
+    const instance = render(
+      <ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />,
+    );
+    await ticks();
+    instance.rerender(
+      <ChatThread
+        header={<Text>LATE</Text>}
+        messages={thread(22)}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(frame).not.toContain("LATE");
+    for (let i = 0; i < 22; i += 1) {
+      expect(frame.split(`msg-${i} content`).length - 1, `msg-${i}`).toBe(1);
+    }
+  });
+
+  it("sentinel_key_collision_throws_typed", () => {
+    const bad = () =>
+      ChatThread({
+        header: HEADER,
+        messages: [
+          { id: "__theokit_tui_header__", role: "user", content: "x" },
+        ],
+      });
+    expect(bad).toThrow(TypeError);
+    expect(bad).toThrow("__theokit_tui_header__");
   });
 });
