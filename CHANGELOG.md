@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- M19 T1.1 (renderer input parser): `src/renderer/input/` — a faithful port of Ink's byte framer (`input-parser.ts`: CSI/SS3/ESC-alt slicing, `pending` accumulation, bracketed-paste atomic framing, held-backspace-run splitting) + keypress semantics (`parse-keypress.ts`: the legacy path — arrows/ctrl/meta/shift/tab/escape/backspace/delete/return + the Ctrl+J-newline contract) + the 12-field `Key` projection (`key.ts`, matching `ComposerKey` exactly). All three at 100% lines; **ported, not imported** from `ink/build` (unblocks the M20 Ink-drop) (plan m19-input-stack, ADR D2/D4)
+
 ### Changed
 
 ### Deprecated
