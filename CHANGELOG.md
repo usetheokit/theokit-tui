@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `useTurnElapsed(active)` — the lib-shipped 1 Hz turn clock for `AgentStreaming.elapsedSeconds` (0 while inactive, resets on re-activation, cleared on deactivate/unmount; AgentStreaming's no-timer contract untouched) (m14-status-bar T1.1)
+
 ### Changed
 
 ### Deprecated
