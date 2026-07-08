@@ -72,6 +72,7 @@ describe("public entry surface (T0.2)", () => {
       "chalk",
       "cli-boxes",
       "cli-truncate",
+      "ignore",
       "ink",
       "ink-spinner",
       "parse-diff",

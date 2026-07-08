@@ -58,6 +58,14 @@ export class Output {
   readonly height: number;
   private readonly operations: WriteOp[] = [];
   private readonly caches = new Caches();
+  /**
+   * Rows that carry a verbatim escape sequence (inline image, M21 T2.1 / ADR
+   * A2). Such a row is emitted byte-for-byte and NEVER measured / tokenized —
+   * an image escape has display width 0 but real content that `string-width`
+   * and the cell tokenizer would corrupt. The filler rows of a multi-row image
+   * are ordinary blank grid rows; only the sequence row is raw.
+   */
+  private readonly rawLines = new Map<number, string>();
 
   constructor(options: { width: number; height: number }) {
     this.width = options.width;
@@ -76,6 +84,11 @@ export class Output {
     this.operations.push({ x, y, text, transformers: options.transformers });
   }
 
+  /** Place a verbatim (width-exempt) escape sequence on row `y` (ADR A2). */
+  writeRaw(y: number, text: string): void {
+    this.rawLines.set(y, text);
+  }
+
   /** Rasterize the grid to `{ output, height }`. */
   get(): { output: string; height: number } {
     const grid: StyledChar[][] = [];
@@ -92,7 +105,11 @@ export class Output {
     }
 
     const output = grid
-      .map((line) => styledCharsToString(line).trimEnd())
+      .map((line, y) =>
+        this.rawLines.has(y)
+          ? this.rawLines.get(y)!
+          : styledCharsToString(line).trimEnd(),
+      )
       .join("\n");
     return { output, height: grid.length };
   }

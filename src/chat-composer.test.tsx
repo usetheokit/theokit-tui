@@ -530,3 +530,64 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     instance.unmount();
   });
 });
+
+describe("ChatComposer emacs editor keys (M21 T3.1)", () => {
+  it("ctrl_k_kills_to_line_end_and_ctrl_y_yanks_it_back", async () => {
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["h", "e", "l", "l", "o"]);
+    await waitForFrame(instance, "hello");
+    await type(instance, ["\x01"]); // C-a → line start
+    await type(instance, ["\x0b"]); // C-k → kill "hello"
+    await waitForFrame(instance, "hello", false);
+    await type(instance, ["\x19"]); // C-y → yank it back
+    await waitForFrame(instance, "hello");
+    instance.unmount();
+  });
+
+  it("up_arrow_recalls_the_last_submitted_entry", async () => {
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["h", "i"]);
+    await type(instance, [ENTER]); // submit → buffer clears
+    await waitForFrame(instance, "hi", false);
+    await type(instance, [UP_ARROW]); // recall "hi"
+    await waitForFrame(instance, "hi");
+    instance.unmount();
+  });
+
+  it("ctrl_underscore_undoes_the_last_edit", async () => {
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["a", "b", "c"]);
+    await waitForFrame(instance, "abc");
+    await type(instance, ["\x1f"]); // C-_ → undo the insert run
+    await waitForFrame(instance, "abc", false);
+    instance.unmount();
+  });
+});
+
+describe("ChatComposer @-file mentions (M21 T4.1)", () => {
+  const fakeSearch = async (query: string): Promise<string[]> =>
+    ["src/foo.ts", "foo.md", "bar.ts"].filter((p) => p.includes(query));
+
+  it("at_mention_opens_a_fuzzy_file_menu_and_completes_a_path", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />,
+    );
+    await type(instance, ["@", "f", "o"]);
+    await waitForFrame(instance, "src/foo.ts"); // async candidates loaded
+    expect(plain(instance.lastFrame())).toContain("foo.md");
+    await type(instance, [ENTER]); // complete the top candidate
+    await waitForFrame(instance, "foo.md", false); // menu closed
+    expect(plain(instance.lastFrame())).toContain("src/foo.ts");
+    instance.unmount();
+  });
+
+  it("slash_command_menu_still_works_unchanged", async () => {
+    // ADR-C3 regression guard: the M15 `/` menu is untouched by the @ addition.
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/", "h"]);
+    await waitForFrame(instance, "show help");
+    instance.unmount();
+  });
+});

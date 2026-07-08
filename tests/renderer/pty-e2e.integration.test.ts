@@ -112,6 +112,22 @@ describe.skipIf(!pty)("input PTY e2e — real raw-mode path (M19 T3.1)", () => {
     expect(session.output()).toContain("BUF:ac");
     session.write("\x03");
   });
+
+  it("drives_the_emacs_editor_keys_over_the_real_pty", async () => {
+    // M21: kill-ring/yank on the REAL raw-mode path — C-w kills the last word,
+    // C-y yanks it back, proving the editor chords project through raw stdin.
+    const session = spawnHarness(pty!);
+    sessions.push(session);
+    await session.waitFor(/READY tty=true/);
+    session.write("hello world");
+    await session.waitFor(/BUF:hello world/);
+    session.write("\x17"); // C-w → kill "world"
+    await session.waitFor(/BUF:hello /);
+    session.write("\x19"); // C-y → yank it back
+    await session.waitFor(/BUF:hello world/);
+    expect(session.output()).toContain("BUF:hello world");
+    session.write("\x03");
+  });
 });
 
 if (skipReason) {

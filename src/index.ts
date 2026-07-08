@@ -1,4 +1,4 @@
-export const VERSION = "0.21.0";
+export const VERSION = "0.22.0";
 
 export {
   TheoTUIProvider,
@@ -116,3 +116,5 @@ export type {
 // M9 — welcome banner (plan ADR D1): the startup-banner primitive.
 export { WelcomeBanner } from "./welcome-banner.js";
 export type { WelcomeBannerProps } from "./welcome-banner.js";
+export { Image } from "./image.js";
+export type { ImageProps } from "./image.js";

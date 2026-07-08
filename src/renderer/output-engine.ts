@@ -222,7 +222,13 @@ export class OutputEngine {
     return seek + cleared.join("\r\n");
   }
 
-  /** Rewrite the changed span, one cleared row per line, relative. */
+  /**
+   * Rewrite the changed span. Rows INSIDE the span that are themselves unchanged
+   * are NOT re-emitted — the cursor just advances over them (empty string + the
+   * `\r\n` join). This keeps a costly, unchanged raw line (an inline-image escape
+   * — M21 T2.1) from being re-blasted when a sibling row in the span changes, and
+   * avoids stacking a duplicate kitty placement (review HIGH). Relative-cursor.
+   */
   private changedSpanBody(
     newLines: string[],
     firstChanged: number,
@@ -231,8 +237,11 @@ export class OutputEngine {
     const seek = this.seekTo(firstChanged);
     const rows: string[] = [];
     for (let row = firstChanged; row <= lastChanged; row++) {
-      const line = row < newLines.length ? newLines[row] : "";
-      rows.push(CLEAR_LINE + line);
+      const newLine = row < newLines.length ? newLines[row] : "";
+      const oldLine =
+        row < this.previousLines.length ? this.previousLines[row] : "";
+      // Unchanged row → emit nothing (the join's \r\n advances past it).
+      rows.push(newLine === oldLine ? "" : CLEAR_LINE + newLine);
     }
     this.cursorRow = lastChanged;
     return seek + rows.join("\r\n");

@@ -19,6 +19,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.22.0] - 2026-07-08
+
+### Added
+
+- ChatComposer `@`-file mentions + fuzzy matching: a hand-rolled subsequence
+  fuzzy scorer (`fuzzy.ts`, ported from pi), an async `.gitignore`-aware cwd
+  file-search provider (`file-search.ts`, DIP'd fs + the `ignore` package —
+  bounded + abortable), and an `@`-mention menu (`mention-menu-model.ts`) that
+  reuses the M15 slash-menu rendering — `@` triggers on the token at the cursor
+  (mid-line), fuzzy-ranks file paths, and completes to a cwd-relative path
+  (`complete-mention` reducer action). The `/` command menu is unchanged (prefix,
+  line-start — ADR-C3 regression-guarded). New runtime dep `ignore` (MIT, no
+  known CVEs). All new modules 100% lines (M21 T4.1).
+
+- ChatComposer readline-grade editor upgrade: Emacs kill-ring (C-w/C-u/C-k/M-d +
+  C-y yank, M-y yank-pop, with consecutive-kill coalescing), word navigation
+  (M-b/M-f over graphemes), coalesced undo (C-_), and input history recall (↑/↓,
+  gated to the first/last visual line). Built on a new PURE editor reducer
+  (`composer-editor.ts`) bundling buffer + kill-ring + undo + history — 100% unit
+  tested, no refs/timers; the composer is a thin dispatcher over the M19 keymap.
+  Real-raw-mode PTY e2e drives the editor chords; an OWN editor micro-bench
+  (`~3.8 µs/op`) is committed (M21 T3.1).
+
+- Renderer V4 image core: `src/renderer/terminal-image.ts` — kitty + iTerm2 inline
+  image encoders (with 4096-byte chunking), magic-byte dimension extraction
+  (PNG/JPEG/GIF/WebP, no decode), cell-fit sizing, an env-based capability matrix
+  (multiplexers + unknown terminals conservatively yield no-image → text
+  fallback), and the `[Image: …]` fallback. Pure, 100% lines, env-injected tests
+  (ported from pi) (M21 T1.1).
+- Renderer V4 `<Image>` component + a raw-passthrough line convention: an image
+  emits an `ink-image` host node carrying the protocol escape sequence + blank
+  filler rows, routed to a new `Output.writeRaw` (width-exempt, emitted verbatim
+  — an image escape would otherwise be corrupted by the cell-grid tokenizer). The
+  image reserves the correct vertical space and a differential update BELOW it
+  lands correctly (regression-tested, mirroring the M20 scroll-invariant engine);
+  unsupported terminals get the text fallback (M21 T2.1).
+
 ## [0.21.0] - 2026-07-08
 
 ### Added

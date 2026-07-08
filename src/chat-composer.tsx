@@ -1,14 +1,18 @@
 import { Box, Text, useFocus, useFocusManager, useInput } from "ink";
-import { useId, useReducer, useState } from "react";
+import { useEffect, useId, useReducer, useState } from "react";
 
+import { deriveMentionMenu, findMentionToken } from "./mention-menu-model.js";
+import { searchFiles } from "./file-search.js";
 import { SLASH_MENU_WINDOW, deriveSlashMenu } from "./slash-menu-model.js";
 import type { SlashCommand, SlashMenu } from "./slash-menu-model.js";
-import {
-  graphemeAt,
-  initialTextBuffer,
-  textBufferReducer,
-} from "./text-buffer.js";
+import { graphemeAt } from "./text-buffer.js";
 import type { TextBufferAction } from "./text-buffer.js";
+import {
+  editorActionForChord,
+  editorReducer,
+  initialEditorState,
+} from "./composer-editor.js";
+import type { Key } from "./renderer/input/key.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
 export type { SlashCommand as ChatComposerCommand } from "./slash-menu-model.js";
@@ -39,7 +43,18 @@ export interface ChatComposerProps {
   commands?: readonly SlashCommand[];
   /** M15: dim affordance line under the composer (e.g. cancel hint). */
   hint?: string;
+  /**
+   * M21: the `@`-file-mention provider — fuzzy-ranked cwd-relative paths for a
+   * query. Defaults to a `.gitignore`-aware cwd walk; inject for tests or to
+   * scope the search. Return `[]` (or omit results) to disable mentions.
+   */
+  fileSearch?: (query: string, signal?: AbortSignal) => Promise<string[]>;
 }
+
+const defaultFileSearch = (
+  query: string,
+  signal?: AbortSignal,
+): Promise<string[]> => searchFiles(query, signal ? { signal } : {});
 
 interface ComposerKey {
   return: boolean;
@@ -281,6 +296,51 @@ function useSlashMenuState(
   return { menu, setSelectionIndex, setDismissedFilter, completeSelection };
 }
 
+/** M21: the `@`-mention menu — candidates are fetched async (abortable) as the
+ * mention token changes; the menu derives from them + the buffer. */
+function useMentionMenuState(
+  text: string,
+  cursorOffset: number,
+  fileSearch: (query: string, signal?: AbortSignal) => Promise<string[]>,
+  complete: (path: string, from: number, to: number) => void,
+) {
+  const [selectionIndex, setSelectionIndex] = useState(0);
+  const [candidates, setCandidates] = useState<readonly string[]>([]);
+  const token = findMentionToken(text, cursorOffset);
+  const query = token?.query ?? null;
+
+  useEffect(() => {
+    if (query === null) {
+      setCandidates([]);
+      return;
+    }
+    const controller = new AbortController();
+    fileSearch(query, controller.signal)
+      .then((paths) => {
+        if (!controller.signal.aborted) {
+          setCandidates(paths);
+        }
+      })
+      .catch(() => setCandidates([]));
+    return () => controller.abort();
+  }, [query, fileSearch]);
+
+  const menu = deriveMentionMenu(
+    text,
+    cursorOffset,
+    candidates,
+    selectionIndex,
+  );
+  const completeSelection = (): void => {
+    const chosen = menu.matches[menu.clampedIndex];
+    if (chosen && token) {
+      complete(chosen.name, token.start, cursorOffset);
+      setSelectionIndex(0);
+    }
+  };
+  return { menu, setSelectionIndex, completeSelection };
+}
+
 export function ChatComposer({
   onSubmit,
   placeholder = "",
@@ -288,16 +348,35 @@ export function ChatComposer({
   autoFocus = true,
   commands = [],
   hint,
+  fileSearch = defaultFileSearch,
 }: ChatComposerProps) {
-  const [buffer, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
+  const [editor, dispatchEditor] = useReducer(
+    editorReducer,
+    initialEditorState,
+  );
+  const buffer = editor.buffer;
   const focusId = useId();
   const { isFocused } = useFocus({ autoFocus, id: focusId });
   const { focus } = useFocusManager();
   const theme = useTheoTheme();
   const { menu, setSelectionIndex, setDismissedFilter, completeSelection } =
     useSlashMenuState(buffer.text, commands, (name) => {
-      dispatch({ type: "complete-command", name });
+      dispatchEditor({
+        type: "buffer",
+        action: { type: "complete-command", name },
+      });
     });
+  const mention = useMentionMenuState(
+    buffer.text,
+    buffer.cursorOffset,
+    fileSearch,
+    (path, from, to) => {
+      dispatchEditor({
+        type: "buffer",
+        action: { type: "complete-mention", path, from, to },
+      });
+    },
+  );
 
   // M15 D2: menu keys intercept BEFORE buffer actions and never leak.
   // Returns true when the key was consumed by the menu.
@@ -331,29 +410,95 @@ export function ChatComposer({
     return false;
   };
 
+  // M21: the `@`-mention menu keys. Same shape as the slash menu (↑↓ select,
+  // Tab/Enter complete, Esc closes) but no dismissal latch — moving off the
+  // `@`-token closes it naturally. Takes priority when its token is active
+  // (ADR-C2). Returns true when consumed.
+  const handleMentionKey = (input: string, key: ComposerKey): boolean => {
+    if (!mention.menu.open) {
+      return false;
+    }
+    if (key.upArrow) {
+      mention.setSelectionIndex(
+        (mention.menu.clampedIndex - 1 + mention.menu.matches.length) %
+          mention.menu.matches.length,
+      );
+      return true;
+    }
+    if (key.downArrow) {
+      mention.setSelectionIndex(
+        (mention.menu.clampedIndex + 1) % mention.menu.matches.length,
+      );
+      return true;
+    }
+    if (key.tab || (key.return && !isNewlineChord(input, key, multiLine))) {
+      mention.completeSelection();
+      return true;
+    }
+    return false;
+  };
+
+  // M21: the emacs editor chords (kill-ring, word-nav, yank, undo) + history
+  // recall, resolved via the M19 keymap and applied to the pure editor reducer.
+  // Runs after the menu, before the plain buffer keys. Returns true when consumed.
+  const handleEditorKey = (input: string, key: ComposerKey): boolean => {
+    // History recall on arrows, gated to the first/last visual line (multiline
+    // drafts keep the arrow for cursor movement — the composer owns this gate).
+    if (
+      key.upArrow &&
+      !buffer.text.slice(0, buffer.cursorOffset).includes("\n")
+    ) {
+      dispatchEditor({ type: "history-prev" });
+      return true;
+    }
+    if (
+      key.downArrow &&
+      !buffer.text.slice(buffer.cursorOffset).includes("\n")
+    ) {
+      dispatchEditor({ type: "history-next" });
+      return true;
+    }
+    const editorAction = editorActionForChord(input, key as unknown as Key);
+    if (!editorAction) {
+      return false;
+    }
+    dispatchEditor(editorAction);
+    return true;
+  };
+
   const handleBufferKey = (input: string, key: ComposerKey): void => {
     if (key.return && !isNewlineChord(input, key, multiLine)) {
       const text = buffer.text.trim();
       if (text.length > 0) {
         // onSubmit BEFORE clear: a throwing handler propagates (EC-5) AND
-        // the user's draft survives (review F-dom-6).
+        // the user's draft survives (review F-dom-6). `submit` also records the
+        // entry in the input history (M21).
         onSubmit(text);
-        dispatch({ type: "clear" });
+        dispatchEditor({ type: "submit", entry: text });
       }
       return;
     }
     const action = actionForKey(input, key, multiLine);
     if (action !== undefined) {
-      dispatch(action);
+      dispatchEditor({ type: "buffer", action });
     }
   };
 
   useInput(
     (input, key) => {
       const composerKey = key as unknown as ComposerKey;
-      if (!handleMenuKey(input, composerKey)) {
-        handleBufferKey(input, composerKey);
+      // The `@`-mention menu takes priority when active (ADR-C2), then the
+      // slash menu, then the emacs editor chords, then the plain buffer.
+      if (handleMentionKey(input, composerKey)) {
+        return;
       }
+      if (handleMenuKey(input, composerKey)) {
+        return;
+      }
+      if (handleEditorKey(input, composerKey)) {
+        return;
+      }
+      handleBufferKey(input, composerKey);
     },
     { isActive: isFocused },
   );
@@ -369,6 +514,9 @@ export function ChatComposer({
         prefixColor={theme.role.user.prefix}
       />
       {menu.open && <SlashMenuList menu={menu} accent={theme.accent} />}
+      {mention.menu.open && (
+        <SlashMenuList menu={mention.menu} accent={theme.accent} />
+      )}
       {hint !== undefined && hint !== "" && (
         <Box paddingLeft={2}>
           <Text dimColor>{hint}</Text>

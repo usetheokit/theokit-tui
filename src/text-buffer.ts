@@ -3,6 +3,11 @@
 // Grapheme discipline via Intl.Segmenter: cursor ops never split emoji or
 // combining marks (borrowed from the react-ink useTextBuffer analog).
 
+import {
+  findWordBackward,
+  findWordForward,
+} from "./renderer/word-navigation.js";
+
 export interface TextBufferState {
   text: string;
   /** Cursor position as a code-unit offset into `text`. */
@@ -17,11 +22,25 @@ export type TextBufferAction =
   | { type: "move-right" }
   | { type: "move-home" }
   | { type: "move-end" }
+  | { type: "move-word-left" }
+  | { type: "move-word-right" }
   | { type: "newline" }
   | { type: "clear" }
   /** M15: replace line 1 with `/name ` (cursor after the space) —
    * the slash-menu completion writes through the reducer (plan D3). */
-  | { type: "complete-command"; name: string };
+  | { type: "complete-command"; name: string }
+  /** M21: replace the `@`-token `[from, to)` with a file `path ` (cursor after
+   * the space) — the mention-menu completion writes through the reducer. */
+  | { type: "complete-mention"; path: string; from: number; to: number }
+  /** M21: replace the whole state — undo / yank-pop / history restore write
+   * through the reducer so React sees one atomic transition (plan ADR B2). */
+  | { type: "set"; state: TextBufferState };
+
+/** The result of a kill: the new buffer state + the removed slice (→ kill-ring). */
+export interface KillResult {
+  state: TextBufferState;
+  killed: string;
+}
 
 export const initialTextBuffer: TextBufferState = { text: "", cursorOffset: 0 };
 
@@ -156,6 +175,84 @@ function completeCommand(
   return { text: line + rest, cursorOffset: line.length };
 }
 
+/** M21: replace the `@`-token `[from, to)` with `path ` — cursor after the space. */
+function completeMention(
+  state: TextBufferState,
+  path: string,
+  from: number,
+  to: number,
+): TextBufferState {
+  const insertion = `${path} `;
+  return {
+    text: state.text.slice(0, from) + insertion + state.text.slice(to),
+    cursorOffset: from + insertion.length,
+  };
+}
+
+function moveWordLeft(state: TextBufferState): TextBufferState {
+  return {
+    ...state,
+    cursorOffset: findWordBackward(state.text, state.cursorOffset),
+  };
+}
+
+function moveWordRight(state: TextBufferState): TextBufferState {
+  return {
+    ...state,
+    cursorOffset: findWordForward(state.text, state.cursorOffset),
+  };
+}
+
+/** Offset of the current line's start (after the previous newline, or 0). */
+function lineStartOffset(text: string, cursor: number): number {
+  return cursor === 0 ? 0 : text.lastIndexOf("\n", cursor - 1) + 1;
+}
+
+/** Offset of the current line's end (the next newline, or text length). */
+function lineEndOffset(text: string, cursor: number): number {
+  const next = text.indexOf("\n", cursor);
+  return next === -1 ? text.length : next;
+}
+
+/** Remove `[from, to)` and place the cursor at `from`; return the removed slice. */
+function sliceKill(
+  state: TextBufferState,
+  from: number,
+  to: number,
+): KillResult {
+  return {
+    state: {
+      text: state.text.slice(0, from) + state.text.slice(to),
+      cursorOffset: from,
+    },
+    killed: state.text.slice(from, to),
+  };
+}
+
+/** Kill from the cursor to the end of the line (Emacs C-k). Pure. */
+export function killLineEnd(state: TextBufferState): KillResult {
+  const s = clampCursor(state);
+  return sliceKill(s, s.cursorOffset, lineEndOffset(s.text, s.cursorOffset));
+}
+
+/** Kill from the start of the line to the cursor (Emacs C-u). Pure. */
+export function killLineStart(state: TextBufferState): KillResult {
+  const s = clampCursor(state);
+  return sliceKill(s, lineStartOffset(s.text, s.cursorOffset), s.cursorOffset);
+}
+
+/** Kill the word before the cursor (Emacs C-w). Pure. */
+export function killWordBackward(state: TextBufferState): KillResult {
+  const s = clampCursor(state);
+  return sliceKill(s, findWordBackward(s.text, s.cursorOffset), s.cursorOffset);
+}
+
+/** Kill the word after the cursor (Emacs M-d). Pure. */
+export function killWordForward(state: TextBufferState): KillResult {
+  const s = clampCursor(state);
+  return sliceKill(s, s.cursorOffset, findWordForward(s.text, s.cursorOffset));
+}
+
 // Table-driven dispatch (the 10-case switch tripped the complexity lint
 // at M15): one handler per action type; the cast is safe because the key
 // IS the discriminant.
@@ -173,7 +270,12 @@ const ACTION_HANDLERS: {
   "move-right": (state) => moveRight(state),
   "move-home": (state) => moveHome(state),
   "move-end": (state) => moveEnd(state),
+  "move-word-left": (state) => moveWordLeft(state),
+  "move-word-right": (state) => moveWordRight(state),
   "complete-command": (state, action) => completeCommand(state, action.name),
+  "complete-mention": (state, action) =>
+    completeMention(state, action.path, action.from, action.to),
+  set: (_state, action) => clampCursor(action.state),
   clear: () => initialTextBuffer,
 };
 
