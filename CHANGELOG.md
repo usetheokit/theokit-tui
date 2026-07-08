@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.22.0] - 2026-07-08
+
+### Added
+
 - ChatComposer `@`-file mentions + fuzzy matching: a hand-rolled subsequence
   fuzzy scorer (`fuzzy.ts`, ported from pi), an async `.gitignore`-aware cwd
   file-search provider (`file-search.ts`, DIP'd fs + the `ignore` package —
@@ -41,16 +55,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   image reserves the correct vertical space and a differential update BELOW it
   lands correctly (regression-tested, mirroring the M20 scroll-invariant engine);
   unsupported terminals get the text fallback (M21 T2.1).
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.21.0] - 2026-07-08
 
