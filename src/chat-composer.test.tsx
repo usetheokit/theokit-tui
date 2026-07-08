@@ -41,13 +41,37 @@ async function type(
   }
 }
 
+// Poll the frame until `substring` is present (or absent), up to a deadline.
+// Ink's render is time-throttled; a fixed `settle` sleep is flaky under load
+// (testing.md §6). Polling resolves as soon as the frame settles and waits as
+// long as needed — deterministic regardless of machine load.
+async function waitForFrame(
+  instance: Awaited<ReturnType<typeof mount>>,
+  substring: string,
+  present = true,
+  timeoutMs = 2000,
+): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if ((instance.lastFrame() ?? "").includes(substring) === present) {
+      return;
+    }
+    await tick();
+  }
+  throw new Error(
+    `frame ${present ? "never contained" : "still contained"} ${JSON.stringify(
+      substring,
+    )} — got:\n${instance.lastFrame()}`,
+  );
+}
+
 describe("ChatComposer (T3.2)", () => {
   it("typing_updates_frame_with_typed_text", async () => {
     // Char-by-char with settle > Ink's throttle window: each event flushes
     // (Ink drops intermediate frames of same-window bursts — no trailing).
     const instance = await mount(<ChatComposer onSubmit={() => {}} />);
     await type(instance, ["h", "i"]);
-    expect(instance.lastFrame()).toContain("hi");
+    await waitForFrame(instance, "hi");
     instance.unmount();
   });
 
@@ -56,7 +80,7 @@ describe("ChatComposer (T3.2)", () => {
     const instance = await mount(<ChatComposer onSubmit={onSubmit} />);
     await type(instance, ["hello", ENTER]);
     expect(onSubmit).toHaveBeenCalledWith("hello");
-    expect(instance.lastFrame()).not.toContain("hello");
+    await waitForFrame(instance, "hello", false);
     instance.unmount();
   });
 
@@ -88,7 +112,7 @@ describe("ChatComposer (T3.2)", () => {
     const instance = await mount(
       <ChatComposer onSubmit={() => {}} placeholder="Type a message" />,
     );
-    expect(instance.lastFrame()).toContain("Type a message");
+    await waitForFrame(instance, "Type a message");
     instance.unmount();
   });
 
@@ -107,7 +131,7 @@ describe("ChatComposer (T3.2)", () => {
     // surrogate pairs — the whole emoji must stay intact in the frame.
     const instance = await mount(<ChatComposer onSubmit={() => {}} />);
     await type(instance, ["a", "👍", LEFT_ARROW]);
-    expect(instance.lastFrame()).toContain("👍");
+    await waitForFrame(instance, "👍");
     instance.unmount();
   });
 
@@ -175,7 +199,7 @@ describe("ChatComposer (T3.2)", () => {
     await settle();
     instance.stdin.write("!");
     await settle();
-    expect(instance.lastFrame()).toContain("hi!");
+    await waitForFrame(instance, "hi!");
     instance.unmount();
   });
 

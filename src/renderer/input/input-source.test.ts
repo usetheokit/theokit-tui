@@ -99,6 +99,16 @@ describe("createInputSource (M19 T2.1)", () => {
     source.stop();
   });
 
+  it("emits_kitty_handshake_on_start_and_disable_on_stop", () => {
+    const stdin = createFakeStdin();
+    const writes: string[] = [];
+    const source = createInputSource(stdin, (data) => writes.push(data));
+    source.start();
+    expect(writes).toEqual(["\x1b[>1u\x1b[?u\x1b[c"]); // enable: push flag + query + DA
+    source.stop();
+    expect(writes).toEqual(["\x1b[>1u\x1b[?u\x1b[c", "\x1b[<u"]); // disable pop
+  });
+
   it("intercepts_kitty_reply_as_awareness_not_a_key", () => {
     const stdin = createFakeStdin();
     const source = createInputSource(stdin);

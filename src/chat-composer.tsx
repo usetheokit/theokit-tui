@@ -113,8 +113,12 @@ function insertAction(
   return undefined;
 }
 
-/** Maps one useInput event to a buffer action (undefined = not a buffer op). */
-function actionForKey(
+/**
+ * Maps one useInput event to a buffer action (undefined = not a buffer op).
+ * Exported for the M19 renderer input-stack compat proof — the new stack must
+ * drive this EXACT mapping identically (not a hand-copy).
+ */
+export function actionForKey(
   input: string,
   key: ComposerKey,
   multiLine: boolean,

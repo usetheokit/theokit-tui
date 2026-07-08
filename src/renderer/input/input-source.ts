@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 
 import { createInputParser } from "./input-parser.js";
 import { projectKey, type Key } from "./key.js";
-import { detectKittyActive } from "./kitty.js";
+import { KITTY_DISABLE, KITTY_ENABLE, detectKittyActive } from "./kitty.js";
 
 // M19 InputSource (plan m19-input-stack, ADR D1/D3): the raw-stdin lifecycle —
 // a symmetric sibling to the output Terminal seam. Reads a stdin stream, frames
@@ -37,7 +37,18 @@ export interface InputSource {
   isKittyActive(): boolean;
 }
 
-export function createInputSource(stdin: InputStream): InputSource {
+/**
+ * @param stdin the input stream to read.
+ * @param writeToTerminal optional output writer — when provided, `start` emits
+ *   the kitty enable handshake and `stop` emits the disable pop (the query the
+ *   terminal replies to, so `isKittyActive()` can ever become true). Without it
+ *   the source is read-only (awareness detection still works if some other layer
+ *   already sent the query).
+ */
+export function createInputSource(
+  stdin: InputStream,
+  writeToTerminal?: (data: string) => void,
+): InputSource {
   const parser = createInputParser();
   const emitter = new EventEmitter();
   emitter.setMaxListeners(0);
@@ -72,12 +83,14 @@ export function createInputSource(stdin: InputStream): InputSource {
       listener = dispatch;
       stdin.on("data", listener);
       stdin.resume?.();
+      writeToTerminal?.(KITTY_ENABLE); // query kitty support (awareness handshake)
     },
     stop(): void {
       if (listener) {
         stdin.off("data", listener);
         listener = undefined;
       }
+      writeToTerminal?.(KITTY_DISABLE); // pop the kitty flag stack on teardown
       emitter.removeAllListeners();
       if (rawModeRefCount > 0) {
         rawModeRefCount = 0;

@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- M19 review fixes: the kitty handshake is now **emitted** — `createInputSource(stdin, writeToTerminal?)` writes the enable query on `start` and the disable pop on `stop` (the query a terminal replies to, so `isKittyActive()` is functional); the composer-compat proof now drives the ChatComposer's **real** `actionForKey` (exported) instead of a hand-copy (review m19-input-stack)
+
 - M19 T3.1 (renderer input — composer compat + kitty + real-raw-mode e2e): proved M15's ChatComposer runs unchanged on the new stack (`composer-compat.test.tsx` drives the composer's `textBufferReducer` through our `useInput` — Ink-identical transitions); added kitty keyboard-protocol handshake + awareness (`kitty.ts`: enable/disable bytes + `detectKittyActive`, intercepted by `InputSource.isKittyActive()`, full CSI-u decode deferred to M21); and a **node-pty e2e that drives the REAL raw-mode path** (`stdin.isTTY===true`, real `setRawMode`) — **permanently closing the M15 EC-5 gap** (a submit whose handler throws surfaces the error + preserves the draft on the real pty). PTY tier SKIPs gracefully when node-pty's native module can't build (EC-7). All 7 input modules at 100% lines (plan m19-input-stack, ADR D5/D6)
 
 - M19 T2.1 (renderer input source + hooks): `InputSource` (`input-source.ts`) — the raw-stdin lifecycle (multi-subscriber key + paste channels, ref-counted `setRawMode` so mounts/unmounts never thrash raw mode); `useInput`/`usePaste`-compat hooks (`use-input.ts`) over our own `InputContext` (no Ink StdinContext); and a remappable emacs keybindings registry (`keybindings.ts`: chord→action, `ctrl+w`/`ctrl+u`/`ctrl+k`/`alt+f`/`alt+b`/…). All at 100% lines, driven by a deterministic fake-stdin fast tier (plan m19-input-stack, ADR D1/D3)
@@ -22,6 +24,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 ### Fixed
+
+- Eliminated a load-dependent flake in `chat-composer.test.tsx` (M15): five frame assertions relied on a fixed 50 ms `settle` vs Ink's time-throttled render, failing ~1-in-2 under load; a poll-based `waitForFrame` now waits until the frame settles (deterministic — 5/5 green under load 9.4) (review m19-input-stack)
 
 ### Security
 

@@ -2,36 +2,24 @@ import { render } from "ink-testing-library";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
+import { actionForKey } from "../../chat-composer.js";
 import {
   initialTextBuffer,
   textBufferReducer,
-  type TextBufferAction,
   type TextBufferState,
 } from "../../text-buffer.js";
 import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { createInputSource, type InputSource } from "./input-source.js";
-import type { Key } from "./key.js";
 import { InputContext, useInput } from "./use-input.js";
 
-// M19 T3.1: the composer-compat proof. The ChatComposer maps (input, key) →
-// TextBufferAction and folds it through `textBufferReducer`; here we drive the
-// SAME reducer through OUR useInput + projectKey + fake stdin and assert the
-// buffer transitions — proving M15's composer runs unchanged on the new input
-// stack (our projectKey matches Ink's, so the transitions are Ink-identical).
-// State is held in a ref updated synchronously in the handler (the reducer
-// transition — not React's async re-render — is what compat is about), incl. the
-// M15 EC-5 error-propagation flow.
-
-/** The composer's key→action mapping (chat-composer.tsx:93-110 essence). */
-function keyToAction(input: string, key: Key): TextBufferAction | undefined {
-  if (key.leftArrow) return { type: "move-left" };
-  if (key.rightArrow) return { type: "move-right" };
-  if (key.backspace || key.delete) return { type: "delete-backward" };
-  if (input === "\n") return { type: "newline" };
-  if (input.length > 0 && !key.ctrl && !key.meta)
-    return { type: "insert", text: input };
-  return undefined;
-}
+// M19 T3.1: the composer-compat proof. It drives the ChatComposer's OWN
+// `actionForKey` mapping (imported, not hand-copied — review M2) and the REAL
+// `textBufferReducer` through OUR useInput + projectKey + fake stdin, asserting
+// the buffer transitions — proving M15's composer runs unchanged on the new
+// input stack (our projectKey matches Ink's, so the transitions are
+// Ink-identical). State is held in a ref updated synchronously in the handler
+// (the reducer transition — not React's async re-render — is what compat is
+// about), incl. the M15 EC-5 error-propagation flow.
 
 function Provider({
   source,
@@ -56,7 +44,7 @@ function mountProbe(
         }
         return;
       }
-      const action = keyToAction(input, key);
+      const action = actionForKey(input, key, true); // multiLine composer
       if (action) {
         ref.current = textBufferReducer(ref.current, action);
       }
