@@ -1,9 +1,7 @@
-// M13 markdown model (plan m13-markdown-renderer, ADR D1): the PURE
-// AI-chat markdown subset parser — gemini-cli's production-proven
-// hand-rolled grammar (blueprint Corner 4), zero dependencies, zero ink.
-// Malformed input NEVER throws: unmatched markers fall through as literal
-// text (the assistant stream is untrusted input; fail-soft by design —
-// a wrong style is recoverable, a crash mid-turn is not).
+// M13 markdown model (ADR D1): PURE AI-chat markdown subset parser —
+// gemini-cli's production-proven hand-rolled grammar (blueprint Corner 4),
+// zero deps, zero ink. Malformed input NEVER throws: unmatched markers
+// fall through as literal (fail-soft — a crash mid-turn is worse).
 
 export interface InlineStyles {
   bold?: boolean;
@@ -41,6 +39,70 @@ const UL_ITEM_RE = /^([ \t]*)([-*+]) +(.*)$/;
 const OL_ITEM_RE = /^([ \t]*)(\d+)\. +(.*)$/;
 const HR_RE = /^ *([-*_] *){3,}$/;
 
+/** Matches a ul/ol list line into its node, or null. */
+function matchListItem(line: string): MarkdownNode | null {
+  const item = line.match(UL_ITEM_RE) ?? line.match(OL_ITEM_RE);
+  if (item === null) {
+    return null;
+  }
+  const marker = item[2] ?? "-";
+  return {
+    kind: "list-item",
+    ordered: /\d/.test(marker),
+    marker,
+    indent: (item[1] ?? "").length,
+    segments: parseInlineSegments(item[3] ?? ""),
+  };
+}
+
+/** Classifies one NON-fence, non-blank line into a block node. */
+function classifyLine(line: string): MarkdownNode {
+  const heading = line.match(HEADING_RE);
+  if (heading?.[1] !== undefined) {
+    return {
+      kind: "heading",
+      level: heading[1].length as 1 | 2 | 3 | 4,
+      segments: parseInlineSegments(heading[2] ?? ""),
+    };
+  }
+  if (HR_RE.test(line)) {
+    return { kind: "hr" };
+  }
+  return (
+    matchListItem(line) ?? {
+      kind: "paragraph",
+      segments: parseInlineSegments(line),
+    }
+  );
+}
+
+/** Matches a fence-opening line into marker + language, or null. */
+function openFence(
+  line: string,
+): { marker: string; language: string | undefined } | null {
+  const fence = line.match(FENCE_RE);
+  if (fence?.[1] === undefined) {
+    return null;
+  }
+  return {
+    marker: fence[1],
+    language: fence[2] === "" ? undefined : fence[2],
+  };
+}
+
+/** True when `line` closes a fence opened by `marker` — same char AND
+ * >= open length, no trailing language (gemini :91-116). */
+function closesFence(line: string, marker: string): boolean {
+  const close = line.match(FENCE_RE);
+  return (
+    close !== null &&
+    close[1] !== undefined &&
+    close[1].startsWith(marker[0] as string) &&
+    close[1].length >= marker.length &&
+    close[2] === ""
+  );
+}
+
 /** Parses a full markdown text into block nodes. An unclosed fence at EOF
  * still emits its code node (streaming partials — gemini :287-300). */
 export function parseMarkdown(text: string): MarkdownNode[] {
@@ -63,72 +125,27 @@ export function parseMarkdown(text: string): MarkdownNode[] {
 
   for (const line of text.split(/\r?\n/)) {
     if (fenceMarker !== null) {
-      const close = line.match(FENCE_RE);
-      // Close requires the SAME fence char and >= open length
-      // (gemini :91-116); anything else is verbatim content.
-      if (
-        close !== null &&
-        close[1] !== undefined &&
-        close[1].startsWith(fenceMarker[0] as string) &&
-        close[1].length >= fenceMarker.length &&
-        close[2] === ""
-      ) {
+      if (closesFence(line, fenceMarker)) {
         closeFence();
       } else {
         fenceLines.push(line);
       }
       continue;
     }
-
-    const fence = line.match(FENCE_RE);
-    if (fence !== null && fence[1] !== undefined) {
-      fenceMarker = fence[1];
-      fenceLanguage = fence[2] === "" ? undefined : fence[2];
-      continue;
-    }
-    const heading = line.match(HEADING_RE);
-    if (heading !== null && heading[1] !== undefined) {
-      push({
-        kind: "heading",
-        level: heading[1].length as 1 | 2 | 3 | 4,
-        segments: parseInlineSegments(heading[2] ?? ""),
-      });
-      continue;
-    }
-    if (HR_RE.test(line)) {
-      push({ kind: "hr" });
-      continue;
-    }
-    const ul = line.match(UL_ITEM_RE);
-    if (ul !== null) {
-      push({
-        kind: "list-item",
-        ordered: false,
-        marker: ul[2] ?? "-",
-        indent: (ul[1] ?? "").length,
-        segments: parseInlineSegments(ul[3] ?? ""),
-      });
-      continue;
-    }
-    const ol = line.match(OL_ITEM_RE);
-    if (ol !== null) {
-      push({
-        kind: "list-item",
-        ordered: true,
-        marker: ol[2] ?? "1",
-        indent: (ol[1] ?? "").length,
-        segments: parseInlineSegments(ol[3] ?? ""),
-      });
+    const fence = openFence(line);
+    if (fence !== null) {
+      fenceMarker = fence.marker;
+      fenceLanguage = fence.language;
       continue;
     }
     if (line.trim() === "") {
-      // Consecutive blanks collapse to ONE spacer (gemini :268-274).
+      // Blanks collapse to ONE spacer (gemini :268-274).
       if (!lastWasSpacer) {
         push({ kind: "spacer" });
       }
       continue;
     }
-    push({ kind: "paragraph", segments: parseInlineSegments(line) });
+    push(classifyLine(line));
   }
 
   if (fenceMarker !== null) {
@@ -142,12 +159,10 @@ export function parseMarkdown(text: string): MarkdownNode[] {
 }
 
 // Inline grammar — ONE alternated regex, first match wins (gemini
-// markdownParsingUtils.ts:125-127; <u> dropped from our subset).
-// The code-span alternative uses a BACKREFERENCE (\2) so a ``a`b``
-// double-backtick span matches whole — gemini's `+.+?`+ shape stops at the
-// first backtick run and mis-splits nested spans.
-// Groups: 2 = code-span opening backtick run; 3/4 = link text/url — used
-// directly below so no second parse (and no dead defensive branch) exists.
+// markdownParsingUtils.ts:125-127; <u> dropped from our subset). The
+// code-span alternative uses a BACKREFERENCE so double-backtick spans
+// match whole (gemini's shape mis-splits them). Groups: 2/3 = link
+// text/url; 4 = code-span opening run — used directly, no second parse.
 const INLINE_RE =
   /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|_.+?_|~~.+?~~|\[(.+?)\]\((.+?)\)|(`+).+?\4|https?:\/\/\S+)/g;
 
@@ -159,7 +174,6 @@ export function parseInlineSegments(
   text: string,
   inherited: InlineStyles = {},
 ): InlineSegment[] {
-  // Fast path: no marker characters at all (gemini :120-122).
   if (!/[*_~`[]|https?:/.test(text)) {
     return text === "" ? [] : [{ text, styles: inherited }];
   }
@@ -174,56 +188,100 @@ export function parseInlineSegments(
   const nested = (inner: string, styles: InlineStyles): void => {
     segments.push(...parseInlineSegments(inner, { ...inherited, ...styles }));
   };
+  const plain = (segment: InlineSegment): void => {
+    segments.push({
+      text: segment.text,
+      styles: { ...inherited, ...segment.styles },
+    });
+  };
 
   let lastIndex = 0;
   INLINE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = INLINE_RE.exec(text)) !== null) {
-    const full = match[0];
     literal(text.slice(lastIndex, match.index));
     lastIndex = INLINE_RE.lastIndex;
-
-    if (full.startsWith("***") && full.endsWith("***") && full.length > 6) {
-      nested(full.slice(3, -3), { bold: true, italic: true });
-    } else if (
-      full.startsWith("**") &&
-      full.endsWith("**") &&
-      full.length > 4
-    ) {
-      nested(full.slice(2, -2), { bold: true });
-    } else if (
-      (full.startsWith("*") || full.startsWith("_")) &&
-      full.length > 2 &&
-      // Word-boundary guards: intra-word runs stay literal
-      // (gemini :168-180).
-      !isWordChar(text.slice(match.index - 1, match.index)) &&
-      !isWordChar(text.slice(lastIndex, lastIndex + 1))
-    ) {
-      nested(full.slice(1, -1), { italic: true });
-    } else if (
-      full.startsWith("~~") &&
-      full.endsWith("~~") &&
-      full.length > 4
-    ) {
-      nested(full.slice(2, -2), { strikethrough: true });
-    } else if (match[4] !== undefined) {
-      // Backtick-count span (gemini :206-210) — content is VERBATIM; the
-      // opening run is group 4 of INLINE_RE (no second parse).
-      segments.push({
-        text: full.slice(match[4].length, -match[4].length),
-        styles: { ...inherited, code: true },
-      });
-    } else if (match[2] !== undefined && match[3] !== undefined) {
-      segments.push({
-        text: match[2],
-        styles: { ...inherited, link: match[3] },
-      });
-    } else if (/^https?:\/\//.test(full)) {
-      segments.push({ text: full, styles: { ...inherited, link: full } });
-    } else {
-      literal(full);
-    }
+    dispatchInlineMatch(match, text, lastIndex, { nested, literal, plain });
   }
   literal(text.slice(lastIndex));
   return segments;
+}
+
+// Order matters: longest marker first (the precedence ladder).
+const WRAPPED_MARKERS: ReadonlyArray<[string, InlineStyles]> = [
+  ["***", { bold: true, italic: true }],
+  ["**", { bold: true }],
+  ["~~", { strikethrough: true }],
+];
+
+interface InlineEmitters {
+  nested: (inner: string, styles: InlineStyles) => void;
+  literal: (value: string) => void;
+  plain: (segment: InlineSegment) => void;
+}
+
+/** True when a wrapped marker was emitted (bold-italic/bold/strike). */
+function emitWrappedMarker(full: string, emit: InlineEmitters): boolean {
+  for (const [marker, styles] of WRAPPED_MARKERS) {
+    if (
+      full.startsWith(marker) &&
+      full.endsWith(marker) &&
+      full.length > marker.length * 2
+    ) {
+      emit.nested(full.slice(marker.length, -marker.length), styles);
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Italic run with the gemini word-boundary guards (:168-180). */
+function isItalicRun(
+  full: string,
+  text: string,
+  matchIndex: number,
+  lastIndex: number,
+): boolean {
+  return (
+    (full.startsWith("*") || full.startsWith("_")) &&
+    full.length > 2 &&
+    !isWordChar(text.slice(matchIndex - 1, matchIndex)) &&
+    !isWordChar(text.slice(lastIndex, lastIndex + 1))
+  );
+}
+
+/** Emits the segment(s) for ONE INLINE_RE match — the marker precedence
+ * ladder (bold-italic, bold, italic with word-boundary guards, strike,
+ * code span, link, bare URL); anything unmatched stays literal. */
+function dispatchInlineMatch(
+  match: RegExpExecArray,
+  text: string,
+  lastIndex: number,
+  emit: InlineEmitters,
+): void {
+  const full = match[0];
+  if (emitWrappedMarker(full, emit)) {
+    return;
+  }
+  if (isItalicRun(full, text, match.index, lastIndex)) {
+    emit.nested(full.slice(1, -1), { italic: true });
+    return;
+  }
+  if (match[4] !== undefined) {
+    // Backtick-count span (gemini :206-210) — VERBATIM.
+    emit.plain({
+      text: full.slice(match[4].length, -match[4].length),
+      styles: { code: true },
+    });
+    return;
+  }
+  if (match[2] !== undefined && match[3] !== undefined) {
+    emit.plain({ text: match[2], styles: { link: match[3] } });
+    return;
+  }
+  if (/^https?:\/\//.test(full)) {
+    emit.plain({ text: full, styles: { link: full } });
+    return;
+  }
+  emit.literal(full);
 }
