@@ -486,7 +486,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 1. Hidden Ink behaviors our tests never pinned surface at migration — mitigated by the divergence-budget discipline from M18.
 2. Perf regressions on the debug/test path (itl semantics differ) — mitigated by benching BOTH the throttled and unthrottled paths.
 
-### M21 — [ ] Renderer V4: premium capabilities (inline images + editor upgrade)
+### M21 — [x] Renderer V4: premium capabilities (inline images + editor upgrade)
 
 > Added 2026-07-08 (V4 renderer program).
 
