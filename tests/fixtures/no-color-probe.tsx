@@ -26,8 +26,10 @@ import { ToolResult } from "../../src/tool-result.js";
 const instance = render(
   <TheoTUIProvider>
     <Box flexDirection="column">
-      <WelcomeBanner name="Probe" version="0.0.0" hints={["hint row"]} />
       <ChatThread
+        header={
+          <WelcomeBanner name="Probe" version="0.0.0" hints={["hint row"]} />
+        }
         messages={[
           { id: "s", role: "system", content: "session context" },
           { id: "u", role: "user", content: "plain text probe" },

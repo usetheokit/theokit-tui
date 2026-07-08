@@ -5,6 +5,8 @@ import {
   AgentStreaming,
   AgentTimeline,
   TheoTUIProvider,
+  VERSION,
+  WelcomeBanner,
   useAgentStream,
 } from "../src/index.js";
 import type { AgentStreamEvent } from "../src/index.js";
@@ -65,7 +67,10 @@ function Demo() {
   return (
     <TheoTUIProvider>
       <Box flexDirection="column" width={60}>
-        <AgentTimeline events={events} />
+        <AgentTimeline
+          header={<WelcomeBanner name="Theo Stream" version={VERSION} />}
+          events={events}
+        />
         {streaming.active ? (
           <AgentStreaming
             {...(streaming.thought === undefined
