@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
+import Yoga from "yoga-layout";
 
-import {
-  createHostReconciler,
-  createRootNode,
-  type RendererNode,
-} from "./host-config.js";
+import { createHostReconciler, createRootNode } from "./host-config.js";
 import { OutputEngine } from "./output-engine.js";
+import { Output } from "./output-grid.js";
+import { renderNodeToOutput } from "./render-node.js";
 import type { Terminal } from "./terminal.js";
 
-// M17 renderer (plan m17-renderer-skeleton, ADR D1 / 0003): the public seam.
-// createRenderer mounts a React tree through the react-reconciler host, paints
-// it via the differential OutputEngine, and coalesces N commits/tick into one
-// paint (pi's requestRender, `tui.ts:306`). Layout: see assembleLines.
+// M18 renderer (plan m18-yoga-layout, ADR D2): the public seam. createRenderer
+// mounts a React tree through the react-reconciler host, lays it out with Yoga
+// (calculateLayout at the terminal width, height auto), rasterizes the laid-out
+// tree into a cell grid (renderNodeToOutput → Output), and paints the resulting
+// rows through the differential OutputEngine. N commits/tick coalesce into one
+// paint (pi's requestRender, `tui.ts:306`).
 
 const LEGACY_ROOT = 0; // sync commits (updateContainerSync) — deterministic.
 
@@ -29,32 +30,6 @@ export interface Renderer {
   stats(): RendererStats;
 }
 
-/** Concatenate all descendant text of a node (the inline text run). */
-function textContent(node: RendererNode): string {
-  if (node.type === "#text") {
-    return node.text ?? "";
-  }
-  return node.children.map(textContent).join("");
-}
-
-/**
- * Depth-first line assembly (M17 skeleton — no Yoga). Ink nests layout under
- * `props.style`, defaults a Box to `flexDirection: "row"`; root always stacks.
- * Row = inline concat, column = stacked lines. Multi-line rows are M18 (Yoga).
- */
-function assembleLines(node: RendererNode): string[] {
-  if (node.type === "#text" || node.type === "ink-text") {
-    return textContent(node).split("\n");
-  }
-  const style = node.props.style as { flexDirection?: string } | undefined;
-  const direction =
-    node.type === "#root" ? "column" : (style?.flexDirection ?? "row");
-  if (direction === "row") {
-    return [node.children.map(textContent).join("")];
-  }
-  return node.children.flatMap(assembleLines);
-}
-
 export function createRenderer(terminal: Terminal): Renderer {
   const engine = new OutputEngine(terminal);
   const root = createRootNode();
@@ -64,7 +39,22 @@ export function createRenderer(terminal: Terminal): Renderer {
   terminal.hideCursor();
 
   const paint = (): void => {
-    engine.render(assembleLines(root));
+    const rootYoga = root.yogaNode;
+    if (!rootYoga) {
+      return;
+    }
+    rootYoga.setWidth(terminal.columns);
+    rootYoga.calculateLayout(undefined, undefined, Yoga.DIRECTION_LTR);
+    const output = new Output({
+      width: rootYoga.getComputedWidth(),
+      height: rootYoga.getComputedHeight(),
+    });
+    renderNodeToOutput(root, output, {
+      offsetX: 0,
+      offsetY: 0,
+      transformers: [],
+    });
+    engine.render(output.get().output.split("\n"));
   };
 
   const requestRender = (): void => {
@@ -110,6 +100,7 @@ export function createRenderer(terminal: Terminal): Renderer {
       reconciler.updateContainerSync(null, container, null, () => {});
       reconciler.flushSyncWork();
       engine.teardown();
+      root.yogaNode?.freeRecursive(); // release the root WASM node (no leak)
     },
     stats: (): RendererStats => ({
       fullRedrawCount: engine.fullRedrawCount,

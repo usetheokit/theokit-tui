@@ -69,6 +69,8 @@ describe("public entry surface (T0.2)", () => {
     };
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
       "@alcalzone/ansi-tokenize",
+      "chalk",
+      "cli-boxes",
       "cli-truncate",
       "ink",
       "ink-spinner",

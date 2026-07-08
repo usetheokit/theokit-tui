@@ -103,6 +103,8 @@ describe("sdk drift tripwire (D3)", () => {
     // layout + measurement engine. The sdk stays devDependency-only.
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
       "@alcalzone/ansi-tokenize",
+      "chalk",
+      "cli-boxes",
       "cli-truncate",
       "ink",
       "ink-spinner",
