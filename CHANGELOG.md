@@ -19,6 +19,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.11.0] - 2026-07-07
+
+### Added
+
+- Bench baselines re-recorded on the new stack with a `stack` provenance field; the 20-metric cross-stack jump table (all deltas explained by an isolated ink5-vs-ink7 engine A/B: ~6.5× wall / ~40× CPU-pure per rerender on the debug path) lives at `implementations/m10-bench-jump-table.md` (m10-react19-ink7 T2.2)
+- Strict-effects canary (`tests/strict-effects-canary.test.tsx`) — pins the OBSERVED single-invoke behavior under StrictMode on ink7 (the source-level prediction of a double-invoke flip was empirically refuted; the M7 DV-1 claim remains true) (m10-react19-ink7 T2.1)
+- ink7 pipe-contract pin in the degrade matrix (non-interactive writes ONE final frame at unmount — content appears exactly once) and a permanent never-weaken migration guard (it-count never decreases vs the pre-bump base) (m10-react19-ink7 T1.2+T1.3)
+
+- Roadmap M10 DoD revised pre-lock: dual React peer is impossible on modern ink (every ink ≥ 6.0.0 requires `react >= 19`, registry-verified) — M10 targets ink ^7 + react `^19` peer; react-18 consumers stay on the 0.10.x line
+- Roadmap V2 amended: added M10 Foundation upgrade (ink 7 + dual React peer), M11 ChatThread/AgentTimeline header slot, M12 Animated welcome banner (`/roadmap-feature`, V2 batch — dependencies M8→M10→{M11, M12})
+- TTFATT record `docs/ttfatt.md` — 16.3 s measured from the published registry artifact (install 13.7 s + first rendered turn 2.6 s; target < 10 min), pinned by a package-contract test (m8-ga-publish T2.2)
+
+### Changed
+
+- Requires: react >= 19.2.0 (peer, was ^18.2.0) and node >= 22 (engines, was >= 20) — the foundation moved to ink ^7.1.0 (every ink >= 6 is react-19-only); the 0.10.x line remains the ink5/react18 track (m10-react19-ink7 T1.1)
+- Snapshot resequencing: ink 7 closes bold (`[22m`) before opening dim — 2 snapshot files re-recorded with per-diff review (visible text byte-identical; border glyphs zero-diff, cli-boxes 4 proven glyph-stable) (m10-react19-ink7 T1.4)
+
 ## [0.10.0] - 2026-07-07
 
 ### Added

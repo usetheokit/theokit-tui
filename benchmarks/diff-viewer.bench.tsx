@@ -6,7 +6,14 @@ import { fileURLToPath } from "node:url";
 import { render } from "ink-testing-library";
 
 import { DiffViewer, TheoTUIProvider } from "../src/index.js";
-import { fmt, frameSampler, round, stats, tick } from "./sampling.js";
+import {
+  fmt,
+  frameSampler,
+  round,
+  stats,
+  tick,
+  stackVersions,
+} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
 
 // M4 diff-viewer benchmark (plan T3.2, ADR D9): a unified diff GROWING
@@ -184,6 +191,7 @@ if (!smoke) {
     benchmark: "diff-viewer-render",
     date: new Date().toISOString(),
     node_version: process.version,
+    stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
     workload: {

@@ -7,7 +7,14 @@ import { Box } from "ink";
 import { render } from "ink-testing-library";
 
 import { ChatMessage, TheoTUIProvider } from "../src/index.js";
-import { fmt, frameSampler, round, stats, tick } from "./sampling.js";
+import {
+  fmt,
+  frameSampler,
+  round,
+  stats,
+  tick,
+  stackVersions,
+} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
 
 // M0 render benchmark (plan T3.1, ADR D6/D9 — data-only, no threshold gate).
@@ -91,6 +98,7 @@ if (!smoke) {
     benchmark: "chat-message-render",
     date: new Date().toISOString(),
     node_version: process.version,
+    stack: stackVersions(),
     hardware: {
       cpu: cpus()[0]?.model ?? "unknown",
       cores: cpus().length,

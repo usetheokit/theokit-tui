@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 
 // Shared bench sampling/stat helpers (rule of three — consumed by the
@@ -65,5 +66,28 @@ export function frameSampler(readFrameCount: () => number) {
     frameCount(): number {
       return frameTimes.length;
     },
+  };
+}
+
+/** Stack provenance for cross-stack baseline comparisons (M10 D3 — a
+ * baseline is stack-relative; the jump is never implicit again). */
+export function stackVersions(): {
+  ink: string;
+  react: string;
+  ink_testing_library: string;
+} {
+  const read = (pkg: string): string =>
+    (
+      JSON.parse(
+        readFileSync(
+          new URL(`../node_modules/${pkg}/package.json`, import.meta.url),
+          "utf8",
+        ),
+      ) as { version: string }
+    ).version;
+  return {
+    ink: read("ink"),
+    react: read("react"),
+    ink_testing_library: read("ink-testing-library"),
   };
 }

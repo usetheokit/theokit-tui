@@ -31,13 +31,15 @@ describe("package publish contract (M8 T1.1)", () => {
   });
 
   it("react_peer_range_is_honest", () => {
-    // Rehearsal-proven (M8 T2.2): ink@5's reconciler does NOT run on
-    // React 19 (ReactCurrentOwner removed) — a ^19 peer range ships a
-    // broken fresh-install. Flip when the lib migrates to ink >= 6.
+    // M10: ink7 requires react >=19.2.0 exactly (blueprint Corner 2) —
+    // the peer mirrors that floor; engines follow ink7 (node >=22).
     const peers = (
       pkg as unknown as { peerDependencies: Record<string, string> }
     ).peerDependencies;
-    expect(peers["react"]).toBe("^18.2.0");
+    expect(peers["react"]).toBe("^19.2.0");
+    const engines = (pkg as unknown as { engines: Record<string, string> })
+      .engines;
+    expect(engines["node"]).toBe(">=22");
   });
 
   it("publint_reports_zero_errors", { timeout: 60000 }, () => {
@@ -90,6 +92,50 @@ describe("README public-copy contract (M8 T1.2)", () => {
     const mod = await import("../src/index.js");
     for (const name of names) {
       expect(mod, name).toHaveProperty(name);
+    }
+  });
+});
+
+describe("TTFATT record (M8 T2.2)", () => {
+  it("ttfatt_record_exists_with_measurement", () => {
+    const md = readFileSync(
+      new URL("../docs/ttfatt.md", import.meta.url),
+      "utf8",
+    );
+    expect(md).toMatch(/@theokit\/tui@0\.10\.0/);
+    expect(md).toMatch(/\d+(\.\d+)?\s?(s|seconds|min)/);
+    expect(md).toContain("npm i");
+  });
+});
+
+describe("never-weaken migration guard (M10 D2)", () => {
+  it("it_count_never_decreases", () => {
+    const M10_BASE = "035ae09";
+    const changed = execFileSync(
+      "git",
+      ["diff", "--name-only", M10_BASE, "--", "src", "tests"],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n")
+      .filter((f) => /\.test\./.test(f));
+    for (const f of changed) {
+      let before = 0;
+      try {
+        before = (
+          execFileSync("git", ["show", `${M10_BASE}:${f}`], {
+            encoding: "utf8",
+          }).match(/\bit\(/g) ?? []
+        ).length;
+      } catch {
+        continue; // new file — nothing to weaken
+      }
+      const after = (
+        readFileSync(new URL(`../${f}`, import.meta.url), "utf8").match(
+          /\bit\(/g,
+        ) ?? []
+      ).length;
+      expect(after, f).toBeGreaterThanOrEqual(before);
     }
   });
 });

@@ -14,7 +14,14 @@ import {
 } from "../src/index.js";
 import type { ChatThreadMessage } from "../src/index.js";
 import { Box } from "ink";
-import { fmt, frameSampler, round, stats, tick } from "./sampling.js";
+import {
+  fmt,
+  frameSampler,
+  round,
+  stats,
+  tick,
+  stackVersions,
+} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
 
 // M5 metrics-footer benchmark (plan T3.2, ADR D6): the always-on footer
@@ -200,6 +207,7 @@ if (!smoke) {
     benchmark: "metrics-footer-render",
     date: new Date().toISOString(),
     node_version: process.version,
+    stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
     workload: {

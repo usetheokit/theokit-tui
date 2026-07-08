@@ -70,6 +70,11 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
   it("no_color_scene_degrades_readably", { timeout: 20000 }, () => {
     const out = spawnProbe({ NO_COLOR: "1" });
     assertDegradedScene(out);
+    // M10 pipe contract (blueprint Corner 4): ink7 non-interactive writes
+    // ONE final frame at unmount — the probe content appears exactly once
+    // (ink5 pipes wrote N throttled intermediate frames).
+    const occurrences = out.split("plain text probe").length - 1;
+    expect(occurrences).toBe(1);
     // The ▏ cursor marker is the only-OUR-swap-can-produce oracle (EC-2):
     // it renders exclusively under the no-color THEME, which only the
     // provider's NO_COLOR resolution selects here.
@@ -102,13 +107,20 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
       // M9 EC-3: the banner border differs BY DESIGN between the scenes
       // (dark→round vs no-color→single) — normalize the 4 corner glyphs
       // alongside the marker (─/│ are shared between round and single).
+      // M10: with ink7's single-final-frame pipe contract, the running
+      // spinner's PHASE at unmount is process-timing-dependent — the two
+      // spawns may freeze different dots glyphs. The phase was never the
+      // oracle; normalize all cli-spinners dots glyphs on BOTH sides.
+      const SPINNER = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/g;
+      const outDumbNorm = outDumb.replace(SPINNER, "⠿");
       const normalized = outNoColor
+        .replace(SPINNER, "⠿")
         .replaceAll("▏", " ")
         .replaceAll("┌", "╭")
         .replaceAll("┐", "╮")
         .replaceAll("└", "╰")
         .replaceAll("┘", "╯");
-      expect(outDumb).toBe(normalized);
+      expect(outDumbNorm).toBe(normalized);
     },
   );
 
