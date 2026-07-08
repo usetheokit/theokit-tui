@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ChatComposer` slash-command menu: `commands` prop (`{name, description}`, declarative — completion only edits the buffer), prefix filter on the first `/`-token of line 1, ↑↓ selection with wrap + 5-row sliding window (▲/▼ + counter), Tab/Enter completion to `/name `, Esc dismissal latch (typing reopens; the composer re-takes focus — ink's global ESC-blur runs first by design), `hint` affordance line; menu keys never leak into the buffer (m15-composer-autocomplete T2.1)
+
 - `slash-menu-model` (internal): pure slash-menu derivation — codex token-filter contract (first token after `/` on line 1), prefix matching, selection clamp, 5-row sliding window with overflow flags; `text-buffer` gains the `complete-command` action (line 1 becomes `/name `, cursor after the space) (m15-composer-autocomplete T1.1)
 
 ### Changed

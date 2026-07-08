@@ -81,7 +81,10 @@ export { CostMeter } from "./cost-meter.js";
 export type { CostMeterProps } from "./cost-meter.js";
 
 export { ChatComposer } from "./chat-composer.js";
-export type { ChatComposerProps } from "./chat-composer.js";
+export type {
+  ChatComposerCommand,
+  ChatComposerProps,
+} from "./chat-composer.js";
 export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
 export type { TextBufferAction, TextBufferState } from "./text-buffer.js";
 

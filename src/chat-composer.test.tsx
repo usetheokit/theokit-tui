@@ -9,6 +9,10 @@ import { TheoTUIProvider } from "./theme.js";
 const ENTER = "\r";
 const CTRL_J = "\n";
 const LEFT_ARROW = "\u001B[D";
+const UP_ARROW = "\u001B[A";
+const DOWN_ARROW = "\u001B[B";
+const TAB = "\t";
+const ESC = "\u001B";
 const RIGHT_ARROW = "\u001B[C";
 const BACKSPACE = "\u007F";
 
@@ -183,6 +187,10 @@ describe("ChatComposer (T3.2)", () => {
       shift: true,
       leftArrow: false,
       rightArrow: false,
+      upArrow: false,
+      downArrow: false,
+      tab: false,
+      escape: false,
       backspace: false,
       delete: false,
       ctrl: false,
@@ -248,6 +256,197 @@ describe("ChatComposer — no-color cursor fallback (M6 T3.1)", () => {
     const frame = instance.lastFrame() ?? "";
     // The marker is no-color-only — colored mode keeps the inverse cursor.
     expect(frame).not.toContain("▏");
+    instance.unmount();
+  });
+});
+
+// M15 T2.1 (plan m15-composer-autocomplete, ADR D2): the slash-menu
+// keyboard protocol — fake-stdin scripts over the REAL useInput surface.
+const COMMANDS = [
+  { name: "clear", description: "clear the thread" },
+  { name: "help", description: "show help" },
+  { name: "hello", description: "greet" },
+];
+const MANY = Array.from({ length: 9 }, (_, i) => ({
+  name: `cmd${i}`,
+  description: `command ${i}`,
+}));
+
+// eslint-disable-next-line no-control-regex
+const MENU_ANSI_RE = /\u001B\[[0-9;]*m/g;
+const plain = (frame: string | undefined): string =>
+  (frame ?? "").replace(MENU_ANSI_RE, "");
+
+describe("ChatComposer slash menu (M15 T2.1)", () => {
+  it("typing_slash_opens_menu_with_all_commands", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/"]);
+    const frame = plain(instance.lastFrame());
+    expect(frame).toContain("clear");
+    expect(frame).toContain("help");
+    expect(frame).toContain("hello");
+    instance.unmount();
+  });
+
+  it("typing_narrows_and_zero_match_closes", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/", "h", "e"]);
+    let frame = plain(instance.lastFrame());
+    expect(frame).toContain("help");
+    expect(frame).toContain("hello");
+    expect(frame).not.toContain("clear the thread");
+    await type(instance, ["z"]);
+    frame = plain(instance.lastFrame());
+    expect(frame).not.toContain("show help");
+    instance.unmount();
+  });
+
+  it("mid_text_slash_never_opens", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["hi ", "/", "w"]);
+    expect(plain(instance.lastFrame())).not.toContain("show help");
+    instance.unmount();
+  });
+
+  it("arrows_move_selection_without_touching_buffer", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/", DOWN_ARROW, UP_ARROW, DOWN_ARROW, DOWN_ARROW]);
+    // Buffer text still exactly "/" — arrows were consumed by the menu.
+    const frame = plain(instance.lastFrame());
+    expect(frame).toContain("/");
+    expect(frame).toContain("hello"); // menu still open
+    // Wrap: 3 commands, 3 downs go back to the first row.
+    await type(instance, [DOWN_ARROW, TAB]);
+    expect(plain(instance.lastFrame())).toContain("/clear ");
+    instance.unmount();
+  });
+
+  it("window_slides_with_markers_and_counter", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={MANY} />,
+    );
+    await type(instance, ["/"]);
+    let frame = plain(instance.lastFrame());
+    expect(frame).toContain("▼"); // overflow below at start
+    expect(frame).not.toContain("▲");
+    for (let i = 0; i < 8; i++) {
+      await type(instance, [DOWN_ARROW]);
+    }
+    frame = plain(instance.lastFrame());
+    expect(frame).toContain("▲");
+    expect(frame).toContain("(9/9)");
+    instance.unmount();
+  });
+
+  it("tab_completes_to_command_with_trailing_space", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/", "h", "e", TAB]);
+    expect(plain(instance.lastFrame())).toContain("/help ");
+    instance.unmount();
+  });
+
+  it("enter_with_menu_completes_enter_without_matches_submits", async () => {
+    const submitted: string[] = [];
+    const instance = await mount(
+      <ChatComposer
+        onSubmit={(text) => {
+          submitted.push(text);
+        }}
+        commands={COMMANDS}
+      />,
+    );
+    await type(instance, ["/", "h", "e", ENTER]);
+    expect(plain(instance.lastFrame())).toContain("/help ");
+    expect(submitted).toHaveLength(0); // completion, not submit
+    await type(instance, [ENTER]);
+    expect(submitted).toEqual(["/help"]); // trimmed submit of the completed text
+    instance.unmount();
+  });
+
+  it("enter_with_zero_matches_submits_raw", async () => {
+    const submitted: string[] = [];
+    const instance = await mount(
+      <ChatComposer
+        onSubmit={(text) => {
+          submitted.push(text);
+        }}
+        commands={COMMANDS}
+      />,
+    );
+    await type(instance, ["/", "z", "z", ENTER]);
+    expect(submitted).toEqual(["/zz"]);
+    instance.unmount();
+  });
+
+  it("escape_dismisses_and_typing_reopens", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/", "h", ESC]);
+    // ink's escape parser holds a lone ESC briefly (meta-prefix window) —
+    // give it time to emit key.escape before the next byte.
+    await settle();
+    await settle();
+    expect(plain(instance.lastFrame())).not.toContain("show help");
+    await type(instance, ["e"]); // filter change resets the latch
+    expect(plain(instance.lastFrame())).toContain("show help");
+    instance.unmount();
+  });
+
+  it("slash_on_second_line_does_not_trigger", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["a", CTRL_J, "/", "h"]);
+    expect(plain(instance.lastFrame())).not.toContain("show help");
+    instance.unmount();
+  });
+
+  it("monochrome_active_row_carries_marker", async () => {
+    const instance = await mount(
+      <TheoTUIProvider theme="no-color">
+        <ChatComposer onSubmit={() => {}} commands={COMMANDS} />
+      </TheoTUIProvider>,
+    );
+    await type(instance, ["/"]);
+    const raw = instance.lastFrame() ?? "";
+    const colorSgr = raw.match(
+      // eslint-disable-next-line no-control-regex
+      /\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g,
+    );
+    expect(colorSgr).toBeNull();
+    expect(plain(raw)).toContain("❯");
+    expect(raw).toMatchSnapshot("slash-menu-monochrome");
+    instance.unmount();
+  });
+
+  it("menu_open_scene_snapshot", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/"]);
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("help");
+    expect(frame).toMatchSnapshot("slash-menu-open");
+    instance.unmount();
+  });
+
+  it("hint_line_renders_dim", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} hint="esc cancels the turn" />,
+    );
+    const frame = plain(instance.lastFrame());
+    expect(frame).toContain("esc cancels the turn");
     instance.unmount();
   });
 });

@@ -1,6 +1,8 @@
-import { Box, Text, useFocus, useInput } from "ink";
-import { useReducer } from "react";
+import { Box, Text, useFocus, useFocusManager, useInput } from "ink";
+import { useId, useReducer, useState } from "react";
 
+import { SLASH_MENU_WINDOW, deriveSlashMenu } from "./slash-menu-model.js";
+import type { SlashCommand, SlashMenu } from "./slash-menu-model.js";
 import {
   graphemeAt,
   initialTextBuffer,
@@ -8,6 +10,8 @@ import {
 } from "./text-buffer.js";
 import type { TextBufferAction } from "./text-buffer.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
+
+export type { SlashCommand as ChatComposerCommand } from "./slash-menu-model.js";
 
 export interface ChatComposerProps {
   /**
@@ -25,6 +29,13 @@ export interface ChatComposerProps {
    */
   multiLine?: boolean;
   autoFocus?: boolean;
+  /** M15: slash-command menu. Typing `/` at the START of line 1 opens a
+   * prefix-filtered menu (↑↓ select, Tab/Enter complete to `/name `, Esc
+   * dismisses until the filter changes). Completion only edits the buffer
+   * — dispatch/execution stays with the app (declarative contract). */
+  commands?: readonly SlashCommand[];
+  /** M15: dim affordance line under the composer (e.g. cancel hint). */
+  hint?: string;
 }
 
 interface ComposerKey {
@@ -32,6 +43,10 @@ interface ComposerKey {
   shift: boolean;
   leftArrow: boolean;
   rightArrow: boolean;
+  upArrow: boolean;
+  downArrow: boolean;
+  tab: boolean;
+  escape: boolean;
   backspace: boolean;
   delete: boolean;
   ctrl: boolean;
@@ -189,55 +204,196 @@ function CursorCell({
   return <Text inverse={focused}>{atCursor}</Text>;
 }
 
+/** The windowed slash-menu rows (gemini SuggestionsDisplay reduced). */
+function SlashMenuList({ menu, accent }: { menu: SlashMenu; accent: string }) {
+  const visible = menu.matches.slice(
+    menu.windowStart,
+    menu.windowStart + SLASH_MENU_WINDOW,
+  );
+  return (
+    <Box flexDirection="column" paddingLeft={2}>
+      {menu.overflowUp && <Text dimColor>▲</Text>}
+      {visible.map((command, index) => {
+        const active = menu.windowStart + index === menu.clampedIndex;
+        return (
+          <Box key={command.name}>
+            {/* exactOptionalPropertyTypes: omit `color`, never undefined
+                (the SEPA iteration-4 house idiom). */}
+            <Text {...(active ? { color: accent } : {})}>
+              {active ? "❯ " : "  "}/{command.name}
+            </Text>
+            <Text dimColor>
+              {"  "}
+              {command.description}
+            </Text>
+          </Box>
+        );
+      })}
+      {menu.overflowDown && <Text dimColor>▼</Text>}
+      {menu.matches.length > SLASH_MENU_WINDOW && (
+        <Text dimColor>
+          ({menu.clampedIndex + 1}/{menu.matches.length})
+        </Text>
+      )}
+    </Box>
+  );
+}
+
+/** M15 D1: menu state DERIVES from the buffer; only selection + the
+ * dismissal latch (keyed by filter text — a filter change reopens) are
+ * component state. Bundled here so the composer stays under the
+ * complexity budget. */
+function useSlashMenuState(
+  bufferText: string,
+  commands: readonly SlashCommand[],
+  complete: (name: string) => void,
+) {
+  const [selectionIndex, setSelectionIndex] = useState(0);
+  const [dismissedFilter, setDismissedFilter] = useState<string | null>(null);
+  const probe = deriveSlashMenu(bufferText, commands, selectionIndex, false);
+  const dismissed =
+    dismissedFilter !== null && dismissedFilter === probe.filter;
+  const menu: SlashMenu = dismissed ? { ...probe, open: false } : probe;
+  const completeSelection = (): void => {
+    const chosen = menu.matches[menu.clampedIndex];
+    if (chosen !== undefined) {
+      complete(chosen.name);
+      setSelectionIndex(0);
+      // Latch the completed name: the exact-match menu would stay open as
+      // a stuck one-row list otherwise (plan D3) — typing reopens.
+      setDismissedFilter(chosen.name);
+    }
+  };
+  return { menu, setSelectionIndex, setDismissedFilter, completeSelection };
+}
+
 export function ChatComposer({
   onSubmit,
   placeholder = "",
   multiLine = true,
   autoFocus = true,
+  commands = [],
+  hint,
 }: ChatComposerProps) {
   const [buffer, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
-  const { isFocused } = useFocus({ autoFocus });
+  const focusId = useId();
+  const { isFocused } = useFocus({ autoFocus, id: focusId });
+  const { focus } = useFocusManager();
   const theme = useTheoTheme();
+  const { menu, setSelectionIndex, setDismissedFilter, completeSelection } =
+    useSlashMenuState(buffer.text, commands, (name) => {
+      dispatch({ type: "complete-command", name });
+    });
+
+  // M15 D2: menu keys intercept BEFORE buffer actions and never leak.
+  // Returns true when the key was consumed by the menu.
+  const handleMenuKey = (input: string, key: ComposerKey): boolean => {
+    if (!menu.open) {
+      return false;
+    }
+    if (key.upArrow) {
+      setSelectionIndex(
+        (menu.clampedIndex - 1 + menu.matches.length) % menu.matches.length,
+      );
+      return true;
+    }
+    if (key.downArrow) {
+      setSelectionIndex((menu.clampedIndex + 1) % menu.matches.length);
+      return true;
+    }
+    if (key.tab || (key.return && !isNewlineChord(input, key, multiLine))) {
+      completeSelection();
+      return true;
+    }
+    if (key.escape) {
+      setDismissedFilter(menu.filter);
+      // ink's App handler already BLURRED on this very ESC (its focus
+      // reset runs before useInput subscribers — ink App.tsx:258);
+      // menu-dismiss must not cost the composer its focus, so take it
+      // back. Outside the menu, ESC keeps ink's default blur.
+      focus(focusId);
+      return true;
+    }
+    return false;
+  };
+
+  const handleBufferKey = (input: string, key: ComposerKey): void => {
+    if (key.return && !isNewlineChord(input, key, multiLine)) {
+      const text = buffer.text.trim();
+      if (text.length > 0) {
+        // onSubmit BEFORE clear: a throwing handler propagates (EC-5) AND
+        // the user's draft survives (review F-dom-6).
+        onSubmit(text);
+        dispatch({ type: "clear" });
+      }
+      return;
+    }
+    const action = actionForKey(input, key, multiLine);
+    if (action !== undefined) {
+      dispatch(action);
+    }
+  };
 
   useInput(
     (input, key) => {
-      if (key.return && !isNewlineChord(input, key, multiLine)) {
-        const text = buffer.text.trim();
-        if (text.length > 0) {
-          // onSubmit BEFORE clear: a throwing handler propagates (EC-5) AND
-          // the user's draft survives (review F-dom-6).
-          onSubmit(text);
-          dispatch({ type: "clear" });
-        }
-        return;
-      }
-      const action = actionForKey(input, key, multiLine);
-      if (action !== undefined) {
-        dispatch(action);
+      const composerKey = key as unknown as ComposerKey;
+      if (!handleMenuKey(input, composerKey)) {
+        handleBufferKey(input, composerKey);
       }
     },
     { isActive: isFocused },
   );
 
+  return (
+    <Box flexDirection="column">
+      <InputRow
+        buffer={buffer}
+        placeholder={placeholder}
+        isFocused={isFocused}
+        monochrome={isMonochrome(theme)}
+        glyph={theme.role.user.glyph}
+        prefixColor={theme.role.user.prefix}
+      />
+      {menu.open && <SlashMenuList menu={menu} accent={theme.accent} />}
+      {hint !== undefined && hint !== "" && (
+        <Box paddingLeft={2}>
+          <Text dimColor>{hint}</Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+/** The single input line (glyph + text/placeholder + cursor cell).
+ * M6 D8: at chalk level 0 the inverse attribute is stripped — the cursor
+ * vanishes. Under MONOCHROME themes (degrade as DATA) a visible marker
+ * carries the affordance instead; colored-mode bytes unchanged. Known
+ * scope (EC-1): TERM=dumb/bare-pipe with a COLORED theme keeps the
+ * invisible inverse — NO_COLOR is the standard opt-out. */
+function InputRow({
+  buffer,
+  placeholder,
+  isFocused,
+  monochrome,
+  glyph,
+  prefixColor,
+}: {
+  buffer: { text: string; cursorOffset: number };
+  placeholder: string;
+  isFocused: boolean;
+  monochrome: boolean;
+  glyph: string;
+  prefixColor: string;
+}) {
   const { before, atCursor, after } = cursorSlices(
     buffer.text,
     buffer.cursorOffset,
   );
   const showPlaceholder = buffer.text.length === 0 && placeholder.length > 0;
-
-  // M6 D8: at chalk level 0 the inverse attribute is stripped — the cursor
-  // vanishes. Under MONOCHROME themes (degrade as DATA — no env read, and no
-  // name-identity check: a customized no-color base reads name "custom" yet
-  // still renders colorless — review arch-2/dom-frontend-1) a visible marker
-  // carries the affordance instead. Colored-mode bytes are unchanged. Known
-  // scope (EC-1): TERM=dumb/bare-pipe with a COLORED theme keeps the
-  // invisible inverse — the cursor is an interactive affordance, meaningless
-  // in non-interactive pipes; NO_COLOR is the standard opt-out for dumb
-  // interactive terminals.
-  const noColorMarker = isMonochrome(theme) && isFocused;
+  const noColorMarker = monochrome && isFocused;
   return (
     <Box>
-      <Text color={theme.role.user.prefix}>{theme.role.user.glyph}</Text>
+      <Text color={prefixColor}>{glyph}</Text>
       {showPlaceholder ? (
         <Box>
           {isFocused && <PlaceholderCursor marker={noColorMarker} />}
