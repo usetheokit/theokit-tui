@@ -169,7 +169,7 @@ src/welcome-banner.tsx / src/welcome-banner.test.tsx / CHANGELOG.md
 #### TDD
 
 ```
-RED:     animated_under_non_tty_is_byte_identical_to_static() — shadow isTTY=false; const a = render(<WelcomeBanner name="Theo" version="1.0" hints={["h1"]} animated/>); const b = render(<WelcomeBanner name="Theo" version="1.0" hints={["h1"]}/>); expect(a.lastFrame()).toBe(b.lastFrame()) (oracle a — EC-3: two LIVE renders, never a recorded string)
+RED:     animated_under_non_tty_is_byte_identical_to_static() — shadow isTTY=false; const a = render(<WelcomeBanner name="Theo" version="1.0" hints={["h1"]} animated/>); const b = render(<WelcomeBanner name="Theo" version="1.0" hints={["h1"]}/>); const identical = a.lastFrame() === b.lastFrame(); expect(identical).toBe(true) (oracle a — EC-3: two LIVE renders, never a recorded string)
 RED:     reveal_converges_to_static_bytes() — vi.useFakeTimers(); shadow isTTY=true, rows=30, columns=60; render animated; act(() => vi.advanceTimersByTime(12 * 80 + 80)); expect(lastFrame()).toBe(staticRender.lastFrame()) (oracle b)
 RED:     mid_reveal_frame_differs_from_final() — same gate-open setup; act(advance 3 * 80); const mid = lastFrame(); expect(mid).not.toContain("h1"); act(advance to end); expect(lastFrame()).toContain("h1"); expect(mid).not.toBe(lastFrame()) (oracle c)
 RED:     reduced_motion_env_forces_static_path() — vi.stubEnv("THEOKIT_TUI_NO_MOTION", "1"); gate-open dims; render animated; expect FIRST lastFrame() to contain "h1" (full static immediately); expect(vi.getTimerCount()).toBe(0) (oracle d)
@@ -270,7 +270,7 @@ tests/bench-baseline.test.ts (or the house bench-contract suite) / CHANGELOG.md
 #### TDD
 
 ```
-RED:     m12_banner_baseline_contract() — JSON.parse(docs/benchmarks/m12-welcome-banner-baseline.json); expect stack.ink === "7.1.0"; expect(modes.map(m => m.mode)).toEqual(expect.arrayContaining(["reveal", "static"])); expect color_env FORCE_COLOR === "1"; every aggregate has mean + std_dev
+RED:     m12_banner_baseline_contract() — const baseline = JSON.parse(read of docs/benchmarks/m12-welcome-banner-baseline.json); expect(baseline.stack.ink).toBe("7.1.0"); const modeNames = baseline.modes.map(pick mode); expect(modeNames).toEqual(expect.arrayContaining(["reveal", "static"])); expect(baseline.color_env.FORCE_COLOR).toBe("1"); every aggregate has mean + std_dev
 GREEN:   the bench file (real timers for reveal; rerender loop for static; warmup + 5 measured runs; per-run frames + ms/frame) + the load-gated run committed
 VERIFY:  pnpm vitest run tests/bench-baseline.test.ts
 ```
