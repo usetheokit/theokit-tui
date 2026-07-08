@@ -372,7 +372,7 @@ TheoCode dogfood against the 5 peers produced the gap table — every peer ships
 
 TheoCode dogfood against the 5 peers produced the gap table — `/` autocomplete is table stakes in every peer CLI and the composer already exists.
 
-### M16 — [ ] ToolCallCard rich variants (diff / output / preview)
+### M16 — [x] ToolCallCard rich variants (diff / output / preview)
 
 > Added 2026-07-08 by `/roadmap-feature` (slug: `m16-tool-card-variants`). See CHANGELOG `[Unreleased] § Added`.
 
