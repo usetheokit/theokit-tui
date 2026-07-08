@@ -37,4 +37,4 @@
 
 `pnpm gates` exits 0 (prettier + lint + typecheck + **599 tests** + build). Renderer modules: output-engine 100% all axes; host-config + renderer 100% lines. Byte-parity gate green; 29.2× bytes win documented.
 
-**Verdict: READY_TO_MERGE** — BLOCKER resolved, both blocking-adjacent MEDIUMs fixed, remaining findings documented and scoped to M18. No BLOCKER, 0 HIGH.
+**Verdict:** READY_TO_MERGE — BLOCKER resolved, both blocking-adjacent MEDIUMs fixed, remaining findings documented and scoped to M18. No BLOCKER, 0 HIGH.
