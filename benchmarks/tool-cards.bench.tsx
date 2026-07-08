@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { cpus } from "node:os";
+import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,7 +12,14 @@ import {
   ToolResult,
 } from "../src/index.js";
 import type { ChatThreadMessage, ToolCallStatus } from "../src/index.js";
-import { fmt, frameSampler, stats, tick, stackVersions } from "./sampling.js";
+import {
+  fmt,
+  frameSampler,
+  stats,
+  tick,
+  stackVersions,
+  round,
+} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
 
 // M2 tool-cards benchmark (plan T3.2, Blueprint Corner 3): thread + mixed
@@ -27,6 +34,7 @@ const WARMUP_RUNS = 1;
 const MEASURED_RUNS = 5;
 
 const smoke = process.argv.includes("--smoke");
+const loadAtStart = loadavg()[0] ?? -1;
 
 const STATUS_CYCLE: ToolCallStatus[] = [
   "pending",
@@ -159,6 +167,7 @@ if (!smoke) {
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    load_1min_at_start: round(loadAtStart),
     workload: {
       messages: N_MESSAGES,
       cards: N_CARDS,

@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `examples/stream.tsx` renders per-kind tool-detail cards after the turn (diff/output/preview — the direct-composition route for `ToolCallCard.result`); smoke pins the three shapes under the pipe contract; done-exit delayed one breath so the post-stream frame is the final piped frame (m16-tool-card-variants T2.1)
+
 - `ToolCallCard` `result?: ToolCardResult` — explicit per-kind bodies over the existing primitives: `{kind:"diff"}` → DiffViewer (malformed patch throws the typed error AT the card boundary — a child render throw is silently swallowed by ink's error boundary, probed), `{kind:"output"}` → ToolResult shell envelope, `{kind:"preview"}` → capped CodeBlock (with language) or plain lines; children coexist BELOW the result body; `ToolCardResult` exported (m16-tool-card-variants T1.1)
 
 ### Changed
