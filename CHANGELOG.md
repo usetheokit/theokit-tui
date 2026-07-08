@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- ROADMAP V4 (renderer program, owner decision — ADR 0003): M17 walking skeleton (react-reconciler + CSI-2026 + @xterm/headless harness), M18 Yoga layout + Box/Text parity, M19 input stack (bracketed paste, keybindings, PTY e2e), M20 scrollback + migration + cutover gate, M21 premium capabilities (inline images, rich editor, fuzzy+paths); the "no homegrown TUI framework" out-of-scope item removed with a dated note
+
 - SOTA references extended for the V4 gap analysis: `pi` (earendil-works, MIT — standalone TUI framework: differential rendering, CSI-2026, bracketed paste, rich Editor, fuzzy autocomplete), `agent-tui` (MIT — PTY automation harness for driving TUIs from agents), `conduit` (MIT, Rust/ratatui — team-of-agents UX)
 
 - `examples/showcase.tsx` (`pnpm example:showcase`) — every shipped primitive in ONE scripted agent turn: animated WelcomeBanner in the ChatThread header slot, markdown assistant reply, per-kind ToolCallCards (diff/output/preview), AgentStreaming driven by useTurnElapsed, ContextWindowBar + CostMeter, AppStatusBar and the slash-command ChatComposer (interactive runs); piped runs play the script deterministically and exit — pinned by a per-surface smoke

@@ -48,7 +48,12 @@ value.
 
 - **Generic TUI components** (menus, tables, forms, generic spinners, layout widgets) — that's
   ink-ui/@inquirer territory. We are AI-native, not a general-purpose TUI lib (Rule 9: don't reinvent).
-- **A homegrown TUI framework** — we use Ink; no ratatui (Rust) or opentui port.
+- ~~**A homegrown TUI framework** — we use Ink; no ratatui (Rust) or opentui port.~~
+  > Removed 2026-07-08 by owner decision (V4 renderer program): the pi/tui gap
+  > analysis proved renderer-level capabilities (CSI-2026 flicker-free output,
+  > fine-grained differential rendering, bracketed paste, inline images) are
+  > unreachable from userland Ink. V4 builds OUR renderer while KEEPING React
+  > (custom react-reconciler) — the React component API remains the thesis.
 - **The agent harness/runtime** — `@theokit/tui` only renders; agent/LLM logic is `@theokit/sdk`'s.
 - **A full coding-agent app/CLI** — that's TheoCode (consumer), not the lib.
 - **Heavy view-only engines** from `@theokit/ui` (slide/whiteboard/diagram) — meaningless in a terminal.
@@ -397,6 +402,111 @@ TheoCode dogfood against the 5 peers produced the gap table — `/` autocomplete
 
 TheoCode dogfood against the 5 peers produced the gap table — peers render tool calls richly by kind; we ship the pieces but not the composition.
 
+### M17 — [ ] Renderer V4: discover + walking skeleton (react-reconciler + CSI-2026)
+
+> Added 2026-07-08 (V4 renderer program — owner decision after the pi/tui gap analysis; out-of-scope item removed, see note above).
+
+**Objective:** Prove the OWN-renderer architecture end-to-end at minimal scope: a custom react-reconciler mounting `<Text>` into an output engine with differential rendering + CSI-2026 synchronized output, behind an opt-in entry (`@theokit/tui/renderer`), byte-parity-gated against Ink on a minimal scene.
+
+**Definition of done:**
+
+- [ ] Deep discover blueprint: pi/tui render loop (3 diff strategies, CSI-2026, scrollback), Ink internals (reconciler config, Output buffer), react-reconciler contract — with citations.
+- [ ] Walking skeleton: `createRenderer(stdout)` mounts a React tree of `<Text>` lines; unmount restores the terminal; zero Ink imports in the new engine.
+- [ ] Differential rendering v0 (line-diff) + CSI-2026 wrapping, verified by an @xterm/headless harness (the pi test idiom — REAL emulator, not fake stdout).
+- [ ] Byte-parity gate vs Ink for the skeleton scene (documented divergences only).
+- [ ] OWN bench (frames/sec + bytes-written vs Ink on the same scene); gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M16
+
+**Top risks (new):**
+
+1. react-reconciler API churn/complexity (undocumented internals) — mitigated by pinning the version Ink 7 uses and studying its host config first.
+2. @xterm/headless as the test oracle is new infra — mitigated by adopting pi's exact harness patterns (MIT, cited).
+
+### M18 — [ ] Renderer V4: layout engine + Box/Text parity
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** Full flexbox layout via Yoga (the SAME engine Ink uses — parity by construction) + our `Box`/`Text` primitives on the new renderer, gated on the EXISTING component snapshots.
+
+**Definition of done:**
+
+- [ ] Yoga-wasm layout integration (flexDirection/grow/shrink/padding/width/borders — the props our 20+ components use).
+- [ ] `Box`/`Text` (incl. wrap modes truncate/truncate-start/wrap, SGR styling, borders) rendering byte-compatible.
+- [ ] ≥ 90% of the existing component snapshot corpus passes UNCHANGED on the new renderer (divergence budget documented per-diff).
+- [ ] Bench: layout+render cost vs Ink on the M1 thread workload.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M17
+
+**Top risks (new):**
+
+1. Yoga measure-functions for text wrapping are the hard 10% — mitigated by porting Ink's measure approach (MIT, studied not copied).
+2. Snapshot-parity may hide semantic diffs — mitigated by the @xterm/headless render harness comparing final screens, not just streams.
+
+### M19 — [ ] Renderer V4: input stack (raw stdin, keybindings, bracketed paste)
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** Our input pipeline: raw-mode stdin buffer with bracketed-paste atomic segments (pi contract), kitty-keyboard-protocol awareness, a remappable keybindings map, and a `useInput`-compatible hook.
+
+**Definition of done:**
+
+- [ ] stdin buffer: escape-sequence parsing, bracketed paste (>10-line pastes become atomic marker segments), kitty protocol handshake where available.
+- [ ] Keybindings registry (emacs-style defaults: word-nav, ctrl+w/u/k, undo chord) — remappable, consumed by ChatComposer.
+- [ ] `useInput`-compat hook so M15's composer/menu run unchanged on the new stack.
+- [ ] PTY e2e: @xterm/headless drives the REAL raw-mode path (closes the M15 EC-5 gap permanently).
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M18
+
+**Top risks (new):**
+
+1. Terminal matrix variance (kitty vs legacy encodings) — mitigated by pi's stdin-buffer table + conservative fallbacks.
+2. Paste-marker segmentation interacting with grapheme segmentation — mitigated by adopting pi's merged-segmenter approach with our Intl.Segmenter buffer.
+
+### M20 — [ ] Renderer V4: scrollback semantics + component migration + cutover gate
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** `Static`-equivalent scrollback semantics (append-once history), migrate ALL components to the new renderer behind one entry flip, full suite green, comparative benches — the go/no-go cutover gate.
+
+**Definition of done:**
+
+- [ ] Scrollback engine: append-once graduated history (ChatThread/AgentTimeline contracts preserved — the M11 header-slot and windowing oracles pass).
+- [ ] 100% of the component suite green on the new renderer (itl-compatible test adapter or @xterm/headless harness).
+- [ ] Full comparative bench table (all existing baselines re-run on both engines; regressions need citable causes).
+- [ ] Cutover ADR: default engine decision (Ink stays as fallback OR is dropped in the next major) — human-approved.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M19
+
+**Top risks (new):**
+
+1. Hidden Ink behaviors our tests never pinned surface at migration — mitigated by the divergence-budget discipline from M18.
+2. Perf regressions on the debug/test path (itl semantics differ) — mitigated by benching BOTH the throttled and unthrottled paths.
+
+### M21 — [ ] Renderer V4: premium capabilities (inline images + editor upgrade)
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** The capabilities the new renderer unlocks: kitty/iTerm2 inline images and the FAANG-level editor (undo stack, kill-ring, word navigation, history recall) on ChatComposer.
+
+**Definition of done:**
+
+- [ ] `Image` component (kitty + iTerm2 protocols, graceful absence detection) — pi's terminal-image approach studied.
+- [ ] ChatComposer editor upgrade: undo stack, kill-ring (yank/yank-pop), word navigation, input history recall (↑), all on the M19 keybindings map.
+- [ ] Fuzzy matching + file-path (`@`) provider on the M15 autocomplete surface.
+- [ ] Example + PTY e2e coverage; OWN bench for the editor path.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M20
+
+**Top risks (new):**
+
+1. Image protocol detection matrix — mitigated by conservative capability probing + graceful text fallback.
+2. Editor state complexity (undo × paste-markers × graphemes) — mitigated by pi's segmenter precedent + property-style tests.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
@@ -412,6 +522,9 @@ Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full c
 | `bubbletea` | MIT | Gold-standard TUI framework (Go) — Elm architecture, render/update patterns | M0, M6 |
 | `bubbles` | MIT | Gold-standard TUI component set (Go) — viewport/progress/spinner component design | M1, M5 |
 | `opencode` | MIT | Agent-TUI splash/home screen (logo + version + hints) in production | M9 |
+| `pi` (`packages/tui`) | MIT | SOTA standalone TUI framework — differential rendering, CSI-2026, bracketed paste, rich editor, @xterm/headless test harness | M17, M18, M19, M20, M21 |
+| `agent-tui` | MIT | PTY automation harness for driving TUIs — e2e angle | M19, M20 |
+| `conduit` | MIT | Multi-agent terminal app (Rust/ratatui) — team-of-agents UX | M21 |
 | `mastra` (`mastracode/`) | Apache-2.0 (root dual: `ee/` dirs enterprise-licensed — avoid) | Production agent CLI (mastracode) — markdown/status/slash/tool-render patterns | M13, M14, M15, M16 |
 | `oh-my-logo` | MIT + CC0-1.0 | Claude-Code/Gemini-CLI-style gradient ASCII logo pattern (TypeScript) | M9 |
 | `ascii-motion` | MIT | Animated ASCII banner authoring — by the GitHub Copilot CLI banner designer | M9 |
