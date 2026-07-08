@@ -18,7 +18,10 @@ export type TextBufferAction =
   | { type: "move-home" }
   | { type: "move-end" }
   | { type: "newline" }
-  | { type: "clear" };
+  | { type: "clear" }
+  /** M15: replace line 1 with `/name ` (cursor after the space) —
+   * the slash-menu completion writes through the reducer (plan D3). */
+  | { type: "complete-command"; name: string };
 
 export const initialTextBuffer: TextBufferState = { text: "", cursorOffset: 0 };
 
@@ -141,29 +144,47 @@ function clampCursor(state: TextBufferState): TextBufferState {
   };
 }
 
+/** M15 D3: replace line 1 with `/name ` — cursor after the space. */
+function completeCommand(
+  state: TextBufferState,
+  name: string,
+): TextBufferState {
+  const rest = state.text.includes("\n")
+    ? state.text.slice(state.text.indexOf("\n"))
+    : "";
+  const line = `/${name} `;
+  return { text: line + rest, cursorOffset: line.length };
+}
+
+// Table-driven dispatch (the 10-case switch tripped the complexity lint
+// at M15): one handler per action type; the cast is safe because the key
+// IS the discriminant.
+const ACTION_HANDLERS: {
+  [K in TextBufferAction["type"]]: (
+    state: TextBufferState,
+    action: Extract<TextBufferAction, { type: K }>,
+  ) => TextBufferState;
+} = {
+  insert: (state, action) => insertAt(state, action.text),
+  newline: (state) => insertAt(state, "\n"),
+  "delete-backward": (state) => deleteBackward(state),
+  "delete-forward": (state) => deleteForward(state),
+  "move-left": (state) => moveLeft(state),
+  "move-right": (state) => moveRight(state),
+  "move-home": (state) => moveHome(state),
+  "move-end": (state) => moveEnd(state),
+  "complete-command": (state, action) => completeCommand(state, action.name),
+  clear: () => initialTextBuffer,
+};
+
 export function textBufferReducer(
   state: TextBufferState,
   action: TextBufferAction,
 ): TextBufferState {
   state = clampCursor(state);
-  switch (action.type) {
-    case "insert":
-      return insertAt(state, action.text);
-    case "newline":
-      return insertAt(state, "\n");
-    case "delete-backward":
-      return deleteBackward(state);
-    case "delete-forward":
-      return deleteForward(state);
-    case "move-left":
-      return moveLeft(state);
-    case "move-right":
-      return moveRight(state);
-    case "move-home":
-      return moveHome(state);
-    case "move-end":
-      return moveEnd(state);
-    case "clear":
-      return initialTextBuffer;
-  }
+  const handler = ACTION_HANDLERS[action.type] as (
+    s: TextBufferState,
+    a: TextBufferAction,
+  ) => TextBufferState;
+  return handler(state, action);
 }
