@@ -38,7 +38,8 @@ export interface ChatThreadProps {
    * content, identity AND presence are ignored by design (no
    * refreshStatic/clearTerminal machinery in a library). The key
    * `"__theokit_tui_header__"` is reserved — a message id colliding with it
-   * throws.
+   * throws. Size the header explicitly (Static's box is content-sized and
+   * absolute — percentage widths may not resolve as in the live region).
    */
   header?: ReactElement;
 }

@@ -564,6 +564,9 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
   });
 
   it("timeline_header_scene_matches_snapshot", async () => {
+    // Also kills the drop-sentinel-key mutant: React would warn on a
+    // missing list key inside Static (review F-1).
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const frame = await renderFrame(
       <Box width={60}>
         <AgentTimeline
@@ -580,6 +583,8 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
     expect(frame).toContain("✓");
     expect(frame).toContain("done");
     expect(frame).toMatchSnapshot("timeline-header-scene");
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it("reserved_event_id_throws_typed", () => {

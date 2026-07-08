@@ -24,7 +24,7 @@ describe("examples/chat.tsx (T4.2)", () => {
       // M11: banner in the header slot — present, ABOVE the thread, once.
       expect(out).toContain("Theo TUI");
       expect(out.indexOf("Theo TUI")).toBeLessThan(
-        out.indexOf("appended in place."),
+        out.indexOf("What ships in M1?"),
       );
       const bannerCount = out.split("Theo TUI").length - 1;
       expect(bannerCount).toBe(1);

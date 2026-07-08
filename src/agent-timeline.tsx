@@ -41,7 +41,8 @@ export interface AgentTimelineProps {
    * `<Static>` — pinned above graduated history (M11; same MOUNT-TIME
    * freeze contract as ChatThread.header: later changes to content,
    * identity and presence are ignored; the id
-   * `"__theokit_tui_header__"` is reserved).
+   * `"__theokit_tui_header__"` is reserved). Size the header explicitly —
+   * Static's box is content-sized/absolute; percentage widths may collapse.
    */
   header?: ReactElement;
 }
