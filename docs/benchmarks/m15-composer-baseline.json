@@ -1,0 +1,112 @@
+{
+  "benchmark": "chat-composer-typing",
+  "date": "2026-07-08T11:12:16.596Z",
+  "node_version": "v22.22.2",
+  "stack": {
+    "ink": "7.1.0",
+    "react": "19.2.7",
+    "ink_testing_library": "4.0.0"
+  },
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+    "cores": 12
+  },
+  "color_env": {
+    "FORCE_COLOR": "1"
+  },
+  "load_1min_at_start": 0.57,
+  "workload": {
+    "keystrokes": 120,
+    "commands": 50,
+    "script": "slash + type/erase filter chars (menu stays open)"
+  },
+  "protocol": {
+    "warmup_runs": 1,
+    "measured_runs": 5
+  },
+  "modes": [
+    {
+      "mode": "menu",
+      "runs": [
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 9.172,
+          "peak_ms_per_frame": 17.541
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 7.656,
+          "peak_ms_per_frame": 9.135
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 7.423,
+          "peak_ms_per_frame": 9.005
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 7.683,
+          "peak_ms_per_frame": 10.174
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 8.236,
+          "peak_ms_per_frame": 16.084
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 120,
+        "mean_ms_per_frame": {
+          "mean": 8.034,
+          "std_dev": 0.629
+        },
+        "peak_ms_per_frame": {
+          "mean": 12.388,
+          "std_dev": 3.664
+        }
+      }
+    },
+    {
+      "mode": "plain",
+      "runs": [
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 5.977,
+          "peak_ms_per_frame": 7.899
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 6.045,
+          "peak_ms_per_frame": 8.873
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 5.972,
+          "peak_ms_per_frame": 9.47
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 5.958,
+          "peak_ms_per_frame": 8.377
+        },
+        {
+          "frames": 120,
+          "mean_ms_per_frame": 6.006,
+          "peak_ms_per_frame": 8.021
+        }
+      ],
+      "aggregate": {
+        "frames_mean": 120,
+        "mean_ms_per_frame": {
+          "mean": 5.992,
+          "std_dev": 0.031
+        },
+        "peak_ms_per_frame": {
+          "mean": 8.528,
+          "std_dev": 0.58
+        }
+      }
+    }
+  ],
+  "methodology": "ink-testing-library render; each keystroke written to the fake stdin with a 0-tick flush; the script strictly alternates typing/erasing one filter char so the menu is OPEN with all 50 rows on EVERY keystroke (filter oscillates c/empty); menu mode registers 50 commands so the derive AND the row render run per keystroke; plain mode runs the SAME script without the commands prop — the mode delta is the menu's per-keystroke cost. Frame-delta sampler; FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup + N measured runs per mode; population std dev."
+}

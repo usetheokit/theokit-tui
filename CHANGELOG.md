@@ -19,6 +19,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.16.0] - 2026-07-08
+
+### Added
+
+- `examples/chat.tsx` registers slash commands + hint on the composer (interactive-only — raw-mode stdin; unit fake-stdin scripts are the deterministic evidence); OWN typing bench (`benchmarks/chat-composer.bench.tsx`): menu 8.03 ± 0.63 vs plain 5.99 ± 0.03 ms/keystroke — the +2.04 ms delta is the honest cost of an OPEN 50-row menu on every keystroke (the first draft's script let the menu close and understated it ~7×; caught at review, workload fixed with a fail-fast open-menu guard and baseline re-recorded) (m15-composer-autocomplete T3.1 + review F-1)
+
+- `ChatComposer` slash-command menu: `commands` prop (`{name, description}`, declarative — completion only edits the buffer), prefix filter on the first `/`-token of line 1, ↑↓ selection with wrap + 5-row sliding window (▲/▼ + counter), Tab/Enter completion to `/name `, Esc dismissal latch (typing reopens; the composer re-takes focus — ink's global ESC-blur runs first by design), `hint` affordance line; menu keys never leak into the buffer (m15-composer-autocomplete T2.1)
+
+- `slash-menu-model` (internal): pure slash-menu derivation — codex token-filter contract (first token after `/` on line 1), prefix matching, selection clamp, 5-row sliding window with overflow flags; `text-buffer` gains the `complete-command` action (line 1 becomes `/name `, cursor after the space) (m15-composer-autocomplete T1.1)
+
+### Fixed
+
+- `ChatComposer` slash menu: a multiline draft now CLOSES the menu (Enter submits — it hijacked the submit into a completion before); long descriptions truncate instead of interleaving with the name column; prefix matching gained its substring negative (review-survived mutant killed); hint dimness, tab trailing-space and negative-anchor oracles strengthened (m15 review batch)
+
 ## [0.15.0] - 2026-07-08
 
 ### Added

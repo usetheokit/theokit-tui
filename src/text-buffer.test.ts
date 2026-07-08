@@ -136,3 +136,26 @@ describe("textBufferReducer (T3.1)", () => {
     expect(textBufferReducer(s, { type: "move-end" }).cursorOffset).toBe(3);
   });
 });
+
+describe("complete-command action (M15 T1.1)", () => {
+  it("buffer_complete_command_action", () => {
+    // Replaces line 1 with "/name " keeping the rest; cursor lands after
+    // the trailing space (plan D3).
+    const state = { text: "/he\nrest", cursorOffset: 3 };
+    const next = textBufferReducer(state, {
+      type: "complete-command",
+      name: "help",
+    });
+    expect(next.text).toBe("/help \nrest");
+    expect(next.cursorOffset).toBe(6);
+  });
+
+  it("complete_command_on_single_line", () => {
+    const next = textBufferReducer(
+      { text: "/cl", cursorOffset: 3 },
+      { type: "complete-command", name: "clear" },
+    );
+    expect(next.text).toBe("/clear ");
+    expect(next.cursorOffset).toBe(7);
+  });
+});

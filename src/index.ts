@@ -1,4 +1,4 @@
-export const VERSION = "0.15.0";
+export const VERSION = "0.16.0";
 
 export {
   TheoTUIProvider,
@@ -81,7 +81,10 @@ export { CostMeter } from "./cost-meter.js";
 export type { CostMeterProps } from "./cost-meter.js";
 
 export { ChatComposer } from "./chat-composer.js";
-export type { ChatComposerProps } from "./chat-composer.js";
+export type {
+  ChatComposerCommand,
+  ChatComposerProps,
+} from "./chat-composer.js";
 export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
 export type { TextBufferAction, TextBufferState } from "./text-buffer.js";
 

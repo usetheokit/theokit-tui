@@ -322,7 +322,7 @@ The M9 blueprint recorded the flip condition and the brand-moment value is peer-
 
 TheoCode dogfood against the 5 peers produced the gap table — raw assistant text is the most visible parity gap that belongs to the lib.
 
-### M14 — [ ] Composed status bar + turn elapsed
+### M14 — [x] Composed status bar + turn elapsed
 
 > Added 2026-07-08 by `/roadmap-feature` (slug: `m14-status-bar`). See CHANGELOG `[Unreleased] § Added`.
 
