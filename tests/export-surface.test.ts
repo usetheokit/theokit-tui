@@ -56,9 +56,11 @@ describe("public entry surface (T0.2)", () => {
     expect(mod.MAX_RESULT_CHARS).toBe(20000);
   });
 
-  it("manifest_declares_only_ink_and_ink_spinner_runtime_deps", () => {
-    // T1.1 dependency contract: ink-spinner is the FIRST new runtime dep
-    // since M0 (plan ADR D2); peers stay react-only.
+  it("manifest_declares_expected_runtime_deps", () => {
+    // Dependency contract. M17 T2.1 (plan m17-renderer-skeleton, ADR D1 /
+    // 0003): react-reconciler joins the runtime graph — it is the renderer
+    // subpath's React host (Ink 7's exact ^0.33.0 pin). Peers stay
+    // react-only; react itself is a peerDependency, not a runtime dep.
     const pkg = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
     ) as {
@@ -69,6 +71,7 @@ describe("public entry surface (T0.2)", () => {
       "ink",
       "ink-spinner",
       "parse-diff",
+      "react-reconciler",
     ]);
     expect(pkg.peerDependencies["react"]).toBeDefined();
   });

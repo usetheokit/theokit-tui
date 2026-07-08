@@ -19,6 +19,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.18.0] - 2026-07-08
+
+### Added
+
+- M17 review fixes: `Renderer.stats()` exposes the differential engine's `fullRedrawCount` + `lastRedrawReason` through the public seam (the D2 observability pillar); `host-config` gained the Offscreen/Suspense `hide/unhide` stubs (no swallowed commit-phase throw). The `m17-parity-report.md` now enumerates the nested-box / newline-in-row / over-viewport divergences as reachable-but-deferred-to-M18 (review m17-renderer-skeleton, wiring + domain findings)
+
+- M17 T3.1 (renderer wiring + evidence): the `@theokit/tui/renderer` subpath export (types-first ESM, `publint`-clean), an `examples/renderer-skeleton.tsx` live ticker mounted through the own renderer (`pnpm example:renderer`), and the first **dual-engine bytes benchmark** (`benchmarks/renderer-skeleton.bench.tsx` + committed baseline): on a 200-line + 60-update script the differential engine writes **29× fewer bytes** than Ink's full-frame model (20 000 vs 584 472) and renders ~6× faster (7.9 vs 48.0 ms/frame). A `docs/renderer/m17-parity-report.md` documents the line-by-line Ink parity on the text scene and the divergences deferred to M18 (Yoga layout) (plan m17-renderer-skeleton, ADR D4)
+
+- M17 T2.1 (renderer reconciler host): a custom `react-reconciler` ^0.33.0 host (`src/renderer/host-config.ts`, Ink 7's mutation-mode hook subset reduced to text) and `createRenderer(terminal)` (`src/renderer/renderer.ts`) that mounts a React tree through the differential engine — commits coalesce via a microtask (N commits/tick → one paint), `unmount` restores the cursor. Verified against the `@xterm/headless` screen oracle, including a **byte-parity gate vs Ink** on a `<Box flexDirection="column">` Text scene (passes line-by-line). Exposed at the `@theokit/tui/renderer` subpath only — the root entry is unchanged. `react-reconciler` joins the runtime dep graph (plan m17-renderer-skeleton, ADR D1 / 0003)
+
+- M17 T1.1 (renderer walking skeleton): the `src/renderer/` island — a `Terminal` seam (interface + `ProcessTerminal`), a differential `OutputEngine` porting pi/tui's strategy ladder (first-render / line-diff / deleted-tail / width-and-height full-redraw with logged reason), all writes wrapped in CSI-2026 synchronized output, and a `@xterm/headless` `VirtualTerminal` test oracle that asserts on REAL emulator screen state. Engine at 100% line/branch/func coverage, 180 LoC, zero Ink imports (M17 renderer program — ADR 0003, plan m17-renderer-skeleton)
+
+- ROADMAP V4 expanded from the 7-peer parity matrix (`docs/v4-parity-matrix.md`): added M22 interaction primitives (SelectList/overlay/pager), M23 agent decision surfaces (approval/question/plan), M24 live progress surfaces (todo/progress/collapsible/toast), M25 parity polish + matrix re-audit (exit gate); tau + opentui reference rows added
+
+- SOTA reference: `tau` (huggingface, MIT) — the 7th parity peer named for the V4 component-parity criterion (Python coding agent, src/tau_coding/tui)
+
+- SOTA reference for V4: `opentui` (sst, MIT) — the direct peer of the renderer program (custom TUI engine with react-reconciler ^0.33.0 bindings, the same pin as ink 7 and our M17 plan)
+
+- ROADMAP V4 (renderer program, owner decision — ADR 0003): M17 walking skeleton (react-reconciler + CSI-2026 + @xterm/headless harness), M18 Yoga layout + Box/Text parity, M19 input stack (bracketed paste, keybindings, PTY e2e), M20 scrollback + migration + cutover gate, M21 premium capabilities (inline images, rich editor, fuzzy+paths); the "no homegrown TUI framework" out-of-scope item removed with a dated note
+
+- SOTA references extended for the V4 gap analysis: `pi` (earendil-works, MIT — standalone TUI framework: differential rendering, CSI-2026, bracketed paste, rich Editor, fuzzy autocomplete), `agent-tui` (MIT — PTY automation harness for driving TUIs from agents), `conduit` (MIT, Rust/ratatui — team-of-agents UX)
+
+- `examples/showcase.tsx` (`pnpm example:showcase`) — every shipped primitive in ONE scripted agent turn: animated WelcomeBanner in the ChatThread header slot, markdown assistant reply, per-kind ToolCallCards (diff/output/preview), AgentStreaming driven by useTurnElapsed, ContextWindowBar + CostMeter, AppStatusBar and the slash-command ChatComposer (interactive runs); piped runs play the script deterministically and exit — pinned by a per-surface smoke
+
+### Fixed
+
+- M16 `ToolCallCard` snapshot tests: eliminated a [NEEDS-REPRO] flake (review r1-F1) where the diff/preview-with-language variants captured plain-vs-highlighted output nondeterministically — CodeBlock/DiffViewer async-load lowlight via a module-cached promise, and whether the re-render flushed inside `renderFrame`'s 0ms tick depended on cross-worker cache warming; a `beforeAll(preloadHighlighter)` now forces the highlight state deterministic (0/10 full-suite runs flaked, verified under load)
+
 ## [0.17.0] - 2026-07-08
 
 ### Added

@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
-  "version": "0.17.0",
-  "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
+  "version": "0.18.0",
+  "description": "AI-native TUI primitives for agent CLIs \u2014 streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "default": "./dist/renderer/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -44,6 +48,8 @@
     "example:stream": "tsx examples/stream.tsx",
     "example:banner": "tsx examples/banner.tsx",
     "example:live": "tsx examples/live-agent-tui.tsx",
+    "example:showcase": "tsx examples/showcase.tsx",
+    "example:renderer": "tsx examples/renderer-skeleton.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "prepublishOnly": "pnpm gates && pnpm build"
   },
@@ -54,14 +60,17 @@
   "dependencies": {
     "ink": "^7.1.0",
     "ink-spinner": "^5.0.0",
-    "parse-diff": "^0.12.0"
+    "parse-diff": "^0.12.0",
+    "react-reconciler": "^0.33.0"
   },
   "devDependencies": {
     "@eslint/js": "^9",
     "@theokit/sdk": "^2.19.0",
     "@types/node": "^22.20.0",
     "@types/react": "^19.2.17",
+    "@types/react-reconciler": "^0.33.0",
     "@vitest/coverage-v8": "^3.0.0",
+    "@xterm/headless": "5.5.0",
     "cli-spinners": "^2.9.2",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.2.0",

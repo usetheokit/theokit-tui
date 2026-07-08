@@ -48,7 +48,12 @@ value.
 
 - **Generic TUI components** (menus, tables, forms, generic spinners, layout widgets) — that's
   ink-ui/@inquirer territory. We are AI-native, not a general-purpose TUI lib (Rule 9: don't reinvent).
-- **A homegrown TUI framework** — we use Ink; no ratatui (Rust) or opentui port.
+- ~~**A homegrown TUI framework** — we use Ink; no ratatui (Rust) or opentui port.~~
+  > Removed 2026-07-08 by owner decision (V4 renderer program): the pi/tui gap
+  > analysis proved renderer-level capabilities (CSI-2026 flicker-free output,
+  > fine-grained differential rendering, bracketed paste, inline images) are
+  > unreachable from userland Ink. V4 builds OUR renderer while KEEPING React
+  > (custom react-reconciler) — the React component API remains the thesis.
 - **The agent harness/runtime** — `@theokit/tui` only renders; agent/LLM logic is `@theokit/sdk`'s.
 - **A full coding-agent app/CLI** — that's TheoCode (consumer), not the lib.
 - **Heavy view-only engines** from `@theokit/ui` (slide/whiteboard/diagram) — meaningless in a terminal.
@@ -372,7 +377,7 @@ TheoCode dogfood against the 5 peers produced the gap table — every peer ships
 
 TheoCode dogfood against the 5 peers produced the gap table — `/` autocomplete is table stakes in every peer CLI and the composer already exists.
 
-### M16 — [ ] ToolCallCard rich variants (diff / output / preview)
+### M16 — [x] ToolCallCard rich variants (diff / output / preview)
 
 > Added 2026-07-08 by `/roadmap-feature` (slug: `m16-tool-card-variants`). See CHANGELOG `[Unreleased] § Added`.
 
@@ -397,6 +402,185 @@ TheoCode dogfood against the 5 peers produced the gap table — `/` autocomplete
 
 TheoCode dogfood against the 5 peers produced the gap table — peers render tool calls richly by kind; we ship the pieces but not the composition.
 
+### M17 — [ ] Renderer V4: discover + walking skeleton (react-reconciler + CSI-2026)
+
+> Added 2026-07-08 (V4 renderer program — owner decision after the pi/tui gap analysis; out-of-scope item removed, see note above).
+
+**Objective:** Prove the OWN-renderer architecture end-to-end at minimal scope: a custom react-reconciler mounting `<Text>` into an output engine with differential rendering + CSI-2026 synchronized output, behind an opt-in entry (`@theokit/tui/renderer`), byte-parity-gated against Ink on a minimal scene.
+
+**Definition of done:**
+
+- [ ] Deep discover blueprint: pi/tui render loop (3 diff strategies, CSI-2026, scrollback), Ink internals (reconciler config, Output buffer), react-reconciler contract — with citations.
+- [ ] Walking skeleton: `createRenderer(stdout)` mounts a React tree of `<Text>` lines; unmount restores the terminal; zero Ink imports in the new engine.
+- [ ] Differential rendering v0 (line-diff) + CSI-2026 wrapping, verified by an @xterm/headless harness (the pi test idiom — REAL emulator, not fake stdout).
+- [ ] Byte-parity gate vs Ink for the skeleton scene (documented divergences only).
+- [ ] OWN bench (frames/sec + bytes-written vs Ink on the same scene); gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M16
+
+**Top risks (new):**
+
+1. react-reconciler API churn/complexity (undocumented internals) — mitigated by pinning the version Ink 7 uses and studying its host config first.
+2. @xterm/headless as the test oracle is new infra — mitigated by adopting pi's exact harness patterns (MIT, cited).
+
+### M18 — [ ] Renderer V4: layout engine + Box/Text parity
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** Full flexbox layout via Yoga (the SAME engine Ink uses — parity by construction) + our `Box`/`Text` primitives on the new renderer, gated on the EXISTING component snapshots.
+
+**Definition of done:**
+
+- [ ] Yoga-wasm layout integration (flexDirection/grow/shrink/padding/width/borders — the props our 20+ components use).
+- [ ] `Box`/`Text` (incl. wrap modes truncate/truncate-start/wrap, SGR styling, borders) rendering byte-compatible.
+- [ ] ≥ 90% of the existing component snapshot corpus passes UNCHANGED on the new renderer (divergence budget documented per-diff).
+- [ ] Bench: layout+render cost vs Ink on the M1 thread workload.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M17
+
+**Top risks (new):**
+
+1. Yoga measure-functions for text wrapping are the hard 10% — mitigated by porting Ink's measure approach (MIT, studied not copied).
+2. Snapshot-parity may hide semantic diffs — mitigated by the @xterm/headless render harness comparing final screens, not just streams.
+
+### M19 — [ ] Renderer V4: input stack (raw stdin, keybindings, bracketed paste)
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** Our input pipeline: raw-mode stdin buffer with bracketed-paste atomic segments (pi contract), kitty-keyboard-protocol awareness, a remappable keybindings map, and a `useInput`-compatible hook.
+
+**Definition of done:**
+
+- [ ] stdin buffer: escape-sequence parsing, bracketed paste (>10-line pastes become atomic marker segments), kitty protocol handshake where available.
+- [ ] Keybindings registry (emacs-style defaults: word-nav, ctrl+w/u/k, undo chord) — remappable, consumed by ChatComposer.
+- [ ] `useInput`-compat hook so M15's composer/menu run unchanged on the new stack.
+- [ ] PTY e2e: @xterm/headless drives the REAL raw-mode path (closes the M15 EC-5 gap permanently).
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M18
+
+**Top risks (new):**
+
+1. Terminal matrix variance (kitty vs legacy encodings) — mitigated by pi's stdin-buffer table + conservative fallbacks.
+2. Paste-marker segmentation interacting with grapheme segmentation — mitigated by adopting pi's merged-segmenter approach with our Intl.Segmenter buffer.
+
+### M20 — [ ] Renderer V4: scrollback semantics + component migration + cutover gate
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** `Static`-equivalent scrollback semantics (append-once history), migrate ALL components to the new renderer behind one entry flip, full suite green, comparative benches — the go/no-go cutover gate.
+
+**Definition of done:**
+
+- [ ] Scrollback engine: append-once graduated history (ChatThread/AgentTimeline contracts preserved — the M11 header-slot and windowing oracles pass).
+- [ ] 100% of the component suite green on the new renderer (itl-compatible test adapter or @xterm/headless harness).
+- [ ] Full comparative bench table (all existing baselines re-run on both engines; regressions need citable causes).
+- [ ] Cutover ADR: default engine decision (Ink stays as fallback OR is dropped in the next major) — human-approved.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M19
+
+**Top risks (new):**
+
+1. Hidden Ink behaviors our tests never pinned surface at migration — mitigated by the divergence-budget discipline from M18.
+2. Perf regressions on the debug/test path (itl semantics differ) — mitigated by benching BOTH the throttled and unthrottled paths.
+
+### M21 — [ ] Renderer V4: premium capabilities (inline images + editor upgrade)
+
+> Added 2026-07-08 (V4 renderer program).
+
+**Objective:** The capabilities the new renderer unlocks: kitty/iTerm2 inline images and the FAANG-level editor (undo stack, kill-ring, word navigation, history recall) on ChatComposer.
+
+**Definition of done:**
+
+- [ ] `Image` component (kitty + iTerm2 protocols, graceful absence detection) — pi's terminal-image approach studied.
+- [ ] ChatComposer editor upgrade: undo stack, kill-ring (yank/yank-pop), word navigation, input history recall (↑), all on the M19 keybindings map.
+- [ ] Fuzzy matching + file-path (`@`) provider on the M15 autocomplete surface.
+- [ ] Example + PTY e2e coverage; OWN bench for the editor path.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M20
+
+**Top risks (new):**
+
+1. Image protocol detection matrix — mitigated by conservative capability probing + graceful text fallback.
+2. Editor state complexity (undo × paste-markers × graphemes) — mitigated by pi's segmenter precedent + property-style tests.
+
+### M22 — [ ] Renderer V4: interaction primitives (SelectList, overlay/modal, pager)
+
+> Added 2026-07-08 (V4 parity matrix — universal in 7/7 peers; see docs/v4-parity-matrix.md).
+
+**Objective:** The interaction foundation every peer ships: a fuzzy SelectList (single/multi), an overlay/modal layer, and a full-screen pager — the primitives apps compose every picker/dialog from.
+
+**Definition of done:**
+
+- [ ] `SelectList`: windowed list, fuzzy filter, single + multi-select, `❯` marker, ▲/▼ + counter (generalizes the M15 slash-menu recipe).
+- [ ] Overlay/modal layer: stacked surface above the thread with focus capture and Esc-dismiss (codex bottom-pane / gemini DialogManager patterns).
+- [ ] `Pager`: full-screen scrollable overlay (PgUp/PgDn/vim keys) for transcripts/long output.
+- [ ] Deterministic keyboard oracles (fake-stdin + PTY e2e); degrade ladder; ≤ 3 snapshots.
+- [ ] Example + smoke; gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M20
+
+**Top risks (new):** 1. Focus management across overlay stack (ink focus vs our input stack) — mitigated by the M15 ESC-refocus lesson + M19 keybindings. 2. Scope creep toward app-specific pickers — the lib ships PRIMITIVES; model/theme/session selectors are app compositions (parity matrix "OUT" list).
+
+### M23 — [ ] Renderer V4: agent decision surfaces (approval, question, plan)
+
+> Added 2026-07-08 (V4 parity matrix — approval flows in 6/7 peers).
+
+**Objective:** The agent-decision vocabulary: ApprovalPrompt (action preview + diff inline + always/once/reject), QuestionPrompt (structured options + free text), PlanApproval (proposed-plan cell with approve/reject).
+
+**Definition of done:**
+
+- [ ] `ApprovalPrompt`: renders the pending action (command / diff via DiffViewer / free body), choices always/once/reject, keyboard-driven, decision emitted via callback.
+- [ ] `QuestionPrompt`: options (single/multi via M22 SelectList) + optional free-text input, per-question header.
+- [ ] `PlanApproval`: plan markdown body + approve/revise choices (the Claude Code plan-mode idiom).
+- [ ] Deterministic oracles incl. keyboard-leak negatives; PTY e2e for one full approve flow.
+- [ ] Example (scripted decision round-trip) + smoke; gates/coverage/CHANGELOG.
+
+**Dependencies:** M22
+
+**Top risks (new):** 1. Decision-state API leaking app semantics into the lib — mitigated by callback-only contracts (the M15 declarative precedent). 2. Diff-in-prompt reuse coupling — composition via the existing DiffViewer slot, never prop forwarding (M16 D2 lesson).
+
+### M24 — [ ] Renderer V4: live progress surfaces (todo, progress, collapsible, toast)
+
+> Added 2026-07-08 (V4 parity matrix — live checklists/progress in 5+/7 peers).
+
+**Objective:** The live-turn surfaces: TodoList (☐/☑ updating mid-turn), MultiStepProgress (+ subagent variant), CollapsibleBlock (thinking/reasoning + expandable long output), Toast + desktop notify (OSC-9/BEL), spinner phrase-cycler + shimmer.
+
+**Definition of done:**
+
+- [ ] `TodoList`: live checklist keyed by stable ids (☐/◐/☑), streaming-safe replace-item contract (the ChatThread ordering precedent).
+- [ ] `MultiStepProgress`: n-of-m steps with per-step status; subagent-labelled variant.
+- [ ] `CollapsibleBlock`: collapsed summary line + expanded body, controlled or key-toggled; ThinkingBlock preset.
+- [ ] `Toast` (transient, auto-dismiss timer — M12 bounded-driver idiom) + `notify()` helper (OSC-9 with BEL fallback).
+- [ ] `AgentStreaming` phrase-cycler + shimmer opt-ins (reduced-motion respected — M12 gate reuse).
+- [ ] Deterministic fake-timer oracles; OWN bench for any per-frame path (M9 flip condition); example + smoke; gates/CHANGELOG.
+
+**Dependencies:** M22
+
+**Top risks (new):** 1. Toast timers × render loop flake surface — the M12/M14 fake-timer discipline applies. 2. OSC-9 support matrix — conservative BEL fallback + capability note.
+
+### M25 — [ ] Renderer V4: parity polish + matrix re-audit (exit gate)
+
+> Added 2026-07-08 (V4 parity matrix closure).
+
+**Objective:** Close the remaining universal rows and re-audit the matrix as the V4 exit gate: markdown tables, intra-line diff word highlight, interactive expand/collapse on capped outputs (ctrl+o idiom), terminal-title + OSC-8 hyperlink helpers.
+
+**Definition of done:**
+
+- [ ] Markdown tables in MarkdownText (gemini TableRenderer recipe; degrade to aligned plain text).
+- [ ] DiffViewer intra-line word highlight (pi/codex recipe) behind an opt-in prop.
+- [ ] Interactive expand/collapse on ToolResult/CodeBlock caps (key-toggled, ctrl+o idiom) built on M24 CollapsibleBlock.
+- [ ] `setTerminalTitle()` + OSC-8 hyperlink helper (graceful no-op off-TTY).
+- [ ] **Matrix re-audit:** docs/v4-parity-matrix.md re-scored — every universal row ✓ for lib scope; the re-audit report is the release artifact.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M21, M23, M24
+
+**Top risks (new):** 1. Table layout under narrow widths — width-matrix oracles (M9 idiom). 2. Re-audit temptation to self-grade leniently — the audit runs as an adversarial review panel, not a checkbox pass.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
@@ -412,6 +596,11 @@ Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full c
 | `bubbletea` | MIT | Gold-standard TUI framework (Go) — Elm architecture, render/update patterns | M0, M6 |
 | `bubbles` | MIT | Gold-standard TUI component set (Go) — viewport/progress/spinner component design | M1, M5 |
 | `opencode` | MIT | Agent-TUI splash/home screen (logo + version + hints) in production | M9 |
+| `pi` (`packages/tui`) | MIT | SOTA standalone TUI framework — differential rendering, CSI-2026, bracketed paste, rich editor, @xterm/headless test harness | M17, M18, M19, M20, M21 |
+| `agent-tui` | MIT | PTY automation harness for driving TUIs — e2e angle | M19, M20 |
+| `conduit` | MIT | Multi-agent terminal app (Rust/ratatui) — team-of-agents UX | M21 |
+| `tau` | MIT | Minimalist coding agent (Python) with TUI — 7th parity peer | M22, M24 |
+| `opentui` | MIT | Custom TUI renderer with react-reconciler 0.33 bindings — direct V4 peer | M17, M18, M20 |
 | `mastra` (`mastracode/`) | Apache-2.0 (root dual: `ee/` dirs enterprise-licensed — avoid) | Production agent CLI (mastracode) — markdown/status/slash/tool-render patterns | M13, M14, M15, M16 |
 | `oh-my-logo` | MIT + CC0-1.0 | Claude-Code/Gemini-CLI-style gradient ASCII logo pattern (TypeScript) | M9 |
 | `ascii-motion` | MIT | Animated ASCII banner authoring — by the GitHub Copilot CLI banner designer | M9 |

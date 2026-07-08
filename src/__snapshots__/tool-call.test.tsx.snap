@@ -27,11 +27,11 @@ exports[`ToolCallCard result variants (M16 T1.1) > output_result_renders_shell_e
 
 exports[`ToolCallCard result variants (M16 T1.1) > preview_result_caps_with_language_routing > tool-card-preview 1`] = `
 "[32m✓[39m  [1mread[22m
-   const line0 = 0;
-   const line1 = 1;
-   const line2 = 2;
-   const line3 = 3;
-   const line4 = 4;
+   [34mconst[39m line0 = [32m0[39m;
+   [34mconst[39m line1 = [32m1[39m;
+   [34mconst[39m line2 = [32m2[39m;
+   [34mconst[39m line3 = [32m3[39m;
+   [34mconst[39m line4 = [32m4[39m;
    [2m… (+15 more lines)[22m"
 `;
 

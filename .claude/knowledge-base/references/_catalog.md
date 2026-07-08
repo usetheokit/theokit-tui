@@ -83,3 +83,11 @@ peers for AI-agent terminal UIs. Read by `/discover-plan` when deep-diving a ref
 > License-gate note (2026-07-07): charmbracelet/crush was EXCLUDED (FSL-1.1 source-available — warn class); Aider dispensed (Python, trivial banner, low pattern value for Ink/React).
 
 | mastra | https://github.com/mastra-ai/mastra | Apache-2.0 (root LICENSE.md dual: any `ee/` dir is enterprise-licensed — do NOT study `ee/`; `mastracode/` package.json declares Apache-2.0) | Production agent CLI (`mastracode/`) — markdown render, status bar, slash menu, per-kind tool render | added_by: roadmap-feature · added_for_milestone: M13, M14, M15, M16 · date: 2026-07-08 |
+
+| pi | https://github.com/earendil-works/pi | MIT | `packages/tui` — SOTA standalone TUI framework (differential rendering, CSI-2026 synchronized output, bracketed paste, kitty/iTerm2 images, 2333-line Editor, fuzzy autocomplete, undo/kill-ring); NOT ink — own renderer; the pi coding agent consumes it | added_by: sota-gap-analysis · date: 2026-07-08 |
+| agent-tui | https://github.com/pproenca/agent-tui | MIT | TUI AUTOMATION harness (PTY sessions + screenshots + wait-conditions for agents driving TUIs) — an e2e-testing angle, not a component library | added_by: sota-gap-analysis · date: 2026-07-08 |
+| conduit | https://github.com/conduit-cli/conduit | MIT | Multi-agent terminal app (Rust/ratatui) — team-of-agents UX patterns | added_by: sota-gap-analysis · date: 2026-07-08 |
+
+| opentui | https://github.com/sst/opentui | MIT | THE V4 direct peer — custom TUI renderer with REACT bindings (packages/react = react-reconciler host over their core engine); study the host-config + core split | added_by: v4-renderer-program · added_for_milestone: M17, M18, M20 · date: 2026-07-08 |
+
+| tau | https://github.com/huggingface/tau | MIT | Minimalist coding agent (Python) with a TUI (src/tau_coding/tui — autocomplete, widgets) — the 7th parity peer named for V4 | added_by: v4-parity-matrix · date: 2026-07-08 |
