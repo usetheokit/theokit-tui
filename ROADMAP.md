@@ -347,7 +347,7 @@ TheoCode dogfood against the 5 peers produced the gap table — raw assistant te
 
 TheoCode dogfood against the 5 peers produced the gap table — every peer ships a persistent status bar; our metrics primitives exist but are uncomposed.
 
-### M15 — [ ] Composer slash autocomplete + keyboard affordances
+### M15 — [x] Composer slash autocomplete + keyboard affordances
 
 > Added 2026-07-08 by `/roadmap-feature` (slug: `m15-composer-autocomplete`). See CHANGELOG `[Unreleased] § Added`. Out-of-scope overlap ("menus") reviewed 2026-07-08: coincidental — this is the agent-surface slash menu every peer CLI ships, not a generic ink-ui menu (grill log).
 
