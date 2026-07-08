@@ -1,4 +1,4 @@
-import { Box } from "ink";
+import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
@@ -474,5 +474,128 @@ describe("AgentTimeline — representative turn (T3.1, roadmap DoD-3)", () => {
     expect(frame).toContain("✓");
     expect(frame).toContain("All green now.");
     expect(frame).toMatchSnapshot("agent-turn");
+  });
+});
+
+describe("AgentTimeline header slot (M11 T1.2)", () => {
+  const HEADER = <Text>BANNER</Text>;
+  const events = (n: number): AgentEvent[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `e${i}`,
+      kind: "message" as const,
+      role: "assistant" as const,
+      text: `row-${i} end`,
+    }));
+
+  async function ticks(count = 3): Promise<void> {
+    for (let index = 0; index < count; index += 1) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    }
+  }
+
+  it("header_above_heterogeneous_graduated_events", async () => {
+    const list: AgentEvent[] = [
+      ...events(5),
+      { id: "tool-h", kind: "tool", name: "build", status: "success" },
+      ...events(20).slice(6),
+    ];
+    const instance = render(
+      <AgentTimeline
+        header={HEADER}
+        events={list}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    const iBanner = frame.indexOf("BANNER");
+    expect(iBanner).toBeGreaterThanOrEqual(0);
+    expect(iBanner).toBeLessThan(frame.indexOf("build"));
+    const count = frame.split("BANNER").length - 1;
+    expect(count).toBe(1);
+  });
+
+  it("timeline_header_mount_freeze_mirrors_chatthread", async () => {
+    // late header ignored
+    const late = render(
+      <AgentTimeline events={events(20)} windowSize={4} windowOverscan={2} />,
+    );
+    await ticks();
+    late.rerender(
+      <AgentTimeline
+        header={<Text>LATE</Text>}
+        events={events(22)}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    const lateFrame = late.lastFrame() ?? "";
+    late.unmount();
+    expect(lateFrame).not.toContain("LATE");
+    // removal + append in ONE rerender loses no events (same-length trap)
+    const inst = render(
+      <AgentTimeline
+        header={HEADER}
+        events={events(10)}
+        windowSize={4}
+        windowOverscan={2}
+      />,
+    );
+    await ticks();
+    inst.rerender(
+      <AgentTimeline events={events(11)} windowSize={4} windowOverscan={2} />,
+    );
+    await ticks();
+    inst.rerender(
+      <AgentTimeline events={events(14)} windowSize={4} windowOverscan={2} />,
+    );
+    await ticks();
+    const frame = inst.lastFrame() ?? "";
+    inst.unmount();
+    for (let i = 0; i < 14; i += 1) {
+      expect(frame.split(`row-${i} end`).length - 1, `row-${i}`).toBe(1);
+    }
+    expect(frame.split("BANNER").length - 1).toBe(1);
+  });
+
+  it("timeline_header_scene_matches_snapshot", async () => {
+    const frame = await renderFrame(
+      <Box width={60}>
+        <AgentTimeline
+          header={<Text>BANNER</Text>}
+          events={[
+            { id: "t1", kind: "thinking", text: "planning" },
+            { id: "tool1", kind: "tool", name: "vitest", status: "success" },
+            { id: "m1", kind: "message", role: "assistant", text: "done" },
+          ]}
+        />
+      </Box>,
+    );
+    expect(frame).toContain("BANNER");
+    expect(frame).toContain("✓");
+    expect(frame).toContain("done");
+    expect(frame).toMatchSnapshot("timeline-header-scene");
+  });
+
+  it("reserved_event_id_throws_typed", () => {
+    const bad = () =>
+      AgentTimeline({
+        header: HEADER,
+        events: [
+          {
+            id: "__theokit_tui_header__",
+            kind: "message",
+            role: "user",
+            text: "x",
+          },
+        ],
+      });
+    expect(bad).toThrow(TypeError);
+    expect(bad).toThrow("__theokit_tui_header__");
   });
 });

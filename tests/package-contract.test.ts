@@ -174,11 +174,13 @@ describe("snapshot re-record review guard (M10 T1.4)", () => {
       ),
       "utf8",
     );
-    const changed = execFileSync(
+    // Only RE-RECORDS (diffs with deletions) need review-table rows —
+    // additions-only diffs are NEW snapshots from later milestones.
+    const numstat = execFileSync(
       "git",
       [
         "diff",
-        "--name-only",
+        "--numstat",
         M10_BASE,
         "--",
         "src/__snapshots__",
@@ -189,9 +191,13 @@ describe("snapshot re-record review guard (M10 T1.4)", () => {
       .trim()
       .split("\n")
       .filter(Boolean);
-    for (const f of changed) {
-      const base = f.split("/").pop() ?? f;
-      expect(table, f).toContain(base);
+    for (const line of numstat) {
+      const [, deleted, file] = line.split("\t");
+      if (Number(deleted) === 0 || file === undefined) {
+        continue;
+      }
+      const base = file.split("/").pop() ?? file;
+      expect(table, file).toContain(base);
     }
   });
 });

@@ -9,7 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `ChatThread` `header?: ReactElement` — folded as the FIRST item of the thread's own `<Static>`, pinned above graduated scrollback (resolves the recorded M9 banner-sinking drawback). MOUNT-TIME prop: the first render's value is frozen; later content/identity/presence changes are ignored by design (the ink Static index advances by length only — a shrinking union would permanently skip freshly graduated rows). Reserved id `__theokit_tui_header__` now always rejected (m11-chatthread-header-slot T1.1)
+- `ChatThread` `header?: ReactElement` — folded as the FIRST item of the thread's own `<Static>`, pinned above graduated scrollback (resolves the recorded M9 banner-sinking drawback). MOUNT-TIME prop: the first render's value is frozen; later content/identity/presence changes are ignored by design (the ink Static index advances by length only — a shrinking union would permanently skip freshly graduated rows). Reserved id `__theokit_tui_header__` now always rejected; `AgentTimeline` gains the mirrored `header?` slot with the same contract (+1 anchored snapshot) (m11-chatthread-header-slot T1.1+T1.2)
 
 ### Added
 

@@ -1,9 +1,11 @@
 import { Box, Static, Text } from "ink";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
+import type { ReactElement } from "react";
 
 import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
 import type { AgentEvent } from "./agent-event.js";
 import { CHAT_ROLES, ChatMessage } from "./chat-message.js";
+import { HEADER_SENTINEL_KEY } from "./chat-thread.js";
 import {
   STATUS_INDICATOR_WIDTH,
   TOOL_CALL_STATUSES,
@@ -34,7 +36,18 @@ export interface AgentTimelineProps {
    */
   windowSize?: number;
   windowOverscan?: number;
+  /**
+   * Optional header folded as the FIRST item of the timeline's own
+   * `<Static>` — pinned above graduated history (M11; same MOUNT-TIME
+   * freeze contract as ChatThread.header: later changes to content,
+   * identity and presence are ignored; the id
+   * `"__theokit_tui_header__"` is reserved).
+   */
+  header?: ReactElement;
 }
+
+const HEADER_SENTINEL = Symbol("theokit-tui-header");
+type TimelineStaticItem = typeof HEADER_SENTINEL | AgentEvent;
 
 /**
  * Structural boundary check (plan ADR D8, EC-1/EC-2): kind membership, id
@@ -80,6 +93,11 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
 function assertValidEvents(events: AgentEvent[]): void {
   const seen = new Set<string>();
   for (const event of events) {
+    if (event.id === HEADER_SENTINEL_KEY) {
+      throw new TypeError(
+        `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+      );
+    }
     if (!isAgentEventKind(event.kind)) {
       throw new TypeError(
         `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
@@ -185,22 +203,38 @@ export function AgentTimeline({
   events,
   windowSize = 8,
   windowOverscan = 4,
+  header,
 }: AgentTimelineProps) {
   // Boundary validation FIRST, before any hook (F10 — tests invoke this as a
   // plain function; Ink swallows render-time throws).
   assertValidEvents(events);
+  // MOUNT-FREEZE (M11 D1 — mirrors ChatThread): constant length
+  // contribution; ink Static advances its index by LENGTH only.
+  const frozenHeader = useRef(header).current;
   const tailStart = Math.max(
     0,
     events.length - Math.max(0, windowSize) - Math.max(0, windowOverscan),
   );
   const prefix = useMemo(() => events.slice(0, tailStart), [events, tailStart]);
+  const items = useMemo<TimelineStaticItem[]>(
+    () => (frozenHeader === undefined ? prefix : [HEADER_SENTINEL, ...prefix]),
+    [frozenHeader, prefix],
+  );
   const tail = events.slice(tailStart);
 
   return (
     <>
-      {prefix.length > 0 && (
-        <Static items={prefix}>
-          {(event) => <Row key={event.id} event={event} />}
+      {items.length > 0 && (
+        <Static items={items}>
+          {(item) =>
+            item === HEADER_SENTINEL ? (
+              <Box key={HEADER_SENTINEL_KEY} flexDirection="column">
+                {frozenHeader}
+              </Box>
+            ) : (
+              <Row key={item.id} event={item} />
+            )
+          }
         </Static>
       )}
       <Box flexDirection="column">
