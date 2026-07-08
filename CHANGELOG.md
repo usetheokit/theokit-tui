@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Roadmap amended (V3 series): added M13 Markdown renderer, M14 Composed status bar + turn elapsed, M15 Composer slash autocomplete + keyboard affordances, M16 ToolCallCard rich variants (`/roadmap-feature`, batch — all depend on M12; gap table from the TheoCode dogfood vs Claude Code/Codex/Gemini/OpenCode/Mastra); SOTA references extended with mastra/mastracode (Apache-2.0 — `ee/` dirs enterprise-licensed, excluded from study)
+
 ### Changed
 
 ### Deprecated
