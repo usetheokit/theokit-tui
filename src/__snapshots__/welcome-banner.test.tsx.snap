@@ -11,3 +11,9 @@ exports[`WelcomeBanner > snapshots_default_and_floor > welcome-banner-default 1`
 `;
 
 exports[`WelcomeBanner > snapshots_default_and_floor > welcome-banner-floor-rung 1`] = `"Theo TUI v0.9.0"`;
+
+exports[`WelcomeBanner animated reveal (M12) > mid_reveal_frame_matches_snapshot > banner-mid-reveal 1`] = `
+"[36m╭──────────────────────────────────────────────────────────╮[39m
+[36m│[39m [1m[36mThe[39m[22m                                                      [36m│[39m
+[36m╰──────────────────────────────────────────────────────────╯[39m"
+`;

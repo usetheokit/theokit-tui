@@ -454,6 +454,25 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     errorSpy.mockRestore();
   });
 
+  it("mid_reveal_frame_matches_snapshot", () => {
+    // M12 T2.1: the ONE new snapshot — a deterministic mid-reveal frame
+    // (fake timers make phase 4 exact), anchored by the partial name.
+    vi.useFakeTimers();
+    const instance = mountGated(
+      { isTTY: true, rows: 30 },
+      { ...REVEAL_PROPS, animated: true },
+    );
+    act(() => {
+      vi.advanceTimersByTime(4 * TICK);
+    });
+    const frame = instance.lastFrame() ?? "";
+    // phase 4/12 of "Theo TUI" (8 chars) ⇒ ceil(8·4/12) = 3 chars shown.
+    expect(frame).toContain("The");
+    expect(frame).not.toContain("Theo TUI");
+    expect(frame).toMatchSnapshot("banner-mid-reveal");
+    instance.unmount();
+  });
+
   it("gate_is_evaluated_once_dims_shrink_mid_reveal", () => {
     // Oracle g (D2 pin): dims shrinking mid-reveal do NOT abort the run.
     vi.useFakeTimers();
