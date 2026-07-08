@@ -106,6 +106,7 @@ describe("sdk drift tripwire (D3)", () => {
       "chalk",
       "cli-boxes",
       "cli-truncate",
+      "ignore",
       "ink",
       "ink-spinner",
       "parse-diff",

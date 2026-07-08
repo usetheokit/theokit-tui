@@ -29,6 +29,9 @@ export type TextBufferAction =
   /** M15: replace line 1 with `/name ` (cursor after the space) —
    * the slash-menu completion writes through the reducer (plan D3). */
   | { type: "complete-command"; name: string }
+  /** M21: replace the `@`-token `[from, to)` with a file `path ` (cursor after
+   * the space) — the mention-menu completion writes through the reducer. */
+  | { type: "complete-mention"; path: string; from: number; to: number }
   /** M21: replace the whole state — undo / yank-pop / history restore write
    * through the reducer so React sees one atomic transition (plan ADR B2). */
   | { type: "set"; state: TextBufferState };
@@ -172,6 +175,20 @@ function completeCommand(
   return { text: line + rest, cursorOffset: line.length };
 }
 
+/** M21: replace the `@`-token `[from, to)` with `path ` — cursor after the space. */
+function completeMention(
+  state: TextBufferState,
+  path: string,
+  from: number,
+  to: number,
+): TextBufferState {
+  const insertion = `${path} `;
+  return {
+    text: state.text.slice(0, from) + insertion + state.text.slice(to),
+    cursorOffset: from + insertion.length,
+  };
+}
+
 function moveWordLeft(state: TextBufferState): TextBufferState {
   return {
     ...state,
@@ -256,6 +273,8 @@ const ACTION_HANDLERS: {
   "move-word-left": (state) => moveWordLeft(state),
   "move-word-right": (state) => moveWordRight(state),
   "complete-command": (state, action) => completeCommand(state, action.name),
+  "complete-mention": (state, action) =>
+    completeMention(state, action.path, action.from, action.to),
   set: (_state, action) => clampCursor(action.state),
   clear: () => initialTextBuffer,
 };

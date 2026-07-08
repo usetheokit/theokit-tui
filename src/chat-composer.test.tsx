@@ -563,3 +563,31 @@ describe("ChatComposer emacs editor keys (M21 T3.1)", () => {
     instance.unmount();
   });
 });
+
+describe("ChatComposer @-file mentions (M21 T4.1)", () => {
+  const fakeSearch = async (query: string): Promise<string[]> =>
+    ["src/foo.ts", "foo.md", "bar.ts"].filter((p) => p.includes(query));
+
+  it("at_mention_opens_a_fuzzy_file_menu_and_completes_a_path", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />,
+    );
+    await type(instance, ["@", "f", "o"]);
+    await waitForFrame(instance, "src/foo.ts"); // async candidates loaded
+    expect(plain(instance.lastFrame())).toContain("foo.md");
+    await type(instance, [ENTER]); // complete the top candidate
+    await waitForFrame(instance, "foo.md", false); // menu closed
+    expect(plain(instance.lastFrame())).toContain("src/foo.ts");
+    instance.unmount();
+  });
+
+  it("slash_command_menu_still_works_unchanged", async () => {
+    // ADR-C3 regression guard: the M15 `/` menu is untouched by the @ addition.
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
+    );
+    await type(instance, ["/", "h"]);
+    await waitForFrame(instance, "show help");
+    instance.unmount();
+  });
+});

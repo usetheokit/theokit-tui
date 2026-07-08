@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- ChatComposer `@`-file mentions + fuzzy matching: a hand-rolled subsequence
+  fuzzy scorer (`fuzzy.ts`, ported from pi), an async `.gitignore`-aware cwd
+  file-search provider (`file-search.ts`, DIP'd fs + the `ignore` package —
+  bounded + abortable), and an `@`-mention menu (`mention-menu-model.ts`) that
+  reuses the M15 slash-menu rendering — `@` triggers on the token at the cursor
+  (mid-line), fuzzy-ranks file paths, and completes to a cwd-relative path
+  (`complete-mention` reducer action). The `/` command menu is unchanged (prefix,
+  line-start — ADR-C3 regression-guarded). New runtime dep `ignore` (MIT, no
+  known CVEs). All new modules 100% lines (M21 T4.1).
+
 - ChatComposer readline-grade editor upgrade: Emacs kill-ring (C-w/C-u/C-k/M-d +
   C-y yank, M-y yank-pop, with consecutive-kill coalescing), word navigation
   (M-b/M-f over graphemes), coalesced undo (C-_), and input history recall (↑/↓,
