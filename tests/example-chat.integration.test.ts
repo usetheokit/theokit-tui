@@ -32,6 +32,13 @@ describe("examples/chat.tsx (T4.2)", () => {
       expect(out).not.toContain("```");
       expect(out).toContain("npm install @theokit/tui");
       expect(out).toContain("M1 highlights");
+      // M14: the status bar renders under the thread with >= 2 separators.
+      expect(out).toContain("theokit-demo");
+      const seps = out.split("\u00B7").length - 1;
+      expect(seps).toBeGreaterThanOrEqual(2);
+      expect(out.indexOf("What ships in M1?")).toBeLessThan(
+        out.indexOf("theokit-demo"),
+      );
       const bannerCount = out.split("Theo TUI").length - 1;
       expect(bannerCount).toBe(1);
     },

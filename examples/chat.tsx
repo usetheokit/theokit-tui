@@ -2,11 +2,14 @@ import { Box, render, useApp } from "ink";
 import { useEffect, useRef, useState } from "react";
 
 import {
+  AgentStreaming,
+  AppStatusBar,
   ChatComposer,
   ChatThread,
   TheoTUIProvider,
   VERSION,
   WelcomeBanner,
+  useTurnElapsed,
 } from "../src/index.js";
 import type { ChatThreadMessage } from "../src/index.js";
 
@@ -92,12 +95,17 @@ function useFakeStreaming(
 function App() {
   const { exit } = useApp();
   const [messages, setMessages] = useState(initialMessages);
+  const [streaming, setStreaming] = useState(false);
   const stream = useFakeStreaming(setMessages);
+  // M14: the lib-shipped turn clock drives AgentStreaming.elapsedSeconds.
+  const elapsed = useTurnElapsed(streaming);
 
   useEffect(() => {
     if (!interactive) {
       // Scripted demo: one streamed reply, then exit cleanly (piped smoke).
+      setStreaming(true);
       stream(() => {
+        setStreaming(false);
         setTimeout(() => {
           exit();
         }, 100);
@@ -118,6 +126,19 @@ function App() {
             />
           }
           messages={messages}
+        />
+        {streaming && (
+          <AgentStreaming
+            thought="composing the reply"
+            elapsedSeconds={elapsed}
+            showCancelHint
+          />
+        )}
+        <AppStatusBar
+          model="theokit-demo"
+          cwd={process.cwd()}
+          tokens={{ used: 12_300, limit: 128_000 }}
+          state={streaming ? "streaming" : "idle"}
         />
         {interactive && (
           <ChatComposer

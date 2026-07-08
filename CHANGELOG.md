@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `examples/chat.tsx` mounts the AppStatusBar under the thread (model · cwd · tokens · state) and drives `AgentStreaming elapsedSeconds` through `useTurnElapsed` during the scripted turn; smoke pins the bar below the thread with its separators (m14-status-bar T2.1)
+
 - `AppStatusBar` — the persistent AI-native status line (model · cwd · tokens · state): dim `·` separators between PRESENT slots only, cwd tildeified with truncate-start (path tail survives narrow widths), tokens compacted via formatTokens, typed validation; exported from the package entry (m14-status-bar T1.2)
 
 - `useTurnElapsed(active)` — the lib-shipped 1 Hz turn clock for `AgentStreaming.elapsedSeconds` (0 while inactive, resets on re-activation, cleared on deactivate/unmount; AgentStreaming's no-timer contract untouched) (m14-status-bar T1.1)
