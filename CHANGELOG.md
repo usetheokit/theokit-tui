@@ -27,7 +27,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `examples/banner.tsx` opts into the animated reveal (interactive terminals get the < 2 s typewriter; piped runs stay on the static path — pipe smoke pins the static scene printing exactly once) + one anchored mid-reveal snapshot (m12-animated-banner T2.1)
 - OWN render bench for the reveal (`benchmarks/welcome-banner.bench.tsx` — the recorded M9 flip condition fired): reveal mode under real timers (measured wall 967.6 ± 2.1 ms < 2 s DoD, load-gated 1.67) + static rerender mode (10.7 ms/frame); baseline committed at `docs/benchmarks/m12-welcome-banner-baseline.json` with a contract test (m12-animated-banner T2.2)
 
-
 ### Fixed
 
 - `WelcomeBanner` animated: phase-0 frame no longer collapses to a 2-line box (empty name row now renders a space placeholder — no layout shift on the first tick); gate legs `columns >= 44` and monochrome-theme now each have a dedicated oracle (both had empirically survived mutation at review) (m12 review batch)
