@@ -18,7 +18,9 @@
   scripted turn (diff with gutter+sign rows, envelope with `stderr:` +
   `exited 1`, capped preview with the `hidden` trailer).
 - **Integration tests:** pipe smoke pins the three SHAPES (stripped ANSI —
-  SGR sits between gutter and sign); export-surface pins `ToolCardResult`.
+  SGR sits between gutter and sign); `ToolCardResult` is type-only — pinned
+  by the typecheck of `src/index.ts` (the export-surface note was added at
+  review r1-F4; the first log draft over-claimed a runtime pin).
 - **Runtime observability:** rendered card bodies ARE the observable; the
   malformed-patch TypeError is the fail-fast signal (card-boundary,
   synchronous — never a silent empty body).
@@ -48,13 +50,34 @@ evidence. Logged as DV-2, not silently absorbed.
 
 - **DV-1 — T2.1 content landed in a `chore(implement)` commit** (`b8a8e14`).
   The intended feat commit was gate-blocked by two degrade-matrix
-  ETIMEDOUTs under external load 42 (spawnSync timeouts —环境, not
+  ETIMEDOUTs under external load 42 (spawnSync timeouts — environment, not
   product); the follow-up chore commit (`git add -A`) swept the example/
   smoke/bench files in. Gates re-run GREEN (573/573) at session resume —
   the content is validated; the commit message understates it. Rule
   reinforced: `git add -A` in process commits is a sweep hazard.
 - **DV-2 — tool-cards baseline re-record could not meet the load gate**
   (see the bench table above — verification done, prior preserved).
+
+- **DV-3 — ADR D2 amended at review (r1-F2).** The plan's D2 said "no
+  card-level payload validation beyond kind"; the ink-swallow probe proved
+  that premise unsafe for the DIFF kind (a child render throw becomes a
+  silent empty frame), so the patch is parsed synchronously at the card
+  boundary — the SAME `parseUnifiedDiff` (DRY preserved; no duplicated
+  logic; parse-twice cost documented). Output/preview payloads stay with
+  the primitives (their shapes are programmer errors the type system
+  covers — r1-F6). Declared here retroactively: the mechanism was
+  documented everywhere but never NAMED as an ADR deviation.
+- **DV-4 — fileName prop removed at review** (r2-F1/F-2 + r1-F3
+  convergence): shipped without an oracle AND visually redundant in both
+  scenarios (DiffViewer always emits its own header row). Never released —
+  clean removal; also restored the LoC AC (231 → 230).
+- **Flake watch (r1-F1, [NEEDS-REPRO]):** the negative kind oracles failed
+  once on the reviewer's FIRST cold-cache invocation under residual
+  external load, then never again. Characterized post-review: 10×
+  shuffle-stress + 2× full suite = 12/12 green on a settled machine.
+  Correlates with vitest cold-cache under external load; no product
+  change. Watch: if it reproduces in CI, file an issue with both
+  signatures.
 
 ## Review outcome
 

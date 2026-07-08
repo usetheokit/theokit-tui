@@ -344,14 +344,56 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
   });
 
   it("preview_without_language_renders_plain_lines", async () => {
+    // Anchored on ToolResult's DISTINCTIVE tail-retention trailer so the
+    // language-routing mutant dies on BOTH branches (review r2-F5).
+    const five = Array.from({ length: 5 }, (_, i) => `prose ${i}`).join("\n");
     const frame = await renderFrame(
       <ToolCallCard
         name="read"
         status="success"
-        result={{ kind: "preview", text: "plain prose here" }}
+        result={{ kind: "preview", text: five, maxLines: 2 }}
       />,
     );
-    expect(m16plain(frame)).toContain("plain prose here");
+    const stripped = m16plain(frame);
+    expect(stripped).toContain("prose 4"); // tail survives
+    expect(stripped).toMatch(/hidden/); // ToolResult trailer, not CodeBlock's
+    expect(stripped).not.toMatch(/more lines/);
+  });
+
+  it("output_and_diff_passthroughs_reach_the_primitives", async () => {
+    // Review r2-F6: the forwarded options must actually forward.
+    const expanded = m16plain(
+      await renderFrame(
+        <ToolCallCard
+          name="bash"
+          status="success"
+          result={{
+            kind: "output",
+            shell: {
+              stdout: Array.from({ length: 8 }, (_, i) => `row ${i}`).join(
+                "\n",
+              ),
+              stderr: "",
+              exitCode: 0,
+            },
+            maxLines: 3,
+            expanded: true,
+          }}
+        />,
+      ),
+    );
+    expect(expanded).toContain("row 0"); // expanded bypasses the line cap
+    expect(expanded).toContain("row 7");
+    const capped = m16plain(
+      await renderFrame(
+        <ToolCallCard
+          name="edit"
+          status="success"
+          result={{ kind: "diff", patch: VALID_PATCH, maxLines: 2 }}
+        />,
+      ),
+    );
+    expect(capped).toMatch(/more lines/); // DiffViewer HEAD-retained cap fired
   });
 
   it("result_and_children_coexist_children_below", async () => {

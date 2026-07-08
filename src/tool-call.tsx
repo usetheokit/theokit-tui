@@ -151,18 +151,13 @@ function ResultBody({ result }: { result: ToolCardResult }) {
   switch (result.kind) {
     case "diff":
       return (
-        <Box flexDirection="column">
-          {result.fileName !== undefined && (
-            <Text dimColor>{result.fileName}</Text>
-          )}
-          <DiffViewer
-            patch={result.patch}
-            {...defined({
-              maxLines: result.maxLines,
-              contextLines: result.contextLines,
-            })}
-          />
-        </Box>
+        <DiffViewer
+          patch={result.patch}
+          {...defined({
+            maxLines: result.maxLines,
+            contextLines: result.contextLines,
+          })}
+        />
       );
     case "output":
       return (
@@ -197,10 +192,14 @@ export function ToolCallCard({ children, result, ...row }: ToolCallCardProps) {
   if (result !== undefined) {
     assertToolCardResult(result);
     if (result.kind === "diff") {
-      // EC-1: a malformed patch must throw HERE, synchronously — a child
-      // render throw is swallowed by ink's error boundary into a silent
-      // EMPTY frame (probed empirically). The duplicate parse is the price
-      // of fail-fast on a render-once card; DiffViewer re-parses on render.
+      // EC-1 (contract as PROVED at review r2-F3): this synchronous parse
+      // makes the typed error testable via plain-call with a stack at the
+      // card boundary — under a MOUNTED ink render ANY throw (here or in a
+      // child) is absorbed by ink's error boundary (apps observe it via
+      // waitUntilExit). Only the diff kind carries runtime DATA (a patch
+      // string); output/preview payload shapes are programmer errors the
+      // type system covers (r1-F6 — recorded decision). The duplicate
+      // parse is the price on a render-once card.
       parseUnifiedDiff(result.patch);
     }
   }

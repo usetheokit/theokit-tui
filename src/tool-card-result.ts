@@ -12,11 +12,11 @@ export type ToolCardResult =
   | {
       kind: "diff";
       /** Unified-diff text — DiffViewer's contract (typed error on a
-       * malformed patch propagates through the card). */
+       * malformed patch propagates through the card). DiffViewer emits its
+       * own per-file header row (falling back to "(unnamed)") — a separate
+       * fileName prop was REMOVED at review (r2-F2: it duplicated or
+       * contradicted that row in both scenarios). */
       patch: string;
-      /** Dim header line above the viewer — ONLY for patches whose text
-       * lacks file headers. */
-      fileName?: string;
       maxLines?: number;
       contextLines?: number;
     }
@@ -30,7 +30,11 @@ export type ToolCardResult =
   | {
       kind: "preview";
       text: string;
-      /** Routes to CodeBlock (plain-first render); absent = plain lines. */
+      /** Routes to CodeBlock (plain-first render); absent = plain lines.
+       * NOTE the cap semantics differ by branch (inherited from the
+       * primitives — r2-F4): with `language` the HEAD lines survive with a
+       * `(+N more lines)` trailer (CodeBlock); without it the TAIL survives
+       * with a `+N lines hidden` indicator (ToolResult). */
       language?: string;
       maxLines?: number;
     };

@@ -82,6 +82,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.AppStatusBar).toBe("function");
     expect(typeof mod.useTurnElapsed).toBe("function");
     // M15: ChatComposerCommand is type-only — presence pinned by typecheck.
+    // M16: ToolCardResult is type-only — presence pinned by typecheck.
     // Module-internal by plan decision (EC-10, D7 precedent):
     expect(mod).not.toHaveProperty("ensureHighlighter");
     expect(mod).not.toHaveProperty("highlightLine");

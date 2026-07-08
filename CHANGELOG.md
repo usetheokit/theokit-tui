@@ -21,6 +21,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `ToolCallCard` diff result: the `fileName` prop was removed before release (it duplicated DiffViewer's own header row in every scenario and shipped without an oracle — review convergence); the boundary-validation comment now states the PROVED contract (plain-call testability + boundary stack; under a mounted ink render any throw is absorbed and surfaces via waitUntilExit); preview cap-semantics asymmetry documented; passthrough and tail-trailer oracles added (m16 review batch)
+
 ### Security
 
 ## [0.16.0] - 2026-07-08
