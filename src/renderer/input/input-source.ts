@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 
 import { createInputParser } from "./input-parser.js";
 import { projectKey, type Key } from "./key.js";
+import { detectKittyActive } from "./kitty.js";
 
 // M19 InputSource (plan m19-input-stack, ADR D1/D3): the raw-stdin lifecycle —
 // a symmetric sibling to the output Terminal seam. Reads a stdin stream, frames
@@ -32,6 +33,8 @@ export interface InputSource {
   onPaste(handler: PasteHandler): () => void;
   /** Ref-counted raw mode: raw is on while ≥ 1 consumer holds it. */
   setRawMode(enabled: boolean): void;
+  /** True once a kitty keyboard-protocol reply has been seen (awareness). */
+  isKittyActive(): boolean;
 }
 
 export function createInputSource(stdin: InputStream): InputSource {
@@ -40,10 +43,16 @@ export function createInputSource(stdin: InputStream): InputSource {
   emitter.setMaxListeners(0);
   let rawModeRefCount = 0;
   let listener: ((chunk: Buffer) => void) | undefined;
+  let kittyActive = false;
 
   const dispatch = (chunk: Buffer): void => {
     for (const event of parser.push(chunk.toString("utf8"))) {
       if (typeof event === "string") {
+        // A kitty handshake reply is awareness state — not a key event.
+        if (detectKittyActive(event)) {
+          kittyActive = true;
+          continue;
+        }
         const { input, key } = projectKey(event);
         emitter.emit("key", input, key);
       } else if (emitter.listenerCount("paste") > 0) {
@@ -95,6 +104,9 @@ export function createInputSource(stdin: InputStream): InputSource {
           stdin.setRawMode?.(false);
         }
       }
+    },
+    isKittyActive(): boolean {
+      return kittyActive;
     },
   };
 }

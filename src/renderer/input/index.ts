@@ -25,3 +25,4 @@ export {
   type Chord,
   type Keymap,
 } from "./keybindings.js";
+export { KITTY_DISABLE, KITTY_ENABLE, detectKittyActive } from "./kitty.js";

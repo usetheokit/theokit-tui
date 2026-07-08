@@ -99,6 +99,19 @@ describe("createInputSource (M19 T2.1)", () => {
     source.stop();
   });
 
+  it("intercepts_kitty_reply_as_awareness_not_a_key", () => {
+    const stdin = createFakeStdin();
+    const source = createInputSource(stdin);
+    const keys: string[] = [];
+    source.onKey((input) => keys.push(input));
+    source.start();
+    expect(source.isKittyActive()).toBe(false);
+    stdin.send("\x1b[?1u"); // kitty handshake reply
+    expect(source.isKittyActive()).toBe(true);
+    expect(keys).toHaveLength(0); // the reply is NOT dispatched as a key
+    source.stop();
+  });
+
   it("holds_partial_sequence_across_two_data_events", () => {
     const stdin = createFakeStdin();
     const source = createInputSource(stdin);
