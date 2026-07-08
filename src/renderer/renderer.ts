@@ -9,19 +9,24 @@ import { OutputEngine } from "./output-engine.js";
 import type { Terminal } from "./terminal.js";
 
 // M17 renderer (plan m17-renderer-skeleton, ADR D1 / 0003): the public seam.
-// createRenderer(terminal) mounts a React tree through the react-reconciler
-// host and paints it via the differential OutputEngine. Line assembly is a
-// depth-first walk of the committed node tree — NO Yoga at M17 (that is M18);
-// a column stacks its children vertically, a row concatenates inline, text
-// nodes contribute their string. Commits coalesce through a microtask so N
-// React commits in one tick paint once (pi's requestRender, `tui.ts:306`).
+// createRenderer mounts a React tree through the react-reconciler host, paints
+// it via the differential OutputEngine, and coalesces N commits/tick into one
+// paint (pi's requestRender, `tui.ts:306`). Layout: see assembleLines.
 
 const LEGACY_ROOT = 0; // sync commits (updateContainerSync) — deterministic.
+
+/** Renderer observability snapshot (D2 wiring pillar — full-redraw metrics). */
+export interface RendererStats {
+  fullRedrawCount: number;
+  lastRedrawReason: string | undefined;
+}
 
 /** Public handle returned by createRenderer. */
 export interface Renderer {
   render(element: ReactNode): void;
   unmount(): void;
+  /** Read the engine's full-redraw metrics through the public seam. */
+  stats(): RendererStats;
 }
 
 /** Concatenate all descendant text of a node (the inline text run). */
@@ -106,5 +111,9 @@ export function createRenderer(terminal: Terminal): Renderer {
       reconciler.flushSyncWork();
       engine.teardown();
     },
+    stats: (): RendererStats => ({
+      fullRedrawCount: engine.fullRedrawCount,
+      lastRedrawReason: engine.lastRedrawReason,
+    }),
   };
 }

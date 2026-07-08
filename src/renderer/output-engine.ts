@@ -48,7 +48,8 @@ export class OutputEngine {
   render(newLines: string[]): void {
     const width = this.terminal.columns;
     const height = this.terminal.rows;
-    const widthChanged = this.previousWidth !== 0 && this.previousWidth !== width;
+    const widthChanged =
+      this.previousWidth !== 0 && this.previousWidth !== width;
     const heightChanged =
       this.previousHeight !== 0 && this.previousHeight !== height;
 
@@ -132,7 +133,8 @@ export class OutputEngine {
     let lastChanged = -1;
     const maxLen = Math.max(newLines.length, this.previousLines.length);
     for (let i = 0; i < maxLen; i++) {
-      const oldLine = i < this.previousLines.length ? this.previousLines[i] : "";
+      const oldLine =
+        i < this.previousLines.length ? this.previousLines[i] : "";
       const newLine = i < newLines.length ? newLines[i] : "";
       if (oldLine !== newLine) {
         if (firstChanged === -1) {

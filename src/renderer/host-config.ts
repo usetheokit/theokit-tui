@@ -46,7 +46,11 @@ function append(parent: RendererNode, child: RendererNode): void {
   child.parent = parent;
 }
 
-function insert(parent: RendererNode, child: RendererNode, before: RendererNode): void {
+function insert(
+  parent: RendererNode,
+  child: RendererNode,
+  before: RendererNode,
+): void {
   detach(child);
   const at = parent.children.indexOf(before);
   parent.children.splice(at === -1 ? parent.children.length : at, 0, child);
@@ -116,6 +120,13 @@ export function createHostReconciler(onCommit: () => void) {
     commitTextUpdate(textInstance, _oldText, newText): void {
       textInstance.text = newText;
     },
+    // Offscreen/Suspense visibility toggles — React calls these unconditionally
+    // on reveal; without them the commit-phase throw is swallowed. No-op here
+    // (the differential engine recomputes lines from the live tree each paint).
+    hideInstance: () => {},
+    unhideInstance: () => {},
+    hideTextInstance: () => {},
+    unhideTextInstance: () => {},
 
     // resetAfterCommit is THE render trigger — one call per React commit.
     resetAfterCommit: () => onCommit(),
@@ -124,6 +135,9 @@ export function createHostReconciler(onCommit: () => void) {
     resolveUpdatePriority: () => DefaultEventPriority,
     setCurrentUpdatePriority: () => {},
     getCurrentUpdatePriority: () => DefaultEventPriority,
+    // Deliberate divergence from Ink (which returns true for resource
+    // preloading): the text-only skeleton has no suspendable resources, so
+    // false avoids the preload machinery. Revisit if images land (M21).
     maySuspendCommit: () => false,
     beforeActiveInstanceBlur: () => {},
     afterActiveInstanceBlur: () => {},

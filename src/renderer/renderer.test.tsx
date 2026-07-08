@@ -145,6 +145,23 @@ describe("createRenderer (M17 T2.1)", () => {
     r.unmount();
   });
 
+  it("box_without_flex_direction_defaults_to_row", async () => {
+    // Ink's Box default is flexDirection: "row" — a Box with no explicit
+    // direction concatenates its text children inline (pins the ?? "row").
+    const term = new VirtualTerminal(40, 10);
+    const r = createRenderer(term);
+    r.render(
+      <Box>
+        <Text>x</Text>
+        <Text>y</Text>
+      </Box>,
+    );
+    await tick();
+    await term.flush();
+    expect(term.screenLines()[0]).toBe("xy");
+    r.unmount();
+  });
+
   it("render_and_unmount_after_dispose_are_noops", async () => {
     const term = new VirtualTerminal(40, 10);
     const r = createRenderer(term);
@@ -157,6 +174,22 @@ describe("createRenderer (M17 T2.1)", () => {
     r.unmount();
     await tick();
     expect(term.writes).toHaveLength(0);
+  });
+
+  it("stats_exposes_full_redraw_metrics_through_public_seam", async () => {
+    // Wiring D2 pillar: the engine's full-redraw metrics are reachable from
+    // the public Renderer handle (not just the internal OutputEngine).
+    const term = new VirtualTerminal(40, 10);
+    const r = createRenderer(term);
+    r.render(<Text>hi</Text>);
+    await tick();
+    expect(r.stats().fullRedrawCount).toBe(1); // first render is a full paint
+    term.resize(20, 10);
+    r.render(<Text>hi</Text>);
+    await tick();
+    expect(r.stats().fullRedrawCount).toBe(2); // width change forced a redraw
+    expect(r.stats().lastRedrawReason).toMatch(/width/i);
+    r.unmount();
   });
 
   it("dynamic_state_update_repaints", async () => {

@@ -52,9 +52,7 @@ class CountingTerminal implements Terminal {
 function scene(step: number): React.ReactElement {
   const rows = Array.from({ length: LINES }, (_, i) => {
     const hot = step >= 0 && i % LINES < 3 ? i + step : i;
-    return (
-      <Text key={i}>{`row ${i} · value ${hot} · ${"—".repeat(8)}`}</Text>
-    );
+    return <Text key={i}>{`row ${i} · value ${hot} · ${"—".repeat(8)}`}</Text>;
   });
   return <Box flexDirection="column">{rows}</Box>;
 }
@@ -118,7 +116,10 @@ async function measure(
     bytes_written: bytes,
     runs,
     aggregate: {
-      mean_ms_per_frame: { mean: round(meanStats.mean), std_dev: round(meanStats.std_dev) },
+      mean_ms_per_frame: {
+        mean: round(meanStats.mean),
+        std_dev: round(meanStats.std_dev),
+      },
     },
   };
 }
@@ -137,14 +138,22 @@ async function main(): Promise<void> {
     color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "" },
     load_1min_at_start: round(loadAtStart),
     workload: { lines: LINES, update_frames: UPDATE_FRAMES },
-    protocol: { warmup_runs: WARMUP_RUNS, measured_runs: smoke ? 1 : MEASURED_RUNS },
+    protocol: {
+      warmup_runs: WARMUP_RUNS,
+      measured_runs: smoke ? 1 : MEASURED_RUNS,
+    },
     bytes_delta_ink_over_own: round(bytesDelta),
     modes: [ink, own],
     methodology:
       "ink bytes = sum of committed frame byte-lengths (full-frame log-update model); own bytes = real differential Terminal writes. Same 200-line + 60-update script. FORCE_COLOR pinned. Order-of-magnitude bytes gap is the diff-engine win (EC-5).",
   };
 
-  const outDir = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "benchmarks");
+  const outDir = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "docs",
+    "benchmarks",
+  );
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "m17-renderer-skeleton-baseline.json");
   writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
