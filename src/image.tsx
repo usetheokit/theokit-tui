@@ -1,9 +1,11 @@
 import { Text } from "ink";
-import { createElement, useMemo, type ReactElement } from "react";
+import { createElement, useEffect, useMemo, type ReactElement } from "react";
 
+import { useStdout } from "./renderer/hooks/use-stdout.js";
 import {
   allocateImageId,
   calculateImageCellSize,
+  deleteKittyImage,
   detectImageProtocol,
   encodeITerm2,
   encodeKitty,
@@ -80,6 +82,19 @@ export function Image({
     [base64Data, mimeType],
   );
   const imageId = useMemo(() => allocateImageId(), []);
+  const { write } = useStdout();
+
+  // Free the uploaded kitty image on unmount — otherwise every mounted image
+  // permanently leaks its bytes into the terminal's graphics store (review
+  // HIGH). No-op under Ink (the default StdoutContext write is a no-op) and for
+  // iTerm2 (no persistent upload). Placed before the fallback early-return so
+  // the hook order is stable.
+  useEffect(() => {
+    if (resolvedProtocol !== "kitty") {
+      return;
+    }
+    return () => write(deleteKittyImage(imageId));
+  }, [resolvedProtocol, imageId, write]);
 
   // No protocol, or unreadable bytes → the text fallback.
   if (!resolvedProtocol || !dimensions) {

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  editorActionForChord,
   editorReducer,
   initialEditorState,
   type EditorAction,
   type EditorState,
 } from "./composer-editor.js";
+import type { Key } from "./renderer/input/key.js";
 
 // M21 T3.1 — the pure editor reducer: kill-ring coalescing, yank/yank-pop, undo
 // (coalesced), and history recall. Fully deterministic (no refs, no timers).
@@ -97,6 +99,18 @@ describe("editorReducer — undo (M21 T3.1)", () => {
     const s = editorReducer(initialEditorState, { type: "undo" });
     expect(s).toEqual(initialEditorState);
   });
+
+  it("caps_the_undo_stack_at_100_snapshots", () => {
+    // Non-word inserts (spaces) never coalesce, so each pushes an undo snapshot.
+    let s = initialEditorState;
+    for (let i = 0; i < 130; i++) {
+      s = editorReducer(s, {
+        type: "buffer",
+        action: { type: "insert", text: " " },
+      });
+    }
+    expect(s.undo.length).toBe(100);
+  });
 });
 
 describe("editorReducer — history (M21 T3.1)", () => {
@@ -114,10 +128,10 @@ describe("editorReducer — history (M21 T3.1)", () => {
     expect(s.buffer.text).toBe("dr");
   });
 
-  it("dedups_a_consecutive_identical_submit_and_caps_the_ring", () => {
+  it("dedups_a_consecutive_identical_submit", () => {
     let s = run([type("same"), { type: "submit", entry: "same" }]);
-    s = run([type("same"), { type: "submit", entry: "same" }]);
-    expect(s.history).toEqual(["same"]);
+    s = run([type("same"), { type: "submit", entry: "same" }], s); // thread state
+    expect(s.history).toEqual(["same"]); // second identical submit deduped
   });
 
   it("history_prev_with_no_history_is_a_no_op", () => {
@@ -136,5 +150,74 @@ describe("editorReducer — history (M21 T3.1)", () => {
     const before = s;
     s = editorReducer(s, { type: "yank-pop" });
     expect(s).toBe(before); // unchanged reference
+  });
+
+  it("caps_the_history_ring_at_100_entries", () => {
+    // B1 companion (review M2): actually exercise the HISTORY_CAP slice + the
+    // undo cap, which the dedup-only test never did.
+    let s = initialEditorState;
+    for (let i = 0; i < 130; i++) {
+      s = run([type(`entry${i}`), { type: "submit", entry: `entry${i}` }], s);
+    }
+    expect(s.history.length).toBe(100);
+    expect(s.history[s.history.length - 1]).toBe("entry129");
+    expect(s.history[0]).toBe("entry30"); // oldest 30 dropped
+  });
+});
+
+describe("editorActionForChord (M21 T4.1)", () => {
+  const key = (over: Partial<Key> = {}): Key =>
+    ({ ctrl: false, meta: false, shift: false, ...over }) as Key;
+
+  it("resolves_emacs_chords_and_undo", () => {
+    expect(editorActionForChord("\x1f", key())).toEqual({ type: "undo" });
+    expect(editorActionForChord("w", key({ ctrl: true }))).toEqual({
+      type: "kill",
+      kind: "word-back",
+    });
+    expect(editorActionForChord("y", key({ ctrl: true }))).toEqual({
+      type: "yank",
+    });
+    expect(editorActionForChord("z", key())).toBeUndefined(); // not a chord
+  });
+});
+
+describe("editorReducer — yank-pop guard (M21 review B1)", () => {
+  function ringOfTwo(): EditorState {
+    const s = run([
+      type("one"),
+      { type: "buffer", action: { type: "move-home" } },
+      { type: "kill", kind: "line-end" }, // ring: ["one"]
+    ]);
+    return run(
+      [
+        type("two"),
+        { type: "buffer", action: { type: "move-home" } },
+        { type: "kill", kind: "line-end" }, // ring: ["one","two"]
+      ],
+      s,
+    );
+  }
+
+  it("yank_pop_after_a_cursor_move_is_a_no_op_not_corruption", () => {
+    let s = editorReducer(ringOfTwo(), { type: "yank" }); // "two"
+    s = editorReducer(s, { type: "buffer", action: { type: "move-left" } });
+    const before = s.buffer;
+    s = editorReducer(s, { type: "yank-pop" }); // NOT immediately after a yank
+    expect(s.buffer).toEqual(before); // buffer untouched (was corruption pre-fix)
+  });
+
+  it("yank_pop_after_typing_is_a_no_op", () => {
+    let s = editorReducer(ringOfTwo(), { type: "yank" }); // "two"
+    s = editorReducer(s, type("X")); // typed → breaks the yank chain
+    const before = s.buffer.text;
+    s = editorReducer(s, { type: "yank-pop" });
+    expect(s.buffer.text).toBe(before);
+  });
+
+  it("yank_pop_immediately_after_a_yank_still_cycles", () => {
+    let s = editorReducer(ringOfTwo(), { type: "yank" }); // "two"
+    s = editorReducer(s, { type: "yank-pop" }); // valid → "one"
+    expect(s.buffer.text).toBe("one");
   });
 });

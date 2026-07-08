@@ -9,7 +9,6 @@ import {
   encodeKitty,
   getImageDimensions,
   imageFallback,
-  isImageLine,
 } from "./terminal-image.js";
 
 // M21 T1.1 (plan m21-premium-capabilities, Feature A): the pure image core —
@@ -285,11 +284,6 @@ describe("kitty/iterm2 helpers (M21 T1.1)", () => {
     expect(out).toContain("preserveAspectRatio=0");
   });
 
-  it("detects_the_slow_path_image_line_with_a_cursor_up_prefix", () => {
-    const line = String.fromCharCode(27) + "[2A" + encodeKitty("QUJD");
-    expect(isImageLine(line)).toBe(true);
-  });
-
   it("cell_fit_respects_a_max_height", () => {
     const size = calculateImageCellSize({ widthPx: 800, heightPx: 600 }, 40, 5);
     expect(size.rows).toBeLessThanOrEqual(5);
@@ -306,13 +300,7 @@ describe("more capability branches (M21 T1.1)", () => {
   });
 });
 
-describe("image line detection + fallback (M21 T1.1)", () => {
-  it("detects_an_image_escape_line", () => {
-    expect(isImageLine(encodeKitty("QUJD"))).toBe(true);
-    expect(isImageLine(encodeITerm2("QUJD"))).toBe(true);
-    expect(isImageLine("plain text")).toBe(false);
-  });
-
+describe("image fallback (M21 T1.1)", () => {
   it("renders_a_text_fallback_for_unsupported_terminals", () => {
     expect(
       imageFallback("image/png", { widthPx: 800, heightPx: 600 }, "pic.png"),

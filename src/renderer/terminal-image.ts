@@ -25,8 +25,6 @@ export interface ImageCellSize {
 }
 
 const DEFAULT_CELL: CellDimensions = { widthPx: 9, heightPx: 18 };
-const KITTY_PREFIX = "\x1b_G";
-const ITERM2_PREFIX = "\x1b]1337;File=";
 
 type Env = Record<string, string | undefined>;
 
@@ -104,14 +102,6 @@ export function detectImageProtocol(env: Env = process.env): ImageProtocol {
   }
   // WT / vscode / alacritty / jetbrains / unknown: no reliable image support.
   return null;
-}
-
-/** True when a rendered grid line carries an inline-image escape sequence. */
-export function isImageLine(line: string): boolean {
-  if (line.startsWith(KITTY_PREFIX) || line.startsWith(ITERM2_PREFIX)) {
-    return true;
-  }
-  return line.includes(KITTY_PREFIX) || line.includes(ITERM2_PREFIX);
 }
 
 /** Random kitty image id in [1, 0xfffffffe] (injectable rng for determinism). */

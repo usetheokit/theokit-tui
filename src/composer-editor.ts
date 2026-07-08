@@ -42,6 +42,13 @@ export interface EditorState {
   lastKill: boolean;
   /** True when the previous op was a word-char insert (undo coalescing). */
   coalescingInsert: boolean;
+  /**
+   * True when the previous op was a yank / yank-pop. Emacs `M-y` is only valid
+   * immediately after `C-y`/`M-y` — any other action (cursor move, typing)
+   * clears this, so a stray yank-pop is a no-op instead of corrupting the
+   * buffer (review B1).
+   */
+  lastYank: boolean;
 }
 
 export type KillKind = "line-end" | "line-start" | "word-back" | "word-forward";
@@ -65,6 +72,7 @@ export const initialEditorState: EditorState = {
   draft: "",
   lastKill: false,
   coalescingInsert: false,
+  lastYank: false,
 };
 
 /** Push a snapshot, keeping the undo stack bounded like the history. */
@@ -103,6 +111,7 @@ function applyBuffer(
     undo,
     lastKill: false,
     coalescingInsert: isWordCharInsert(action),
+    lastYank: false,
   };
 }
 
@@ -137,6 +146,7 @@ function applyKill(state: EditorState, kind: KillKind): EditorState {
     undo: pushUndo(state.undo, state.buffer),
     lastKill: true,
     coalescingInsert: false,
+    lastYank: false,
   };
 }
 
@@ -148,11 +158,14 @@ function applyYank(state: EditorState): EditorState {
   return {
     ...applyBuffer(state, { type: "insert", text: head }),
     lastKill: false,
+    lastYank: true,
   };
 }
 
 function applyYankPop(state: EditorState): EditorState {
-  if (state.ring.length < 2) {
+  // M-y is valid ONLY immediately after a yank / yank-pop — otherwise it would
+  // splice the rotated head over unrelated text (review B1).
+  if (!state.lastYank || state.ring.length < 2) {
     return state;
   }
   // Rotate the ring, then re-yank: remove the previously-yanked head and insert
@@ -175,6 +188,7 @@ function applyYankPop(state: EditorState): EditorState {
     buffer: textBufferReducer(withoutPrev, { type: "insert", text: head }),
     lastKill: false,
     coalescingInsert: false,
+    lastYank: true,
   };
 }
 
@@ -189,6 +203,7 @@ function applyUndo(state: EditorState): EditorState {
     undo: state.undo.slice(0, -1),
     lastKill: false,
     coalescingInsert: false,
+    lastYank: false,
   };
 }
 
@@ -204,6 +219,7 @@ function loadText(
     historyIndex,
     lastKill: false,
     coalescingInsert: false,
+    lastYank: false,
   };
 }
 

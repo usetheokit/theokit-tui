@@ -98,6 +98,50 @@ describe("Image component (M21 T2.1)", () => {
     r.unmount();
   });
 
+  it("does_not_re_emit_an_unchanged_image_when_a_line_in_the_span_changes", async () => {
+    // Review HIGH: an image between two rows that BOTH change (span crosses the
+    // image) must NOT re-blast the escape (perf + duplicate kitty placement).
+    function App({ top, bottom }: { top: string; bottom: string }) {
+      return createElement(
+        Box,
+        { flexDirection: "column" },
+        createElement(Text, {}, `T:${top}`),
+        createElement(Image, {
+          base64Data: png1x1(),
+          mimeType: "image/png",
+          protocol: "kitty",
+        }),
+        createElement(Text, {}, `B:${bottom}`),
+      );
+    }
+    const term = new VirtualTerminal(40, 30);
+    const r = createRenderer(term);
+    r.render(createElement(App, { top: "1", bottom: "1" }));
+    await settle(term);
+    r.render(createElement(App, { top: "2", bottom: "2" })); // span crosses image
+    await settle(term);
+    // The kitty escape hit the wire exactly once (first render only).
+    expect(term.writeStream().split(ESC + "_G").length - 1).toBe(1);
+    r.unmount();
+  });
+
+  it("frees_the_kitty_image_on_unmount", async () => {
+    const term = new VirtualTerminal(40, 12);
+    const r = createRenderer(term);
+    r.render(
+      createElement(Image, {
+        base64Data: png1x1(),
+        mimeType: "image/png",
+        protocol: "kitty",
+      }),
+    );
+    await settle(term);
+    r.unmount();
+    await new Promise((res) => setTimeout(res, 0));
+    // The delete-image escape (a=d,d=I) was written on unmount (no leak).
+    expect(term.writeStream()).toContain("a=d,d=I");
+  });
+
   it("differential_update_below_an_image_lands_correctly", async () => {
     // Regression-grade (mirrors M20 B1): an image reserves its rows; a live line
     // BELOW it updates in place without corrupting the image or other rows.
