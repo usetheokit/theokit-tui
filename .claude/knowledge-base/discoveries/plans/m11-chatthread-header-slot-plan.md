@@ -31,7 +31,7 @@ collision policy, and the test strategy (drawback-resolution proof).
 
 ## In-Scope / Out-of-Scope
 
-**In:** header slot on BOTH thread components; Static item-union; ordering
+**In:** header slot on BOTH thread components (`.claude/knowledge-base/references/ink/src/components/Static.tsx` is the ONLY ink primitive involved); Static item-union; ordering
 guarantees; immutability contract; windowing interplay; M9 banner as the
 canonical header consumer.
 **Out:** refreshStatic/clearTerminal (rejected by M9 D4); multiple slots;
@@ -67,10 +67,11 @@ mutates after being consumed.
 
 | # | Question | Corner | Reference project(s) | Fase A (broad — map hotspots) | Fase B (deep — Read at each hotspot) | Expected answer shape |
 |---|---|---|---|---|---|---|
-| Q1 | ink7 `<Static>` semantics for the sentinel design: how items/lastIndex advance (`.claude/knowledge-base/references/ink/src/components/Static.tsx` full read), whether item[0] prints before later-appended items ALWAYS, what happens on Static mount AFTER first render (header present but prefix empty → Static mounts at mount-time; prefix grows later), and the ink.tsx fullStaticOutput reset on Static identity change (`.claude/knowledge-base/references/ink/src/ink.tsx:543-545` — does our conditional mount trigger it?) | techniques | `.claude/knowledge-base/references/ink/src/components/Static.tsx`, `.claude/knowledge-base/references/ink/src/ink.tsx` (onStaticChange/fullStaticOutput regions), our `src/chat-thread.tsx:70-88`, `src/agent-timeline.tsx:190-204` | Grep `lastIndex\|staticOutput\|onStaticChange` | Read Static.tsx end-to-end + the ink.tsx static regions | Sentinel-design verdict: print-once ordering guaranteed/conditional — citations |
+| Q1 | ink7 `<Static>` semantics for the sentinel design: how items/lastIndex advance (`.claude/knowledge-base/references/ink/src/components/Static.tsx:30-33` — index state + `items.slice(index)`; full read of the 58-line module), whether item[0] prints before later-appended items ALWAYS, what happens on Static mount AFTER first render (header present but prefix empty → Static mounts at mount-time; prefix grows later), and the ink.tsx fullStaticOutput reset on Static identity change (`.claude/knowledge-base/references/ink/src/ink.tsx:543-545` — does our conditional mount trigger it?) | techniques | `.claude/knowledge-base/references/ink/src/components/Static.tsx`, `.claude/knowledge-base/references/ink/src/ink.tsx` (onStaticChange/fullStaticOutput regions), our `src/chat-thread.tsx:70-88`, `src/agent-timeline.tsx:190-204` | Grep `lastIndex\|staticOutput\|onStaticChange` | Read Static.tsx end-to-end + the ink.tsx static regions | Sentinel-design verdict: print-once ordering guaranteed/conditional — citations |
 | Q2 | Immutability reality: with the sentinel at index 0 already consumed, what does ink7 do if the header element identity changes on a later render (nothing? re-print? corrupt)? And the gemini contract for comparison (their header re-print needs refreshStatic — confirming ignore-by-default) | techniques | `.claude/knowledge-base/references/ink/src/components/Static.tsx` (items effect/state), `.claude/knowledge-base/references/gemini-cli/packages/cli/src/ui/AppContainer.tsx:646-698` | Grep `useState\|useEffect\|slice` in Static.tsx | Trace the consumed-items path with a mutated item[0] | Ignore-by-design confirmed (or corrective design) — citations |
 | Q3 | Test strategy: drawback-resolution proof (header stays ABOVE graduated rows after windowSize+overscan appends — the M9 D4 scenario), print-once pin (frames contain the header exactly once across N appends), immutability pin (changed header ignored), key-collision negative (row id colliding with the sentinel key), both components covered, snapshot budget | tests | our `src/chat-thread.test.tsx` + `src/agent-timeline.test.tsx` windowing suites (existing graduation tests to extend), `tests/degrade-matrix` fixture (banner already mounted ABOVE the thread — move INTO the header slot?) | Grep the existing graduation tests | Read the windowing test idioms; design the header extensions | Oracle set + budget — citations |
-| Q4 | Deps/evidence: zero new deps (pure composition); bench impact NONE expected (no per-frame path change — header renders once into Static; cite the M9/M10 no-new-bench conventions); example update (banner into the slot) + smoke deltas | deps + tools | our `examples/banner.tsx` + `examples/chat.tsx`, `benchmarks/chat-thread.bench.tsx` (windowed mode — confirm header absence keeps it untouched), M10 jump-table conventions | Map the example composition | Decide example + smoke shape; record the no-bench justification | Deps verdict + evidence plan — citations |
+| Q4 | Deps: zero new deps (pure composition over ink `Static` — already the platform); confirm no companion (ink-spinner/itl) is touched; the header element type is `ReactElement` (react already a peer) | deps | our `package.json`, `.claude/knowledge-base/references/ink/src/components/Static.tsx` (the only consumed primitive), `.claude/knowledge-base/references/gemini-cli/packages/cli/src/ui/components/MainContent.tsx:222-319` (gemini adds no dep for its header either) | Grep imports in the two thread components | Confirm the diff adds zero manifest lines | Rule 9 verdict — citations |
+| Q5 | Evidence: bench impact NONE expected (header renders once into Static — no per-frame path; `benchmarks/chat-thread.bench.tsx` windowed mode runs headerless and stays untouched); example update (move the banner INTO the slot in `examples/banner.tsx`/`examples/chat.tsx`) + smoke deltas; no-new-bench justification per the M9/M10 convention (the M9/M10 no-new-bench precedents in `.claude/knowledge-base/implementations/`) | tools | our `benchmarks/chat-thread.bench.tsx`, `examples/banner.tsx`, `examples/chat.tsx`, `tests/example-banner.integration.test.ts` | Map the example composition | Decide example + smoke shape; write the justification + flip condition | Evidence plan — citations |
 
 ## Coverage Matrix
 
@@ -78,7 +79,7 @@ mutates after being consumed.
 |---|---|---|
 | Integration tests | Q3 | Covered |
 | Dependencies | Q4 | Covered |
-| Tools | Q4 | Covered |
+| Tools | Q5 | Covered |
 | Techniques | Q1, Q2 | Covered |
 
 **Coverage: 4/4 corners covered (100%)**
@@ -86,7 +87,7 @@ mutates after being consumed.
 ## Halt-loop Checkpoints
 
 - Q1/Q2 done: sentinel + immutability verdicts with dual citations.
-- Q3/Q4 done: oracle set + evidence plan.
+- Q3/Q4/Q5 done: oracle set + deps verdict + evidence plan.
 - Blueprint: 4 corners, ADRs final, density ≥ 1.0.
 
 ## Acceptance Criteria
