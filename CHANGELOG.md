@@ -25,6 +25,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `markdown-model`: italic now respects the gemini path guards (asterisk runs between path separators stay literal — `ls src/*x*/y` no longer italicizes) and the fence close-length rule gained its missing oracle; `ChatMessage` default-off contract now pinned by a live byte-compare incl. explicit `markdown={false}` (two review-survived mutants killed) (m13 review batch)
+
 ### Security
 
 ## [0.13.0] - 2026-07-08

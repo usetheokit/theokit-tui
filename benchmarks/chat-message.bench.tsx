@@ -34,8 +34,10 @@ type Mode = "plain" | "markdown";
 
 // M13 markdown mode: the streamed tail is markdown-rich and re-parses on
 // every repaint — the per-frame path the M9 flip condition points at. The
-// token feed is IDENTICAL in both modes (cadence symmetry); only the tail
-// message's markdown flag differs.
+// token CADENCE is identical (300 rerenders, same appended tokens) but the
+// markdown tail ALSO carries MD_PREFIX — the mode delta therefore measures
+// parse + richer content TOGETHER, not the flag in isolation (honest scope,
+// review r1-F1).
 const MD_PREFIX =
   "## Reply\n**bold** step, `code span`\n```ts\nconst x = 1;\n```\n";
 

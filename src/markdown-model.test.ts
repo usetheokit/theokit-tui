@@ -59,6 +59,17 @@ describe("markdown-model blocks (M13 T1.1)", () => {
     expect(fence.lines).toContain("still code");
   });
 
+  it("longer_open_fence_is_not_closed_by_shorter_close", () => {
+    // Review r2-F1 (survived mutant): close requires >= OPEN length —
+    // a ```` block swallows a ``` line as content.
+    const nodes = parseMarkdown("````\ncode\n```\nstill code\n````\ndone");
+    const fence = nodes[0];
+    if (fence?.kind !== "code") throw new Error("expected code");
+    expect(fence.lines).toContain("```");
+    expect(fence.lines).toContain("still code");
+    expect(nodes.at(-1)?.kind).toBe("paragraph");
+  });
+
   it("unclosed_fence_at_eof_still_emits_code", () => {
     // EC-1 streaming safety — gemini MarkdownDisplay.tsx:287-300.
     const nodes = parseMarkdown("before\n```js\ntail");
@@ -131,6 +142,15 @@ describe("markdown-model inline (M13 T1.1)", () => {
     expect(link?.styles.link).toBe("https://u");
     const bare = segs.find((s) => s.text === "https://w");
     expect(bare?.styles.link).toBe("https://w");
+  });
+
+  it("path_like_asterisk_runs_stay_literal", () => {
+    // Review r1-F5 (gemini path guards :168-180): globs/paths must not
+    // italicize — `ls src/*name*/dir` keeps its asterisks.
+    const segs = parseInlineSegments("ls src/*name*/dir");
+    const styled = segs.filter((s) => s.styles.italic);
+    expect(styled).toHaveLength(0);
+    expect(segs.map((s) => s.text).join("")).toBe("ls src/*name*/dir");
   });
 
   it("strikethrough_segment", () => {

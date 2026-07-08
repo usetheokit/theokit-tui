@@ -114,6 +114,9 @@ function BlockNode({ node, accent }: { node: MarkdownNode; accent: string }) {
           <Segments segments={node.segments} accent={accent} />
         </Text>
       );
+    /* v8 ignore start — unreachable via the public surface: parseMarkdown
+       never emits an unknown kind; the guard exists for future node kinds
+       (review r1-F3: excluded from coverage by decision, not silence). */
     default: {
       // Exhaustiveness guard — a new node kind must be handled here.
       const exhaustive: never = node;
@@ -121,6 +124,7 @@ function BlockNode({ node, accent }: { node: MarkdownNode; accent: string }) {
         `MarkdownText: unhandled node kind ${JSON.stringify(exhaustive)}`,
       );
     }
+    /* v8 ignore stop */
   }
 }
 
@@ -128,7 +132,10 @@ function BlockNode({ node, accent }: { node: MarkdownNode; accent: string }) {
  * Assistant-text Markdown renderer (the AI-chat subset: headings 1-4,
  * lists, hr, paragraphs, fenced code via CodeBlock; inline bold/italic/
  * strikethrough/verbatim code/links). Malformed input degrades to literal
- * text — never throws mid-turn.
+ * text — never throws mid-turn. Known subset limits (recorded at review):
+ * styled link TEXT is literal (`[**b**](u)` keeps the asterisks — no
+ * recursive parse inside links); a code span inside an h1/h2 heading is
+ * visually fused with the heading accent (and unstyled under monochrome).
  */
 export function MarkdownText(props: MarkdownTextProps) {
   // Boundary validation before hooks (house F10 idiom).

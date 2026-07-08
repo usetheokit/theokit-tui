@@ -235,7 +235,9 @@ function emitWrappedMarker(full: string, emit: InlineEmitters): boolean {
   return false;
 }
 
-/** Italic run with the gemini word-boundary guards (:168-180). */
+/** Italic run with the gemini word-boundary AND path guards (:168-180) —
+ * intra-word runs and path/glob contexts (asterisks between path
+ * separators) stay literal. */
 function isItalicRun(
   full: string,
   text: string,
@@ -246,7 +248,9 @@ function isItalicRun(
     (full.startsWith("*") || full.startsWith("_")) &&
     full.length > 2 &&
     !isWordChar(text.slice(matchIndex - 1, matchIndex)) &&
-    !isWordChar(text.slice(lastIndex, lastIndex + 1))
+    !isWordChar(text.slice(lastIndex, lastIndex + 1)) &&
+    !/\S[./\\]/.test(text.slice(matchIndex - 2, matchIndex)) &&
+    !/[./\\]\S/.test(text.slice(lastIndex, lastIndex + 2))
   );
 }
 

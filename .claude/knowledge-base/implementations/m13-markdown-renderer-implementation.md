@@ -24,13 +24,13 @@
 
 ## Bench evidence (markdown mode — the M9 flip condition fired)
 
-Re-record at load **0.82** (`load_1min_at_start` in the JSON), FORCE_COLOR=1,
+Re-record at load **0.83** (`load_1min_at_start` in the JSON), FORCE_COLOR=1,
 1 warmup + 5 runs per mode, identical token cadence both modes:
 
 | Mode | mean ms/frame | peak ms/frame | Reading |
 |---|---|---|---|
 | plain | 32.107 ± 1.743 | 78.352 ± 11.116 | the pre-M13 workload (top-level runs/aggregate keep this shape — contract compatibility) |
-| markdown | 42.026 ± 2.052 | 118.530 ± 57.395 | +9.9 ms/frame (+31%) — CITABLE CAUSE: the tail message re-parses (block+inline) AND re-renders a fenced CodeBlock (lowlight highlight) on every streaming repaint. Expected and by design (blueprint: parse is a pure function of text; memoization is the consumer's option). Peak σ 57 reflects highlight warm-up on early frames. |
+| markdown | 42.026 ± 2.052 | 118.530 ± 57.395 | +9.9 ms/frame (+31%) — CITABLE CAUSE: the tail message re-parses (block+inline) AND renders RICHER content (MD_PREFIX heading+bold+fence with CodeBlock) on every streaming repaint — the delta measures parse + content together, not the flag in isolation (r1-F1). Peak σ 57 reflects highlight warm-up on early frames. |
 
 Delta > 1σ ⇒ cause row required and given (plan T3.1 AC).
 

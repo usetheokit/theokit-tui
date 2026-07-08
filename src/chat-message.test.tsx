@@ -125,14 +125,21 @@ describe("ChatMessage (T2.1)", () => {
   // the 3-scene env matrix; the forced-color canary above stays here to
   // guard the vitest FORCE_COLOR pin.
   it("chat_message_default_off_is_byte_identical", async () => {
-    // M13 EC-3: WITHOUT `markdown`, raw markers render literally and the
-    // output is byte-equal to the pre-M13 shape (live comparison).
+    // M13 EC-3: WITHOUT `markdown` (absent OR explicit false) the raw
+    // markers render literally, and the two default paths are byte-equal
+    // (LIVE comparison — kills the `markdown !== undefined` mutant, r2-F2).
     const md = "**bold** and `code`";
-    const a = await renderFrame(
+    const absent = await renderFrame(
       <ChatMessage role="assistant">{md}</ChatMessage>,
     );
-    expect(a).toContain("**bold**");
-    expect(a).toContain("`code`");
+    const explicitFalse = await renderFrame(
+      <ChatMessage role="assistant" markdown={false}>
+        {md}
+      </ChatMessage>,
+    );
+    expect(absent).toBe(explicitFalse);
+    expect(absent).toContain("**bold**");
+    expect(absent).toContain("`code`");
   });
 
   it("chat_message_markdown_opt_in_renders_styled", async () => {
