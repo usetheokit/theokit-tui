@@ -48,6 +48,26 @@ function styleOf(props: Record<string, unknown>): Style {
   return (props.style as Style | undefined) ?? {};
 }
 
+/**
+ * The changed keys between two styles, with **deleted** keys present as
+ * `undefined` — so `applyStyles` resets them (Ink's reconciler.js diff, :26-51).
+ * Without this, a style key removed across renders keeps its stale yoga value.
+ */
+function diffStyle(prev: Style, next: Style): Style {
+  const diff: Record<string, unknown> = {};
+  for (const key of Object.keys(next) as (keyof Style)[]) {
+    if (next[key] !== prev[key]) {
+      diff[key] = next[key];
+    }
+  }
+  for (const key of Object.keys(prev) as (keyof Style)[]) {
+    if (!(key in next)) {
+      diff[key] = undefined; // deleted key → reset to yoga default
+    }
+  }
+  return diff as Style;
+}
+
 /** The yoga index of `child` = count of yoga-having siblings before it. */
 function yogaIndexOf(parent: RendererNode, child: RendererNode): number {
   let index = 0;
@@ -193,10 +213,18 @@ export function createHostReconciler(onCommit: () => void) {
     removeChildFromContainer: (_container, child) => remove(child),
 
     finalizeInitialChildren: () => false,
-    commitUpdate(instance, _type, _prevProps, nextProps): void {
+    commitUpdate(instance, _type, prevProps, nextProps): void {
       instance.props = nextProps;
       if (instance.yogaNode) {
-        applyStyles(instance.yogaNode, styleOf(nextProps));
+        // Pass the diff (deleted keys → undefined) as the setter arg and the
+        // full new style as currentStyle (border-width reads the whole picture),
+        // mirroring Ink so a removed style key resets to the yoga default.
+        const next = styleOf(nextProps);
+        applyStyles(
+          instance.yogaNode,
+          diffStyle(styleOf(prevProps), next),
+          next,
+        );
       }
     },
     commitTextUpdate(textInstance, _oldText, newText): void {

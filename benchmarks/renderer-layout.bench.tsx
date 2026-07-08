@@ -4,17 +4,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
 
-import { Box, Text } from "ink";
 import { render as inkRender } from "ink-testing-library";
 
+import { ChatThread } from "../src/index.js";
 import { createRenderer } from "../src/renderer/renderer.js";
 import type { Terminal } from "../src/renderer/terminal.js";
 import { round, stats, stackVersions, tick } from "./sampling.js";
 
 // M18 renderer-layout bench (plan T3.1, ADR D4): the FULL layout+render pipeline
 // (yoga calculateLayout → renderNodeToOutput → cell grid → OutputEngine) vs Ink
-// on a chat-thread-shaped workload (the M1 thread). Measures ms/frame for an
-// initial paint + 40 update frames (a growing thread), both under FORCE_COLOR=1.
+// on the REAL M1 ChatThread workload. Measures ms/frame for an initial paint +
+// 40 streaming-update frames (the last message grows), both under FORCE_COLOR=1.
 
 const MESSAGES = 30;
 const UPDATE_FRAMES = 40;
@@ -32,15 +32,15 @@ class SinkTerminal implements Terminal {
   showCursor(): void {}
 }
 
-/** A column of chat-message rows (icon + text), `n` messages, `step` mutates the tail. */
+/** The real M1 ChatThread with `n` messages; `step` grows the streaming tail. */
 function scene(n: number, step: number): React.ReactElement {
-  const rows = Array.from({ length: n }, (_, i) => (
-    <Box key={i} flexDirection="row">
-      <Text>{i % 2 === 0 ? "› " : "✦ "}</Text>
-      <Text>{`message ${i} · turn ${i === n - 1 ? step : 0}`}</Text>
-    </Box>
-  ));
-  return <Box flexDirection="column">{rows}</Box>;
+  const messages = Array.from({ length: n }, (_, i) => ({
+    id: String(i),
+    role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
+    content:
+      i === n - 1 ? `streaming ${"·".repeat(step)}` : `message ${i} content`,
+  }));
+  return <ChatThread messages={messages} />;
 }
 
 async function runOwn(): Promise<number> {

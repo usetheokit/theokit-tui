@@ -149,6 +149,17 @@ describe("host-config yoga tree (M18 T1.1)", () => {
     expect(inkText.yogaNode!.getComputedHeight()).toBe(1);
   });
 
+  it("commit_update_resets_removed_style_key", () => {
+    // A style key present last render and ABSENT this render must reset to the
+    // yoga default (Ink's diff-with-undefined-deletes) — not keep the stale
+    // value. Regression guard for the M18 review port-fidelity finding.
+    const { root, render } = mount(<Box paddingLeft={4} />);
+    const box = root.children[0]!;
+    expect(box.yogaNode!.getPadding(Yoga.EDGE_LEFT).value).toBe(4);
+    render(<Box />); // paddingLeft removed
+    expect(box.yogaNode!.getPadding(Yoga.EDGE_LEFT).value).toBe(0);
+  });
+
   it("clear_container_children_removes_and_frees_all", () => {
     const { root } = mount(
       <Box>

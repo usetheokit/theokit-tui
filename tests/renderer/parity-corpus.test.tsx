@@ -12,7 +12,14 @@ import {
   ToolCallCard,
   WelcomeBanner,
 } from "../../src/index.js";
+import {
+  createHostReconciler,
+  createRootNode,
+} from "../../src/renderer/host-config.js";
 import { createRenderer } from "../../src/renderer/index.js";
+import { Output } from "../../src/renderer/output-grid.js";
+import { renderNodeToOutput } from "../../src/renderer/render-node.js";
+import Yoga from "yoga-layout";
 import { VirtualTerminal } from "./virtual-terminal.js";
 
 // M18 T3.1 (plan m18-yoga-layout, ADR D5): the parity gate. Each corpus scene is
@@ -60,6 +67,38 @@ function inkLines(element: ReactElement): string[] {
   const lines = plainLines(instance.lastFrame() ?? "");
   instance.unmount();
   return lines;
+}
+
+/** Our COLORED frame (the cell grid before the emulator strips SGR). */
+function ourColoredFrame(element: ReactElement, cols: number): string {
+  const root = createRootNode();
+  const reconciler = createHostReconciler(() => {});
+  const container = reconciler.createContainer(
+    root,
+    0,
+    null,
+    false,
+    null,
+    "sgr",
+    () => {},
+    () => {},
+    () => {},
+    () => {},
+  );
+  reconciler.updateContainerSync(element, container, null, () => {});
+  reconciler.flushSyncWork();
+  root.yogaNode!.setWidth(cols);
+  root.yogaNode!.calculateLayout(undefined, undefined, Yoga.DIRECTION_LTR);
+  const output = new Output({
+    width: root.yogaNode!.getComputedWidth(),
+    height: root.yogaNode!.getComputedHeight(),
+  });
+  renderNodeToOutput(root, output, {
+    offsetX: 0,
+    offsetY: 0,
+    transformers: [],
+  });
+  return output.get().output;
 }
 
 interface Scene {
@@ -147,6 +186,39 @@ const scenes: Scene[] = [
     ),
     rows: 16,
   },
+  {
+    // Breadth (review MEDIUM-2): flexGrow distribution — Ink is the oracle for
+    // the width math, not our own expectation.
+    name: "flex-grow distribution",
+    element: (
+      <Box width={12} flexDirection="row">
+        <Box flexGrow={1}>
+          <Text>L</Text>
+        </Box>
+        <Box flexGrow={1}>
+          <Text>R</Text>
+        </Box>
+      </Box>
+    ),
+  },
+  {
+    name: "justify-content space-between",
+    element: (
+      <Box width={10} flexDirection="row" justifyContent="space-between">
+        <Text>x</Text>
+        <Text>y</Text>
+      </Box>
+    ),
+  },
+  {
+    name: "text wrap within width",
+    element: (
+      <Box width={8}>
+        <Text>hello world foo</Text>
+      </Box>
+    ),
+    cols: 8,
+  },
 ];
 
 describe("M18 parity corpus vs Ink (T3.1)", () => {
@@ -159,6 +231,10 @@ describe("M18 parity corpus vs Ink (T3.1)", () => {
         scene.cols ?? 60,
         scene.rows ?? 12,
       );
+      // Vacuity guard (review HIGH-1): a scene that renders NOTHING must not
+      // count as a match — every scene must produce real output on BOTH sides.
+      expect(ink.length).toBeGreaterThan(0);
+      expect(ours.length).toBeGreaterThan(0);
       const match = JSON.stringify(ink) === JSON.stringify(ours);
       results.push({ name: scene.name, match });
       if (!match) {
@@ -174,5 +250,22 @@ describe("M18 parity corpus vs Ink (T3.1)", () => {
       `M18 parity: ${matched}/${total} (${((matched / total) * 100).toFixed(0)}%) — diverging: ${failures.join(", ") || "none"}`,
     );
     expect(matched / total).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it("sgr_color_bytes_match_ink", () => {
+    // DoD-2 SGR parity: our colored output (the cell grid BEFORE the emulator
+    // strips SGR) must byte-match Ink for a colored Text — proven by
+    // construction since we share Ink's chalk transform + @alcalzone tokenizer.
+    const scene = (
+      <Box flexDirection="row">
+        <Text color="red">hi</Text>
+        <Text color="green"> ok</Text>
+      </Box>
+    );
+    const inkFrame = inkRender(scene).lastFrame() ?? "";
+    const oursFrame = ourColoredFrame(scene, 20);
+    expect(oursFrame).toBe(inkFrame.replace(/\s+$/, ""));
+    // And it genuinely carries SGR (not a plain-text coincidence).
+    expect(oursFrame).toContain(String.fromCharCode(27));
   });
 });
