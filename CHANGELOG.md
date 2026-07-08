@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- M17 T1.1 (renderer walking skeleton): the `src/renderer/` island — a `Terminal` seam (interface + `ProcessTerminal`), a differential `OutputEngine` porting pi/tui's strategy ladder (first-render / line-diff / deleted-tail / width-and-height full-redraw with logged reason), all writes wrapped in CSI-2026 synchronized output, and a `@xterm/headless` `VirtualTerminal` test oracle that asserts on REAL emulator screen state. Engine at 100% line/branch/func coverage, 180 LoC, zero Ink imports (M17 renderer program — ADR 0003, plan m17-renderer-skeleton)
+
 - ROADMAP V4 expanded from the 7-peer parity matrix (`docs/v4-parity-matrix.md`): added M22 interaction primitives (SelectList/overlay/pager), M23 agent decision surfaces (approval/question/plan), M24 live progress surfaces (todo/progress/collapsible/toast), M25 parity polish + matrix re-audit (exit gate); tau + opentui reference rows added
 
 - SOTA reference: `tau` (huggingface, MIT) — the 7th parity peer named for the V4 component-parity criterion (Python coding agent, src/tau_coding/tui)

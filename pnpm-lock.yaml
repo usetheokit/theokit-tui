@@ -36,6 +36,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.0.0
         version: 3.2.6(vitest@3.2.6(@types/node@22.20.0)(tsx@4.23.0))
+      '@xterm/headless':
+        specifier: 5.5.0
+        version: 5.5.0
       cli-spinners:
         specifier: ^2.9.2
         version: 2.9.2
@@ -636,6 +639,9 @@ packages:
 
   '@vitest/utils@3.2.6':
     resolution: {integrity: sha512-lI23nIs4bnT3T8NIoh+vFaz5s2/DdP0Jgt2jxwgWljvwn82cLJtyi/If+fjFyoLMGIOz0U/fKvWE0d4jsNQEfg==}
+
+  '@xterm/headless@5.5.0':
+    resolution: {integrity: sha512-5xXB7kdQlFBP82ViMJTwwEc3gKCLGKR/eoxQm4zge7GPBl86tCdI0IdPJjoKd8mUSFXz5V7i/25sfsEkP4j46g==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2103,6 +2109,8 @@ snapshots:
       '@vitest/pretty-format': 3.2.6
       loupe: 3.2.1
       tinyrainbow: 2.0.0
+
+  '@xterm/headless@5.5.0': {}
 
   acorn-jsx@5.3.2(acorn@8.17.0):
     dependencies:
