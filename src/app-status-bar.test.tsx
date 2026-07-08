@@ -99,6 +99,14 @@ describe("AppStatusBar (M14 T1.2)", () => {
     instance.unmount();
     expect(frame).toContain("repo-name");
     expect(frame).toContain("idle");
+    // Review r2-F2/r1-F4: pin the LAYOUT, not just content survival — the
+    // bar stays ONE line, the path head is cut and the ellipsis shows.
+    expect(frame.trim()).not.toContain("\n");
+    expect(frame).not.toContain("/very/long");
+    expect(frame).toContain("…");
+    // The line actually FITS the 30 columns (kills the flexShrink mutant —
+    // without cwd shrink the row overflows to 41 chars, review M5).
+    expect(frame.trim().length).toBeLessThanOrEqual(30);
   });
 
   it("monochrome_theme_keeps_separators_drops_color", () => {
@@ -122,10 +130,49 @@ describe("AppStatusBar (M14 T1.2)", () => {
     expect(frame).toMatchSnapshot("status-bar-full");
   });
 
-  it("invalid_tokens_throw_typed", () => {
-    // Negative case (testing.md § 4.1): fail-fast with a typed error.
-    const bad = () => AppStatusBar({ tokens: { used: -1, limit: 0 } });
+  // Negative cases (testing.md § 4.1) — ONE axis violated per test so each
+  // guard leg has its own oracle (review r2-F1: the conflated pair let the
+  // limit-leg mutant survive).
+  it("invalid_tokens_used_negative_throws", () => {
+    const bad = () => AppStatusBar({ tokens: { used: -1, limit: 128 } });
     expect(bad).toThrow(TypeError);
     expect(bad).toThrow(/AppStatusBar/);
+  });
+
+  it("invalid_tokens_used_nan_throws", () => {
+    const bad = () =>
+      AppStatusBar({ tokens: { used: Number.NaN, limit: 128 } });
+    expect(bad).toThrow(TypeError);
+  });
+
+  it("invalid_tokens_limit_zero_throws", () => {
+    const bad = () => AppStatusBar({ tokens: { used: 1, limit: 0 } });
+    expect(bad).toThrow(TypeError);
+  });
+
+  it("invalid_tokens_limit_negative_or_nan_throws", () => {
+    const negative = () => AppStatusBar({ tokens: { used: 1, limit: -5 } });
+    expect(negative).toThrow(TypeError);
+    const nan = () => AppStatusBar({ tokens: { used: 1, limit: Number.NaN } });
+    expect(nan).toThrow(TypeError);
+  });
+
+  it("empty_string_slots_are_treated_as_absent", () => {
+    // Review r2-F5: "" must not emit a slot nor a dangling separator.
+    const frame = stripAnsi(renderBar(<AppStatusBar model="gpt-x" state="" />));
+    expect(frame.trim()).toBe("gpt-x");
+    expect(frame).not.toContain("·");
+  });
+
+  it("tildeify_requires_a_path_boundary", () => {
+    // Review r2-F4/r1-F1: a SIBLING of home (~-backup) must stay literal;
+    // cwd exactly equal to home renders "~".
+    const sibling = stripAnsi(
+      renderBar(<AppStatusBar cwd={`${homedir()}-backup/repo`} />),
+    );
+    expect(sibling).toContain(`${homedir()}-backup/repo`);
+    expect(sibling).not.toContain("~-backup");
+    const exact = stripAnsi(renderBar(<AppStatusBar cwd={homedir()} />));
+    expect(exact.trim()).toBe("~");
   });
 });

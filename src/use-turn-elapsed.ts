@@ -19,6 +19,9 @@ export function useTurnElapsed(active: boolean): number {
       setElapsed(0);
       return;
     }
+    // Defensive reset: redundant today (the !active branch always ran
+    // first — review r2-F9 proved the mutant equivalent) but kept so the
+    // reset survives any future effect-ordering change.
     setElapsed(0);
     const id = setInterval(() => {
       setElapsed((current) => current + 1);

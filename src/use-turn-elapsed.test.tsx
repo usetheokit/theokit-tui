@@ -23,6 +23,16 @@ function Probe({ active }: { active: boolean }) {
   return <Text>{`elapsed:${elapsed}`}</Text>;
 }
 
+/** act-wrapped mount — itl's render fires the hook effect outside act
+ * otherwise (review r2-F6: stderr noise masks real warnings). */
+function mountProbe(active: boolean) {
+  let instance!: ReturnType<typeof render>;
+  act(() => {
+    instance = render(<Probe active={active} />);
+  });
+  return instance;
+}
+
 describe("useTurnElapsed (M14 T1.1)", () => {
   beforeAll(() => {
     (
@@ -39,7 +49,7 @@ describe("useTurnElapsed (M14 T1.1)", () => {
 
   it("inactive_renders_zero", () => {
     vi.useFakeTimers();
-    const instance = render(<Probe active={false} />);
+    const instance = mountProbe(false);
     expect(instance.lastFrame()).toContain("elapsed:0");
     expect(vi.getTimerCount()).toBe(0);
     instance.unmount();
@@ -47,7 +57,7 @@ describe("useTurnElapsed (M14 T1.1)", () => {
 
   it("active_ticks_once_per_second", () => {
     vi.useFakeTimers();
-    const instance = render(<Probe active={true} />);
+    const instance = mountProbe(true);
     act(() => {
       vi.advanceTimersByTime(3000);
     });
@@ -58,7 +68,7 @@ describe("useTurnElapsed (M14 T1.1)", () => {
   it("deactivation_freezes_then_reactivation_resets", () => {
     // EC-2: turn 2 starts at 0 — never where turn 1 stopped.
     vi.useFakeTimers();
-    const instance = render(<Probe active={true} />);
+    const instance = mountProbe(true);
     act(() => {
       vi.advanceTimersByTime(5000);
     });
@@ -83,7 +93,7 @@ describe("useTurnElapsed (M14 T1.1)", () => {
 
   it("unmount_mid_turn_leaves_no_timers", () => {
     vi.useFakeTimers();
-    const instance = render(<Probe active={true} />);
+    const instance = mountProbe(true);
     act(() => {
       vi.advanceTimersByTime(2000);
     });
@@ -96,7 +106,7 @@ describe("useTurnElapsed (M14 T1.1)", () => {
 
   it("rapid_toggle_does_not_leak_intervals", () => {
     vi.useFakeTimers();
-    const instance = render(<Probe active={true} />);
+    const instance = mountProbe(true);
     act(() => {
       instance.rerender(<Probe active={false} />);
     });

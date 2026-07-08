@@ -98,6 +98,9 @@ function App() {
   const [streaming, setStreaming] = useState(false);
   const stream = useFakeStreaming(setMessages);
   // M14: the lib-shipped turn clock drives AgentStreaming.elapsedSeconds.
+  // NOTE: the scripted stream lasts < 1 s, so elapsed stays 0 in this demo
+  // — the 1 Hz path is exercised end-to-end by the app-status-bar bench
+  // (ticking mode), not here (review r2-F8, honest scope).
   const elapsed = useTurnElapsed(streaming);
 
   useEffect(() => {

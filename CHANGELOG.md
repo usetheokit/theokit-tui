@@ -25,6 +25,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `AppStatusBar`: separators no longer shrink before the cwd slot (they collapsed under squeeze), the tokens slot clips VISIBLY with an ellipsis instead of silently showing a wrong limit, empty-string slots are treated as absent (no dangling `·`), and `tildeify` respects the path boundary (`/home/user-backup` is not inside `~`); per-axis token negatives + a width-fit oracle kill the two review-survived mutants (m14 review batch)
+
 ### Security
 
 ## [0.14.0] - 2026-07-08

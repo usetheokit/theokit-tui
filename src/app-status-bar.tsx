@@ -42,10 +42,14 @@ function assertTokens(tokens: AppStatusBarTokens): void {
   }
 }
 
-/** Home-prefix tildeify (gemini tildeifyPath reduced — stdlib only). */
+/** Home-prefix tildeify (gemini tildeifyPath reduced — stdlib only).
+ * Boundary-aware: `/home/user-backup` is a SIBLING, not inside home. */
 function tildeify(cwd: string): string {
   const home = homedir();
-  return cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
+  if (cwd === home) {
+    return "~";
+  }
+  return cwd.startsWith(`${home}/`) ? `~${cwd.slice(home.length)}` : cwd;
 }
 
 interface Slot {
@@ -56,9 +60,14 @@ interface Slot {
 }
 
 /**
- * One-line status bar: model · cwd · tokens · state. Absent slots are
- * omitted WITH their separators (never a dangling `·`). Colors come from
- * theme tokens — monochrome themes drop color, keep the dim separator.
+ * One-line status bar: model · cwd · tokens · state. Absent slots
+ * (undefined OR empty string) are omitted WITH their separators (never a
+ * dangling `·`). Colors come from theme tokens — monochrome themes drop
+ * color, keep the dim separator. Designed width floor ≈ 30 columns with
+ * all slots (the cwd absorbs the squeeze; below the floor ink clips
+ * visibly rather than lying). NOTE: the tokens TypeError fires at the
+ * component boundary — under a live ink render the framework surfaces it
+ * via waitUntilExit rather than the render call (review r2-F7).
  */
 export function AppStatusBar(props: AppStatusBarProps) {
   // Boundary validation before hooks (house F10 idiom).
@@ -66,18 +75,23 @@ export function AppStatusBar(props: AppStatusBarProps) {
     assertTokens(props.tokens);
   }
   const theme = useTheoTheme();
+  // Empty strings are ABSENT (review r2-F5): a "" slot must not emit a
+  // dangling separator — presence means non-empty content.
+  const model = props.model === "" ? undefined : props.model;
+  const cwd = props.cwd === "" ? undefined : props.cwd;
+  const state = props.state === "" ? undefined : props.state;
   const slots: Slot[] = [];
-  if (props.model !== undefined) {
+  if (model !== undefined) {
     slots.push({
       key: "model",
-      node: <Text color={theme.accent}>{props.model}</Text>,
+      node: <Text color={theme.accent}>{model}</Text>,
       shrinks: false,
     });
   }
-  if (props.cwd !== undefined) {
+  if (cwd !== undefined) {
     slots.push({
       key: "cwd",
-      node: <Text wrap="truncate-start">{tildeify(props.cwd)}</Text>,
+      node: <Text wrap="truncate-start">{tildeify(cwd)}</Text>,
       shrinks: true,
     });
   }
@@ -85,17 +99,20 @@ export function AppStatusBar(props: AppStatusBarProps) {
     slots.push({
       key: "tokens",
       node: (
-        <Text dimColor>
+        // truncate-end keeps any clipping VISIBLE (`12.3k/12…`) — a
+        // silently cut "12.3k/128" reads as a complete-but-wrong limit
+        // (review r2-F3).
+        <Text dimColor wrap="truncate-end">
           {formatTokens(props.tokens.used)}/{formatTokens(props.tokens.limit)}
         </Text>
       ),
       shrinks: false,
     });
   }
-  if (props.state !== undefined) {
+  if (state !== undefined) {
     slots.push({
       key: "state",
-      node: <Text>{props.state}</Text>,
+      node: <Text>{state}</Text>,
       shrinks: false,
     });
   }
@@ -106,7 +123,13 @@ export function AppStatusBar(props: AppStatusBarProps) {
     <Box flexWrap="nowrap">
       {slots.map((slot, index) => (
         <Fragment key={slot.key}>
-          {index > 0 && <Text dimColor> · </Text>}
+          {index > 0 && (
+            // The separator never shrinks (review r2-F3 — it collapsed
+            // before the cwd slot did).
+            <Box flexShrink={0}>
+              <Text dimColor> · </Text>
+            </Box>
+          )}
           <Box flexShrink={slot.shrinks ? 1 : 0}>{slot.node}</Box>
         </Fragment>
       ))}

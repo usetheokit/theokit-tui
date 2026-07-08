@@ -208,7 +208,9 @@ if (!smoke) {
       "until the bar shows the final tick; wall_ms = mount→final-tick " +
       "(expected ≈ N_TICKS s). static mode: 150-step rerender loop (child " +
       "counter drives frames) with the bar present but not ticking. " +
-      "Frame-delta sampler; FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup " +
+      "Frame-delta sampler — NOTE the ticking-mode peak is QUANTIZED by the " +
+      "500 ms sample cadence (a late sample attributes up to +500 ms to one " +
+      "frame); it is not a render stall. FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup " +
       "+ N measured runs per mode; population std dev.",
   };
   const outPath = join(

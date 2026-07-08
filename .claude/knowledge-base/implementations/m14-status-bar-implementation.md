@@ -29,14 +29,23 @@ Load **1.95** (`load_1min_at_start` in the JSON), FORCE_COLOR=1, 1 warmup
 
 | Mode | mean ms/frame | Reading |
 |---|---|---|
-| ticking | 1002.041 ± 0.107 | ≈ 1 frame/s — the metric reflects the 1 s tick INTERVAL (frame-delta sampler distributes wall across frames), not render cost; wall 10020.4 ± 1.1 ms for 10 ticks (plan AC 9000–12000 ✓) |
+| ticking | 1002.041 ± 0.107 | ≈ 1 frame/s — the metric reflects the 1 s tick INTERVAL (frame-delta sampler distributes wall across frames), not render cost; the PEAK (~1500/1338 ± 230) is quantization from the 500 ms sample cadence, not a render stall (r1-F5); wall 10020.4 ± 1.1 ms for 10 ticks (plan AC 9000–12000 ✓) |
 | static | 14.404 ± 0.091 (peak 24.9 ± 1.7) | the presence cost per unrelated repaint under a 30-message thread |
 
 ## Deviations (logged)
 
 - (none — 4/4 tasks ran executed REDs; every commit gates-guarded via
-  `&&`; no scope drift; all budgets met: hook 29 ≤ 70, bar 113 ≤ 150,
+  `&&`; no scope drift; all budgets met: hook 29 ≤ 70, bar 115 ≤ 150 (log initially wrote 113 — corrected at review r1-F2),
   2/2 snapshots)
+
+## Empirical mutation (review r2, 6 mutants + batch re-kills)
+
+| Mutant | Outcome |
+|---|---|
+| M1 reset-on-deactivate / M3 cleanup / M4 separator index | KILLED at review |
+| M2 active-branch reset | equivalent (defensive redundancy — noted in-code, r2-F9) |
+| M5 cwd flexShrink | SURVIVED at review → width-fit oracle added → **KILLED** (re-verified) |
+| M6 limit<=0 guard | SURVIVED at review → per-axis negative oracles added → **KILLED** (re-verified) |
 
 ## Review outcome
 

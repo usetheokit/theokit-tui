@@ -1,6 +1,6 @@
 {
   "benchmark": "app-status-bar-render",
-  "date": "2026-07-08T05:09:25.584Z",
+  "date": "2026-07-08T05:30:21.424Z",
   "node_version": "v22.22.2",
   "stack": {
     "ink": "7.1.0",
@@ -14,7 +14,7 @@
   "color_env": {
     "FORCE_COLOR": "1"
   },
-  "load_1min_at_start": 1.95,
+  "load_1min_at_start": 0.37,
   "workload": {
     "ticks": 10,
     "tick_interval_ms": 1000,
@@ -26,8 +26,8 @@
     "measured_runs": 3
   },
   "ticking_wall_ms": {
-    "mean": 10020.428,
-    "std_dev": 1.084
+    "mean": 10024.339,
+    "std_dev": 1.745
   },
   "modes": [
     {
@@ -35,32 +35,32 @@
       "runs": [
         {
           "frames": 10,
-          "mean_ms_per_frame": 1002.176,
-          "peak_ms_per_frame": 1500.78,
-          "wall_ms": 10021.796
+          "mean_ms_per_frame": 1002.468,
+          "peak_ms_per_frame": 1014.776,
+          "wall_ms": 10024.69
         },
         {
           "frames": 10,
-          "mean_ms_per_frame": 1002.033,
-          "peak_ms_per_frame": 1013.504,
-          "wall_ms": 10020.342
+          "mean_ms_per_frame": 1002.627,
+          "peak_ms_per_frame": 1013.873,
+          "wall_ms": 10026.278
         },
         {
           "frames": 10,
-          "mean_ms_per_frame": 1001.914,
-          "peak_ms_per_frame": 1501.515,
-          "wall_ms": 10019.146
+          "mean_ms_per_frame": 1002.204,
+          "peak_ms_per_frame": 1501.732,
+          "wall_ms": 10022.048
         }
       ],
       "aggregate": {
         "frames_mean": 10,
         "mean_ms_per_frame": {
-          "mean": 1002.041,
-          "std_dev": 0.107
+          "mean": 1002.433,
+          "std_dev": 0.174
         },
         "peak_ms_per_frame": {
-          "mean": 1338.6,
-          "std_dev": 229.878
+          "mean": 1176.794,
+          "std_dev": 229.766
         }
       }
     },
@@ -69,32 +69,32 @@
       "runs": [
         {
           "frames": 150,
-          "mean_ms_per_frame": 14.343,
-          "peak_ms_per_frame": 27.283
+          "mean_ms_per_frame": 14.377,
+          "peak_ms_per_frame": 31.594
         },
         {
           "frames": 150,
-          "mean_ms_per_frame": 14.337,
-          "peak_ms_per_frame": 23.127
+          "mean_ms_per_frame": 14.663,
+          "peak_ms_per_frame": 25.609
         },
         {
           "frames": 150,
-          "mean_ms_per_frame": 14.533,
-          "peak_ms_per_frame": 24.378
+          "mean_ms_per_frame": 14.727,
+          "peak_ms_per_frame": 31.577
         }
       ],
       "aggregate": {
         "frames_mean": 150,
         "mean_ms_per_frame": {
-          "mean": 14.404,
-          "std_dev": 0.091
+          "mean": 14.589,
+          "std_dev": 0.152
         },
         "peak_ms_per_frame": {
-          "mean": 24.929,
-          "std_dev": 1.741
+          "mean": 29.593,
+          "std_dev": 2.817
         }
       }
     }
   ],
-  "methodology": "ticking mode: useTurnElapsed(true) drives the state slot under a 30-message static thread with REAL timers; sampled every 500 ms until the bar shows the final tick; wall_ms = mount→final-tick (expected ≈ N_TICKS s). static mode: 150-step rerender loop (child counter drives frames) with the bar present but not ticking. Frame-delta sampler; FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup + N measured runs per mode; population std dev."
+  "methodology": "ticking mode: useTurnElapsed(true) drives the state slot under a 30-message static thread with REAL timers; sampled every 500 ms until the bar shows the final tick; wall_ms = mount→final-tick (expected ≈ N_TICKS s). static mode: 150-step rerender loop (child counter drives frames) with the bar present but not ticking. Frame-delta sampler — NOTE the ticking-mode peak is QUANTIZED by the 500 ms sample cadence (a late sample attributes up to +500 ms to one frame); it is not a render stall. FORCE_COLOR=1 via benchmarks/run.ts; 1 warmup + N measured runs per mode; population std dev."
 }
