@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- SOTA reference: `tau` (huggingface, MIT) — the 7th parity peer named for the V4 component-parity criterion (Python coding agent, src/tau_coding/tui)
+
 - SOTA reference for V4: `opentui` (sst, MIT) — the direct peer of the renderer program (custom TUI engine with react-reconciler ^0.33.0 bindings, the same pin as ink 7 and our M17 plan)
 
 - ROADMAP V4 (renderer program, owner decision — ADR 0003): M17 walking skeleton (react-reconciler + CSI-2026 + @xterm/headless harness), M18 Yoga layout + Box/Text parity, M19 input stack (bracketed paste, keybindings, PTY e2e), M20 scrollback + migration + cutover gate, M21 premium capabilities (inline images, rich editor, fuzzy+paths); the "no homegrown TUI framework" out-of-scope item removed with a dated note

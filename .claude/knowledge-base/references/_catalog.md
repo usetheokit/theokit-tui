@@ -89,3 +89,5 @@ peers for AI-agent terminal UIs. Read by `/discover-plan` when deep-diving a ref
 | conduit | https://github.com/conduit-cli/conduit | MIT | Multi-agent terminal app (Rust/ratatui) — team-of-agents UX patterns | added_by: sota-gap-analysis · date: 2026-07-08 |
 
 | opentui | https://github.com/sst/opentui | MIT | THE V4 direct peer — custom TUI renderer with REACT bindings (packages/react = react-reconciler host over their core engine); study the host-config + core split | added_by: v4-renderer-program · added_for_milestone: M17, M18, M20 · date: 2026-07-08 |
+
+| tau | https://github.com/huggingface/tau | MIT | Minimalist coding agent (Python) with a TUI (src/tau_coding/tui — autocomplete, widgets) — the 7th parity peer named for V4 | added_by: v4-parity-matrix · date: 2026-07-08 |
