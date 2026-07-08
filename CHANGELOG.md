@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   captures the static delta per-commit; Ink's `<Static>` works unchanged on the
   new engine. Plus our own `useStdout` (Ink's context is un-importable) provided
   by `createRenderer` (M20 T1.1).
+- Renderer V4 focus manager: `useFocus`/`useFocusManager` + `FocusProvider` over
+  our M19 InputSource — the ESC/Tab/Shift+Tab arbiter runs on a new priority
+  input channel (before component `useInput`), matching Ink's App ordering the
+  composer's ESC-refocus relies on. InputSource now flushes a lone ESC after a
+  short delay (Escape-key delivery). Plus an ink-testing-library-shaped test
+  adapter over the new renderer (lastFrame = scrollback + live) (M20 T2.1).
 
 ### Changed
 

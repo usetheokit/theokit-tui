@@ -29,6 +29,13 @@ export interface InputSource {
   stop(): void;
   /** Subscribe to key events; returns an unsubscribe function. */
   onKey(handler: KeyHandler): () => void;
+  /**
+   * Subscribe to key events on the PRIORITY channel — these run before every
+   * `onKey` subscriber, regardless of registration order (React effects fire
+   * bottom-up, so a parent focus arbiter cannot rely on subscribing first).
+   * Ink's App runs its ESC/Tab focus arbiter ahead of useInput the same way.
+   */
+  onKeyPriority(handler: KeyHandler): () => void;
   /** Subscribe to paste events; returns an unsubscribe function. */
   onPaste(handler: PasteHandler): () => void;
   /** Ref-counted raw mode: raw is on while ≥ 1 consumer holds it. */
@@ -55,8 +62,41 @@ export function createInputSource(
   let rawModeRefCount = 0;
   let listener: ((chunk: Buffer) => void) | undefined;
   let kittyActive = false;
+  let escapeFlushTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // A lone ESC is held pending (it may start a longer sequence). Flush it as the
+  // Escape key after a short delay if no continuation arrives — Ink's App
+  // schedulePendingInputFlush (App.js:164-173). Without this, pressing Escape
+  // never delivers a key (the focus arbiter + composer ESC-dismiss depend on it).
+  const ESCAPE_FLUSH_MS = 20;
+
+  // Priority subscribers fire before the regular "key" channel (focus arbiter).
+  const emitKey = (input: string, key: Key): void => {
+    emitter.emit("key:priority", input, key);
+    emitter.emit("key", input, key);
+  };
+
+  const clearEscapeFlush = (): void => {
+    if (escapeFlushTimer) {
+      clearTimeout(escapeFlushTimer);
+      escapeFlushTimer = undefined;
+    }
+  };
+
+  const scheduleEscapeFlush = (): void => {
+    clearEscapeFlush();
+    escapeFlushTimer = setTimeout(() => {
+      escapeFlushTimer = undefined;
+      const pending = parser.flushPendingEscape();
+      if (pending !== undefined) {
+        const { input, key } = projectKey(pending);
+        emitKey(input, key);
+      }
+    }, ESCAPE_FLUSH_MS);
+  };
 
   const dispatch = (chunk: Buffer): void => {
+    clearEscapeFlush(); // a new chunk may complete the pending escape
     for (const event of parser.push(chunk.toString("utf8"))) {
       if (typeof event === "string") {
         // A kitty handshake reply is awareness state — not a key event.
@@ -65,13 +105,16 @@ export function createInputSource(
           continue;
         }
         const { input, key } = projectKey(event);
-        emitter.emit("key", input, key);
+        emitKey(input, key);
       } else if (emitter.listenerCount("paste") > 0) {
         emitter.emit("paste", event.paste);
       } else {
         // No paste listener — fall through to the key channel (Ink's fallback).
-        emitter.emit("key", event.paste, projectKey("").key);
+        emitKey(event.paste, projectKey("").key);
       }
+    }
+    if (parser.hasPendingEscape()) {
+      scheduleEscapeFlush(); // lone ESC → deliver it after the flush delay
     }
   };
 
@@ -86,6 +129,7 @@ export function createInputSource(
       writeToTerminal?.(KITTY_ENABLE); // query kitty support (awareness handshake)
     },
     stop(): void {
+      clearEscapeFlush();
       if (listener) {
         stdin.off("data", listener);
         listener = undefined;
@@ -100,6 +144,10 @@ export function createInputSource(
     onKey(handler: KeyHandler): () => void {
       emitter.on("key", handler);
       return () => emitter.off("key", handler);
+    },
+    onKeyPriority(handler: KeyHandler): () => void {
+      emitter.on("key:priority", handler);
+      return () => emitter.off("key:priority", handler);
     },
     onPaste(handler: PasteHandler): () => void {
       emitter.on("paste", handler);
