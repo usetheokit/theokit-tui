@@ -1,9 +1,10 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import spinners from "cli-spinners";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
+import { preloadHighlighter } from "./code-block.js";
 import { ToolCall, ToolCallCard } from "./tool-call.js";
 import { TheoTUIProvider } from "./theme.js";
 
@@ -266,6 +267,18 @@ const VALID_PATCH = [
 ].join("\n");
 
 describe("ToolCallCard result variants (M16 T1.1)", () => {
+  // Determinism (fixes the review r1-F1 [NEEDS-REPRO] flake): the diff and
+  // preview-with-language variants route through CodeBlock/DiffViewer, which
+  // async-load lowlight via a module-cached promise and re-render
+  // highlighted. Whether that re-render's microtask flushes inside
+  // renderFrame's 0ms tick depends on whether a prior test in the same
+  // vitest worker warmed the cache — pure parallel-ordering nondeterminism.
+  // Preloading forces the highlight state ON before any render, so every
+  // frame (and snapshot) is deterministic.
+  beforeAll(async () => {
+    await preloadHighlighter();
+  });
+
   it("diff_result_renders_patch_inside_card_indent", async () => {
     const frame = await renderFrame(
       <Box width={70}>
