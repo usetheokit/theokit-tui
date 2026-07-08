@@ -19,6 +19,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.14.0] - 2026-07-08
+
+### Added
+
+- `ChatThreadMessage.markdown?` — per-message opt-in routed to the row's ChatMessage (unflagged rows byte-identical); `examples/chat.tsx` ships a markdown-rich assistant reply (smoke pins rendered shapes, not markers); chat-message bench gains a `markdown` mode (markdown-rich streaming tail re-parses per repaint — plain 32.1±1.7 vs markdown 42.0±2.1 ms/frame at load 0.82, honest per-frame parse+highlight cost) with the legacy plain shape preserved (m13-markdown-renderer T3.1)
+
+- `MarkdownText` — assistant-text Markdown renderer (AI-chat subset: headings 1-4, ul/ol lists, hr, paragraphs, fenced code via the existing `CodeBlock`; inline bold/italic/bold-italic/strikethrough/verbatim code spans/links/bare URLs), theme-token styled (monochrome themes keep bold/italic SGR, drop color); exported from the package entry. `ChatMessage` gains opt-in `markdown` (default false — raw text stays byte-identical; requires string children, TypeError otherwise) (m13-markdown-renderer T2.1)
+
+- `markdown-model` (internal): pure AI-chat markdown subset parser — headings 1-4, ul/ol, hr, paragraphs, length-matched code fences (unclosed fence at EOF still emits code — streaming-safe), inline bold/italic/bold-italic/strikethrough/verbatim code spans (backreference-matched, handles ``a`b``)/links/bare URLs; malformed markers fall through as literal, never throw; zero deps, zero ink imports (m13-markdown-renderer T1.1)
+
+- Roadmap amended (V3 series): added M13 Markdown renderer, M14 Composed status bar + turn elapsed, M15 Composer slash autocomplete + keyboard affordances, M16 ToolCallCard rich variants (`/roadmap-feature`, batch — all depend on M12; gap table from the TheoCode dogfood vs Claude Code/Codex/Gemini/OpenCode/Mastra); SOTA references extended with mastra/mastracode (Apache-2.0 — `ee/` dirs enterprise-licensed, excluded from study)
+
+### Fixed
+
+- `markdown-model`: italic now respects the gemini path guards (asterisk runs between path separators stay literal — `ls src/*x*/y` no longer italicizes) and the fence close-length rule gained its missing oracle; `ChatMessage` default-off contract now pinned by a live byte-compare incl. explicit `markdown={false}` (two review-survived mutants killed) (m13 review batch)
+
 ## [0.13.0] - 2026-07-08
 
 ### Added
@@ -26,7 +42,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `WelcomeBanner` `animated?: boolean` — opt-in < 2 s typewriter reveal (12 phases × 80 ms, bounded and self-clearing). Mount-time gate stack evaluated once: interactive TTY + rows ≥ 15 + columns ≥ 44 + non-monochrome theme + `THEOKIT_TUI_NO_MOTION` unset (any non-empty value disables motion — the end-user reduced-motion override). Everywhere the gate is closed — and at convergence — the render is the exact static banner tree, byte-identical by construction (m12-animated-banner T1.1)
 - `examples/banner.tsx` opts into the animated reveal (interactive terminals get the < 2 s typewriter; piped runs stay on the static path — pipe smoke pins the static scene printing exactly once) + one anchored mid-reveal snapshot (m12-animated-banner T2.1)
 - OWN render bench for the reveal (`benchmarks/welcome-banner.bench.tsx` — the recorded M9 flip condition fired): reveal mode under real timers (measured wall 967.6 ± 2.1 ms < 2 s DoD, load-gated 1.67) + static rerender mode (10.7 ms/frame); baseline committed at `docs/benchmarks/m12-welcome-banner-baseline.json` with a contract test (m12-animated-banner T2.2)
-
 
 ### Fixed
 

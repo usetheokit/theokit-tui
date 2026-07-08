@@ -28,7 +28,16 @@ const initialMessages: ChatThreadMessage[] = [
   {
     id: makeId(),
     role: "assistant",
-    content: "ChatThread with Static history, ChatComposer and streaming.",
+    markdown: true,
+    content: [
+      "## M1 highlights",
+      "",
+      "**ChatThread** with `Static` history and streaming.",
+      "",
+      "```bash",
+      "npm install @theokit/tui",
+      "```",
+    ].join("\n"),
   },
 ];
 

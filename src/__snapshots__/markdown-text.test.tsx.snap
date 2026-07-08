@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MarkdownText (M13 T2.1) > monochrome_theme_drops_color_keeps_attributes > markdown-monochrome 1`] = `
+"[1mH[22m
+[1mb[22m and c"
+`;
+
+exports[`MarkdownText (M13 T2.1) > renders_heading_bold_and_fence_scene > markdown-rich-scene 1`] = `
+"[1m[36mTitle[39m[22m
+
+Intro with [1mbold[22m, [3mitalic[23m and [36mpnpm test[39m.
+
+ - first item
+ 1. ordered item
+
+const x = 1;
+
+See docs ([36mhttps://theo.dev[39m) or [36mhttps://raw.url[39m"
+`;

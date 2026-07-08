@@ -67,3 +67,41 @@ describe("benchmark baseline M12 (T2.2)", () => {
     expect(baseline.methodology).toMatch(/real timers/i);
   });
 });
+
+// M13 T3.1: the chat-message baseline gained a modes[] axis (plain +
+// markdown) while keeping the legacy top-level runs/aggregate = plain
+// (contract compatibility). Lives here for the 500-line budget of
+// tests/bench-baseline.test.ts.
+describe("benchmark baseline M13 (T3.1)", () => {
+  it("m13_chat_message_markdown_mode_contract", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/benchmarks/m0-chat-message-baseline.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      load_1min_at_start: number;
+      runs: unknown[];
+      modes: {
+        mode: string;
+        runs: { mean_ms_per_frame: number }[];
+        aggregate: { mean_ms_per_frame: { mean: number; std_dev: number } };
+      }[];
+    };
+    const modeNames = baseline.modes.map((m) => m.mode);
+    expect(modeNames).toEqual(expect.arrayContaining(["plain", "markdown"]));
+    expect(Number.isFinite(baseline.load_1min_at_start)).toBe(true);
+    expect(baseline.load_1min_at_start).toBeLessThan(4);
+    for (const mode of baseline.modes) {
+      for (const run of mode.runs) {
+        expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
+      }
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.mean)).toBe(true);
+    }
+    // Legacy top-level shape survives (the pre-M13 contract reads it).
+    expect(baseline.runs.length).toBeGreaterThan(0);
+  });
+});

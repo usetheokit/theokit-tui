@@ -369,3 +369,29 @@ describe("ChatThread header slot (M11 T1.1)", () => {
     expect(bad).toThrow("__theokit_tui_header__");
   });
 });
+
+describe("ChatThread markdown routing (M13 T3.1)", () => {
+  it("thread_message_markdown_flag_routes_to_row", () => {
+    const instance = render(
+      <ChatThread
+        messages={[
+          {
+            id: "m1",
+            role: "assistant",
+            content: "**b** styled",
+            markdown: true,
+          },
+          { id: "m2", role: "assistant", content: "**raw** markers" },
+        ]}
+      />,
+    );
+    const raw = instance.lastFrame() ?? "";
+    instance.unmount();
+    // eslint-disable-next-line no-control-regex
+    const frame = raw.replace(/\u001B\[[0-9;]*m/g, "");
+    expect(frame).toContain("b styled");
+    expect(frame).not.toContain("**b**");
+    // Unflagged row keeps markers literally (default-off per message).
+    expect(frame).toContain("**raw** markers");
+  });
+});

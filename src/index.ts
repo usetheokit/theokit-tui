@@ -1,4 +1,4 @@
-export const VERSION = "0.13.0";
+export const VERSION = "0.14.0";
 
 export {
   TheoTUIProvider,
@@ -37,6 +37,8 @@ export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";
 // ensureHighlighter stays module-internal (EC-10 — D7 precedent);
 // preloadHighlighter is the PUBLIC readiness seam (DV-5, review batch).
 export { CodeBlock, preloadHighlighter } from "./code-block.js";
+export { MarkdownText } from "./markdown-text.js";
+export type { MarkdownTextProps } from "./markdown-text.js";
 export type { CodeBlockProps } from "./code-block.js";
 export { DiffViewer } from "./diff-viewer.js";
 export type { DiffViewerProps } from "./diff-viewer.js";

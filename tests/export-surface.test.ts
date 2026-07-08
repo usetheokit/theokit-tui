@@ -78,6 +78,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.parseUnifiedDiff).toBe("function");
     expect(typeof mod.DiffViewer).toBe("function");
     expect(typeof mod.CodeBlock).toBe("function");
+    expect(typeof mod.MarkdownText).toBe("function");
     // Module-internal by plan decision (EC-10, D7 precedent):
     expect(mod).not.toHaveProperty("ensureHighlighter");
     expect(mod).not.toHaveProperty("highlightLine");

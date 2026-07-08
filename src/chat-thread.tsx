@@ -10,6 +10,9 @@ export interface ChatThreadMessage {
   id: string;
   role: ChatRole;
   content: string;
+  /** M13 per-message opt-in: render `content` as Markdown (AI-chat subset).
+   * Default false — unflagged rows are byte-identical to pre-M13. */
+  markdown?: boolean;
 }
 
 export interface ChatThreadProps {
@@ -51,7 +54,9 @@ type StaticItem = typeof HEADER_SENTINEL | ChatThreadMessage;
 
 const Row = memo(
   ({ message }: { message: ChatThreadMessage }) => (
-    <ChatMessage role={message.role}>{message.content}</ChatMessage>
+    <ChatMessage role={message.role} markdown={message.markdown === true}>
+      {message.content}
+    </ChatMessage>
   ),
   (prev, next) => prev.message === next.message,
 );

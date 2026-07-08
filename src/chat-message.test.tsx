@@ -1,4 +1,4 @@
-import { Box } from "ink";
+import { Box, Text } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
@@ -124,6 +124,49 @@ describe("ChatMessage (T2.1)", () => {
   // tests/degrade-matrix.integration.test.tsx (M6 T3.2) — one file now owns
   // the 3-scene env matrix; the forced-color canary above stays here to
   // guard the vitest FORCE_COLOR pin.
+  it("chat_message_default_off_is_byte_identical", async () => {
+    // M13 EC-3: WITHOUT `markdown` (absent OR explicit false) the raw
+    // markers render literally, and the two default paths are byte-equal
+    // (LIVE comparison — kills the `markdown !== undefined` mutant, r2-F2).
+    const md = "**bold** and `code`";
+    const absent = await renderFrame(
+      <ChatMessage role="assistant">{md}</ChatMessage>,
+    );
+    const explicitFalse = await renderFrame(
+      <ChatMessage role="assistant" markdown={false}>
+        {md}
+      </ChatMessage>,
+    );
+    expect(absent).toBe(explicitFalse);
+    expect(absent).toContain("**bold**");
+    expect(absent).toContain("`code`");
+  });
+
+  it("chat_message_markdown_opt_in_renders_styled", async () => {
+    const frame = await renderFrame(
+      <Box width={60}>
+        <ChatMessage role="assistant" markdown>
+          {"# Hi\n**bold** and `code`"}
+        </ChatMessage>
+      </Box>,
+    );
+    expect(frame).not.toContain("**");
+    expect(frame).not.toContain("# Hi");
+    expect(frame).toContain("Hi");
+    expect(frame).toContain("bold");
+  });
+
+  it("chat_message_markdown_requires_string_children", () => {
+    const bad = () =>
+      ChatMessage({
+        role: "assistant",
+        markdown: true,
+        children: <Text>node</Text>,
+      });
+    expect(bad).toThrow(TypeError);
+    expect(bad).toThrow(/markdown/);
+  });
+
   it("renders_glyph_only_for_empty_children", async () => {
     const frame = await renderFrame(
       <Box width={40}>

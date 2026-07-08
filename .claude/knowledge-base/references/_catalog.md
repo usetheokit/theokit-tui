@@ -81,3 +81,5 @@ peers for AI-agent terminal UIs. Read by `/discover-plan` when deep-diving a ref
 - Reproduce: git clone --depth 1 --filter=blob:none https://github.com/CameronFoxly/Ascii-Motion.git .claude/knowledge-base/references/ascii-motion
 
 > License-gate note (2026-07-07): charmbracelet/crush was EXCLUDED (FSL-1.1 source-available — warn class); Aider dispensed (Python, trivial banner, low pattern value for Ink/React).
+
+| mastra | https://github.com/mastra-ai/mastra | Apache-2.0 (root LICENSE.md dual: any `ee/` dir is enterprise-licensed — do NOT study `ee/`; `mastracode/` package.json declares Apache-2.0) | Production agent CLI (`mastracode/`) — markdown render, status bar, slash menu, per-kind tool render | added_by: roadmap-feature · added_for_milestone: M13, M14, M15, M16 · date: 2026-07-08 |

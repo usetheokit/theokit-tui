@@ -272,7 +272,7 @@ V1 closed (10/10, v0.10.0 published); the M8 rehearsal PROVED the react-19 fresh
 
 The M9 D4 drawback is RECORDED with this exact flip condition; V2 is the moment to honor it on the upgraded base.
 
-### M12 — [ ] Animated welcome banner
+### M12 — [x] Animated welcome banner
 
 > Added 2026-07-07 by `/roadmap-feature` (slug: `m12-animated-banner`). See CHANGELOG `[Unreleased] § Added`.
 
@@ -297,6 +297,106 @@ The M9 D4 drawback is RECORDED with this exact flip condition; V2 is the moment 
 
 The M9 blueprint recorded the flip condition and the brand-moment value is peer-proven (Copilot CLI engineering post); rides the M10 base.
 
+### M13 — [ ] Markdown renderer for assistant text
+
+> Added 2026-07-08 by `/roadmap-feature` (slug: `m13-markdown-renderer`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Assistant text renders Markdown (peer parity: Claude Code/Codex/Gemini/OpenCode/Mastra all render it), with code fences routed to the existing `CodeBlock`.
+
+**Definition of done:**
+
+- [ ] `MarkdownText`: bold/italic/inline-code/headings/lists/links (AI-chat subset).
+- [ ] Code fences route to the existing `CodeBlock` (syntax highlight); NO_COLOR/pipe degrade ladder.
+- [ ] `ChatMessage` opt-in (`markdown` prop) — raw text stays the default.
+- [ ] Zero new deps OR one audited parser dep (marked/micromark) via `/deps-audit`.
+- [ ] Example + deterministic smoke; bench if a per-frame path lands; gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M12
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Markdown parser dependency (CVE surface/weight) vs a hand-rolled subset parser (Rule 9 tension) — resolved by `/deps-audit` + the discovery cycle.
+2. Wrap/width interplay in terminal cells (lists/headings under narrow columns) — mitigated by the house width-matrix test idiom.
+
+**Why now (from grill Q1):**
+
+TheoCode dogfood against the 5 peers produced the gap table — raw assistant text is the most visible parity gap that belongs to the lib.
+
+### M14 — [ ] Composed status bar + turn elapsed
+
+> Added 2026-07-08 by `/roadmap-feature` (slug: `m14-status-bar`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** An AI-native `AppStatusBar` (model · cwd · tokens · state) composing the M5 metrics primitives, plus elapsed-time on the streaming spinner.
+
+**Definition of done:**
+
+- [ ] `AppStatusBar`: slots model · cwd · tokens · state (composes `ContextWindowBar`/`CostMeter` data).
+- [ ] Turn elapsed/state integrated with `AgentStreaming` (spinner + time).
+- [ ] Responsive width + degrade ladder (NO_COLOR/narrow/pipe).
+- [ ] Example + smoke; OWN bench (elapsed ticks = per-frame path — M9 flip condition).
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M12
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Elapsed timer is a per-frame path (flake surface) — mitigated by the M12 fake-timer + bounded-driver idiom.
+2. Status-bar slot API scope creep toward a generic layout widget — mitigated by the AI-native slot set (model/cwd/tokens/state only).
+
+**Why now (from grill Q1):**
+
+TheoCode dogfood against the 5 peers produced the gap table — every peer ships a persistent status bar; our metrics primitives exist but are uncomposed.
+
+### M15 — [ ] Composer slash autocomplete + keyboard affordances
+
+> Added 2026-07-08 by `/roadmap-feature` (slug: `m15-composer-autocomplete`). See CHANGELOG `[Unreleased] § Added`. Out-of-scope overlap ("menus") reviewed 2026-07-08: coincidental — this is the agent-surface slash menu every peer CLI ships, not a generic ink-ui menu (grill log).
+
+**Objective:** `ChatComposer` gains the slash-command menu (incremental filter, ↑↓ select, Tab/Enter complete) + multi-line and cancel affordances.
+
+**Definition of done:**
+
+- [ ] Slash menu on typing `/`: incremental filtering, ↑↓ selection, Tab/Enter completion, Esc dismiss.
+- [ ] Multi-line input affordance (Ctrl+E or continuation) + cancel hint (Esc).
+- [ ] Declarative API: `commands=[{name, description}]` — zero app logic in the lib.
+- [ ] Deterministic keyboard tests (fake stdin idiom); example + smoke.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M12
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. First interactive input surface of the lib — raw-mode stdin in tests is new territory (itl fake stdin exists; determinism must be proven in discovery).
+2. Scope pressure toward a generic menu widget (out-of-scope) — mitigated by the slash-command-only API.
+
+**Why now (from grill Q1):**
+
+TheoCode dogfood against the 5 peers produced the gap table — `/` autocomplete is table stakes in every peer CLI and the composer already exists.
+
+### M16 — [ ] ToolCallCard rich variants (diff / output / preview)
+
+> Added 2026-07-08 by `/roadmap-feature` (slug: `m16-tool-card-variants`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Per-kind tool cards matching peer rendering: edit/write → embedded `DiffViewer`; bash → output box (`ToolResult`); read → capped preview.
+
+**Definition of done:**
+
+- [ ] edit/write kind embeds `DiffViewer` inside the card; bash kind renders the output box; read kind renders a capped preview.
+- [ ] API by kind/variant — pure composition of existing primitives, zero new deps.
+- [ ] Snapshot budget ≤ 3; degrade ladder (NO_COLOR/narrow/pipe).
+- [ ] Example + deterministic smoke.
+- [ ] Gates/coverage/CHANGELOG house standard.
+
+**Dependencies:** M12
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Snapshot explosion across kind × theme × width — mitigated by the ≤ 3 budget + anchored-snapshot idiom.
+2. Card↔viewer coupling (DiffViewer API leaking into the card contract) — mitigated by slot composition, not prop forwarding.
+
+**Why now (from grill Q1):**
+
+TheoCode dogfood against the 5 peers produced the gap table — peers render tool calls richly by kind; we ship the pieces but not the composition.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in
@@ -312,6 +412,7 @@ Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full c
 | `bubbletea` | MIT | Gold-standard TUI framework (Go) — Elm architecture, render/update patterns | M0, M6 |
 | `bubbles` | MIT | Gold-standard TUI component set (Go) — viewport/progress/spinner component design | M1, M5 |
 | `opencode` | MIT | Agent-TUI splash/home screen (logo + version + hints) in production | M9 |
+| `mastra` (`mastracode/`) | Apache-2.0 (root dual: `ee/` dirs enterprise-licensed — avoid) | Production agent CLI (mastracode) — markdown/status/slash/tool-render patterns | M13, M14, M15, M16 |
 | `oh-my-logo` | MIT + CC0-1.0 | Claude-Code/Gemini-CLI-style gradient ASCII logo pattern (TypeScript) | M9 |
 | `ascii-motion` | MIT | Animated ASCII banner authoring — by the GitHub Copilot CLI banner designer | M9 |
 
