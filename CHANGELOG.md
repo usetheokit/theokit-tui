@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ToolCallCard` `result?: ToolCardResult` — explicit per-kind bodies over the existing primitives: `{kind:"diff"}` → DiffViewer (malformed patch throws the typed error AT the card boundary — a child render throw is silently swallowed by ink's error boundary, probed), `{kind:"output"}` → ToolResult shell envelope, `{kind:"preview"}` → capped CodeBlock (with language) or plain lines; children coexist BELOW the result body; `ToolCardResult` exported (m16-tool-card-variants T1.1)
+
 ### Changed
 
 ### Deprecated
