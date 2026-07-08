@@ -465,7 +465,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 1. Terminal matrix variance (kitty vs legacy encodings) — mitigated by pi's stdin-buffer table + conservative fallbacks.
 2. Paste-marker segmentation interacting with grapheme segmentation — mitigated by adopting pi's merged-segmenter approach with our Intl.Segmenter buffer.
 
-### M20 — [ ] Renderer V4: scrollback semantics + component migration + cutover gate
+### M20 — [x] Renderer V4: scrollback semantics + component migration + cutover gate
 
 > Added 2026-07-08 (V4 renderer program).
 
