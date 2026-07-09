@@ -14,6 +14,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   id (rows memo-ed by identity, the M8 ChatThread precedent); duplicate ids throw;
   it never graduates to `<Static>` (a done item may revert). The status glyph
   carries the meaning, so the surface survives a monochrome theme (M24 T1.2).
+- `MultiStepProgress` — a discrete n-of-m step list that reuses the `TodoList` row
+  (DRY) + a header: `"{done} of {total}"`, or `"step {i} of {total}"` (clamped)
+  when a `current` step is given. A `groupLabel` renders the subagent-lane variant
+  (each step's label is a lane name) (M24 T2.1).
 
 ### Changed
 

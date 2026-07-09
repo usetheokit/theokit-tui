@@ -166,3 +166,5 @@ export type {
 // M24 — live progress surfaces.
 export { TodoList } from "./todo-list.js";
 export type { TodoListProps, TodoItem, TodoStatus } from "./todo-list.js";
+export { MultiStepProgress } from "./multi-step-progress.js";
+export type { MultiStepProgressProps } from "./multi-step-progress.js";
