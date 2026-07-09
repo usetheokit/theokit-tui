@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.27.0] - 2026-07-09
+
+### Added
+
 - `ChatComposer` — a `bordered` prop that draws a rounded box around the input line
   (the Claude Code look; degrades to a `single` border under a monochrome theme).
   Default false, so existing consumers are unchanged.
@@ -31,18 +45,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   first whitespace once a `/` has been seen, so a path with spaces (`@~/Área de Trabalho/`)
   stays a single token. A space before the first `/` still closes the token as before.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - `ChatComposer` `@`-mention menu rendered a spurious leading `/` on every file path
   (`/src/foo.ts`) because it reused the slash-command renderer, which hard-coded the `/`
   sigil. `SlashMenu` gained an optional `sigil` field (default `/`); the mention menu sets
   it to `""` so paths render bare (`src/foo.ts`).
-
-### Security
 
 ## [0.26.1] - 2026-07-09
 
