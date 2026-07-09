@@ -525,7 +525,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 **Top risks (new):** 1. Focus management across overlay stack (ink focus vs our input stack) — mitigated by the M15 ESC-refocus lesson + M19 keybindings. 2. Scope creep toward app-specific pickers — the lib ships PRIMITIVES; model/theme/session selectors are app compositions (parity matrix "OUT" list).
 
-### M23 — [ ] Renderer V4: agent decision surfaces (approval, question, plan)
+### M23 — [x] Renderer V4: agent decision surfaces (approval, question, plan)
 
 > Added 2026-07-08 (V4 parity matrix — approval flows in 6/7 peers).
 
