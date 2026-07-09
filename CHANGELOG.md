@@ -20,6 +20,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   marks the changed WORDS with inverse video (a pure indentation change is not
   highlighted). New dependency `diff` (jsdiff, BSD-3, no CVEs), imported only on
   the opt-in path (M25 T2.1).
+- `ExpandableOutput` — a capped view that reveals its full body on ctrl+o / Space
+  / Enter (per-component state, no global registry) over the M24 CollapsibleBlock.
+  `ToolResult` and `CodeBlock` gain an `interactive` prop that wraps their
+  line-capped output in it (the 20k char guard is never bypassed) (M25 T3.1).
 
 ### Changed
 

@@ -2,6 +2,7 @@ import { Box, Text } from "ink";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
+import { ExpandableOutput } from "./expandable-output.js";
 import { useTheoTheme } from "./theme.js";
 import type { CodeTokens } from "./theme.js";
 
@@ -200,6 +201,11 @@ export interface CodeBlockProps {
   showLineNumbers?: boolean;
   /** HEAD-retained line cap with dim `… (+N more lines)` trailer. Int >= 1. */
   maxLines?: number;
+  /**
+   * M25: when line-capped, make the block interactively expandable (ctrl+o /
+   * Space / Enter over the M24 CollapsibleBlock).
+   */
+  interactive?: boolean;
 }
 
 /**
@@ -207,18 +213,24 @@ export interface CodeBlockProps {
  * highlighted once the OPTIONAL `lowlight` peer loads (plan ADR D2 — absent
  * peer degrades to plain forever with one warn). Tabs expand to 4 spaces.
  */
-export function CodeBlock({
-  code,
-  language,
-  showLineNumbers = false,
-  maxLines,
-}: CodeBlockProps) {
-  // Boundary guard FIRST, before hooks (F10 idiom).
+/** Fail-fast on an invalid `maxLines` (integer >= 1). */
+function assertPositiveMaxLines(maxLines: number | undefined): void {
   if (maxLines !== undefined && (!Number.isInteger(maxLines) || maxLines < 1)) {
     throw new TypeError(
       `CodeBlock: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
     );
   }
+}
+
+export function CodeBlock({
+  code,
+  language,
+  showLineNumbers = false,
+  maxLines,
+  interactive = false,
+}: CodeBlockProps) {
+  // Boundary guard FIRST, before hooks (F10 idiom).
+  assertPositiveMaxLines(maxLines);
   const theme = useTheoTheme();
   const [highlighter, setHighlighter] = useState<HighlighterLike | undefined>(
     undefined,
@@ -244,9 +256,9 @@ export function CodeBlock({
   const visible = capped ? allLines.slice(0, maxLines) : allLines;
   const padWidth = String(allLines.length).length;
 
-  return (
+  const rows = (lines: string[]) => (
     <Box flexDirection="column">
-      {visible.map((line, index) => (
+      {lines.map((line, index) => (
         <Box key={`l${index}`}>
           {showLineNumbers && (
             <Box flexShrink={0}>
@@ -266,11 +278,24 @@ export function CodeBlock({
           </Text>
         </Box>
       ))}
-      {capped && (
-        <Text dimColor>
-          … (+{allLines.length - (maxLines as number)} more lines)
-        </Text>
-      )}
+    </Box>
+  );
+
+  const hidden = capped ? allLines.length - (maxLines as number) : 0;
+  if (interactive && capped) {
+    return (
+      <ExpandableOutput
+        collapsed={rows(visible)}
+        expanded={rows(allLines)}
+        hiddenCount={hidden}
+      />
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      {rows(visible)}
+      {capped && <Text dimColor>… (+{hidden} more lines)</Text>}
     </Box>
   );
 }
