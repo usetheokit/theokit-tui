@@ -1,6 +1,7 @@
 import { Box, Text, useStdout } from "ink";
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
@@ -84,13 +85,13 @@ function isRevealEligible(
   monochrome: boolean,
   columns: number,
 ): boolean {
+  // The core reduced-motion predicate (env + TTY + monochrome) is shared via
+  // `isMotionEnabled` (M24 D6); the banner adds its own rows/columns thresholds.
   return (
     animated === true &&
-    stdout?.isTTY === true &&
-    (stdout.rows ?? 0) >= MIN_ANIMATION_ROWS &&
-    columns >= MIN_ANIMATION_COLUMNS &&
-    !monochrome &&
-    (process.env["THEOKIT_TUI_NO_MOTION"] ?? "") === ""
+    isMotionEnabled(process.env, stdout, monochrome) &&
+    (stdout?.rows ?? 0) >= MIN_ANIMATION_ROWS &&
+    columns >= MIN_ANIMATION_COLUMNS
   );
 }
 

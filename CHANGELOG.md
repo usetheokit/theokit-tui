@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Extracted the reduced-motion gate to a shared `isMotionEnabled(env, stdout,
+monochrome)` predicate (module-internal); `WelcomeBanner` now delegates its M12
+  motion check to it (behavior-preserving — the animated tests are unchanged). The
+  M24 phrase-cycler / shimmer opt-ins gate on the same predicate (M24 T1.1).
+
 ### Deprecated
 
 ### Removed
