@@ -29,6 +29,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with a conservative capability gate: OSC-9 only where known-supported
   (iTerm2/ConEmu), BEL fallback, suppressed under a multiplexer or on a non-TTY
   (M24 T4.1).
+- `AgentStreaming` phrase-cycler + shimmer opt-ins: `phrases` cycles a set of
+  status phrases (deterministic round-robin, ~2s) and `shimmer` pulses the primary
+  line, both gated on `isMotionEnabled` (reduced-motion / non-TTY / monochrome →
+  inert). Absent opt-ins render byte-identical to before; neither path is per-frame
+  (~600ms–2s cadence) so no OWN bench is required. Plus a live-turn example
+  (`examples/live-turn.tsx`) composing all the M24 surfaces (M24 T5.1).
 
 ### Changed
 
