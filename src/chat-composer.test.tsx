@@ -698,3 +698,34 @@ describe("ChatComposer bang mode (! quick command)", () => {
     instance.unmount();
   });
 });
+
+describe("ChatComposer help toggle (?)", () => {
+  it("question_mark_on_an_empty_buffer_toggles_help_and_is_not_typed", async () => {
+    const onHelpToggle = vi.fn();
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} onHelpToggle={onHelpToggle} />,
+    );
+    await type(instance, ["?"]);
+    expect(onHelpToggle).toHaveBeenCalledTimes(1);
+    await waitForFrame(instance, "?", false); // the `?` is consumed, not inserted
+    instance.unmount();
+  });
+
+  it("question_mark_after_text_is_a_literal_char_not_a_toggle", async () => {
+    const onHelpToggle = vi.fn();
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} onHelpToggle={onHelpToggle} />,
+    );
+    await type(instance, ["h", "i", "?"]);
+    await waitForFrame(instance, "hi?");
+    expect(onHelpToggle).not.toHaveBeenCalled();
+    instance.unmount();
+  });
+
+  it("without_onHelpToggle_a_question_mark_is_plain_text", async () => {
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["?"]);
+    await waitForFrame(instance, "?");
+    instance.unmount();
+  });
+});

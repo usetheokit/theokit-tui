@@ -17,6 +17,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   decides how to run it (fail-fast boundary / DIP). Omit the prop and a leading `!` is plain
   text submitted through `onSubmit` (non-breaking). The `chat` example wires a real runner
   (`spawnSync`) to demonstrate. New pure export: `parseShellCommand`.
+- `KeyboardHelp` component + `DEFAULT_COMPOSER_SHORTCUTS` — a bordered keyboard-shortcut
+  help panel (keys column + description; monochrome-degrading border), plus a ready-made
+  list of the composer's built-in chords. Pairs with a new `ChatComposer` prop
+  `onHelpToggle?: () => void`: pressing `?` on an EMPTY buffer calls it (the app toggles the
+  panel) instead of typing the `?`; a `?` mid-text stays literal. Claude Code `?` parity.
+  Omit the prop and `?` is always ordinary text (non-breaking). The `chat` example wires it.
 
 ### Changed
 

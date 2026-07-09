@@ -64,6 +64,13 @@ export interface ChatComposerProps {
    * Omit it and a leading `!` is plain text submitted through `onSubmit`.
    */
   onShellCommand?: (command: string) => void;
+  /**
+   * Keyboard-help toggle (Claude Code parity): when provided, pressing `?` on an
+   * EMPTY buffer calls this instead of typing the `?` — the app toggles a
+   * `KeyboardHelp` panel. A `?` typed mid-text stays literal. Omit it and `?` is
+   * always ordinary text (non-breaking).
+   */
+  onHelpToggle?: () => void;
 }
 
 /**
@@ -408,6 +415,7 @@ export function ChatComposer({
   bordered = false,
   fileSearch = defaultFileSearch,
   onShellCommand,
+  onHelpToggle,
 }: ChatComposerProps) {
   const [editor, dispatchEditor] = useReducer(
     editorReducer,
@@ -571,6 +579,22 @@ export function ChatComposer({
     return false;
   };
 
+  // `?` on an empty buffer toggles the app's keyboard-help panel instead of
+  // typing the char (Claude Code parity); mid-text it stays a literal `?`.
+  const handleHelpKey = (input: string, key: ComposerKey): boolean => {
+    if (
+      onHelpToggle !== undefined &&
+      input === "?" &&
+      buffer.text.length === 0 &&
+      !key.ctrl &&
+      !key.meta
+    ) {
+      onHelpToggle();
+      return true;
+    }
+    return false;
+  };
+
   useInput(
     (input, key) => {
       const composerKey = key as unknown as ComposerKey;
@@ -583,6 +607,9 @@ export function ChatComposer({
         return;
       }
       if (handleShellKey(composerKey)) {
+        return;
+      }
+      if (handleHelpKey(input, composerKey)) {
         return;
       }
       if (handleEditorKey(input, composerKey)) {

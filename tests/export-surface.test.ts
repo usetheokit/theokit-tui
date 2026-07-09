@@ -45,6 +45,18 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ChatThread).toBe("function");
   });
 
+  it("public_entry_exposes_keyboard_help_surface", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.KeyboardHelp).toBe("function");
+    expect(Array.isArray(mod.DEFAULT_COMPOSER_SHORTCUTS)).toBe(true);
+    // The `?` toggle chord must be documented in the shipped default list.
+    expect(
+      mod.DEFAULT_COMPOSER_SHORTCUTS.some(
+        (s: { keys: string }) => s.keys === "?",
+      ),
+    ).toBe(true);
+  });
+
   it("public_entry_exposes_tool_call_surface", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.ToolCall).toBe("function");

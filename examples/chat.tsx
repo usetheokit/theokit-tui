@@ -8,6 +8,8 @@ import {
   AppStatusBar,
   ChatComposer,
   ChatThread,
+  DEFAULT_COMPOSER_SHORTCUTS,
+  KeyboardHelp,
   TheoTUIProvider,
   VERSION,
   WelcomeBanner,
@@ -101,6 +103,7 @@ function App() {
   const { exit } = useApp();
   const [messages, setMessages] = useState(initialMessages);
   const [streaming, setStreaming] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const stream = useFakeStreaming(setMessages);
   // M14: the lib-shipped turn clock drives AgentStreaming.elapsedSeconds.
   // NOTE: the scripted stream lasts < 1 s, so elapsed stays 0 in this demo
@@ -167,13 +170,13 @@ function App() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message (Enter sends · / commands · @ files · ! shell)"
+            placeholder="Type a message (Enter sends · / commands · @ files · ! shell · ? help)"
             commands={[
               { name: "help", description: "show available commands" },
               { name: "clear", description: "clear the thread" },
               { name: "model", description: "switch the model" },
             ]}
-            hint="Alt+Enter newline · @ browses files (try @~/) · ! runs a shell command"
+            hint="? toggles shortcuts · @ browses files · ! runs a shell command"
             bordered
             onSubmit={(text) => {
               setMessages((current) => [
@@ -183,7 +186,11 @@ function App() {
               stream();
             }}
             onShellCommand={runShell}
+            onHelpToggle={() => setHelpOpen((open) => !open)}
           />
+        )}
+        {interactive && helpOpen && (
+          <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />
         )}
       </Box>
     </TheoTUIProvider>
