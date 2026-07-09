@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.24.0] - 2026-07-09
+
+### Added
+
 - `ChoiceRow` — a horizontal fixed choice bar (❯ active marker, ←/→ wrap, Enter
   commit, Esc cancel, digit-key jump) plus the pure `agent-decision-model`
   (`resolveChoiceKey` oracle, `ApprovalDecision`/`ApprovalChoice`/`QuestionAnswer`/
