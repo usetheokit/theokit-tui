@@ -28,6 +28,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   title (OSC 0) and hyperlink (OSC 8) helpers, mirroring the `notify()` capability
   gate: a no-op / plain-text degrade off-TTY or under a multiplexer (never leak raw
   escape bytes) (M25 T4.1).
+- Parity-polish example (`examples/parity-polish.tsx`) composing a Markdown table,
+  an intra-line diff, an ExpandableOutput, and the OSC helpers; plus dual-render
+  parity scenes (the table + intra-line highlight render byte-identically under Ink
+  and the V4 renderer) (M25 T5.1).
 
 ### Changed
 

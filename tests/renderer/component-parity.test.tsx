@@ -127,6 +127,26 @@ const scenes: Scene[] = [
     name: "MarkdownText",
     element: <MarkdownText text={"# Title\n\nSome **bold** text"} />,
   },
+  {
+    // M25: a Markdown table renders byte-identically under Ink and V4.
+    name: "MarkdownTable",
+    element: (
+      <MarkdownText
+        text={"| a | b |\n| --- | ---: |\n| one | 1 |\n| two | 2 |"}
+      />
+    ),
+    cols: 60,
+  },
+  {
+    // M25: intra-line word highlight renders byte-identically under Ink and V4.
+    name: "DiffViewerIntraLine",
+    element: (
+      <DiffViewer
+        patch={"--- a\n+++ b\n@@ -1 +1 @@\n-the quick fox\n+the slow fox\n"}
+        intraLineHighlight
+      />
+    ),
+  },
   { name: "AppStatusBar", element: <AppStatusBar model="gpt-5" /> },
   {
     name: "AgentTimeline",
