@@ -1,4 +1,4 @@
-export const VERSION = "0.24.0";
+export const VERSION = "0.25.0";
 
 export {
   TheoTUIProvider,
@@ -162,3 +162,18 @@ export type {
   ChoiceKey,
   ChoiceKeyAction,
 } from "./agent-decision-model.js";
+
+// M24 — live progress surfaces.
+export { TodoList } from "./todo-list.js";
+export type { TodoListProps, TodoItem, TodoStatus } from "./todo-list.js";
+export { MultiStepProgress } from "./multi-step-progress.js";
+export type { MultiStepProgressProps } from "./multi-step-progress.js";
+export { CollapsibleBlock, ThinkingBlock } from "./collapsible-block.js";
+export type {
+  CollapsibleBlockProps,
+  ThinkingBlockProps,
+} from "./collapsible-block.js";
+export { Toast } from "./toast.js";
+export type { ToastProps } from "./toast.js";
+export { notify } from "./notify.js";
+export type { NotifyProtocol, NotifySink } from "./notify.js";

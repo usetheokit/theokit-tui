@@ -19,6 +19,52 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.25.0] - 2026-07-09
+
+### Added
+
+- `TodoList` — a live checklist keyed by stable `id` (☐ pending / ◐ active / ☑
+  done). An item updates in place when the caller passes a new object with the same
+  id (rows memo-ed by identity, the M8 ChatThread precedent); duplicate ids throw;
+  it never graduates to `<Static>` (a done item may revert). The status glyph
+  carries the meaning, so the surface survives a monochrome theme (M24 T1.2).
+- `MultiStepProgress` — a discrete n-of-m step list that reuses the `TodoList` row
+  (DRY) + a header: `"{done} of {total}"`, or `"step {i} of {total}"` (clamped)
+  when a `current` step is given. A `groupLabel` renders the subagent-lane variant
+  (each step's label is a lane name) (M24 T2.1).
+- `CollapsibleBlock` — a collapsed summary + expandable body, controlled (via
+  `expanded`+`onToggle`) or key-toggled (Space/Enter when focused); `▶`/`▼`
+  affordance (glyph — survives monochrome); no global toggle registry. Plus a
+  `ThinkingBlock` preset (collapsed-default, dim+italic summary, MarkdownText body
+  when the children are a markdown string) (M24 T3.1).
+- `Toast` — a transient message on a bounded one-shot auto-dismiss timer (default
+  5000ms, self-clearing at fire + torn down on unmount; an inline `onDismiss` does
+  not reset the countdown). Plus `notify(message)` — a desktop notification helper
+  with a conservative capability gate: OSC-9 only where known-supported
+  (iTerm2/ConEmu), BEL fallback, suppressed under a multiplexer or on a non-TTY
+  (M24 T4.1).
+- `AgentStreaming` phrase-cycler + shimmer opt-ins: `phrases` cycles a set of
+  status phrases (deterministic round-robin, ~2s) and `shimmer` pulses the primary
+  line, both gated on `isMotionEnabled` (reduced-motion / non-TTY / monochrome →
+  inert). Absent opt-ins render byte-identical to before; neither path is per-frame
+  (~600ms–2s cadence) so no OWN bench is required. Plus a live-turn example
+  (`examples/live-turn.tsx`) composing all the M24 surfaces (M24 T5.1).
+
+### Changed
+
+- Extracted the reduced-motion gate to a shared `isMotionEnabled(env, stdout,
+monochrome)` predicate (module-internal); `WelcomeBanner` now delegates its M12
+  motion check to it (behavior-preserving — the animated tests are unchanged). The
+  M24 phrase-cycler / shimmer opt-ins gate on the same predicate (M24 T1.1).
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## [0.24.0] - 2026-07-09
 
 ### Added
