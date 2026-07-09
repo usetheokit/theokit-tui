@@ -77,25 +77,25 @@ continue-vs-halt) is OUT — the app decides via the callback.
 ## ADRs
 
 ### D1 — ApprovalPrompt preview is a `children` ReactNode slot, NOT a diff-prop union
-**Alt:** a discriminated `preview: {command} | {diff} | ReactNode` prop — forces the prompt to forward `patch`/`maxLines` into DiffViewer (the M16 D2 coupling the ROADMAP forbids). Chosen: `children: ReactNode`; the app composes `<ApprovalPrompt><DiffViewer patch={p}/></ApprovalPrompt>`, the prompt never touches diff props. Precedent: `ToolCallCard` accepts `children` (`tool-call.tsx:131`). Enforced by review: ApprovalPrompt props contain no `patch`/`maxLines`/`contextLines`.
+**Alternative rejected:** a discriminated `preview: {command} | {diff} | ReactNode` prop — forces the prompt to forward `patch`/`maxLines` into DiffViewer (the M16 D2 coupling the ROADMAP forbids). Chosen: `children: ReactNode`; the app composes `<ApprovalPrompt><DiffViewer patch={p}/></ApprovalPrompt>`, the prompt never touches diff props. Precedent: `ToolCallCard` accepts `children` (`tool-call.tsx:131`). Enforced by review: ApprovalPrompt props contain no `patch`/`maxLines`/`contextLines`.
 
 ### D2 — Callback-only decision contract; components hold only local UI state
-**Alt:** a `status`/`state` prop + `onStateChange` (a mini state machine) — leaks app semantics into the lib (ROADMAP risk 1). Chosen: one callback per component (`onDecision`/`onAnswer`); local state is only the highlighted choice + the free-text buffer. The M15 rule ("dispatch/execution stays with the app") binds. Enforced by test: an instance emits exactly one decision and holds no "approved" memory.
+**Alternative rejected:** a `status`/`state` prop + `onStateChange` (a mini state machine) — leaks app semantics into the lib (ROADMAP risk 1). Chosen: one callback per component (`onDecision`/`onAnswer`); local state is only the highlighted choice + the free-text buffer. The M15 rule ("dispatch/execution stays with the app") binds. Enforced by test: an instance emits exactly one decision and holds no "approved" memory.
 
 ### D3 — ApprovalPrompt choices default to `once/always/reject`, override-able
-**Alt:** hard-code the 3-value union — too rigid (codex has 4+, gemini 7). Chosen: `choices?: ApprovalChoice[]` defaulting to `DEFAULT_APPROVAL_CHOICES = [{value:"once"},{value:"always"},{value:"reject"}]`; emitted value is the choice's `value` string; the lib never enumerates policy semantics.
+**Alternative rejected:** hard-code the 3-value union — too rigid (codex has 4+, gemini 7). Chosen: `choices?: ApprovalChoice[]` defaulting to `DEFAULT_APPROVAL_CHOICES = [{value:"once"},{value:"always"},{value:"reject"}]`; emitted value is the choice's `value` string; the lib never enumerates policy semantics.
 
 ### D4 — New `ChoiceRow` primitive for fixed choice bars; SelectList reused only for QuestionPrompt option lists
-**Alt:** force `SelectList` for the 3-item approval set — its always-on `filter:` line + counter (`select-list.tsx:154`) is wrong UX for a fixed bar; OR add a `filterable?:boolean` prop to SelectList (muddies its SRP). Chosen: a thin `ChoiceRow` (horizontal bar, no filter). `SelectList` stays untouched and is composed verbatim inside QuestionPrompt (its exact filterable-list use case). DRY holds at the *model* level (shared decision types), not by contorting the list UI.
+**Alternative rejected:** force `SelectList` for the 3-item approval set — its always-on `filter:` line + counter (`select-list.tsx:154`) is wrong UX for a fixed bar; OR add a `filterable?:boolean` prop to SelectList (muddies its SRP). Chosen: a thin `ChoiceRow` (horizontal bar, no filter). `SelectList` stays untouched and is composed verbatim inside QuestionPrompt (its exact filterable-list use case). DRY holds at the *model* level (shared decision types), not by contorting the list UI.
 
 ### D5 — Single `reject` token; the app decides continue-vs-halt
-**Alt:** model codex's `Denied` (continue) vs `Abort` (halt). Chosen: emit one `"reject"`; continue-vs-halt and reject-with-reason are app concerns resolved in the `onDecision` callback (compose a follow-up QuestionPrompt if a reason is wanted).
+**Alternative rejected:** model codex's `Denied` (continue) vs `Abort` (halt). Chosen: emit one `"reject"`; continue-vs-halt and reject-with-reason are app concerns resolved in the `onDecision` callback (compose a follow-up QuestionPrompt if a reason is wanted).
 
 ### D6 — QuestionPrompt free-text via an injected "Other…" sentinel option (gemini idiom)
-**Alt:** an always-visible separate text field below the options (gemini `type:'text'`) — deferred (YAGNI). Chosen: when `allowFreeText`, inject a synthetic "Other…" `SelectListItem`; selecting it reveals a mini text input (reuse the M15 text-buffer reducer). Answer = `{ values, text }`.
+**Alternative rejected:** an always-visible separate text field below the options (gemini `type:'text'`) — deferred (YAGNI). Chosen: when `allowFreeText`, inject a synthetic "Other…" `SelectListItem`; selecting it reveals a mini text input (reuse the M15 text-buffer reducer). Answer = `{ values, text }`.
 
 ### D7 — Rendering is in-band; overlay usage is the app's call (prompt never calls `useOverlay`)
-**Alt:** ApprovalPrompt calls `useOverlay().push` internally — couples the lib to the overlay provider and re-introduces app-orchestration. Chosen: the three components render in-band like every M1-M21 component; an app that wants a modal wraps them in `useOverlay().push(...)`. Esc-arbitration (overlay-pop vs prompt-reject) is documented as the app's call (edge case 5).
+**Alternative rejected:** ApprovalPrompt calls `useOverlay().push` internally — couples the lib to the overlay provider and re-introduces app-orchestration. Chosen: the three components render in-band like every M1-M21 component; an app that wants a modal wraps them in `useOverlay().push(...)`. Esc-arbitration (overlay-pop vs prompt-reject) is documented as the app's call (edge case 5).
 
 ## Dependencies
 
@@ -129,7 +129,8 @@ Blueprint ADR D4 + Coverage Corner 1.A keyboard model (opencode button bar `perm
 - RED `choice-row.test.tsx` (itl-adapter): `test_renders_choices_with_active_marker`, `test_right_arrow_moves_marker`, `test_enter_calls_onCommit_with_active_value`, `test_escape_calls_onCancel`, `test_marker_survives_no_color_theme`, `test_key_is_consumed_not_leaked_to_sibling_handler` (spy on a sibling `useInput`).
 - GREEN: table-driven resolver (complexity ≤10) + the component.
 
-#### Concurrency tests (none — single-threaded)
+#### Concurrency tests
+(none — single-threaded)
 
 #### Acceptance Criteria
 - [ ] `resolveChoiceKey` is pure, table-driven, 100% line-covered; complexity ≤10.
@@ -155,7 +156,8 @@ Blueprint ADR D1/D2/D3/D5; opencode `permission.tsx:405`; `tool-call.tsx:117-131
 - RED `approval-prompt.test.tsx` (itl-adapter): `test_renders_title_and_children_preview`, `test_default_choices_are_once_always_reject`, `test_enter_on_always_emits_always`, `test_escape_emits_reject`, `test_custom_choices_override_default`, `test_composes_a_DiffViewer_child_without_forwarding_patch` (render `<ApprovalPrompt><DiffViewer patch={PATCH}/></ApprovalPrompt>`, assert diff lines appear AND ApprovalPrompt received no `patch` prop — by construction), `test_emits_exactly_one_decision_and_holds_no_state` (two Enters → one call).
 - GREEN: compose `ChoiceRow`; no diff/preview logic inside.
 
-#### Concurrency tests (none — single-threaded)
+#### Concurrency tests
+(none — single-threaded)
 
 #### Acceptance Criteria
 - [ ] ApprovalPrompt props contain NO `patch`/`maxLines`/`contextLines`/`items` (D1 enforced by the type + review).
@@ -185,7 +187,8 @@ Blueprint ADR D6 + Coverage Corner 1.B; gemini `confirmation-bus/types.ts:185-19
 - RED `question-prompt.test.tsx` (itl-adapter): `test_renders_header_and_question`, `test_single_select_answer_carries_one_value`, `test_multi_select_answer_carries_many_values`, `test_other_sentinel_reveals_free_text_input`, `test_free_text_answer_carries_text_and_no_sentinel_value`, `test_empty_submit_is_a_noop` (Enter with nothing selected + no text → no `onAnswer`), `test_no_free_text_when_allowFreeText_false` (no "Other…" injected), `test_empty_options_renders_without_crash`.
 - GREEN: compose SelectList; the "Other…" injection + branch is the only new logic (keep ≤10 complexity via a helper).
 
-#### Concurrency tests (none — single-threaded)
+#### Concurrency tests
+(none — single-threaded)
 
 #### Acceptance Criteria
 - [ ] Single → `{values:[v]}`; multi → `{values:[...]}`; free-text → `{values, text}` with no sentinel value leaking into `values`.
@@ -219,7 +222,8 @@ Blueprint ADR D2 + Coverage Corner 1.C; gemini `ExitPlanModeDialog.tsx:37,263-27
 - RED `plan-approval.test.tsx` (itl-adapter): `test_renders_plan_markdown_body`, `test_approve_emits_approve`, `test_revise_reveals_feedback_input`, `test_revise_with_feedback_emits_feedback`, `test_revise_with_empty_feedback_is_allowed`, `test_escape_never_auto_approves` (Esc → revise, not approve), `test_streaming_body_updates_while_choice_focused` (re-render with a longer `plan` prop, choice bar still responsive).
 - GREEN: compose MarkdownText + ChoiceRow + the feedback branch.
 
-#### Concurrency tests (none — single-threaded)
+#### Concurrency tests
+(none — single-threaded)
 
 #### Acceptance Criteria
 - [ ] `approve` → `{kind:"approve"}`; `revise` → `{kind:"revise", feedback?}`.
@@ -252,6 +256,9 @@ DoD demands ("PTY e2e for one full approve flow"); the leak-negative + decision 
 - RED: a PTY e2e (`tests/*.e2e` per the harness convention) that spawns the example, sends the approve keystrokes, and asserts the decision line on stdout. RED first = the example/exports don't exist yet.
 - GREEN: the example + exports; e2e goes green.
 - Overlay-integration test (itl-adapter): push an ApprovalPrompt via `useOverlay`, assert Esc pops the overlay (app-owned) and the prompt's own choice-Esc is documented (edge case 5).
+
+#### Concurrency tests
+(none — single-threaded)
 
 #### Failure scenarios (external I/O — terminal / PTY)
 - PTY spawn failure or a truncated frame → the e2e asserts on a settled frame (poll-based waitFor, not a fixed sleep), matching the itl-adapter determinism posture; a flaky fixed-timeout e2e is forbidden (testing.md § 6).
@@ -296,10 +303,12 @@ Absorbed from the blueprint § Edge cases (MUST-FIX owners = the phase that ship
 
 ## Drawbacks & Risks
 
-1. **`children`-slot preview shifts validation to the caller.** A malformed diff throws from the DiffViewer child, not the prompt. Mitigation: documented as caller responsibility (edge case 2); the prompt's contract is "render what you're given". This is the correct boundary (KISS) but must be stated so a caller doesn't expect the prompt to guard.
-2. **PlanApproval leans on a single prior-art reference** (gemini `ExitPlanModeDialog`). Mitigation: the design is a pure local composition (`MarkdownText` + `ChoiceRow` + the Phase-2 feedback pattern) — low novel surface, so thin cross-peer evidence is low-risk.
-3. **ChoiceRow-vs-SelectList duplication risk.** A second list-ish component could drift from SelectList. Mitigation: ChoiceRow is deliberately NOT a list (no filter, no window) — it shares the decision *types*, not the list UI; the SRP split is the point (ADR D4).
-4. **Esc semantics differ by context** (choice-bar reject vs overlay-pop). Mitigation: documented (edge case 5), tested at T4.1; the prompt's own Esc is a safe default (reject/revise, never approve).
+| # | Risk / drawback | Mitigation |
+|---|---|---|
+| 1 | `children`-slot preview shifts diff/body validation to the caller — a malformed diff throws from the DiffViewer child, not the prompt. | Documented as caller responsibility (edge case 2); the prompt's contract is "render what you're given" — the correct boundary (KISS), stated so a caller doesn't expect the prompt to guard. |
+| 2 | PlanApproval leans on a single full prior-art reference (gemini `ExitPlanModeDialog`). | The design is a pure local composition (`MarkdownText` + `ChoiceRow` + the Phase-2 feedback pattern) — low novel surface, so thin cross-peer evidence stays low-risk. |
+| 3 | ChoiceRow-vs-SelectList duplication could drift over time. | ChoiceRow is deliberately NOT a list (no filter, no window) — it shares the decision *types*, not the list UI; the SRP split is the point (ADR D4). |
+| 4 | Esc semantics differ by context (choice-bar reject vs overlay-pop). | Documented (edge case 5), tested at T4.1; the prompt's own Esc is a safe default (reject/revise, never approve). |
 
 ## Failure scenarios (when I/O external)
 
@@ -311,9 +320,9 @@ section lists none), so no timeout/5xx/retry scenarios apply.
 
 ## Unresolved Questions
 
-(none) — the one open design fork from the blueprint (ChoiceRow-new vs
-SelectList-`filterable`-prop) is RESOLVED in ADR D4 (new ChoiceRow). The multi-select
-empty-submit behavior is RESOLVED as a no-op (edge case 4).
+(none — every decision is resolved at plan time). The one open design fork from the
+blueprint (ChoiceRow-new vs SelectList-`filterable`-prop) is RESOLVED in ADR D4 (new
+ChoiceRow). The multi-select empty-submit behavior is RESOLVED as a no-op (edge case 4).
 
 ## Test Plan
 
@@ -328,7 +337,7 @@ empty-submit behavior is RESOLVED as a no-op (edge case 4).
 - [ ] All 4 phases' DoD checked.
 - [ ] ApprovalPrompt / QuestionPrompt / PlanApproval / ChoiceRow + decision types exported from `src/index.ts`.
 - [ ] No new dependency; no `output-engine`/`renderer` change.
-- [ ] `pnpm gates` green twice consecutively; new pure module 100% line-covered.
+- [ ] Quality gates: `pnpm gates` (prettier + lint + typecheck + test + build) green twice consecutively; new pure module 100% line-covered; complexity ≤10.
 - [ ] Keyboard-leak negatives green for every prompt; DiffViewer composed with zero prop-forwarding; callback-only (no state machine) proven by test.
 - [ ] PTY e2e of one approve flow green; example runs the scripted round-trip.
 - [ ] CHANGELOG `[Unreleased]` complete; blueprint + plan cross-referenced.
