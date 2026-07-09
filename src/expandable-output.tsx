@@ -45,15 +45,16 @@ export function ExpandableOutput({
     { isActive: isFocused },
   );
 
+  // Content renders in the Box (multi-line layout preserved — a Text wrapper
+  // would flatten capped rows onto one line); the ▶/▼ affordance is its own line
+  // BELOW the content (the gemini/pi "… N more" idiom). The glyph carries the
+  // affordance under a monochrome theme.
   return (
     <Box flexDirection="column">
-      {open ? (
-        <Text>▼ {expanded}</Text>
-      ) : (
-        <Text>
-          ▶ {collapsed} <Text dimColor>… {hiddenCount} more (ctrl+o)</Text>
-        </Text>
-      )}
+      {open ? expanded : collapsed}
+      <Text dimColor>
+        {open ? "▼ (ctrl+o to collapse)" : `▶ … ${hiddenCount} more (ctrl+o)`}
+      </Text>
     </Box>
   );
 }

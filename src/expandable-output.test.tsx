@@ -1,4 +1,4 @@
-import { Text } from "ink";
+import { Box, Text } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { render } from "../tests/renderer/itl-adapter.js";
@@ -6,7 +6,7 @@ import { ExpandableOutput } from "./expandable-output.js";
 
 // M25 T3.1 — ExpandableOutput over the itl-adapter. A capped view + a ctrl+o /
 // Space / Enter toggle (per-component state, no global registry) revealing the
-// full body. Composes the M24 CollapsibleBlock (▶/▼ affordance).
+// full body, with a ▶/▼ affordance line below the content.
 
 describe("ExpandableOutput (M25 T3.1)", () => {
   it("collapsed_shows_the_capped_view_and_a_ctrl_o_affordance", async () => {
@@ -24,6 +24,30 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     expect(frame).toContain("ctrl+o");
     expect(frame).toContain("▶"); // collapsed affordance
     expect(frame).not.toContain("all 42 lines");
+    app.unmount();
+  });
+
+  it("multiline_collapsed_content_keeps_its_line_breaks", async () => {
+    // Regression (found in the live gallery): a Text wrapper flattened multi-row
+    // collapsed content onto one line. Content now renders in a Box.
+    const app = render(
+      <ExpandableOutput
+        collapsed={
+          <Box flexDirection="column">
+            <Text>row one</Text>
+            <Text>row two</Text>
+          </Box>
+        }
+        expanded={<Text>full</Text>}
+        hiddenCount={3}
+      />,
+    );
+    await app.flush();
+    const lines = app.lastFrame().split("\n");
+    // "row one" and "row two" occupy SEPARATE visual lines, not "row onerow two".
+    expect(lines.some((l) => l.includes("row one"))).toBe(true);
+    expect(lines.some((l) => l.includes("row two"))).toBe(true);
+    expect(app.lastFrame()).not.toContain("row onerow two");
     app.unmount();
   });
 

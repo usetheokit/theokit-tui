@@ -562,7 +562,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 **Top risks (new):** 1. Toast timers × render loop flake surface — the M12/M14 fake-timer discipline applies. 2. OSC-9 support matrix — conservative BEL fallback + capability note.
 
-### M25 — [ ] Renderer V4: parity polish + matrix re-audit (exit gate)
+### M25 — [x] Renderer V4: parity polish + matrix re-audit (exit gate)
 
 > Added 2026-07-08 (V4 parity matrix closure).
 
