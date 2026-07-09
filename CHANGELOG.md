@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.25.0] - 2026-07-09
+
+### Added
+
 - `TodoList` — a live checklist keyed by stable `id` (☐ pending / ◐ active / ☑
   done). An item updates in place when the caller passes a new object with the same
   id (rows memo-ed by identity, the M8 ChatThread precedent); duplicate ids throw;
