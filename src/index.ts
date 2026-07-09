@@ -1,4 +1,4 @@
-export const VERSION = "0.23.0";
+export const VERSION = "0.24.0";
 
 export {
   TheoTUIProvider,
@@ -138,3 +138,27 @@ export type {
   SelectListView,
   WindowView,
 } from "./select-list-model.js";
+
+// M23 — agent-decision surfaces.
+export { ChoiceRow } from "./choice-row.js";
+export type { ChoiceRowProps } from "./choice-row.js";
+export { ApprovalPrompt } from "./approval-prompt.js";
+export type { ApprovalPromptProps } from "./approval-prompt.js";
+export { QuestionPrompt, OTHER_OPTION_VALUE } from "./question-prompt.js";
+export type { QuestionPromptProps } from "./question-prompt.js";
+export { PlanApproval } from "./plan-approval.js";
+export type { PlanApprovalProps } from "./plan-approval.js";
+export { FreeTextInput } from "./free-text-input.js";
+export type { FreeTextInputProps } from "./free-text-input.js";
+export {
+  DEFAULT_APPROVAL_CHOICES,
+  resolveChoiceKey,
+} from "./agent-decision-model.js";
+export type {
+  ApprovalChoice,
+  ApprovalDecision,
+  QuestionAnswer,
+  PlanDecision,
+  ChoiceKey,
+  ChoiceKeyAction,
+} from "./agent-decision-model.js";

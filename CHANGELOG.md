@@ -19,6 +19,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.24.0] - 2026-07-09
+
+### Added
+
+- `ChoiceRow` — a horizontal fixed choice bar (❯ active marker, ←/→ wrap, Enter
+  commit, Esc cancel, digit-key jump) plus the pure `agent-decision-model`
+  (`resolveChoiceKey` oracle, `ApprovalDecision`/`ApprovalChoice`/`QuestionAnswer`/
+  `PlanDecision` types, `DEFAULT_APPROVAL_CHOICES`) — the callback-only spine of the
+  M23 agent-decision surfaces (M23 T1.1).
+- `ApprovalPrompt` — a titled pending-action card whose preview is a `children`
+  slot (the app composes `<DiffViewer/>` / a command line / any body — never a
+  diff-prop union, so zero prop-forwarding), a `ChoiceRow` defaulting to
+  once/always/reject (override-able), Enter commits, Esc → reject. The decision
+  leaves via one `onDecision` callback; the component holds no app state (M23 T1.2).
+- `QuestionPrompt` — a per-question header + question text + a composed M22
+  SelectList (single or multi). With `allowFreeText`, an "Other…" option is
+  injected that reveals a mini text input (over the M15 text-buffer reducer); the
+  answer leaves via one `onAnswer({values,text})` callback, an empty submit is a
+  no-op (M23 T2.1).
+- `PlanApproval` — the plan-mode idiom: a proposed-plan markdown body (M13
+  MarkdownText, streaming-safe) + a `ChoiceRow` of approve/revise; `revise`
+  reveals a feedback input (empty allowed). Esc is a safe default → revise (never
+  auto-approve). Decision via one `onDecision(PlanDecision)` callback. Plus the
+  shared `FreeTextInput` (a minimal single-line input over the M15 text-buffer
+  reducer) backing both QuestionPrompt's "Other…" and PlanApproval's revise
+  branches — Esc cancels the free-text branch back to the parent (options /
+  choice bar), so it is never a dead end (M23 T3.1).
+- Agent-decision round-trip example (`examples/decisions.tsx`) — ApprovalPrompt
+  (composing a DiffViewer) → QuestionPrompt (options + free text) → PlanApproval;
+  plus a node-pty e2e driving one full approve flow over the real raw-mode path
+  through the V4 renderer, and an overlay-integration test (Esc = reject + close)
+  (M23 T4.1).
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## [0.23.0] - 2026-07-09
 
 ### Added
@@ -27,14 +70,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - an overlay-pushed Pager (a primitives demo, not an app picker), and a
     monochrome degrade test for the SelectList marker (M22 T4.1).
 
-
 - Pager interaction primitive: a full-screen scrollable viewport over pre-wrapped
   content, on a new PURE `pager-model.ts` (bubbles-viewport port — clamp, percent,
   visible slice). Canonical less/vim keymap (↑/k, ↓/j, PgUp/PgDn or b/f page, C-u/C-d
   half-page, g/G top/bottom, q close) + a `line X–Y of Z · NN%` status line; reads
   the terminal height from `useStdout` and re-clamps on resize. Meant to be pushed
   as an overlay (M22 T3.1).
-
 
 - Overlay/modal layer: `OverlayProvider` + `useOverlay()` — a stack of overlays
   rendered in-band above the thread on the M20 focus manager. Opening the first
@@ -44,7 +85,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   background inert until depth 0 — the review-flagged boolean-isFocusEnabled bug
   fixed). A new `blur()` on the focus manager backs the capture (M22 T2.1).
 
-
 - SelectList interaction primitive: a windowed list with prefix|fuzzy filter,
   single AND multi-select (by value, so it survives a fuzzy re-order), `❯` marker,
   ▲/▼ overflow + counter/checkboxes. Built on a new PURE `select-list-model.ts`
@@ -52,8 +92,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   slash-menu + M21 mention-menu delegate to it (DRY collapse, behavior-preserving,
   all existing menu tests unchanged). The component consumes OUR M19/M20 hooks
   (M22 T1.1).
-
-
 
 ### Fixed
 
