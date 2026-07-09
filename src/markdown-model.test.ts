@@ -180,3 +180,51 @@ describe("markdown-model inline (M13 T1.1)", () => {
     expect(elapsed).toBeLessThan(1000);
   });
 });
+
+describe("markdown-model tables (M25 T1.1)", () => {
+  it("parses_a_gfm_table_into_a_table_node", () => {
+    const nodes = parseMarkdown(
+      "| name | age |\n| --- | ---: |\n| alice | 30 |\n| bob | 9 |",
+    );
+    expect(nodes).toHaveLength(1);
+    const table = nodes[0]!;
+    expect(table.kind).toBe("table");
+    if (table.kind !== "table") throw new Error("not a table");
+    expect(table.header).toEqual(["name", "age"]);
+    expect(table.align).toEqual(["left", "right"]); // `---` left, `---:` right
+    expect(table.rows).toEqual([
+      ["alice", "30"],
+      ["bob", "9"],
+    ]);
+  });
+
+  it("parses_center_alignment_from_a_colon_colon_delimiter", () => {
+    const nodes = parseMarkdown("| a |\n| :-: |\n| x |");
+    const table = nodes[0]!;
+    if (table.kind !== "table") throw new Error("not a table");
+    expect(table.align).toEqual(["center"]);
+  });
+
+  it("a_header_row_without_a_delimiter_stays_a_paragraph", () => {
+    // Fail-soft: a lone pipe line is NOT a table (no delimiter next).
+    const nodes = parseMarkdown("| just | pipes |\nregular text");
+    expect(nodes.every((n) => n.kind !== "table")).toBe(true);
+    expect(nodes[0]!.kind).toBe("paragraph");
+  });
+
+  it("handles_an_escaped_pipe_inside_a_cell", () => {
+    const nodes = parseMarkdown("| a | b |\n| --- | --- |\n| x \\| y | z |");
+    const table = nodes[0]!;
+    if (table.kind !== "table") throw new Error("not a table");
+    expect(table.rows[0]).toEqual(["x | y", "z"]); // \| is one cell
+  });
+
+  it("pads_a_ragged_row_to_the_header_column_count", () => {
+    const nodes = parseMarkdown(
+      "| a | b | c |\n| --- | --- | --- |\n| x | y |",
+    );
+    const table = nodes[0]!;
+    if (table.kind !== "table") throw new Error("not a table");
+    expect(table.rows[0]).toEqual(["x", "y", ""]); // 3rd cell padded empty
+  });
+});

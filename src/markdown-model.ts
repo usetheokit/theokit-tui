@@ -28,8 +28,16 @@ export type MarkdownNode =
     }
   | { kind: "paragraph"; segments: InlineSegment[] }
   | { kind: "code"; language: string | undefined; lines: string[] }
+  | {
+      kind: "table";
+      header: string[];
+      align: TableAlign[];
+      rows: string[][];
+    }
   | { kind: "hr" }
   | { kind: "spacer" };
+
+export type TableAlign = "left" | "center" | "right";
 
 // Block grammar — gemini MarkdownDisplay.tsx:62-69 (tables/LaTeX out of
 // subset per blueprint).
@@ -38,6 +46,91 @@ const FENCE_RE = /^ *(`{3,}|~{3,}) *(\w*) *$/;
 const UL_ITEM_RE = /^([ \t]*)([-*+]) +(.*)$/;
 const OL_ITEM_RE = /^([ \t]*)(\d+)\. +(.*)$/;
 const HR_RE = /^ *([-*_] *){3,}$/;
+// A GFM table delimiter row: cells of `---`, `:--`, `--:`, `:-:` between pipes.
+const TABLE_DELIM_RE = /^ *\|? *:?-{1,} *:? *(\| *:?-{1,} *:? *)* *\|?\s*$/;
+// A candidate table row contains at least one pipe (fail-soft — only a table
+// when the NEXT line is a delimiter).
+const TABLE_ROW_RE = /\|/;
+
+/** Split a `| a | b |` row into trimmed cells, honoring `\|` escapes and
+ * optional outer pipes. */
+function splitTableRow(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === "\\" && line[i + 1] === "|") {
+      current += "|";
+      i += 1;
+    } else if (ch === "|") {
+      cells.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current.trim());
+  // Drop the empty cells produced by leading/trailing pipes.
+  if (cells[0] === "") cells.shift();
+  if (cells.length > 0 && cells.at(-1) === "") cells.pop();
+  return cells;
+}
+
+/** Parse one delimiter cell into its alignment. */
+function cellAlign(cell: string): TableAlign {
+  const trimmed = cell.trim();
+  const left = trimmed.startsWith(":");
+  const right = trimmed.endsWith(":");
+  if (left && right) return "center";
+  if (right) return "right";
+  return "left";
+}
+
+/** Build a `table` node from a header line, delimiter line, and body lines. */
+function buildTable(
+  headerLine: string,
+  delimLine: string,
+  bodyLines: string[],
+): MarkdownNode {
+  const header = splitTableRow(headerLine);
+  const align = splitTableRow(delimLine).map(cellAlign);
+  const rows = bodyLines.map((line) => {
+    const cells = splitTableRow(line);
+    // Pad/truncate to the header column count (ragged rows).
+    return header.map((_, col) => cells[col] ?? "");
+  });
+  return {
+    kind: "table",
+    header,
+    align: header.map((_, col) => align[col] ?? "left"),
+    rows,
+  };
+}
+
+/** If `lines[index]` opens a GFM table (a pipe row whose next line is a
+ * delimiter), consume it; returns the node + the last consumed line index, or
+ * null (fail-soft — the caller falls through to `classifyLine`). */
+function tryConsumeTable(
+  lines: string[],
+  index: number,
+): { node: MarkdownNode; endIndex: number } | null {
+  const line = lines[index] as string;
+  const next = lines[index + 1];
+  if (
+    !TABLE_ROW_RE.test(line) ||
+    next === undefined ||
+    !TABLE_DELIM_RE.test(next)
+  ) {
+    return null;
+  }
+  const body: string[] = [];
+  let cursor = index + 2;
+  while (cursor < lines.length && TABLE_ROW_RE.test(lines[cursor] as string)) {
+    body.push(lines[cursor] as string);
+    cursor += 1;
+  }
+  return { node: buildTable(line, next, body), endIndex: cursor - 1 };
+}
 
 /** Matches a ul/ol list line into its node, or null. */
 function matchListItem(line: string): MarkdownNode | null {
@@ -122,8 +215,14 @@ export function parseMarkdown(text: string): MarkdownNode[] {
     fenceLanguage = undefined;
     fenceLines = [];
   };
+  // Blanks collapse to ONE spacer (gemini :268-274).
+  const pushSpacer = (): void => {
+    if (!lastWasSpacer) push({ kind: "spacer" });
+  };
 
-  for (const line of text.split(/\r?\n/)) {
+  const lines = text.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] as string;
     if (fenceMarker !== null) {
       if (closesFence(line, fenceMarker)) {
         closeFence();
@@ -139,10 +238,14 @@ export function parseMarkdown(text: string): MarkdownNode[] {
       continue;
     }
     if (line.trim() === "") {
-      // Blanks collapse to ONE spacer (gemini :268-274).
-      if (!lastWasSpacer) {
-        push({ kind: "spacer" });
-      }
+      pushSpacer();
+      continue;
+    }
+    // A table = a pipe row whose NEXT line is a delimiter (fail-soft otherwise).
+    const table = tryConsumeTable(lines, index);
+    if (table !== null) {
+      push(table.node);
+      index = table.endIndex; // resume after the consumed table
       continue;
     }
     push(classifyLine(line));

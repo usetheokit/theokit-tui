@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Markdown tables in `MarkdownText` — a GFM table (header + delimiter + rows,
+  alignment from `:--`/`--:`/`:-:`) parses to a `table` node and renders as a
+  box-drawing grid when it fits the terminal width, degrading to wrapping plain
+  text (no cell truncation → no data loss) when narrow. Fail-soft: a pipe line
+  without a delimiter next stays a paragraph. Column widths via `string-width`
+  (CJK/EAW-aware); a width-matrix oracle pins no-overflow across widths (M25 T1.1).
+
 ### Changed
 
 ### Deprecated
