@@ -233,7 +233,8 @@ function Demo() {
               { name: "model", description: "switch the model" },
               { name: "retry", description: "re-run the failing test" },
             ]}
-            hint="esc dismisses the menu · Ctrl+C quits"
+            hint="esc dismisses the menu · Alt+Enter newline · Ctrl+C quits"
+            bordered
             onSubmit={(text) => {
               setMessages((current) => [
                 ...current,

@@ -9,7 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ChatComposer` — a `bordered` prop that draws a rounded box around the input line
+  (the Claude Code look; degrades to a `single` border under a monochrome theme).
+  Default false, so existing consumers are unchanged.
+
 ### Changed
+
+- `ChatComposer` — **Alt+Enter now inserts a newline** in multi-line mode, in every
+  terminal (it arrives as `\x1b\r` → `{return, meta}`, unlike Shift+Enter which needs
+  the kitty protocol). Enter still submits; Ctrl+J / Shift+Enter still work. The chat
+  and showcase examples adopt the bordered box + the Alt+Enter hint.
 
 ### Deprecated
 

@@ -224,6 +224,39 @@ describe("ChatComposer (T3.2)", () => {
     expect(isNewlineChord("", key, false)).toBe(false);
     expect(isNewlineChord("", { ...key, shift: false }, true)).toBe(false);
   });
+
+  it("alt_enter_counts_as_newline_chord_in_every_terminal", () => {
+    // Alt+Enter arrives as `\x1b\r` → { return:true, meta:true } — the portable
+    // "break the line" chord (Claude Code parity), unlike Shift+Enter (kitty only).
+    const key = {
+      return: true,
+      shift: false,
+      leftArrow: false,
+      rightArrow: false,
+      upArrow: false,
+      downArrow: false,
+      tab: false,
+      escape: false,
+      backspace: false,
+      delete: false,
+      ctrl: false,
+      meta: true,
+    };
+    expect(isNewlineChord("", key, true)).toBe(true); // multiline → newline
+    expect(isNewlineChord("", key, false)).toBe(false); // single-line ignores it
+    expect(isNewlineChord("", { ...key, meta: false }, true)).toBe(false); // plain Enter
+  });
+
+  it("bordered_renders_a_box_around_the_input", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} bordered placeholder="type…" />,
+    );
+    const frame = plain(instance.lastFrame());
+    // A rounded border corner is present (the Claude Code look).
+    expect(frame).toMatch(/[╭┌]/);
+    expect(frame).toContain("type…");
+    instance.unmount();
+  });
 });
 
 // M6 T3.1 (plan D8): the cursor is invisible at chalk level 0 (inverse is an

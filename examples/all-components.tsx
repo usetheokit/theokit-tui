@@ -285,7 +285,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
           ChatComposer (the input box — /commands, @files, history, kill-ring):
         </Text>
         <ChatComposer
-          placeholder="Type a message ('/' opens commands, Enter sends)"
+          placeholder="Type a message ('/' commands, Enter sends, Alt+Enter newline)"
           commands={[
             { name: "help", description: "show available commands" },
             { name: "clear", description: "clear the thread" },
@@ -293,6 +293,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
           ]}
           hint="in this gallery it is not focused — see `pnpm example:chat` to type"
           onSubmit={() => {}}
+          bordered
           autoFocus={false}
         />
         <Text dimColor>

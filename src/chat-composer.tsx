@@ -1,5 +1,5 @@
 import { Box, Text, useFocus, useFocusManager, useInput } from "ink";
-import { useEffect, useId, useReducer, useState } from "react";
+import { useEffect, useId, useReducer, useState, type ReactNode } from "react";
 
 import { deriveMentionMenu, findMentionToken } from "./mention-menu-model.js";
 import { searchFiles } from "./file-search.js";
@@ -44,6 +44,12 @@ export interface ChatComposerProps {
   /** M15: dim affordance line under the composer (e.g. cancel hint). */
   hint?: string;
   /**
+   * Draw a rounded border box around the input line (the Claude Code look).
+   * Default false (borderless — unchanged for existing consumers). Under a
+   * monochrome theme the border degrades to a `single` style (no accent color).
+   */
+  bordered?: boolean;
+  /**
    * M21: the `@`-file-mention provider — fuzzy-ranked cwd-relative paths for a
    * query. Defaults to a `.gitignore`-aware cwd walk; inject for tests or to
    * scope the search. Return `[]` (or omit results) to disable mentions.
@@ -82,6 +88,16 @@ export function isShiftReturn(key: ComposerKey): boolean {
 }
 
 /**
+ * Alt(Meta)+Enter chord — arrives as `\x1b\r` → `{ name:"return", meta:true }`
+ * in EVERY terminal (the meta-prefix escape, unlike Shift+Enter which needs the
+ * kitty protocol). This is the portable "break the line" chord (Claude Code
+ * parity). Exported for tests; not part of the package public surface.
+ */
+export function isAltReturn(key: ComposerKey): boolean {
+  return key.return && key.meta;
+}
+
+/**
  * Single source of the newline-vs-submit decision (review F-arch-3): the
  * submit gate is derived from THIS predicate, never re-encoded.
  */
@@ -90,8 +106,11 @@ export function isNewlineChord(
   key: ComposerKey,
   multiLine: boolean,
 ): boolean {
-  // Ctrl+J arrives as a literal linefeed with key.return === false.
-  return multiLine && (input === "\n" || isShiftReturn(key));
+  // Ctrl+J arrives as a literal linefeed with key.return === false; Alt+Enter
+  // (portable) and Shift+Enter (kitty only) both arrive as key.return.
+  return (
+    multiLine && (input === "\n" || isAltReturn(key) || isShiftReturn(key))
+  );
 }
 
 function newlineAction(
@@ -348,6 +367,7 @@ export function ChatComposer({
   autoFocus = true,
   commands = [],
   hint,
+  bordered = false,
   fileSearch = defaultFileSearch,
 }: ChatComposerProps) {
   const [editor, dispatchEditor] = useReducer(
@@ -505,23 +525,78 @@ export function ChatComposer({
 
   return (
     <Box flexDirection="column">
-      <InputRow
-        buffer={buffer}
-        placeholder={placeholder}
-        isFocused={isFocused}
+      <ComposerFrame
+        bordered={bordered}
         monochrome={isMonochrome(theme)}
-        glyph={theme.role.user.glyph}
-        prefixColor={theme.role.user.prefix}
+        accent={theme.accent}
+      >
+        <InputRow
+          buffer={buffer}
+          placeholder={placeholder}
+          isFocused={isFocused}
+          monochrome={isMonochrome(theme)}
+          glyph={theme.role.user.glyph}
+          prefixColor={theme.role.user.prefix}
+        />
+      </ComposerFrame>
+      <ComposerFooter
+        menu={menu}
+        mentionMenu={mention.menu}
+        accent={theme.accent}
+        hint={hint}
       />
-      {menu.open && <SlashMenuList menu={menu} accent={theme.accent} />}
-      {mention.menu.open && (
-        <SlashMenuList menu={mention.menu} accent={theme.accent} />
-      )}
+    </Box>
+  );
+}
+
+/** The menus (slash + mention) and the dim hint line below the input. */
+function ComposerFooter({
+  menu,
+  mentionMenu,
+  accent,
+  hint,
+}: {
+  menu: SlashMenu;
+  mentionMenu: SlashMenu;
+  accent: string;
+  hint: string | undefined;
+}) {
+  return (
+    <>
+      {menu.open && <SlashMenuList menu={menu} accent={accent} />}
+      {mentionMenu.open && <SlashMenuList menu={mentionMenu} accent={accent} />}
       {hint !== undefined && hint !== "" && (
         <Box paddingLeft={2}>
           <Text dimColor>{hint}</Text>
         </Box>
       )}
+    </>
+  );
+}
+
+/** Wraps the input line in a rounded box when `bordered` (Claude Code look);
+ * degrades to a `single` border with no accent under a monochrome theme. */
+function ComposerFrame({
+  bordered,
+  monochrome,
+  accent,
+  children,
+}: {
+  bordered: boolean;
+  monochrome: boolean;
+  accent: string;
+  children: ReactNode;
+}) {
+  if (!bordered) {
+    return <>{children}</>;
+  }
+  return (
+    <Box
+      borderStyle={monochrome ? "single" : "round"}
+      paddingX={1}
+      {...(monochrome ? {} : { borderColor: accent })}
+    >
+      {children}
     </Box>
   );
 }
