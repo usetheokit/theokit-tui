@@ -18,6 +18,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (DRY) + a header: `"{done} of {total}"`, or `"step {i} of {total}"` (clamped)
   when a `current` step is given. A `groupLabel` renders the subagent-lane variant
   (each step's label is a lane name) (M24 T2.1).
+- `CollapsibleBlock` — a collapsed summary + expandable body, controlled (via
+  `expanded`+`onToggle`) or key-toggled (Space/Enter when focused); `▶`/`▼`
+  affordance (glyph — survives monochrome); no global toggle registry. Plus a
+  `ThinkingBlock` preset (collapsed-default, dim+italic summary, MarkdownText body
+  when the children are a markdown string) (M24 T3.1).
 
 ### Changed
 
