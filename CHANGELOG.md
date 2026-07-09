@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Pager interaction primitive: a full-screen scrollable viewport over pre-wrapped
+  content, on a new PURE `pager-model.ts` (bubbles-viewport port — clamp, percent,
+  visible slice). Canonical less/vim keymap (↑/k, ↓/j, b/f page, C-u/C-d
+  half-page, g/G top/bottom, q close) + a `line X–Y of Z · NN%` status line; reads
+  the terminal height from `useStdout` and re-clamps on resize. Meant to be pushed
+  as an overlay (M22 T3.1).
+
+### Added
+
 - Overlay/modal layer: `OverlayProvider` + `useOverlay()` — a stack of overlays
   rendered in-band above the thread on the M20 focus manager. Opening the first
   overlay saves + blurs the background focus and disables Tab (background goes
