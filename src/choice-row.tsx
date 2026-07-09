@@ -1,5 +1,5 @@
 import { Box, Text } from "ink";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   resolveChoiceKey,
@@ -35,6 +35,10 @@ export function ChoiceRow({
   autoFocus = true,
 }: ChoiceRowProps) {
   const [index, setIndex] = useState(0);
+  // The committed index is mirrored in a ref so a commit reads the LATEST index
+  // even when a move + Enter arrive in the same tick (rapid input / paste over a
+  // real PTY) — reading the state closure alone would commit the pre-move choice.
+  const indexRef = useRef(0);
   const { isFocused } = useFocus({ autoFocus });
   const theme = useTheoTheme();
   const count = choices.length;
@@ -45,13 +49,14 @@ export function ChoiceRow({
         input,
         key as unknown as ChoiceKey,
         count,
-        index,
+        indexRef.current,
       );
       if (!action) return;
       if (action.type === "move") {
+        indexRef.current = action.index;
         setIndex(action.index);
       } else if (action.type === "commit") {
-        const choice = choices[index];
+        const choice = choices[indexRef.current];
         if (choice) onCommit(choice.value);
       } else {
         onCancel?.();

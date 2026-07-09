@@ -31,6 +31,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   shared `FreeTextInput` (a minimal single-line input over the M15 text-buffer
   reducer) backing both QuestionPrompt's "Other…" and PlanApproval's revise
   branches (M23 T3.1).
+- Agent-decision round-trip example (`examples/decisions.tsx`) — ApprovalPrompt
+  (composing a DiffViewer) → QuestionPrompt (options + free text) → PlanApproval;
+  plus a node-pty e2e driving one full approve flow over the real raw-mode path
+  through the V4 renderer, and an overlay-integration test (Esc = reject + close)
+  (M23 T4.1).
 
 ### Changed
 
