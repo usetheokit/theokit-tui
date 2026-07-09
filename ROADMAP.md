@@ -507,7 +507,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 1. Image protocol detection matrix — mitigated by conservative capability probing + graceful text fallback.
 2. Editor state complexity (undo × paste-markers × graphemes) — mitigated by pi's segmenter precedent + property-style tests.
 
-### M22 — [ ] Renderer V4: interaction primitives (SelectList, overlay/modal, pager)
+### M22 — [x] Renderer V4: interaction primitives (SelectList, overlay/modal, pager)
 
 > Added 2026-07-08 (V4 parity matrix — universal in 7/7 peers; see docs/v4-parity-matrix.md).
 
