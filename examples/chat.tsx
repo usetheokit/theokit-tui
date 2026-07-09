@@ -148,13 +148,14 @@ function App() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message (Enter sends, Ctrl+J newline, / commands)"
+            placeholder="Type a message (Enter sends, Alt+Enter newline, / commands)"
             commands={[
               { name: "help", description: "show available commands" },
               { name: "clear", description: "clear the thread" },
               { name: "model", description: "switch the model" },
             ]}
-            hint="esc dismisses the menu / cancels"
+            hint="esc dismisses the menu / cancels · Alt+Enter for a new line"
+            bordered
             onSubmit={(text) => {
               setMessages((current) => [
                 ...current,

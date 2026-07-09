@@ -28,17 +28,23 @@ export interface MentionToken {
 
 /**
  * The active `@`-mention token at the cursor, or null. `@` triggers only at the
- * start of a token (preceded by whitespace or the buffer start) and the token
- * ends at the first whitespace — so `review @src/foo and …` mentions `src/foo`.
+ * start of a token (preceded by whitespace or the buffer start). The token ends
+ * at the first whitespace — EXCEPT once a `/` has been seen (path mode), so a
+ * path with spaces (`@~/Área de Trabalho/`) stays one token (Claude Code parity).
+ * `review @src/foo and …` still mentions `src/foo`.
  */
 export function findMentionToken(
   text: string,
   cursor: number,
 ): MentionToken | null {
+  let sawSlash = false;
   for (let i = cursor - 1; i >= 0; i--) {
     const ch = text[i]!;
-    if (/\s/.test(ch)) {
-      return null; // whitespace before an `@` → no active token here
+    if (ch === "/") {
+      sawSlash = true;
+    }
+    if (/\s/.test(ch) && !sawSlash) {
+      return null; // whitespace before any `/` → the token has ended
     }
     if (ch === "@") {
       if (i === 0 || /\s/.test(text[i - 1]!)) {
@@ -69,6 +75,7 @@ export function deriveMentionMenu(
     open: true,
     filter: token.query,
     matches,
+    sigil: "", // paths are whole; no `/` sigil (unlike the slash menu)
     ...windowFor(matches.length, selectionIndex, SLASH_MENU_WINDOW),
   };
 }

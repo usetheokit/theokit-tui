@@ -224,6 +224,39 @@ describe("ChatComposer (T3.2)", () => {
     expect(isNewlineChord("", key, false)).toBe(false);
     expect(isNewlineChord("", { ...key, shift: false }, true)).toBe(false);
   });
+
+  it("alt_enter_counts_as_newline_chord_in_every_terminal", () => {
+    // Alt+Enter arrives as `\x1b\r` → { return:true, meta:true } — the portable
+    // "break the line" chord (Claude Code parity), unlike Shift+Enter (kitty only).
+    const key = {
+      return: true,
+      shift: false,
+      leftArrow: false,
+      rightArrow: false,
+      upArrow: false,
+      downArrow: false,
+      tab: false,
+      escape: false,
+      backspace: false,
+      delete: false,
+      ctrl: false,
+      meta: true,
+    };
+    expect(isNewlineChord("", key, true)).toBe(true); // multiline → newline
+    expect(isNewlineChord("", key, false)).toBe(false); // single-line ignores it
+    expect(isNewlineChord("", { ...key, meta: false }, true)).toBe(false); // plain Enter
+  });
+
+  it("bordered_renders_a_box_around_the_input", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} bordered placeholder="type…" />,
+    );
+    const frame = plain(instance.lastFrame());
+    // A rounded border corner is present (the Claude Code look).
+    expect(frame).toMatch(/[╭┌]/);
+    expect(frame).toContain("type…");
+    instance.unmount();
+  });
 });
 
 // M6 T3.1 (plan D8): the cursor is invisible at chalk level 0 (inverse is an
@@ -578,6 +611,18 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     await type(instance, [ENTER]); // complete the top candidate
     await waitForFrame(instance, "foo.md", false); // menu closed
     expect(plain(instance.lastFrame())).toContain("src/foo.ts");
+    instance.unmount();
+  });
+
+  it("renders_a_file_mention_row_without_a_leading_slash", async () => {
+    // Parity nit: the mention menu reuses the slash renderer. A file path must
+    // render bare (`❯ src/foo.ts`), NOT slash-prefixed (`/src/foo.ts`).
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />,
+    );
+    await type(instance, ["@", "f", "o"]);
+    await waitForFrame(instance, "src/foo.ts"); // menu open
+    expect(plain(instance.lastFrame())).not.toContain("/src/foo.ts");
     instance.unmount();
   });
 
