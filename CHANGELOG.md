@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.26.0] - 2026-07-09
+
+### Added
+
 - Markdown tables in `MarkdownText` — a GFM table (header + delimiter + rows,
   alignment from `:--`/`--:`/`:-:`) parses to a `table` node and renders as a
   box-drawing grid when it fits the terminal width, degrading to wrapping plain
