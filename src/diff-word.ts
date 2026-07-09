@@ -22,12 +22,17 @@ function stripLeadingWhitespace(segments: WordSegment[]): WordSegment[] {
   const match = first.text.match(/^\s+/);
   if (match === null) return segments;
   const lead = match[0];
+  const rest = first.text.slice(lead.length);
+  // Drop the now-empty changed remainder (an indentation-only change) so no inert
+  // empty `inverse` span is emitted downstream (review L1).
   return segments.flatMap((s) =>
     s === first
-      ? [
-          { text: lead, changed: false },
-          { text: s.text.slice(lead.length), changed: true },
-        ]
+      ? rest === ""
+        ? [{ text: lead, changed: false }]
+        : [
+            { text: lead, changed: false },
+            { text: rest, changed: true },
+          ]
       : [s],
   );
 }

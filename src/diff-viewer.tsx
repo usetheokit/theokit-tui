@@ -33,7 +33,9 @@ export interface DiffViewerProps {
   /**
    * M25 opt-in: within paired del/add line replacements, highlight the changed
    * WORDS (rendered `inverse`). Default `false` → the render is byte-identical to
-   * the whole-line coloring (no jsdiff import on the default path).
+   * the whole-line coloring and the jsdiff word-diff is never CALLED (the segment
+   * computation is gated on this flag; `diff` is a regular dependency of the diff
+   * feature — Rule 9 don't-reinvent — so it is in the bundle but inert when off).
    */
   intraLineHighlight?: boolean;
 }

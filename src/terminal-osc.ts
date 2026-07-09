@@ -16,7 +16,10 @@ const underMultiplexer = (env: NodeJS.ProcessEnv): boolean =>
   env["STY"] !== undefined ||
   env["ZELLIJ"] !== undefined;
 
-/** Set the terminal window/tab title (OSC 0). A no-op on a non-TTY sink. */
+/** Set the terminal window/tab title (OSC 0). A no-op on a non-TTY sink. Unlike
+ * `osc8Link`, this does NOT gate on a multiplexer: tmux/screen pass OSC-0 title
+ * sequences through to the outer terminal, so gating would break title-passthrough
+ * (whereas OSC-8 hyperlinks are not reliably forwarded — hence the asymmetry). */
 export function setTerminalTitle(
   title: string,
   out: OscSink = process.stdout,

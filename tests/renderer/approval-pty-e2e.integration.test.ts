@@ -84,7 +84,9 @@ describe.skipIf(!pty)(
       const session = spawnHarness(pty!);
       sessions.push(session);
       // The harness reports isTTY — the REAL raw-mode path (a pipe would be false).
-      const ready = await session.waitFor(/READY tty=(true|false)/);
+      // A generous READY wait: the tsx subprocess cold-start can exceed 5s under
+      // parallel-suite load (testing.md §6 — deterministic, not a fixed sleep).
+      const ready = await session.waitFor(/READY tty=(true|false)/, 15000);
       expect(ready).toContain("READY tty=true");
 
       // The ChoiceRow subscribes to input a couple renders after mount (the focus

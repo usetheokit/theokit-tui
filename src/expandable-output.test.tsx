@@ -85,6 +85,37 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     app.unmount();
   });
 
+  it("tab_moves_focus_directly_between_instances_no_dead_stop", async () => {
+    // review H1: composing CollapsibleBlock registered a second (dead) focusable
+    // per instance, so a single Tab landed on a phantom stop that swallowed keys.
+    // With the glyph inlined there is exactly ONE focusable per ExpandableOutput,
+    // so ONE Tab moves focus from the first to the second and ctrl+o expands it.
+    const app = render(
+      <>
+        <ExpandableOutput
+          collapsed={<Text>a-capped</Text>}
+          expanded={<Text>a-full</Text>}
+          hiddenCount={1}
+          autoFocus
+        />
+        <ExpandableOutput
+          collapsed={<Text>b-capped</Text>}
+          expanded={<Text>b-full</Text>}
+          hiddenCount={1}
+          autoFocus={false}
+        />
+      </>,
+    );
+    await app.flush();
+    app.stdin.write("\t"); // Tab → focus the SECOND instance (no dead stop)
+    await app.flush();
+    app.stdin.write("\x0f"); // Ctrl+O → the second expands
+    await app.flush();
+    expect(app.lastFrame()).toContain("b-full");
+    expect(app.lastFrame()).not.toContain("a-full"); // the first stays collapsed
+    app.unmount();
+  });
+
   it("ctrl_o_when_unfocused_is_a_noop", async () => {
     const app = render(
       <ExpandableOutput

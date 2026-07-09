@@ -42,6 +42,27 @@ describe("ToolResult interactive (M25 T3.1)", () => {
     app.unmount();
   });
 
+  it("the_char_cap_notice_stays_visible_in_interactive_mode", async () => {
+    // review M2: interactive mode replaces the LINE-cap indicator with the
+    // affordance, but a CHAR cap must remain observable (no silent data loss).
+    // Many short lines totalling > 20k chars → BOTH line-capped AND char-capped.
+    const huge = Array.from(
+      { length: 400 },
+      (_, i) => `row ${i} ${"x".repeat(60)}`,
+    ).join("\n");
+    const app = render(
+      createElement(ToolResult, {
+        children: huge,
+        maxLines: 2,
+        interactive: true,
+      }),
+    );
+    await app.flush();
+    expect(app.lastFrame()).toContain("output capped"); // char-cap still surfaced
+    expect(app.lastFrame()).toContain("ctrl+o"); // + the line-cap affordance
+    app.unmount();
+  });
+
   it("the_char_guard_is_not_bypassed_when_expanded", async () => {
     // A body far over the char cap: even expanded, the rendered content is the
     // char-capped slice (never the full oversized input).

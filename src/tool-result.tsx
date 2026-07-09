@@ -152,6 +152,12 @@ function resolveContent(props: ToolResultProps): ResolvedContent {
   };
 }
 
+/** The char-cap notice alone (interactive mode shows the line cap as an
+ * affordance, but the char cap must remain observable — review M2). */
+function charCapIndicator(capped: boolean): string | undefined {
+  return capped ? `… output capped at ${MAX_RESULT_CHARS} chars` : undefined;
+}
+
 function indicatorText(hidden: number, capped: boolean): string | undefined {
   const parts: string[] = [];
   if (hidden > 0) {
@@ -308,11 +314,17 @@ export function ToolResult(props: ToolResultProps) {
     theme,
   );
 
+  // Interactive mode replaces the LINE-cap indicator with the affordance, but the
+  // CHAR cap must stay observable (silent data loss is worse — review M2).
+  const indicator = interactive
+    ? charCapIndicator(content.capped)
+    : view.indicator;
+
   return (
     <Box flexDirection="column">
-      {view.indicator !== undefined && !interactive && (
+      {indicator !== undefined && (
         <Text dimColor wrap="truncate-end">
-          {view.indicator}
+          {indicator}
         </Text>
       )}
       {view.showPinnedStderrLabel && <Text dimColor>stderr:</Text>}
