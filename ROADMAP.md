@@ -543,7 +543,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 **Top risks (new):** 1. Decision-state API leaking app semantics into the lib — mitigated by callback-only contracts (the M15 declarative precedent). 2. Diff-in-prompt reuse coupling — composition via the existing DiffViewer slot, never prop forwarding (M16 D2 lesson).
 
-### M24 — [ ] Renderer V4: live progress surfaces (todo, progress, collapsible, toast)
+### M24 — [x] Renderer V4: live progress surfaces (todo, progress, collapsible, toast)
 
 > Added 2026-07-08 (V4 parity matrix — live checklists/progress in 5+/7 peers).
 
