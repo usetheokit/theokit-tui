@@ -32,6 +32,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   an intra-line diff, an ExpandableOutput, and the OSC helpers; plus dual-render
   parity scenes (the table + intra-line highlight render byte-identically under Ink
   and the V4 renderer) (M25 T5.1).
+- V4 exit-gate re-audit: `docs/v4-parity-matrix.md` re-scored by an adversarial
+  2-specialist refutation panel (not a self-grade) — all four M25 rows pass the
+  component ∧ oracle ∧ example triple with no standing refutation; borderline rows
+  ship with an honesty note. The report `docs/renderer/m25-parity-report.md` is the
+  release artifact. The V4 parity program is closed (M25 T6.1).
 
 ### Changed
 

@@ -4,8 +4,9 @@ import stringWidth from "string-width";
 // column-width + fit-or-degrade decision for a GFM table. Binary by design (house
 // rule = degrade-as-data): the bordered grid renders ONLY when the full content
 // fits the budget — so no cell is ever truncated (no data loss); otherwise the
-// caller degrades to aligned plain text (which the renderer wraps, still no loss).
-// Width via an injected `measure` (grapheme/EAW-aware `string-width` in production).
+// caller degrades to space-separated plain text (which the renderer wraps, still
+// no loss — column borders/padding are dropped, cell content is preserved). Width
+// via an injected `measure` (grapheme/EAW-aware `string-width` in production).
 
 export type ColumnAlign = "left" | "center" | "right";
 
