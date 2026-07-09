@@ -15,6 +15,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   text (no cell truncation → no data loss) when narrow. Fail-soft: a pipe line
   without a delimiter next stays a paragraph. Column widths via `string-width`
   (CJK/EAW-aware); a width-matrix oracle pins no-overflow across widths (M25 T1.1).
+- `DiffViewer` intra-line word highlight — an opt-in `intraLineHighlight` prop
+  (default off = byte-identical) that pairs equal-length del/add line runs and
+  marks the changed WORDS with inverse video (a pure indentation change is not
+  highlighted). New dependency `diff` (jsdiff, BSD-3, no CVEs), imported only on
+  the opt-in path (M25 T2.1).
 
 ### Changed
 

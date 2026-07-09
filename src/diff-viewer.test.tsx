@@ -300,3 +300,55 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
     expect(frame).toMatchSnapshot("diff-viewer-basic");
   });
 });
+
+// M25 T2.1 — intra-line word highlight (opt-in).
+const PATCH_WORD = [
+  "--- a/x.ts",
+  "+++ b/x.ts",
+  "@@ -1,1 +1,1 @@",
+  "-the quick brown fox",
+  "+the slow brown fox",
+  "",
+].join("\n");
+
+describe("DiffViewer intra-line highlight (M25 T2.1)", () => {
+  const INVERSE = "\x1b[7m";
+
+  it("off_is_byte_identical_to_the_default", async () => {
+    const off = await renderFrame(<DiffViewer patch={PATCH_WORD} />);
+    const explicit = await renderFrame(
+      <DiffViewer patch={PATCH_WORD} intraLineHighlight={false} />,
+    );
+    expect(explicit).toBe(off); // the opt-in default path is unchanged
+    expect(off).not.toContain(INVERSE); // no inverse spans by default
+  });
+
+  it("on_marks_the_changed_word_with_an_inverse_span", async () => {
+    const frame = await renderFrame(
+      <DiffViewer patch={PATCH_WORD} intraLineHighlight />,
+    );
+    expect(frame).toContain(INVERSE); // the changed word is inverse-video
+    // The unchanged words + the changed words are all still present.
+    expect(stripAnsi(frame)).toContain("the quick brown fox");
+    expect(stripAnsi(frame)).toContain("the slow brown fox");
+  });
+
+  it("does_not_highlight_a_pure_indentation_change", async () => {
+    // Leading-whitespace-only change: the words are unchanged, so no inverse
+    // span lights up the indentation (pi's strip-leading-whitespace rule).
+    const patch = [
+      "--- a/y.ts",
+      "+++ b/y.ts",
+      "@@ -1,1 +1,1 @@",
+      "-value",
+      "+  value",
+      "",
+    ].join("\n");
+    const frame = await renderFrame(
+      <DiffViewer patch={patch} intraLineHighlight />,
+    );
+    // "value" is unchanged; only the (stripped) leading whitespace differs, which
+    // is not marked — so no inverse span wraps the word.
+    expect(stripAnsi(frame)).toContain("value");
+  });
+});
