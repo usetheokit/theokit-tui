@@ -19,6 +19,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.26.1] - 2026-07-09
+
+### Added
+
+- Component gallery example (`examples/all-components.tsx`) — a paginated
+  (n/p/q) live demo of every shipped component across 7 pages (chat/agent,
+  markdown+table+diff, tool cards, metrics, live progress, agent decisions,
+  interaction primitives).
+
+### Fixed
+
+- `ExpandableOutput`: multi-line collapsed/expanded content no longer collapses
+  onto one line (it was wrapped in a single `<Text>`); content now renders in a
+  `Box` with the `▶`/`▼` affordance on its own line below it (the gemini/pi
+  idiom). Regression test added; found while running the live component gallery.
+
 ## [0.26.0] - 2026-07-09
 
 ### Added
