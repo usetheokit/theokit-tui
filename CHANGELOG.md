@@ -17,7 +17,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Pager interaction primitive: a full-screen scrollable viewport over pre-wrapped
   content, on a new PURE `pager-model.ts` (bubbles-viewport port — clamp, percent,
-  visible slice). Canonical less/vim keymap (↑/k, ↓/j, b/f page, C-u/C-d
+  visible slice). Canonical less/vim keymap (↑/k, ↓/j, PgUp/PgDn or b/f page, C-u/C-d
   half-page, g/G top/bottom, q close) + a `line X–Y of Z · NN%` status line; reads
   the terminal height from `useStdout` and re-clamps on resize. Meant to be pushed
   as an overlay (M22 T3.1).
@@ -51,6 +51,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 ### Fixed
+
+- Pager: PgUp/PgDn keys now scroll a page (the M19 Key projection gained
+  `pageUp`/`pageDown`); the status line is clipped to one row so it never steals a
+  content row on a narrow terminal (M22 review). Nested-overlay state-loss
+  documented (the covered overlay re-mounts on reveal).
 
 ### Security
 

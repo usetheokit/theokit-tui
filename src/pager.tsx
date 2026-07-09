@@ -29,6 +29,8 @@ export interface PagerProps {
 interface PagerKey {
   upArrow: boolean;
   downArrow: boolean;
+  pageUp: boolean;
+  pageDown: boolean;
   ctrl: boolean;
 }
 
@@ -49,6 +51,8 @@ function resolvePagerKey(
 ): PagerAction | "close" | undefined {
   if (key.upArrow) return { type: "line-up" };
   if (key.downArrow) return { type: "line-down" };
+  if (key.pageUp) return { type: "page-up" };
+  if (key.pageDown) return { type: "page-down" };
   if (key.ctrl && input === "u") return { type: "half-up" };
   if (key.ctrl && input === "d") return { type: "half-down" };
   if (input === "q") return "close";
@@ -88,15 +92,21 @@ export function Pager({ content, onClose, autoFocus = true }: PagerProps) {
   const visible = lines.slice(start, end);
   const bottom = Math.min(end, lines.length);
   const percent = Math.round(scrollPercent(state) * 100);
+  // Clip the status to ONE row: a wrapped status would consume rows the layout
+  // reserved for content, pushing content off the top (review M1).
+  const columns = stdout?.columns ?? 80;
+  const status =
+    `line ${start + 1}–${bottom} of ${lines.length} · ${percent}% · q to close`.slice(
+      0,
+      Math.max(1, columns),
+    );
 
   return (
     <Box flexDirection="column">
       {visible.map((line, index) => (
         <Text key={start + index}>{line || " "}</Text>
       ))}
-      <Text dimColor>
-        line {start + 1}–{bottom} of {lines.length} · {percent}% · q to close
-      </Text>
+      <Text dimColor>{status}</Text>
     </Box>
   );
 }

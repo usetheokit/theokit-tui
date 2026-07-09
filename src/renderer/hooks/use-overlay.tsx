@@ -20,6 +20,15 @@ import { useFocusManager } from "./use-focus.js";
 // push→push→pop keeps the background inert until depth 0 (the F-HIGH-1 fix). The
 // TOP overlay owns Esc-dismiss; the M20 priority ESC-blur arbiter is gated off
 // while focus is disabled, so Esc reaches the overlay instead of blurring it.
+//
+// NESTED-OVERLAY STATE (documented limitation, review M22): only the TOP overlay
+// is mounted. When a nested overlay is pushed, the one below UNMOUNTS; on pop it
+// re-mounts fresh — which correctly re-captures focus (its autoFocus re-fires)
+// but RESETS its internal component state (a covered SelectList's filter /
+// selection is lost). Single-level overlays are unaffected. If you nest overlays
+// and need to preserve the covered overlay's state, LIFT that state to the caller
+// and pass it back in. (Keeping lower overlays mounted while isolating focus is a
+// future enhancement.)
 
 interface OverlayEntry {
   id: string;

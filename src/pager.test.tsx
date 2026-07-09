@@ -90,6 +90,35 @@ describe("Pager component (M22 T3.1)", () => {
     app.unmount();
   });
 
+  it("pageup_and_pagedown_keys_scroll_a_page", async () => {
+    const app = render(
+      createElement(Pager, { content: CONTENT, onClose: () => {} }),
+      { columns: 40, rows: 8 },
+    );
+    await settle(app);
+    app.stdin.write("\x1b[6~"); // PgDn → page-down (offset 0 → 7)
+    await settle(app);
+    expect(app.lastFrame()).toContain("line7");
+    app.stdin.write("\x1b[5~"); // PgUp → page-up (back to 0)
+    await settle(app);
+    expect(app.lastFrame()).toContain("line0");
+    app.unmount();
+  });
+
+  it("status_line_stays_one_row_on_a_narrow_terminal", async () => {
+    const app = render(
+      createElement(Pager, { content: CONTENT, onClose: () => {} }),
+      { columns: 12, rows: 6 }, // viewportHeight = 5; status would wrap unclipped
+    );
+    await settle(app);
+    const frame = app.lastFrame();
+    // The first 5 content lines are all present (status did not steal a row).
+    for (const i of [0, 1, 2, 3, 4]) {
+      expect(frame).toContain(`line${i}`);
+    }
+    app.unmount();
+  });
+
   it("q_calls_onClose", async () => {
     let closed = 0;
     const app = render(
