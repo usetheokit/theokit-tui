@@ -226,14 +226,14 @@ function Demo() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message ('/' opens commands, Enter sends)"
+            placeholder="Type a message ('/' commands · '@' files · Enter sends)"
             commands={[
               { name: "help", description: "show available commands" },
               { name: "clear", description: "clear the thread" },
               { name: "model", description: "switch the model" },
               { name: "retry", description: "re-run the failing test" },
             ]}
-            hint="esc dismisses the menu · Alt+Enter newline · Ctrl+C quits"
+            hint="esc dismisses · Alt+Enter newline · @ browses files (try @~/) · Ctrl+C quits"
             bordered
             onSubmit={(text) => {
               setMessages((current) => [

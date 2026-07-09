@@ -148,13 +148,13 @@ function App() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message (Enter sends, Alt+Enter newline, / commands)"
+            placeholder="Type a message (Enter sends · Alt+Enter newline · / commands · @ files)"
             commands={[
               { name: "help", description: "show available commands" },
               { name: "clear", description: "clear the thread" },
               { name: "model", description: "switch the model" },
             ]}
-            hint="esc dismisses the menu / cancels · Alt+Enter for a new line"
+            hint="esc dismisses · Alt+Enter newline · @ mentions a file — try @~/ to browse paths"
             bordered
             onSubmit={(text) => {
               setMessages((current) => [

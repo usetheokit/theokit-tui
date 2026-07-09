@@ -285,7 +285,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
           ChatComposer (the input box — /commands, @files, history, kill-ring):
         </Text>
         <ChatComposer
-          placeholder="Type a message ('/' commands, Enter sends, Alt+Enter newline)"
+          placeholder="Type a message ('/' commands · '@' files · Enter sends · Alt+Enter newline)"
           commands={[
             { name: "help", description: "show available commands" },
             { name: "clear", description: "clear the thread" },

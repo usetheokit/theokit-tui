@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Examples (`chat`, `showcase`, `all-components`) — placeholder/hint copy now advertises
+  the `@`-file mention + path navigation (e.g. "try `@~/` to browse paths"), so the 0.27.0
+  headline feature is discoverable when running the live demos.
+
 ### Deprecated
 
 ### Removed
