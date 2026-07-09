@@ -12,16 +12,16 @@ G=Gemini P=pi M=mastracode T=tau O=OpenCode
 
 ## Already covered (V1–V3 surface)
 
-| Category                        | CC  | Cx  | G   | P   | M   | T   | O   | Ours (0.17.0)                                               | Gap notes                                                                     |
-| ------------------------------- | --- | --- | --- | --- | --- | --- | --- | ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Chat thread + role messages     | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ ChatMessage/ChatThread                                    | system-labeled blocks (skill/branch/compaction) missing — app-composable      |
-| Tool cards + per-kind results   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ ToolCall(Card)/ToolResult + result union                  | per-TOOL custom renderers ◐; interactive expand/collapse ✗ (M25)              |
-| Markdown + code + diff          | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ MarkdownText/CodeBlock/DiffViewer                         | tables ✗, intra-line diff highlight ✗ (M25)                                   |
-| Spinner + elapsed + cancel hint | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ AgentStreaming + useTurnElapsed                           | phrase-cycler/shimmer ✗ (M24)                                                 |
-| Status bar + token metrics      | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ AppStatusBar + ContextWindowBar/CostMeter/TokenUsageChart | —                                                                             |
-| Banner / splash                 | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ WelcomeBanner (animated)                                  | multi-step onboarding = app flow, out                                         |
-| Composer + slash menu           | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ ChatComposer + slash menu                                 | fuzzy ✗ (M21), @files ✗ (M21), history/Ctrl+R ✗ (M21), kill-ring/undo ✗ (M21) |
-| Themes + degrade ladder         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ TheoTUIProvider + monochrome data-driven                  | theme preview picker → M22 SelectList consumer                                |
+| Category                        | CC  | Cx  | G   | P   | M   | T   | O   | Ours (0.17.0)                                               | Gap notes                                                                         |
+| ------------------------------- | --- | --- | --- | --- | --- | --- | --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Chat thread + role messages     | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ ChatMessage/ChatThread                                    | system-labeled blocks (skill/branch/compaction) missing — app-composable          |
+| Tool cards + per-kind results   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ ToolCall(Card)/ToolResult + result union                  | per-TOOL custom renderers ◐; interactive expand/collapse ✓ (M25 ExpandableOutput) |
+| Markdown + code + diff          | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ MarkdownText/CodeBlock/DiffViewer                         | tables ✓ + intra-line diff highlight ✓ (M25)                                      |
+| Spinner + elapsed + cancel hint | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ AgentStreaming + useTurnElapsed                           | phrase-cycler/shimmer ✓ (M24 opt-ins)                                             |
+| Status bar + token metrics      | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ AppStatusBar + ContextWindowBar/CostMeter/TokenUsageChart | —                                                                                 |
+| Banner / splash                 | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ WelcomeBanner (animated)                                  | multi-step onboarding = app flow, out                                             |
+| Composer + slash menu           | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ ChatComposer + slash menu                                 | fuzzy ✗ (M21), @files ✗ (M21), history/Ctrl+R ✗ (M21), kill-ring/undo ✗ (M21)     |
+| Themes + degrade ladder         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ TheoTUIProvider + monochrome data-driven                  | theme preview picker → M22 SelectList consumer                                    |
 
 ## Committed in the V4 renderer program (M17–M21)
 
@@ -35,24 +35,31 @@ G=Gemini P=pi M=mastracode T=tau O=OpenCode
 | Editor upgrade: undo/kill-ring/word-nav/history   | P, Cx, G, CC, O        | M21       |
 | Fuzzy + @file-mention autocomplete                | CC, Cx, G, T, O        | M21       |
 
-## NEW milestones required by this matrix (M22–M25)
+## NEW milestones required by this matrix (M22–M25) — ALL SHIPPED
 
-| Category                                                     | CC  | Cx  | G   | P   | M   | T   | O   | New milestone                   |
-| ------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --- | ------------------------------- |
-| SelectList (fuzzy, single/multi) + pickers                   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | **M22** interaction primitives  |
-| Overlay/modal infra + full-screen pager                      | ✓   | ✓   | ✓   | ◐   | ✓   | ✓   | ✓   | **M22**                         |
-| Approval/Permission prompt (diff inline; always/once/reject) | ✓   | ✓   | ✓   | ◐   | ✓   | ✗   | ✓   | **M23** agent decision surfaces |
-| Question prompt (structured ask-user)                        | ✓   | ◐   | ✓   | ◐   | ✓   | ✗   | ✓   | **M23**                         |
-| Plan approval / proposed-plan cell                           | ✓   | ✓   | ◐   | ✗   | ✓   | ✗   | ◐   | **M23**                         |
-| Todo/plan checklist (live ☐/☑)                               | ✓   | ✓   | ✓   | ✗   | ◐   | ✗   | ✓   | **M24** live progress surfaces  |
-| Multi-step / subagent progress                               | ◐   | ✓   | ✓   | ✗   | ✓   | ✗   | ✓   | **M24**                         |
-| Collapsible block (thinking/reasoning; expandable output)    | ✓   | ✓   | ◐   | ✓   | ✓   | ✓   | ✓   | **M24**                         |
-| Toast / desktop notification (OSC-9/BEL)                     | ✗   | ✓   | ✓   | ✗   | ✓   | ✗   | ✓   | **M24**                         |
-| Spinner phrase-cycler + shimmer                              | ✓   | ✓   | ✓   | ✗   | ◐   | ✗   | ✗   | **M24**                         |
-| Markdown tables                                              | ✓   | ✓   | ✓   | ✓   | ◐   | ✓   | ✓   | **M25** parity polish           |
-| Intra-line diff word highlight                               | ◐   | ✓   | ✗   | ✓   | ✗   | ✗   | ✓   | **M25**                         |
-| Interactive expand/collapse on caps (ctrl+o idiom)           | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗   | **M25**                         |
-| Terminal title + OSC-8 hyperlinks helpers                    | ✗   | ✓   | ✗   | ✗   | ◐   | ✓   | ✓   | **M25**                         |
+| Category                                                     | CC  | Cx  | G   | P   | M   | T   | O   | Milestone / status                                               |
+| ------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --- | ---------------------------------------------------------------- |
+| SelectList (fuzzy, single/multi) + pickers                   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | **M22** ✓ (v0.23.0 SelectList)                                   |
+| Overlay/modal infra + full-screen pager                      | ✓   | ✓   | ✓   | ◐   | ✓   | ✓   | ✓   | **M22** ✓ (OverlayProvider/Pager)                                |
+| Approval/Permission prompt (diff inline; always/once/reject) | ✓   | ✓   | ✓   | ◐   | ✓   | ✗   | ✓   | **M23** ✓ (v0.24.0 ApprovalPrompt)                               |
+| Question prompt (structured ask-user)                        | ✓   | ◐   | ✓   | ◐   | ✓   | ✗   | ✓   | **M23** ✓ (QuestionPrompt)                                       |
+| Plan approval / proposed-plan cell                           | ✓   | ✓   | ◐   | ✗   | ✓   | ✗   | ◐   | **M23** ✓ (PlanApproval)                                         |
+| Todo/plan checklist (live ☐/☑)                               | ✓   | ✓   | ✓   | ✗   | ◐   | ✗   | ✓   | **M24** ✓ (v0.25.0 TodoList)                                     |
+| Multi-step / subagent progress                               | ◐   | ✓   | ✓   | ✗   | ✓   | ✗   | ✓   | **M24** ✓ (MultiStepProgress)                                    |
+| Collapsible block (thinking/reasoning; expandable output)    | ✓   | ✓   | ◐   | ✓   | ✓   | ✓   | ✓   | **M24** ✓ (CollapsibleBlock/ThinkingBlock)                       |
+| Toast / desktop notification (OSC-9/BEL)                     | ✗   | ✓   | ✓   | ✗   | ✓   | ✗   | ✓   | **M24** ✓ (Toast/notify)                                         |
+| Spinner phrase-cycler + shimmer                              | ✓   | ✓   | ✓   | ✗   | ◐   | ✗   | ✗   | **M24** ✓ (AgentStreaming opt-ins)                               |
+| Markdown tables                                              | ✓   | ✓   | ✓   | ✓   | ◐   | ✓   | ✓   | **M25** ✓ (v0.26.0 — universal 6.5/7)                            |
+| Intra-line diff word highlight                               | ◐   | ✓   | ✗   | ✓   | ✗   | ✗   | ✓   | **M25** ✓† (borderline ~3.5/7 — opt-in, off-path byte-identical) |
+| Interactive expand/collapse on caps (ctrl+o idiom)           | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗   | **M25** ✓ (universal 5/7 — ExpandableOutput)                     |
+| Terminal title + OSC-8 hyperlinks helpers                    | ✗   | ✓   | ✗   | ✗   | ◐   | ✓   | ✓   | **M25** ✓† (non-universal ~3.5/7 — bonus parity)                 |
+
+> † Honesty note (M25 re-audit): the intra-line diff and OSC-helper rows are
+> below the strict ≥ 4/7 "universal → parity REQUIRED" bar. They ship ✓ because
+> each fully satisfies the exit-gate triple (component ∧ oracle set ∧ example)
+> with no standing refutation — intra-line as an opt-in prop with a proven
+> byte-identical default path, OSC helpers as pure no-op-off-TTY escape writers.
+> They are graded ✓ **with this note**, not silently as required-universal rows.
 
 ## Explicitly OUT (app territory, ≤ 3 peers, or against thesis)
 
@@ -68,3 +75,13 @@ G=Gemini P=pi M=mastracode T=tau O=OpenCode
 V4 closes when a RE-AUDIT of this matrix shows every "universal" row
 (≥ 4/7 peers) at ✓ for the lib-scope column — verified per-row by a
 component + oracle set + example, per the house cycle discipline.
+
+### Exit-gate result (M25 re-audit, 2026-07-09) — **PASSED**
+
+The M25 adversarial re-audit (an independent 2-specialist refutation panel, per
+`cycle-review.md` — not a self-grade) tried to REFUTE each M25 ✓. **No refutation
+stood.** Every universal lib-scope row has the exit-gate triple (component ∧ oracle
+set ∧ example); the two borderline rows ship ✓ with the honesty note above. No
+app-scope row (the "Explicitly OUT" list) was mis-graded as a lib gap. Full report:
+`docs/renderer/m25-parity-report.md`. Every M22–M25 milestone is released
+(v0.23.0–v0.26.0); the V4 parity program is closed.

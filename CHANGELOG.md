@@ -19,6 +19,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.26.0] - 2026-07-09
+
+### Added
+
+- Markdown tables in `MarkdownText` — a GFM table (header + delimiter + rows,
+  alignment from `:--`/`--:`/`:-:`) parses to a `table` node and renders as a
+  box-drawing grid when it fits the terminal width, degrading to wrapping plain
+  text (no cell truncation → no data loss) when narrow. Fail-soft: a pipe line
+  without a delimiter next stays a paragraph. Column widths via `string-width`
+  (CJK/EAW-aware); a width-matrix oracle pins no-overflow across widths (M25 T1.1).
+- `DiffViewer` intra-line word highlight — an opt-in `intraLineHighlight` prop
+  (default off = byte-identical) that pairs equal-length del/add line runs and
+  marks the changed WORDS with inverse video (a pure indentation change is not
+  highlighted). New dependency `diff` (jsdiff, BSD-3, no CVEs), imported only on
+  the opt-in path (M25 T2.1).
+- `ExpandableOutput` — a capped view that reveals its full body on ctrl+o / Space
+  / Enter (per-component state, no global registry) over the M24 CollapsibleBlock.
+  `ToolResult` and `CodeBlock` gain an `interactive` prop that wraps their
+  line-capped output in it (the 20k char guard is never bypassed) (M25 T3.1).
+- `setTerminalTitle()` + `osc8Link()` (+ `supportsHyperlinks()`) — terminal window
+  title (OSC 0) and hyperlink (OSC 8) helpers, mirroring the `notify()` capability
+  gate: a no-op / plain-text degrade off-TTY or under a multiplexer (never leak raw
+  escape bytes) (M25 T4.1).
+- Parity-polish example (`examples/parity-polish.tsx`) composing a Markdown table,
+  an intra-line diff, an ExpandableOutput, and the OSC helpers; plus dual-render
+  parity scenes (the table + intra-line highlight render byte-identically under Ink
+  and the V4 renderer) (M25 T5.1).
+- V4 exit-gate re-audit: `docs/v4-parity-matrix.md` re-scored by an adversarial
+  2-specialist refutation panel (not a self-grade) — all four M25 rows pass the
+  component ∧ oracle ∧ example triple with no standing refutation; borderline rows
+  ship with an honesty note. The report `docs/renderer/m25-parity-report.md` is the
+  release artifact. The V4 parity program is closed (M25 T6.1).
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## [0.25.0] - 2026-07-09
 
 ### Added

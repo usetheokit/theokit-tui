@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { foldDiffLines, parseUnifiedDiff } from "./diff-model.js";
 import type { DiffFile, DiffLine, DiffRow } from "./diff-model.js";
+import { pairIntraLines, type WordSegment } from "./diff-word.js";
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
 
@@ -29,6 +30,14 @@ export interface DiffViewerProps {
    * `--- N lines hidden ---` rows (fold FIRST, then cap). Integer >= 0.
    */
   contextLines?: number;
+  /**
+   * M25 opt-in: within paired del/add line replacements, highlight the changed
+   * WORDS (rendered `inverse`). Default `false` → the render is byte-identical to
+   * the whole-line coloring and the jsdiff word-diff is never CALLED (the segment
+   * computation is gated on this flag; `diff` is a regular dependency of the diff
+   * feature — Rule 9 don't-reinvent — so it is in the bundle but inert when off).
+   */
+  intraLineHighlight?: boolean;
 }
 
 const expandTabs = (value: string): string =>
@@ -128,12 +137,35 @@ function headerRow(file: DiffFile, theme: TheoTheme, key: string) {
   );
 }
 
+/** The line body: word-segmented `inverse` spans when intra-line highlight has
+ * segments for this line, else the current single tab-expanded text (byte-
+ * identical for the default path). */
+function lineBody(
+  line: DiffLine,
+  color: { color?: string },
+  segments: WordSegment[] | undefined,
+) {
+  if (segments === undefined || segments.length === 0) {
+    return line.text === "" ? " " : expandTabs(line.text);
+  }
+  return segments.map((segment, index) => (
+    <Text
+      key={`w${index}`}
+      {...color}
+      {...(segment.changed ? { inverse: true } : {})}
+    >
+      {expandTabs(segment.text)}
+    </Text>
+  ));
+}
+
 function lineRow(
   line: DiffLine,
   theme: TheoTheme,
   showLineNumbers: boolean,
   width: number,
   key: string,
+  segments?: WordSegment[],
 ) {
   const sign = line.kind === "add" ? "+" : line.kind === "del" ? "-" : " ";
   const color =
@@ -152,7 +184,7 @@ function lineRow(
         <Text {...color}>{sign} </Text>
       </Box>
       <Text {...color} wrap="wrap">
-        {line.text === "" ? " " : expandTabs(line.text)}
+        {lineBody(line, color, segments)}
       </Text>
     </Box>
   );
@@ -164,6 +196,7 @@ function viewRowElement(
   theme: TheoTheme,
   showLineNumbers: boolean,
   width: number,
+  intraMap: Map<DiffLine, WordSegment[]> | undefined,
 ) {
   const key = `r${index}`;
   switch (row.kind) {
@@ -189,7 +222,14 @@ function viewRowElement(
         </Text>
       );
     default:
-      return lineRow(row, theme, showLineNumbers, width, key);
+      return lineRow(
+        row,
+        theme,
+        showLineNumbers,
+        width,
+        key,
+        intraMap?.get(row),
+      );
   }
 }
 
@@ -217,11 +257,23 @@ function assertValidBounds(
  * absence in every terminal analog). Signs are rendered UNCONDITIONALLY —
  * the color-independent NO_COLOR mechanism. Code lines WRAP, never truncate.
  */
+/** Build the reference-keyed intra-line segment map across all files (opt-in). */
+function buildIntraMap(files: DiffFile[]): Map<DiffLine, WordSegment[]> {
+  const map = new Map<DiffLine, WordSegment[]>();
+  for (const file of files) {
+    for (const [line, segments] of pairIntraLines(file.lines)) {
+      map.set(line, segments);
+    }
+  }
+  return map;
+}
+
 export function DiffViewer({
   patch,
   showLineNumbers = true,
   maxLines,
   contextLines,
+  intraLineHighlight = false,
 }: DiffViewerProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   assertValidBounds(maxLines, contextLines);
@@ -235,6 +287,7 @@ export function DiffViewer({
   for (const file of files) {
     rows.push(...fileRows(file, contextLines));
   }
+  const intraMap = intraLineHighlight ? buildIntraMap(files) : undefined;
   const theme = useTheoTheme();
 
   if (files.length === 0) {
@@ -263,7 +316,7 @@ export function DiffViewer({
   return (
     <Box flexDirection="column">
       {visible.map((row, index) =>
-        viewRowElement(row, index, theme, showLineNumbers, width),
+        viewRowElement(row, index, theme, showLineNumbers, width, intraMap),
       )}
       {capped && <Text dimColor>… (+{hiddenSourceLines} more lines)</Text>}
     </Box>

@@ -127,6 +127,26 @@ const scenes: Scene[] = [
     name: "MarkdownText",
     element: <MarkdownText text={"# Title\n\nSome **bold** text"} />,
   },
+  {
+    // M25: a Markdown table renders byte-identically under Ink and V4.
+    name: "MarkdownTable",
+    element: (
+      <MarkdownText
+        text={"| a | b |\n| --- | ---: |\n| one | 1 |\n| two | 2 |"}
+      />
+    ),
+    cols: 60,
+  },
+  {
+    // M25: intra-line word highlight renders byte-identically under Ink and V4.
+    name: "DiffViewerIntraLine",
+    element: (
+      <DiffViewer
+        patch={"--- a\n+++ b\n@@ -1 +1 @@\n-the quick fox\n+the slow fox\n"}
+        intraLineHighlight
+      />
+    ),
+  },
   { name: "AppStatusBar", element: <AppStatusBar model="gpt-5" /> },
   {
     name: "AgentTimeline",
@@ -174,47 +194,54 @@ const scenes: Scene[] = [
 ];
 
 describe("component parity — full suite on the new renderer (M20 T3.1)", () => {
-  it("every_component_renders_byte_identical_to_ink_or_documented", async () => {
-    const results: {
-      name: string;
-      match: boolean;
-      ink: string;
-      ours: string;
-    }[] = [];
-    for (const scene of scenes) {
-      const ink = inkLines(scene.element);
-      const ours = await ourLines(
-        scene.element,
-        scene.cols ?? 60,
-        scene.rows ?? 12,
-      );
-      // Vacuity guard: a scene must produce real output on BOTH sides.
-      const nonEmpty = ink.length > 0 && ours.length > 0;
-      const match = nonEmpty && JSON.stringify(ink) === JSON.stringify(ours);
-      results.push({
-        name: scene.name,
-        match,
-        ink: JSON.stringify(ink),
-        ours: JSON.stringify(ours),
-      });
-    }
-    const passed = results.filter((r) => r.match);
-    const failed = results.filter((r) => !r.match);
-    const rate = passed.length / results.length;
-    // Surface every divergence so the report can document its scoped cause.
-    for (const f of failed) {
+  // Renders every shipped component under BOTH renderers — a heavy, dual-render
+  // test whose per-scene work grows with the surface; a generous timeout keeps it
+  // deterministic under parallel-suite load (testing.md §6 — no flaky sleeps).
+  it(
+    "every_component_renders_byte_identical_to_ink_or_documented",
+    { timeout: 30000 },
+    async () => {
+      const results: {
+        name: string;
+        match: boolean;
+        ink: string;
+        ours: string;
+      }[] = [];
+      for (const scene of scenes) {
+        const ink = inkLines(scene.element);
+        const ours = await ourLines(
+          scene.element,
+          scene.cols ?? 60,
+          scene.rows ?? 12,
+        );
+        // Vacuity guard: a scene must produce real output on BOTH sides.
+        const nonEmpty = ink.length > 0 && ours.length > 0;
+        const match = nonEmpty && JSON.stringify(ink) === JSON.stringify(ours);
+        results.push({
+          name: scene.name,
+          match,
+          ink: JSON.stringify(ink),
+          ours: JSON.stringify(ours),
+        });
+      }
+      const passed = results.filter((r) => r.match);
+      const failed = results.filter((r) => !r.match);
+      const rate = passed.length / results.length;
+      // Surface every divergence so the report can document its scoped cause.
+      for (const f of failed) {
+        console.log(
+          `PARITY DIVERGENCE [${f.name}]\n  ink : ${f.ink}\n  ours: ${f.ours}`,
+        );
+      }
       console.log(
-        `PARITY DIVERGENCE [${f.name}]\n  ink : ${f.ink}\n  ours: ${f.ours}`,
+        `COMPONENT PARITY: ${passed.length}/${results.length} (${(rate * 100).toFixed(1)}%) — diverged: ${failed.map((f) => f.name).join(", ") || "none"}`,
       );
-    }
-    console.log(
-      `COMPONENT PARITY: ${passed.length}/${results.length} (${(rate * 100).toFixed(1)}%) — diverged: ${failed.map((f) => f.name).join(", ") || "none"}`,
-    );
-    // Pin the actual state: 100% today, so a future single-component regression
-    // FAILS the gate instead of coasting on a 10% margin (review M1). Any real
-    // divergence must be individually documented + this list narrowed.
-    expect(failed.map((f) => f.name)).toEqual([]);
-  });
+      // Pin the actual state: 100% today, so a future single-component regression
+      // FAILS the gate instead of coasting on a 10% margin (review M1). Any real
+      // divergence must be individually documented + this list narrowed.
+      expect(failed.map((f) => f.name)).toEqual([]);
+    },
+  );
 });
 
 // A thread long enough to ACTUALLY graduate rows into Static (windowSize=4,

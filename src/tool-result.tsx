@@ -1,5 +1,7 @@
 import { Box, Text } from "ink";
+import type { ReactNode } from "react";
 
+import { ExpandableOutput } from "./expandable-output.js";
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
 
@@ -64,6 +66,12 @@ export interface ToolResultProps {
   maxLines?: number;
   /** Render every line (bypasses LINE truncation only — not the char cap). */
   expanded?: boolean;
+  /**
+   * M25: when the output is line-capped, make it interactively expandable
+   * (ctrl+o / Space / Enter over the M24 CollapsibleBlock). The char cap is
+   * NEVER bypassed — the expanded body is still the char-capped content.
+   */
+  interactive?: boolean;
 }
 
 /** Split content on newlines: strip trailing `\r` (EC-6) + trailing "" (EC-7). */
@@ -142,6 +150,12 @@ function resolveContent(props: ToolResultProps): ResolvedContent {
     capped,
     exitCode: undefined,
   };
+}
+
+/** The char-cap notice alone (interactive mode shows the line cap as an
+ * affordance, but the char cap must remain observable — review M2). */
+function charCapIndicator(capped: boolean): string | undefined {
+  return capped ? `… output capped at ${MAX_RESULT_CHARS} chars` : undefined;
 }
 
 function indicatorText(hidden: number, capped: boolean): string | undefined {
@@ -231,6 +245,36 @@ function resultView(
  * `… +N lines hidden` indicator, optional shell envelope (labeled stderr,
  * non-zero-only exit badge, `(no output)` placeholder).
  */
+/** Interactive expand applies only when requested, not statically expanded, and
+ * there is hidden (line-capped) content to reveal. */
+function interactiveEligible(
+  requested: boolean | undefined,
+  expanded: boolean,
+  hidden: number,
+): boolean {
+  return requested === true && !expanded && hidden > 0;
+}
+
+/** The content body: an ExpandableOutput when interactive, else the capped rows. */
+function resultBody(
+  interactive: boolean,
+  content: ResolvedContent,
+  truncation: { visible: string[]; hidden: number },
+  lineTruncation: { hidden: number },
+  theme: TheoTheme,
+): ReactNode {
+  if (interactive) {
+    return (
+      <ExpandableOutput
+        collapsed={contentRows(content, truncation.visible.length, theme)}
+        expanded={contentRows(content, content.rows.length, theme)}
+        hiddenCount={lineTruncation.hidden}
+      />
+    );
+  }
+  return contentRows(content, truncation.visible.length, theme);
+}
+
 export function ToolResult(props: ToolResultProps) {
   const { maxLines = 10, expanded = false } = props;
   // Boundary guards precede the hook (ChatMessage EC-1 idiom): source
@@ -255,15 +299,36 @@ export function ToolResult(props: ToolResultProps) {
     return null;
   }
 
+  // M25 interactive mode: when line-capped, the content becomes an
+  // ExpandableOutput (its own affordance replaces the static indicator).
+  const interactive = interactiveEligible(
+    props.interactive,
+    expanded,
+    lineTruncation.hidden,
+  );
+  const body: ReactNode = resultBody(
+    interactive,
+    content,
+    truncation,
+    lineTruncation,
+    theme,
+  );
+
+  // Interactive mode replaces the LINE-cap indicator with the affordance, but the
+  // CHAR cap must stay observable (silent data loss is worse — review M2).
+  const indicator = interactive
+    ? charCapIndicator(content.capped)
+    : view.indicator;
+
   return (
     <Box flexDirection="column">
-      {view.indicator !== undefined && (
+      {indicator !== undefined && (
         <Text dimColor wrap="truncate-end">
-          {view.indicator}
+          {indicator}
         </Text>
       )}
       {view.showPinnedStderrLabel && <Text dimColor>stderr:</Text>}
-      {contentRows(content, truncation.visible.length, theme)}
+      {body}
       {view.showPlaceholder && <Text dimColor>(no output)</Text>}
       {view.showExit && (
         <Text color={theme.status.error} bold>
