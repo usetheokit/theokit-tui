@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ChoiceRow` — a horizontal fixed choice bar (❯ active marker, ←/→ wrap, Enter
+  commit, Esc cancel, digit-key jump) plus the pure `agent-decision-model`
+  (`resolveChoiceKey` oracle, `ApprovalDecision`/`ApprovalChoice`/`QuestionAnswer`/
+  `PlanDecision` types, `DEFAULT_APPROVAL_CHOICES`) — the callback-only spine of the
+  M23 agent-decision surfaces (M23 T1.1).
+
 ### Changed
 
 ### Deprecated
@@ -27,14 +33,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - an overlay-pushed Pager (a primitives demo, not an app picker), and a
     monochrome degrade test for the SelectList marker (M22 T4.1).
 
-
 - Pager interaction primitive: a full-screen scrollable viewport over pre-wrapped
   content, on a new PURE `pager-model.ts` (bubbles-viewport port — clamp, percent,
   visible slice). Canonical less/vim keymap (↑/k, ↓/j, PgUp/PgDn or b/f page, C-u/C-d
   half-page, g/G top/bottom, q close) + a `line X–Y of Z · NN%` status line; reads
   the terminal height from `useStdout` and re-clamps on resize. Meant to be pushed
   as an overlay (M22 T3.1).
-
 
 - Overlay/modal layer: `OverlayProvider` + `useOverlay()` — a stack of overlays
   rendered in-band above the thread on the M20 focus manager. Opening the first
@@ -44,7 +48,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   background inert until depth 0 — the review-flagged boolean-isFocusEnabled bug
   fixed). A new `blur()` on the focus manager backs the capture (M22 T2.1).
 
-
 - SelectList interaction primitive: a windowed list with prefix|fuzzy filter,
   single AND multi-select (by value, so it survives a fuzzy re-order), `❯` marker,
   ▲/▼ overflow + counter/checkboxes. Built on a new PURE `select-list-model.ts`
@@ -52,8 +55,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   slash-menu + M21 mention-menu delegate to it (DRY collapse, behavior-preserving,
   all existing menu tests unchanged). The component consumes OUR M19/M20 hooks
   (M22 T1.1).
-
-
 
 ### Fixed
 
