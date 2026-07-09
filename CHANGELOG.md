@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ChatComposer` **bang mode** (`!` quick command — Claude Code parity). New optional
+  `onShellCommand?: (command: string) => void` prop: when provided, typing `!` at the start
+  of the buffer enters a distinct shell mode (the prompt drops to `!` and the hint changes);
+  Enter calls `onShellCommand` with the command (text after the `!`, trimmed) instead of
+  `onSubmit`, and Esc cancels the draft. The library NEVER spawns a process — the consumer
+  decides how to run it (fail-fast boundary / DIP). Omit the prop and a leading `!` is plain
+  text submitted through `onSubmit` (non-breaking). The `chat` example wires a real runner
+  (`spawnSync`) to demonstrate. New pure export: `parseShellCommand`.
+
 ### Changed
 
 - Examples (`chat`, `showcase`, `all-components`) — placeholder/hint copy now advertises

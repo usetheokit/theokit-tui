@@ -1,7 +1,11 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
-import { ChatComposer, isNewlineChord } from "./chat-composer.js";
+import {
+  ChatComposer,
+  isNewlineChord,
+  parseShellCommand,
+} from "./chat-composer.js";
 import { TheoTUIProvider } from "./theme.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
@@ -633,6 +637,64 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     );
     await type(instance, ["/", "h"]);
     await waitForFrame(instance, "show help");
+    instance.unmount();
+  });
+});
+
+describe("parseShellCommand (bang mode)", () => {
+  it("returns_the_trimmed_command_after_the_bang", () => {
+    expect(parseShellCommand("!git status")).toBe("git status");
+    expect(parseShellCommand("!  ls -la  ")).toBe("ls -la");
+  });
+  it("returns_null_when_not_bang_prefixed", () => {
+    expect(parseShellCommand("git status")).toBeNull();
+    expect(parseShellCommand("")).toBeNull();
+    expect(parseShellCommand(" !later")).toBeNull(); // bang not at the start
+  });
+  it("returns_empty_string_for_a_bare_bang", () => {
+    expect(parseShellCommand("!")).toBe("");
+  });
+});
+
+describe("ChatComposer bang mode (! quick command)", () => {
+  it("runs_the_command_via_onShellCommand_not_onSubmit", async () => {
+    const onSubmit = vi.fn();
+    const onShellCommand = vi.fn();
+    const instance = await mount(
+      <ChatComposer onSubmit={onSubmit} onShellCommand={onShellCommand} />,
+    );
+    await type(instance, ["!", "g", "i", "t", ENTER]);
+    expect(onShellCommand).toHaveBeenCalledWith("git");
+    expect(onSubmit).not.toHaveBeenCalled();
+    await waitForFrame(instance, "git", false); // buffer cleared after run
+    instance.unmount();
+  });
+
+  it("shows_a_shell_mode_hint_while_bang_prefixed", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} onShellCommand={() => {}} />,
+    );
+    await type(instance, ["!"]);
+    await waitForFrame(instance, "shell mode");
+    instance.unmount();
+  });
+
+  it("esc_exits_shell_mode_by_clearing_the_draft", async () => {
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} onShellCommand={() => {}} />,
+    );
+    await type(instance, ["!", "l", "s"]);
+    await waitForFrame(instance, "ls");
+    await type(instance, [ESC]);
+    await waitForFrame(instance, "shell mode", false); // back to normal
+    instance.unmount();
+  });
+
+  it("without_onShellCommand_a_bang_is_plain_text_submitted_normally", async () => {
+    const onSubmit = vi.fn();
+    const instance = await mount(<ChatComposer onSubmit={onSubmit} />);
+    await type(instance, ["!", "x", ENTER]);
+    expect(onSubmit).toHaveBeenCalledWith("!x");
     instance.unmount();
   });
 });
