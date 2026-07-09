@@ -19,6 +19,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   diff-prop union, so zero prop-forwarding), a `ChoiceRow` defaulting to
   once/always/reject (override-able), Enter commits, Esc → reject. The decision
   leaves via one `onDecision` callback; the component holds no app state (M23 T1.2).
+- `QuestionPrompt` — a per-question header + question text + a composed M22
+  SelectList (single or multi). With `allowFreeText`, an "Other…" option is
+  injected that reveals a mini text input (over the M15 text-buffer reducer); the
+  answer leaves via one `onAnswer({values,text})` callback, an empty submit is a
+  no-op (M23 T2.1).
 
 ### Changed
 

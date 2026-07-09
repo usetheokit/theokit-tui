@@ -144,6 +144,8 @@ export { ChoiceRow } from "./choice-row.js";
 export type { ChoiceRowProps } from "./choice-row.js";
 export { ApprovalPrompt } from "./approval-prompt.js";
 export type { ApprovalPromptProps } from "./approval-prompt.js";
+export { QuestionPrompt, OTHER_OPTION_VALUE } from "./question-prompt.js";
+export type { QuestionPromptProps } from "./question-prompt.js";
 export {
   DEFAULT_APPROVAL_CHOICES,
   resolveChoiceKey,
