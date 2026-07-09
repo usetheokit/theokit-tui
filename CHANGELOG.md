@@ -24,6 +24,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   / Enter (per-component state, no global registry) over the M24 CollapsibleBlock.
   `ToolResult` and `CodeBlock` gain an `interactive` prop that wraps their
   line-capped output in it (the 20k char guard is never bypassed) (M25 T3.1).
+- `setTerminalTitle()` + `osc8Link()` (+ `supportsHyperlinks()`) — terminal window
+  title (OSC 0) and hyperlink (OSC 8) helpers, mirroring the `notify()` capability
+  gate: a no-op / plain-text degrade off-TTY or under a multiplexer (never leak raw
+  escape bytes) (M25 T4.1).
 
 ### Changed
 

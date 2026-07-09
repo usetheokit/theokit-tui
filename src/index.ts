@@ -181,3 +181,9 @@ export type { NotifyProtocol, NotifySink } from "./notify.js";
 // M25 — parity polish.
 export { ExpandableOutput } from "./expandable-output.js";
 export type { ExpandableOutputProps } from "./expandable-output.js";
+export {
+  setTerminalTitle,
+  osc8Link,
+  supportsHyperlinks,
+} from "./terminal-osc.js";
+export type { OscSink } from "./terminal-osc.js";
