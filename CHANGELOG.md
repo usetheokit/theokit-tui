@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Overlay/modal layer: `OverlayProvider` + `useOverlay()` — a stack of overlays
+  rendered in-band above the thread on the M20 focus manager. Opening the first
+  overlay saves + blurs the background focus and disables Tab (background goes
+  inert / captures keys); the top overlay owns Esc-dismiss; closing the last
+  overlay restores focus. Nesting is DEPTH-COUNTED (a push→push→pop keeps the
+  background inert until depth 0 — the review-flagged boolean-isFocusEnabled bug
+  fixed). A new `blur()` on the focus manager backs the capture (M22 T2.1).
+
+### Added
+
 - SelectList interaction primitive: a windowed list with prefix|fuzzy filter,
   single AND multi-select (by value, so it survives a fuzzy re-order), `❯` marker,
   ▲/▼ overflow + counter/checkboxes. Built on a new PURE `select-list-model.ts`

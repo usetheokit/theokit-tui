@@ -33,6 +33,8 @@ export interface FocusContextValue {
   activate(id: string): void;
   deactivate(id: string): void;
   focus(id: string): void;
+  /** Clear the active focus (no component focused) — used by the overlay layer. */
+  blur(): void;
   focusNext(): void;
   focusPrevious(): void;
   enableFocus(): void;
@@ -50,6 +52,7 @@ export const FocusContext = createContext<FocusContextValue>({
   activate: noop,
   deactivate: noop,
   focus: noop,
+  blur: noop,
   focusNext: noop,
   focusPrevious: noop,
   enableFocus: noop,
@@ -173,6 +176,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const blur = useCallback(() => setActiveId(undefined), []);
   const enableFocus = useCallback(() => setIsFocusEnabled(true), []);
   const disableFocus = useCallback(() => setIsFocusEnabled(false), []);
 
@@ -229,6 +233,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       activate,
       deactivate,
       focus,
+      blur,
       focusNext,
       focusPrevious,
       enableFocus,
@@ -242,6 +247,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       activate,
       deactivate,
       focus,
+      blur,
       focusNext,
       focusPrevious,
       enableFocus,
@@ -309,6 +315,7 @@ export function useFocusManager(): Pick<
   | "focusNext"
   | "focusPrevious"
   | "focus"
+  | "blur"
   | "activeId"
 > {
   const ctx = useContext(FocusContext);
@@ -318,6 +325,7 @@ export function useFocusManager(): Pick<
     focusNext: ctx.focusNext,
     focusPrevious: ctx.focusPrevious,
     focus: ctx.focus,
+    blur: ctx.blur,
     activeId: ctx.activeId,
   };
 }

@@ -120,6 +120,7 @@ export { Image } from "./image.js";
 export type { ImageProps } from "./image.js";
 
 // M22 — interaction primitives.
+export { OverlayProvider, useOverlay } from "./renderer/hooks/use-overlay.js";
 export { SelectList } from "./select-list.js";
 export type { SelectListProps } from "./select-list.js";
 export { deriveSelectList, windowFor } from "./select-list-model.js";
