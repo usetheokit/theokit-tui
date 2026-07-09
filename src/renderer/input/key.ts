@@ -19,6 +19,9 @@ export interface Key {
   backspace: boolean;
   delete: boolean;
   meta: boolean;
+  /** M22: the parser already frames these — surfaced for the Pager (review H1). */
+  pageUp: boolean;
+  pageDown: boolean;
 }
 
 /** Project a raw framed sequence into `(input, key)` — the useInput handler args. */
@@ -37,6 +40,8 @@ export function projectKey(sequence: string): { input: string; key: Key } {
     backspace: keypress.name === "backspace",
     delete: keypress.name === "delete",
     meta: keypress.meta,
+    pageUp: keypress.name === "pageup",
+    pageDown: keypress.name === "pagedown",
   };
 
   let input = keypress.ctrl ? keypress.name : keypress.sequence;

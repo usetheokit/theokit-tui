@@ -4,6 +4,12 @@
 // leading '/' on the FIRST line filters), prefix matching, selection
 // clamp (codex clamp_selection) and a 5-row sliding window (gemini
 // SuggestionsDisplay reduced). Zero deps, zero ink.
+//
+// M22: the window/clamp/overflow math is now delegated to the shared
+// `windowFor` (select-list-model.ts) — one authoritative site for the slash +
+// mention + SelectList windows (DRY). The trigger/filter contract is unchanged.
+
+import { windowFor } from "./select-list-model.js";
 
 export interface SlashCommand {
   /** Command name WITHOUT the slash (e.g. "help"). */
@@ -66,23 +72,11 @@ export function deriveSlashMenu(
   if (dismissed || multiline || matches.length === 0) {
     return { ...CLOSED, filter };
   }
-  const clampedIndex = Math.min(
-    Math.max(selectionIndex, 0),
-    matches.length - 1,
-  );
-  // Slide the window to keep the active row visible (gemini scrollOffset
-  // reduced): never past the tail, never negative.
-  const windowStart = Math.min(
-    Math.max(clampedIndex - (SLASH_MENU_WINDOW - 1), 0),
-    Math.max(matches.length - SLASH_MENU_WINDOW, 0),
-  );
+  // Window/clamp/overflow via the shared M15 trailing-window (M22 DRY collapse).
   return {
     open: true,
     filter,
     matches,
-    clampedIndex,
-    windowStart,
-    overflowUp: windowStart > 0,
-    overflowDown: windowStart + SLASH_MENU_WINDOW < matches.length,
+    ...windowFor(matches.length, selectionIndex, SLASH_MENU_WINDOW),
   };
 }

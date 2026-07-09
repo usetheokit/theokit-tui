@@ -33,6 +33,8 @@ export interface FocusContextValue {
   activate(id: string): void;
   deactivate(id: string): void;
   focus(id: string): void;
+  /** Clear the active focus (no component focused) — used by the overlay layer. */
+  blur(): void;
   focusNext(): void;
   focusPrevious(): void;
   enableFocus(): void;
@@ -50,6 +52,7 @@ export const FocusContext = createContext<FocusContextValue>({
   activate: noop,
   deactivate: noop,
   focus: noop,
+  blur: noop,
   focusNext: noop,
   focusPrevious: noop,
   enableFocus: noop,
@@ -173,16 +176,19 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const blur = useCallback(() => setActiveId(undefined), []);
   const enableFocus = useCallback(() => setIsFocusEnabled(true), []);
   const disableFocus = useCallback(() => setIsFocusEnabled(false), []);
 
   // The arbiter reads `isFocusEnabled` from a ref so it always sees the current
   // value without re-subscribing (re-subscription churn would race a key that
-  // arrives before the new subscription lands).
+  // arrives before the new subscription lands). The ref is updated DURING render
+  // (not in an effect) so it is current the instant the new value is committed —
+  // an effect lags the render, letting a key that arrives between commit and
+  // effect see the stale value (the canonical "read latest value in a callback"
+  // pattern; safe for a ref).
   const isFocusEnabledRef = useRef(isFocusEnabled);
-  useEffect(() => {
-    isFocusEnabledRef.current = isFocusEnabled;
-  }, [isFocusEnabled]);
+  isFocusEnabledRef.current = isFocusEnabled;
 
   // ESC-blur runs on the PRIORITY channel (before component useInput) — the
   // composer's ESC-refocus depends on seeing an already-blurred state
@@ -227,6 +233,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       activate,
       deactivate,
       focus,
+      blur,
       focusNext,
       focusPrevious,
       enableFocus,
@@ -240,6 +247,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       activate,
       deactivate,
       focus,
+      blur,
       focusNext,
       focusPrevious,
       enableFocus,
@@ -307,6 +315,7 @@ export function useFocusManager(): Pick<
   | "focusNext"
   | "focusPrevious"
   | "focus"
+  | "blur"
   | "activeId"
 > {
   const ctx = useContext(FocusContext);
@@ -316,6 +325,7 @@ export function useFocusManager(): Pick<
     focusNext: ctx.focusNext,
     focusPrevious: ctx.focusPrevious,
     focus: ctx.focus,
+    blur: ctx.blur,
     activeId: ctx.activeId,
   };
 }

@@ -1,4 +1,4 @@
-export const VERSION = "0.22.0";
+export const VERSION = "0.23.0";
 
 export {
   TheoTUIProvider,
@@ -118,3 +118,23 @@ export { WelcomeBanner } from "./welcome-banner.js";
 export type { WelcomeBannerProps } from "./welcome-banner.js";
 export { Image } from "./image.js";
 export type { ImageProps } from "./image.js";
+
+// M22 — interaction primitives.
+export { OverlayProvider, useOverlay } from "./renderer/hooks/use-overlay.js";
+export { Pager } from "./pager.js";
+export type { PagerProps } from "./pager.js";
+export {
+  pagerReducer,
+  scrollPercent,
+  visibleRange,
+  maxOffset,
+} from "./pager-model.js";
+export type { PagerState, PagerAction } from "./pager-model.js";
+export { SelectList } from "./select-list.js";
+export type { SelectListProps } from "./select-list.js";
+export { deriveSelectList, windowFor } from "./select-list-model.js";
+export type {
+  SelectListItem,
+  SelectListView,
+  WindowView,
+} from "./select-list-model.js";
