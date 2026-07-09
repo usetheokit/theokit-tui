@@ -38,6 +38,13 @@ export interface SearchOptions {
 
 const DEFAULT_SKIP = new Set([".git", "node_modules"]);
 const DEFAULT_MAX_RESULTS = 50;
+
+/** Hidden entries (name starts with `.`) are excluded by default — the file
+ * picker convention (Claude Code parity): the cwd walk never descends into them,
+ * and a path listing hides them unless the typed partial itself starts with `.`. */
+function isHidden(name: string): boolean {
+  return name.startsWith(".");
+}
 const DEFAULT_MAX_DEPTH = 8;
 
 /** The real filesystem, backed by node:fs/promises. */
@@ -108,8 +115,8 @@ function includedRelPath(
   ig: Ignore,
   prefix: string,
 ): string | null {
-  if (DEFAULT_SKIP.has(entry.name)) {
-    return null;
+  if (DEFAULT_SKIP.has(entry.name) || isHidden(entry.name)) {
+    return null; // skip build/vcs dirs AND hidden dotfiles/dot-directories
   }
   const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
   // `ignore` wants a trailing slash to match directory patterns.
@@ -176,8 +183,11 @@ async function listPathEntries(
     return []; // unreadable dir → no results, never throw
   }
   const lower = partial.toLowerCase();
+  // Hidden entries surface only when the partial itself opts in with a `.`.
+  const showHidden = partial.startsWith(".");
   const matched = entries
     .filter((e) => !DEFAULT_SKIP.has(e.name))
+    .filter((e) => showHidden || !isHidden(e.name))
     .filter((e) => e.name.toLowerCase().startsWith(lower))
     // Directories first, then files; alphabetical within each group.
     .sort(
