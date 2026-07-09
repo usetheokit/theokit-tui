@@ -9,11 +9,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.23.0] - 2026-07-09
+
+### Added
+
 - Interaction-primitives example (`examples/interaction.tsx`) composing SelectList
   - an overlay-pushed Pager (a primitives demo, not an app picker), and a
     monochrome degrade test for the SelectList marker (M22 T4.1).
 
-### Added
 
 - Pager interaction primitive: a full-screen scrollable viewport over pre-wrapped
   content, on a new PURE `pager-model.ts` (bubbles-viewport port — clamp, percent,
@@ -22,7 +35,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the terminal height from `useStdout` and re-clamps on resize. Meant to be pushed
   as an overlay (M22 T3.1).
 
-### Added
 
 - Overlay/modal layer: `OverlayProvider` + `useOverlay()` — a stack of overlays
   rendered in-band above the thread on the M20 focus manager. Opening the first
@@ -32,7 +44,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   background inert until depth 0 — the review-flagged boolean-isFocusEnabled bug
   fixed). A new `blur()` on the focus manager backs the capture (M22 T2.1).
 
-### Added
 
 - SelectList interaction primitive: a windowed list with prefix|fuzzy filter,
   single AND multi-select (by value, so it survives a fuzzy re-order), `❯` marker,
@@ -42,13 +53,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   all existing menu tests unchanged). The component consumes OUR M19/M20 hooks
   (M22 T1.1).
 
-### Added
 
-### Changed
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -56,8 +61,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `pageUp`/`pageDown`); the status line is clipped to one row so it never steals a
   content row on a narrow terminal (M22 review). Nested-overlay state-loss
   documented (the covered overlay re-mounts on reveal).
-
-### Security
 
 ## [0.22.0] - 2026-07-08
 
