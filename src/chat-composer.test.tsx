@@ -614,6 +614,18 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     instance.unmount();
   });
 
+  it("renders_a_file_mention_row_without_a_leading_slash", async () => {
+    // Parity nit: the mention menu reuses the slash renderer. A file path must
+    // render bare (`❯ src/foo.ts`), NOT slash-prefixed (`/src/foo.ts`).
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />,
+    );
+    await type(instance, ["@", "f", "o"]);
+    await waitForFrame(instance, "src/foo.ts"); // menu open
+    expect(plain(instance.lastFrame())).not.toContain("/src/foo.ts");
+    instance.unmount();
+  });
+
   it("slash_command_menu_still_works_unchanged", async () => {
     // ADR-C3 regression guard: the M15 `/` menu is untouched by the @ addition.
     const instance = await mount(

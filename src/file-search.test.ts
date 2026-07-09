@@ -3,7 +3,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  isPathQuery,
   searchFiles,
+  splitMentionPath,
   type DirEntryLike,
   type FileSystemLike,
 } from "./file-search.js";
@@ -111,5 +113,101 @@ describe("searchFiles (M21 T4.1)", () => {
       maxResults: 200,
     });
     expect(results).toContain("fuzzy.ts");
+  });
+});
+
+const HOME = "/home/dev";
+
+describe("isPathQuery (@ path mode — Claude Code parity)", () => {
+  it("plain_words_are_not_paths", () => {
+    expect(isPathQuery("retry")).toBe(false);
+    expect(isPathQuery("")).toBe(false);
+  });
+  it("a_slash_or_tilde_makes_it_a_path", () => {
+    expect(isPathQuery("src/")).toBe(true);
+    expect(isPathQuery("~")).toBe(true);
+    expect(isPathQuery("~/Desk")).toBe(true);
+    expect(isPathQuery("/etc/")).toBe(true);
+  });
+});
+
+describe("splitMentionPath", () => {
+  it("expands_tilde_to_home", () => {
+    expect(splitMentionPath("~/Desktop/re", "/repo", HOME)).toEqual({
+      absDir: "/home/dev/Desktop",
+      partial: "re",
+      displayDir: "~/Desktop/",
+    });
+  });
+  it("bare_tilde_lists_home", () => {
+    expect(splitMentionPath("~", "/repo", HOME)).toEqual({
+      absDir: "/home/dev",
+      partial: "",
+      displayDir: "~/",
+    });
+  });
+  it("relative_dir_resolves_against_cwd", () => {
+    expect(splitMentionPath("src/comp", "/repo", HOME)).toEqual({
+      absDir: "/repo/src",
+      partial: "comp",
+      displayDir: "src/",
+    });
+  });
+  it("absolute_dir_is_kept", () => {
+    expect(splitMentionPath("/etc/ho", "/repo", HOME)).toEqual({
+      absDir: "/etc",
+      partial: "ho",
+      displayDir: "/etc/",
+    });
+  });
+});
+
+describe("searchFiles — @ path navigation", () => {
+  it("lists_a_home_directory_via_tilde_with_a_prefix_filter", async () => {
+    const fs = fakeFs({
+      "/home/dev": [
+        subdir("Área de Trabalho"),
+        subdir("Documents"),
+        ...dir("notes.txt"),
+      ],
+    });
+    const results = await searchFiles("~/Áre", {
+      cwd: "/repo",
+      home: HOME,
+      fs,
+    });
+    // Prefix "Áre" → the space-bearing dir, returned with its trailing slash and
+    // the `~/` display prefix (so completing it inserts `~/Área de Trabalho/`).
+    expect(results).toEqual(["~/Área de Trabalho/"]);
+  });
+
+  it("lists_a_directory_dirs_first_then_files", async () => {
+    const fs = fakeFs({
+      "/repo/src": [subdir("hooks"), ...dir("index.ts", "app.tsx")],
+    });
+    const results = await searchFiles("src/", { cwd: "/repo", home: HOME, fs });
+    expect(results).toEqual(["src/hooks/", "src/app.tsx", "src/index.ts"]);
+  });
+
+  it("an_unreadable_directory_yields_no_results_never_throws", async () => {
+    const fs: FileSystemLike = {
+      readDir: async () => {
+        throw new Error("EACCES");
+      },
+      readGitignore: async () => null,
+    };
+    await expect(
+      searchFiles("~/nope/", { cwd: "/repo", home: HOME, fs }),
+    ).resolves.toEqual([]);
+  });
+
+  it("a_plain_query_still_uses_the_cwd_fuzzy_walk", async () => {
+    const fs = fakeFs({ "/repo": dir("retry.ts", "readme.md") });
+    const results = await searchFiles("retry", {
+      cwd: "/repo",
+      home: HOME,
+      fs,
+    });
+    expect(results).toContain("retry.ts");
   });
 });

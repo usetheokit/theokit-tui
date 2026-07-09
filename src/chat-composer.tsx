@@ -265,7 +265,9 @@ function SlashMenuList({ menu, accent }: { menu: SlashMenu; accent: string }) {
               {/* exactOptionalPropertyTypes: omit `color`, never undefined
                   (the SEPA iteration-4 house idiom). */}
               <Text {...(active ? { color: accent } : {})}>
-                {active ? "❯ " : "  "}/{command.name}
+                {active ? "❯ " : "  "}
+                {menu.sigil ?? "/"}
+                {command.name}
               </Text>
             </Box>
             <Box flexGrow={1} flexShrink={1}>

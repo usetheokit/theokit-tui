@@ -12,6 +12,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ChatComposer` — a `bordered` prop that draws a rounded box around the input line
   (the Claude Code look; degrades to a `single` border under a monochrome theme).
   Default false, so existing consumers are unchanged.
+- `ChatComposer` `@`-mentions — **path navigation** (Claude Code parity). When the
+  `@`-query names a path (contains `/` or starts with `~`), the menu switches from the
+  cwd fuzzy-walk to a directory listing: `searchFiles` reads that directory (with `~`
+  expanded to `$HOME`), lists its entries dirs-first filtered by the trailing partial,
+  and keeps the verbatim prefix — so `@~/Área de Trabalho/` lists that folder. Selecting
+  a directory re-inserts the `@` (so the menu stays open) with a trailing `/` and no
+  closing space, so you keep navigating in; selecting a file completes the mention as
+  before. New pure exports: `isPathQuery`, `splitMentionPath` (`src/file-search.ts`).
 
 ### Changed
 
@@ -19,12 +27,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   terminal (it arrives as `\x1b\r` → `{return, meta}`, unlike Shift+Enter which needs
   the kitty protocol). Enter still submits; Ctrl+J / Shift+Enter still work. The chat
   and showcase examples adopt the bordered box + the Alt+Enter hint.
+- `@`-mention token scanning (`findMentionToken`) — the token no longer stops at the
+  first whitespace once a `/` has been seen, so a path with spaces (`@~/Área de Trabalho/`)
+  stays a single token. A space before the first `/` still closes the token as before.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- `ChatComposer` `@`-mention menu rendered a spurious leading `/` on every file path
+  (`/src/foo.ts`) because it reused the slash-command renderer, which hard-coded the `/`
+  sigil. `SlashMenu` gained an optional `sigil` field (default `/`); the mention menu sets
+  it to `""` so paths render bare (`src/foo.ts`).
 
 ### Security
 

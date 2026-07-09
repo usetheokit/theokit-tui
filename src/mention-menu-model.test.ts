@@ -27,6 +27,21 @@ describe("findMentionToken (M21 T4.1)", () => {
   it("closes_after_whitespace_past_the_token", () => {
     expect(findMentionToken("@foo bar", 8)).toBeNull();
   });
+
+  it("allows_spaces_inside_a_path_token_once_a_slash_appears", () => {
+    // A path with spaces (`~/Área de Trabalho/`) stays ONE token — whitespace no
+    // longer terminates once a `/` has been typed (Claude Code path parity).
+    const text = "@~/Área de Trabalho/";
+    expect(findMentionToken(text, text.length)).toEqual({
+      start: 0,
+      query: "~/Área de Trabalho/",
+    });
+  });
+
+  it("a_space_before_the_first_slash_still_closes_the_token", () => {
+    // "@foo bar" has no slash → the space still ends it (unchanged behavior).
+    expect(findMentionToken("@foo bar and @x", 8)).toBeNull();
+  });
 });
 
 describe("deriveMentionMenu (M21 T4.1)", () => {
@@ -40,6 +55,14 @@ describe("deriveMentionMenu (M21 T4.1)", () => {
   it("is_closed_without_a_token_or_without_candidates", () => {
     expect(deriveMentionMenu("plain text", 5, ["a.ts"], 0).open).toBe(false);
     expect(deriveMentionMenu("@foo", 4, [], 0).open).toBe(false);
+  });
+
+  it("uses_an_empty_sigil_so_paths_render_bare_not_slash_prefixed", () => {
+    // The menu reuses the slash renderer, which prepends a sigil before each
+    // name. Slash commands want `/`; mentions carry the full path already, so
+    // the sigil MUST be empty — `src/foo.ts`, never `/src/foo.ts`.
+    const menu = deriveMentionMenu("@foo", 4, ["src/foo.ts"], 0);
+    expect(menu.sigil).toBe("");
   });
 
   it("clamps_selection_and_windows_a_long_list", () => {
@@ -67,5 +90,18 @@ describe("complete-mention reducer action (M21 T4.1)", () => {
       { type: "complete-mention", path: "foo.ts", from: 4, to: 7 },
     );
     expect(next.text).toBe("see foo.ts  now");
+  });
+
+  it("a_directory_path_keeps_the_at_sigil_and_no_trailing_space_so_navigation_continues", () => {
+    // Selecting a directory (path ends with `/`) RE-INSERTS the `@` and drops
+    // the trailing space, so `findMentionToken` still detects the token and the
+    // user keeps navigating INTO the directory (Claude Code parity). A file
+    // selection (below) instead drops the `@` and adds a space — mention done.
+    const next = textBufferReducer(
+      { text: "@~/Áre", cursorOffset: 6 },
+      { type: "complete-mention", path: "~/Área de Trabalho/", from: 0, to: 6 },
+    );
+    expect(next.text).toBe("@~/Área de Trabalho/"); // `@` kept, no trailing space
+    expect(next.cursorOffset).toBe("@~/Área de Trabalho/".length);
   });
 });

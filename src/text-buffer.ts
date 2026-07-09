@@ -175,14 +175,17 @@ function completeCommand(
   return { text: line + rest, cursorOffset: line.length };
 }
 
-/** M21: replace the `@`-token `[from, to)` with `path ` — cursor after the space. */
+/** M21/M25: replace the `@`-token `[from, to)` with the path. A FILE path drops
+ * the `@` and gets a trailing space (mention done, M21 semantics). A DIRECTORY
+ * path (ends with `/`) RE-INSERTS the `@` and no space, so `findMentionToken`
+ * still sees the token and the user keeps navigating INTO it (path parity). */
 function completeMention(
   state: TextBufferState,
   path: string,
   from: number,
   to: number,
 ): TextBufferState {
-  const insertion = `${path} `;
+  const insertion = path.endsWith("/") ? `@${path}` : `${path} `;
   return {
     text: state.text.slice(0, from) + insertion + state.text.slice(to),
     cursorOffset: from + insertion.length,

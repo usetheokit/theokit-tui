@@ -32,6 +32,9 @@ export interface SlashMenu {
   /** Rows hidden above/below the window. */
   overflowUp: boolean;
   overflowDown: boolean;
+  /** Sigil rendered before each name. Slash commands use `/` (the default when
+   * omitted); the `@`-mention menu sets `""` since the path is already whole. */
+  sigil?: string;
 }
 
 export const SLASH_MENU_WINDOW = 5;

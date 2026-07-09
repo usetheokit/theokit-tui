@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 
 import ignore, { type Ignore } from "ignore";
 
@@ -31,6 +32,8 @@ export interface SearchOptions {
   maxResults?: number;
   maxDepth?: number;
   signal?: AbortSignal;
+  /** Home directory for `~` expansion in path mode (injectable for tests). */
+  home?: string;
 }
 
 const DEFAULT_SKIP = new Set([".git", "node_modules"]);
@@ -116,10 +119,83 @@ function includedRelPath(
   return rel;
 }
 
+// ── @ path navigation (Claude Code parity) ──────────────────────────────────
+// A `@`-query that names a PATH (has a `/` or a `~` home prefix) switches from
+// the cwd fuzzy-walk to a DIRECTORY LISTING: it reads the named directory (with
+// `~` expanded to the home dir) and returns its entries filtered by the trailing
+// partial. Dirs get a trailing `/` so you can keep navigating; the display prefix
+// is kept verbatim (the `~` survives) so completing inserts the path you typed.
+
+/** The split of a path-like `@`-query into a directory to read + a name filter. */
+export interface MentionPath {
+  /** Absolute directory to `readDir` (`~`-expanded, cwd-resolved). */
+  absDir: string;
+  /** The trailing partial name to filter entries by (prefix, case-insensitive). */
+  partial: string;
+  /** The verbatim prefix to re-attach to each result (keeps `~`, trailing `/`). */
+  displayDir: string;
+}
+
+/** True when the `@`-query names a path (has a separator or a `~` home prefix). */
+export function isPathQuery(query: string): boolean {
+  return query.includes("/") || query.startsWith("~");
+}
+
+/** Split a path-like `@`-query into `{ absDir, partial, displayDir }`. */
+export function splitMentionPath(
+  query: string,
+  cwd: string,
+  home: string,
+): MentionPath {
+  // A bare `~` means "list the home directory".
+  const q = query === "~" ? "~/" : query;
+  const slash = q.lastIndexOf("/");
+  const displayDir = q.slice(0, slash + 1); // "" when there is no slash
+  const partial = q.slice(slash + 1);
+  const dirSpec = displayDir === "" ? "." : displayDir;
+  const expanded = dirSpec.startsWith("~") ? home + dirSpec.slice(1) : dirSpec;
+  // resolve() normalizes (strips the trailing slash; an absolute 2nd arg ignores
+  // cwd) so the readDir key matches whether the path was ~/absolute/relative.
+  const absDir = resolve(cwd, expanded);
+  return { absDir, partial, displayDir };
+}
+
+/** List the directory named by a path-like `@`-query (never throws → `[]`). */
+async function listPathEntries(
+  query: string,
+  cwd: string,
+  home: string,
+  fs: FileSystemLike,
+  maxResults: number,
+): Promise<string[]> {
+  const { absDir, partial, displayDir } = splitMentionPath(query, cwd, home);
+  let entries: DirEntryLike[];
+  try {
+    entries = await fs.readDir(absDir);
+  } catch {
+    return []; // unreadable dir → no results, never throw
+  }
+  const lower = partial.toLowerCase();
+  const matched = entries
+    .filter((e) => !DEFAULT_SKIP.has(e.name))
+    .filter((e) => e.name.toLowerCase().startsWith(lower))
+    // Directories first, then files; alphabetical within each group.
+    .sort(
+      (a, b) =>
+        Number(b.isDirectory) - Number(a.isDirectory) ||
+        a.name.localeCompare(b.name),
+    );
+  return matched
+    .slice(0, maxResults)
+    .map((e) => `${displayDir}${e.name}${e.isDirectory ? "/" : ""}`);
+}
+
 /**
- * Walk `cwd` and return cwd-relative file paths fuzzy-ranked against `query`
- * (best first). Honors `.gitignore` + a default skip-list; bounded + abortable so
- * a huge repo never blocks. Never throws — an unreadable tree yields `[]`.
+ * The `@`-file provider. When `query` names a PATH (`/` or `~`), lists that
+ * directory (`~`-expanded) filtered by the trailing partial — Claude Code's
+ * path-navigation idiom. Otherwise walks `cwd` and returns cwd-relative file
+ * paths fuzzy-ranked against `query`. Honors `.gitignore` + a default skip-list;
+ * bounded + abortable so a huge repo never blocks. Never throws.
  */
 export async function searchFiles(
   query: string,
@@ -127,8 +203,13 @@ export async function searchFiles(
 ): Promise<string[]> {
   const cwd = options.cwd ?? process.cwd();
   const fs = options.fs ?? nodeFileSystem;
+  const maxResults = options.maxResults ?? DEFAULT_MAX_RESULTS;
+  if (isPathQuery(query)) {
+    const home = options.home ?? homedir();
+    return listPathEntries(query, cwd, home, fs, maxResults);
+  }
   const limits = {
-    maxResults: options.maxResults ?? DEFAULT_MAX_RESULTS,
+    maxResults,
     maxDepth: options.maxDepth ?? DEFAULT_MAX_DEPTH,
   };
   const ig = ignore();
