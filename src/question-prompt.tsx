@@ -1,13 +1,10 @@
 import { Box, Text } from "ink";
-import { useReducer, useState } from "react";
+import { useState } from "react";
 
 import type { QuestionAnswer } from "./agent-decision-model.js";
-import { useFocus } from "./renderer/hooks/use-focus.js";
-import type { Key } from "./renderer/input/key.js";
-import { useInput } from "./renderer/input/use-input.js";
+import { FreeTextInput } from "./free-text-input.js";
 import { SelectList } from "./select-list.js";
 import type { SelectListItem } from "./select-list-model.js";
-import { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
 import { useTheoTheme } from "./theme.js";
 
 // M23 QuestionPrompt (plan m23-agent-decision-surfaces T2.1, ADR D6): a
@@ -32,35 +29,6 @@ export interface QuestionPromptProps {
   allowFreeText?: boolean;
   onAnswer: (answer: QuestionAnswer) => void;
   autoFocus?: boolean;
-}
-
-/** A minimal single-line text input over the M15 buffer reducer. */
-function FreeTextInput({ onSubmit }: { onSubmit: (text: string) => void }) {
-  const [state, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
-  // Register in the focus registry (so the manager's activeId is correct after
-  // the SelectList unmounts), but subscribe to input on MOUNT rather than gating
-  // on `isFocused`: free-text mode is the exclusive interactive branch of
-  // QuestionPrompt (the SelectList is unmounted), so waiting for the focus
-  // round-trip would drop the first keystrokes (a race, testing.md §6).
-  useFocus({ autoFocus: true });
-  useInput(
-    (input, key: Key) => {
-      if (key.return) {
-        onSubmit(state.text);
-      } else if (key.backspace || key.delete) {
-        dispatch({ type: "delete-backward" });
-      } else if (input && !key.ctrl && !key.meta) {
-        dispatch({ type: "insert", text: input });
-      }
-    },
-    { isActive: true },
-  );
-  return (
-    <Text>
-      Type your answer: {state.text}
-      <Text dimColor>▏</Text>
-    </Text>
-  );
 }
 
 export function QuestionPrompt({
@@ -105,6 +73,7 @@ export function QuestionPrompt({
         />
       ) : (
         <FreeTextInput
+          label="Type your answer:"
           onSubmit={(text) => onAnswer({ values: pendingValues, text })}
         />
       )}

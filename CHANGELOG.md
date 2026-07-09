@@ -24,6 +24,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   injected that reveals a mini text input (over the M15 text-buffer reducer); the
   answer leaves via one `onAnswer({values,text})` callback, an empty submit is a
   no-op (M23 T2.1).
+- `PlanApproval` — the plan-mode idiom: a proposed-plan markdown body (M13
+  MarkdownText, streaming-safe) + a `ChoiceRow` of approve/revise; `revise`
+  reveals a feedback input (empty allowed). Esc is a safe default → revise (never
+  auto-approve). Decision via one `onDecision(PlanDecision)` callback. Plus the
+  shared `FreeTextInput` (a minimal single-line input over the M15 text-buffer
+  reducer) backing both QuestionPrompt's "Other…" and PlanApproval's revise
+  branches (M23 T3.1).
 
 ### Changed
 

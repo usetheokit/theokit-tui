@@ -146,6 +146,10 @@ export { ApprovalPrompt } from "./approval-prompt.js";
 export type { ApprovalPromptProps } from "./approval-prompt.js";
 export { QuestionPrompt, OTHER_OPTION_VALUE } from "./question-prompt.js";
 export type { QuestionPromptProps } from "./question-prompt.js";
+export { PlanApproval } from "./plan-approval.js";
+export type { PlanApprovalProps } from "./plan-approval.js";
+export { FreeTextInput } from "./free-text-input.js";
+export type { FreeTextInputProps } from "./free-text-input.js";
 export {
   DEFAULT_APPROVAL_CHOICES,
   resolveChoiceKey,
