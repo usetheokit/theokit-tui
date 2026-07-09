@@ -162,3 +162,7 @@ export type {
   ChoiceKey,
   ChoiceKeyAction,
 } from "./agent-decision-model.js";
+
+// M24 — live progress surfaces.
+export { TodoList } from "./todo-list.js";
+export type { TodoListProps, TodoItem, TodoStatus } from "./todo-list.js";

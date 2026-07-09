@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `TodoList` — a live checklist keyed by stable `id` (☐ pending / ◐ active / ☑
+  done). An item updates in place when the caller passes a new object with the same
+  id (rows memo-ed by identity, the M8 ChatThread precedent); duplicate ids throw;
+  it never graduates to `<Static>` (a done item may revert). The status glyph
+  carries the meaning, so the surface survives a monochrome theme (M24 T1.2).
+
 ### Changed
 
 - Extracted the reduced-motion gate to a shared `isMotionEnabled(env, stdout,
