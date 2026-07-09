@@ -1,3 +1,4 @@
+import { windowFor } from "./select-list-model.js";
 import { SLASH_MENU_WINDOW, type SlashMenu } from "./slash-menu-model.js";
 
 // M21 mention-menu (plan m21-premium-capabilities T4.1, Feature C / ADR C2/C3):
@@ -64,21 +65,10 @@ export function deriveMentionMenu(
     return { ...CLOSED, filter: token?.query ?? "" };
   }
   const matches = candidates.map((path) => ({ name: path, description: "" }));
-  const clampedIndex = Math.min(
-    Math.max(selectionIndex, 0),
-    matches.length - 1,
-  );
-  const windowStart = Math.min(
-    Math.max(clampedIndex - (SLASH_MENU_WINDOW - 1), 0),
-    Math.max(matches.length - SLASH_MENU_WINDOW, 0),
-  );
   return {
     open: true,
     filter: token.query,
     matches,
-    clampedIndex,
-    windowStart,
-    overflowUp: windowStart > 0,
-    overflowDown: windowStart + SLASH_MENU_WINDOW < matches.length,
+    ...windowFor(matches.length, selectionIndex, SLASH_MENU_WINDOW),
   };
 }

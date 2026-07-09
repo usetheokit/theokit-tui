@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- SelectList interaction primitive: a windowed list with prefix|fuzzy filter,
+  single AND multi-select (by value, so it survives a fuzzy re-order), `❯` marker,
+  ▲/▼ overflow + counter/checkboxes. Built on a new PURE `select-list-model.ts`
+  whose `windowFor` is now the ONE authoritative trailing-window site — the M15
+  slash-menu + M21 mention-menu delegate to it (DRY collapse, behavior-preserving,
+  all existing menu tests unchanged). The component consumes OUR M19/M20 hooks
+  (M22 T1.1).
+
+### Added
+
 ### Changed
 
 ### Deprecated

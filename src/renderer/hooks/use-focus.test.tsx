@@ -1,6 +1,6 @@
 import { Text } from "ink";
 import { cleanup, render } from "ink-testing-library";
-import { createElement, type ReactNode } from "react";
+import { createElement, useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
@@ -20,6 +20,30 @@ afterEach(cleanup); // unmount each tree so leftover focus arbiters don't cross-
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 // A lone ESC is delivered after the InputSource's ~20ms flush delay.
 const tickEsc = (): Promise<void> => new Promise((r) => setTimeout(r, 40));
+
+/**
+ * Poll `lastFrame()` until it contains `substring` (or does not, when
+ * `present=false`), up to a deadline — deterministic under load, unlike a fixed
+ * sleep + immediate assert (the M15/M19 flake lesson, testing.md §6). Accounts
+ * for the ESC flush delay in the deadline.
+ */
+async function waitForFocus(
+  lastFrame: () => string | undefined,
+  substring: string,
+  present = true,
+  timeoutMs = 2000,
+): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if ((lastFrame() ?? "").includes(substring) === present) {
+      return;
+    }
+    await tick();
+  }
+  throw new Error(
+    `focus frame ${present ? "never contained" : "still contained"} ${JSON.stringify(substring)} — got:\n${lastFrame()}`,
+  );
+}
 
 function Focusable({
   label,
@@ -64,8 +88,7 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
       }),
       createElement(Focusable, { key: "b", label: "b", id: "b" }),
     ]);
-    await tick();
-    expect(lastFrame()).toContain("a:ON");
+    await waitForFocus(lastFrame, "a:ON");
     expect(lastFrame()).toContain("b:off");
   });
 
@@ -81,8 +104,7 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     ]);
     await tick();
     stdin.send("\t"); // Tab
-    await tick();
-    expect(lastFrame()).toContain("a:off");
+    await waitForFocus(lastFrame, "a:off");
     expect(lastFrame()).toContain("b:ON");
   });
 
@@ -98,8 +120,7 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     ]);
     await tick();
     stdin.send("\x1b[Z"); // Shift+Tab
-    await tick();
-    expect(lastFrame()).toContain("a:ON");
+    await waitForFocus(lastFrame, "a:ON");
     expect(lastFrame()).toContain("b:off");
   });
 
@@ -112,11 +133,9 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
         id: "a",
       }),
     ]);
-    await tick();
-    expect(lastFrame()).toContain("a:ON");
+    await waitForFocus(lastFrame, "a:ON");
     stdin.send("\x1b"); // ESC
-    await tickEsc();
-    expect(lastFrame()).toContain("a:off");
+    await waitForFocus(lastFrame, "a:off");
   });
 
   it("focus_manager_focus_moves_focus_to_a_given_id", async () => {
@@ -141,23 +160,28 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     ]);
     await tick();
     stdin.send("x");
-    await tick();
-    expect(lastFrame()).toContain("b:ON");
+    await waitForFocus(lastFrame, "b:ON");
     expect(lastFrame()).toContain("a:off");
   });
 
   it("disable_focus_stops_tab_then_enable_restores_it", async () => {
+    // The Toggle renders its mode so a poll can observe the disable/enable
+    // LANDED (same React batch as the mgr call) before the next Tab — no fixed
+    // sleep between two state-changing sends (the load-flake source).
     function Toggle() {
       const mgr = useFocusManager();
+      const [mode, setMode] = useState("init");
       useInput((input) => {
         if (input === "d") {
           mgr.disableFocus();
+          setMode("disabled");
         }
         if (input === "e") {
           mgr.enableFocus();
+          setMode("enabled");
         }
       });
-      return null;
+      return createElement(Text, {}, `mode:${mode}`);
     }
     const { stdin, lastFrame } = mount([
       createElement(Focusable, {
@@ -169,17 +193,16 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
       createElement(Focusable, { key: "b", label: "b", id: "b" }),
       createElement(Toggle, { key: "t" }),
     ]);
-    await tick();
+    await waitForFocus(lastFrame, "a:ON");
     stdin.send("d"); // disable focus
-    await tickEsc();
+    await waitForFocus(lastFrame, "mode:disabled"); // disable has landed
     stdin.send("\t"); // Tab is ignored while focus is disabled
-    await tickEsc();
+    await tick();
     expect(lastFrame()).toContain("a:ON");
     stdin.send("e"); // re-enable
-    await tickEsc();
+    await waitForFocus(lastFrame, "mode:enabled"); // enable has landed
     stdin.send("\t");
-    await tickEsc();
-    expect(lastFrame()).toContain("b:ON");
+    await waitForFocus(lastFrame, "b:ON");
   });
 
   it("an_inactive_focusable_is_skipped_by_tab", async () => {
@@ -199,8 +222,7 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     ]);
     await tick();
     stdin.send("\t"); // b is inactive → focus stays on a (the only active one)
-    await tick();
-    expect(lastFrame()).toContain("a:ON");
+    await waitForFocus(lastFrame, "a:ON");
     expect(lastFrame()).toContain("b:off");
   });
 
@@ -216,11 +238,9 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     ]);
     await tick();
     stdin.send("\t"); // Tab from the last → wraps forward to the first
-    await tick();
-    expect(lastFrame()).toContain("a:ON");
+    await waitForFocus(lastFrame, "a:ON");
     stdin.send("\x1b[Z"); // Shift+Tab from the first → wraps back to the last
-    await tick();
-    expect(lastFrame()).toContain("b:ON");
+    await waitForFocus(lastFrame, "b:ON");
   });
 
   it("focus_provider_without_an_input_source_does_not_crash", async () => {
@@ -238,8 +258,7 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
         }),
       ),
     );
-    await tick();
-    expect(lastFrame()).toContain("a:ON");
+    await waitForFocus(lastFrame, "a:ON");
   });
 
   it("tab_with_no_focusables_registered_is_a_safe_no_op", async () => {
@@ -247,8 +266,7 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     await tick();
     stdin.send("\t"); // focusNext over an empty registry → no-op
     stdin.send("\x1b[Z"); // focusPrevious over an empty registry → no-op
-    await tick();
-    expect(lastFrame()).toContain("static-text");
+    await waitForFocus(lastFrame, "static-text");
   });
 
   it("esc_arbiter_runs_before_component_useInput_subscribers", async () => {

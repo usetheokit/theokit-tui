@@ -178,11 +178,13 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   // The arbiter reads `isFocusEnabled` from a ref so it always sees the current
   // value without re-subscribing (re-subscription churn would race a key that
-  // arrives before the new subscription lands).
+  // arrives before the new subscription lands). The ref is updated DURING render
+  // (not in an effect) so it is current the instant the new value is committed —
+  // an effect lags the render, letting a key that arrives between commit and
+  // effect see the stale value (the canonical "read latest value in a callback"
+  // pattern; safe for a ref).
   const isFocusEnabledRef = useRef(isFocusEnabled);
-  useEffect(() => {
-    isFocusEnabledRef.current = isFocusEnabled;
-  }, [isFocusEnabled]);
+  isFocusEnabledRef.current = isFocusEnabled;
 
   // ESC-blur runs on the PRIORITY channel (before component useInput) — the
   // composer's ESC-refocus depends on seeing an already-blurred state
