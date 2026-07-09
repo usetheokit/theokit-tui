@@ -50,6 +50,7 @@
     "example:live": "tsx examples/live-agent-tui.tsx",
     "example:showcase": "tsx examples/showcase.tsx",
     "example:renderer": "tsx examples/renderer-skeleton.tsx",
+    "example:all": "tsx examples/all-components.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "prepublishOnly": "pnpm gates && pnpm build"
   },
