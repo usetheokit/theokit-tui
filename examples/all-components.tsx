@@ -6,6 +6,7 @@ import {
   AgentTimeline,
   AppStatusBar,
   ApprovalPrompt,
+  ChatComposer,
   ChatThread,
   ChoiceRow,
   CodeBlock,
@@ -278,6 +279,20 @@ const PAGES: { title: string; body: ReactNode }[] = [
             { value: "reject", label: "Reject" },
           ]}
           onCommit={() => {}}
+          autoFocus={false}
+        />
+        <Text dimColor>
+          ChatComposer (the input box — /commands, @files, history, kill-ring):
+        </Text>
+        <ChatComposer
+          placeholder="Type a message ('/' opens commands, Enter sends)"
+          commands={[
+            { name: "help", description: "show available commands" },
+            { name: "clear", description: "clear the thread" },
+            { name: "model", description: "switch the model" },
+          ]}
+          hint="in this gallery it is not focused — see `pnpm example:chat` to type"
+          onSubmit={() => {}}
           autoFocus={false}
         />
         <Text dimColor>
