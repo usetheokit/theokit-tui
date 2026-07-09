@@ -14,6 +14,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`resolveChoiceKey` oracle, `ApprovalDecision`/`ApprovalChoice`/`QuestionAnswer`/
   `PlanDecision` types, `DEFAULT_APPROVAL_CHOICES`) — the callback-only spine of the
   M23 agent-decision surfaces (M23 T1.1).
+- `ApprovalPrompt` — a titled pending-action card whose preview is a `children`
+  slot (the app composes `<DiffViewer/>` / a command line / any body — never a
+  diff-prop union, so zero prop-forwarding), a `ChoiceRow` defaulting to
+  once/always/reject (override-able), Enter commits, Esc → reject. The decision
+  leaves via one `onDecision` callback; the component holds no app state (M23 T1.2).
 
 ### Changed
 

@@ -138,3 +138,21 @@ export type {
   SelectListView,
   WindowView,
 } from "./select-list-model.js";
+
+// M23 — agent-decision surfaces.
+export { ChoiceRow } from "./choice-row.js";
+export type { ChoiceRowProps } from "./choice-row.js";
+export { ApprovalPrompt } from "./approval-prompt.js";
+export type { ApprovalPromptProps } from "./approval-prompt.js";
+export {
+  DEFAULT_APPROVAL_CHOICES,
+  resolveChoiceKey,
+} from "./agent-decision-model.js";
+export type {
+  ApprovalChoice,
+  ApprovalDecision,
+  QuestionAnswer,
+  PlanDecision,
+  ChoiceKey,
+  ChoiceKeyAction,
+} from "./agent-decision-model.js";
