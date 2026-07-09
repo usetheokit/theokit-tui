@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useInput } from "./renderer/input/use-input.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import { deriveSelectList, type SelectListItem } from "./select-list-model.js";
-import { isMonochrome, useTheoTheme } from "./theme.js";
+import { useTheoTheme } from "./theme.js";
 
 // M22 SelectList (plan m22-interaction-primitives T1.1, ADR A3): a windowed
 // list with prefix|fuzzy filter, single OR multi-select, over the shared pure
@@ -75,7 +75,6 @@ export function SelectList({
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const { isFocused } = useFocus({ autoFocus });
   const theme = useTheoTheme();
-  const monochrome = isMonochrome(theme);
 
   const view = deriveSelectList({
     items,
@@ -156,7 +155,9 @@ export function SelectList({
       {view.overflowUp && <Text dimColor>▲</Text>}
       {visible.map((item, index) => {
         const active = view.windowStart + index === view.clampedIndex;
-        const marker = active ? (monochrome ? "❯ " : "❯ ") : "  ";
+        // The `❯` marker is the affordance that survives a monochrome theme
+        // (chalk strips the accent color; the glyph remains — M6 degrade ladder).
+        const marker = active ? "❯ " : "  ";
         const box = multi ? (selected.has(item.value) ? "◉ " : "◯ ") : "";
         return (
           <Box key={item.value}>

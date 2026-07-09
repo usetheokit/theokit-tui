@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "../tests/renderer/itl-adapter.js";
 import { SelectList } from "./select-list.js";
 import type { SelectListItem } from "./select-list-model.js";
+import { TheoTUIProvider, themes } from "./theme.js";
 
 // M22 T1.1 — the SelectList component driven through the itl-adapter (OUR
 // renderer + InputSource + FocusProvider). Deterministic keyboard oracle.
@@ -120,6 +121,20 @@ describe("SelectList component (M22 T1.1)", () => {
     await app.flush();
     app.stdin.write("\r"); // enter
     expect(chosen).toEqual([["apricot"]]);
+    app.unmount();
+  });
+
+  it("marker_survives_a_monochrome_theme_degrade_ladder", async () => {
+    // Under a no-color theme the accent color is stripped, but the ❯ glyph
+    // (the affordance) still marks the active row (M6 degrade-as-data).
+    const app = render(
+      createElement(TheoTUIProvider, {
+        theme: themes["no-color"],
+        children: createElement(SelectList, { items, onSubmit: () => {} }),
+      }),
+    );
+    await app.flush();
+    expect(app.lastFrame()).toContain("❯ apple");
     app.unmount();
   });
 

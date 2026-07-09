@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Interaction-primitives example (`examples/interaction.tsx`) composing SelectList
+  - an overlay-pushed Pager (a primitives demo, not an app picker), and a
+    monochrome degrade test for the SelectList marker (M22 T4.1).
+
+### Added
+
 - Pager interaction primitive: a full-screen scrollable viewport over pre-wrapped
   content, on a new PURE `pager-model.ts` (bubbles-viewport port — clamp, percent,
   visible slice). Canonical less/vim keymap (↑/k, ↓/j, b/f page, C-u/C-d
