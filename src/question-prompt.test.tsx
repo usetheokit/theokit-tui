@@ -25,6 +25,25 @@ async function waitForFrame(
   );
 }
 
+/**
+ * Type an atomic key burst, retrying until it echoes. A FreeTextInput subscribes
+ * a render or two after mount (the focus round-trip), so the first burst can land
+ * before it is listening; the burst is atomic (all keys or none), so re-sending
+ * it while the buffer is empty is safe (no duplication) and deterministic.
+ */
+async function typeWhenReady(app: ItlInstance, text: string): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    app.stdin.write(text);
+    try {
+      await waitForFrame(app, text, 300);
+      return;
+    } catch {
+      /* not subscribed yet — retry the atomic burst */
+    }
+  }
+  throw new Error(`input never accepted ${JSON.stringify(text)}`);
+}
+
 // M23 T2.1 — QuestionPrompt over the itl-adapter. A per-question header + question
 // text + a composed M22 SelectList (single or multi) with an optional "Other…"
 // free-text branch (ADR D6). The answer leaves via one `onAnswer({values,text})`
@@ -135,9 +154,8 @@ describe("QuestionPrompt component (M23 T2.1)", () => {
     app.stdin.write("\x1b[A"); // wrap to "Other…"
     await app.flush();
     app.stdin.write("\r"); // → free-text mode
-    await waitForFrame(app, "Type your answer:"); // input mounted + subscribed
-    app.stdin.write("teal"); // type
-    await waitForFrame(app, "teal"); // echo confirms every char landed
+    await waitForFrame(app, "Type your answer:"); // input mounted
+    await typeWhenReady(app, "teal"); // subscribe lags focus — retry the burst
     app.stdin.write("\r"); // submit free text
     expect(answers).toEqual([{ values: [], text: "teal" }]);
     app.unmount();

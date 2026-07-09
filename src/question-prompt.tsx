@@ -75,6 +75,7 @@ export function QuestionPrompt({
         <FreeTextInput
           label="Type your answer:"
           onSubmit={(text) => onAnswer({ values: pendingValues, text })}
+          onCancel={() => setPendingValues(null)} // Esc → back to the options
         />
       )}
     </Box>

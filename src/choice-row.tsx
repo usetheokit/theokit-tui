@@ -1,5 +1,5 @@
 import { Box, Text } from "ink";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   resolveChoiceKey,
@@ -42,6 +42,17 @@ export function ChoiceRow({
   const { isFocused } = useFocus({ autoFocus });
   const theme = useTheoTheme();
   const count = choices.length;
+
+  // Re-clamp when the `choices` prop shrinks (a dynamic/streamed choice set —
+  // ADR D3): an index past the new tail would render no active marker and commit
+  // `undefined`. Keep index + ref in sync at the new last row (review MEDIUM-2).
+  useEffect(() => {
+    if (index >= count) {
+      const clamped = Math.max(0, count - 1);
+      indexRef.current = clamped;
+      setIndex(clamped);
+    }
+  }, [count, index]);
 
   useInput(
     (input, key) => {

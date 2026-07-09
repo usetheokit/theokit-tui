@@ -176,4 +176,26 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.textBufferReducer).toBe("function");
     expect(mod.initialTextBuffer).toEqual({ text: "", cursorOffset: 0 });
   });
+
+  it("public_entry_exposes_agent_decision_surface", async () => {
+    const mod = await import("../src/index.js");
+    // M23: the three decision surfaces + the shared ChoiceRow / FreeTextInput.
+    expect(typeof mod.ApprovalPrompt).toBe("function");
+    expect(typeof mod.QuestionPrompt).toBe("function");
+    expect(typeof mod.PlanApproval).toBe("function");
+    expect(typeof mod.ChoiceRow).toBe("function");
+    expect(typeof mod.FreeTextInput).toBe("function");
+    // The pure oracle + the canonical approval triad (values only — the lib
+    // never enumerates policy semantics, ADR D3/D5).
+    expect(typeof mod.resolveChoiceKey).toBe("function");
+    expect(mod.DEFAULT_APPROVAL_CHOICES.map((c) => c.value)).toEqual([
+      "once",
+      "always",
+      "reject",
+    ]);
+    expect(mod.OTHER_OPTION_VALUE).toBe("__theo_other__");
+    // Module-internal by design (the absence-pin pattern): the plan choice set
+    // stays private; only resolveChoiceKey + DEFAULT_APPROVAL_CHOICES are public.
+    expect(mod).not.toHaveProperty("PLAN_CHOICES");
+  });
 });

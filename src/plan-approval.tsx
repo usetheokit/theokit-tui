@@ -47,6 +47,7 @@ export function PlanApproval({
         <FreeTextInput
           label="Type feedback:"
           onSubmit={(feedback) => onDecision({ kind: "revise", feedback })}
+          onCancel={() => setRevising(false)} // Esc → back to the choice bar
         />
       ) : (
         <ChoiceRow

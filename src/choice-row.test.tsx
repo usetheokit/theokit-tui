@@ -133,4 +133,39 @@ describe("ChoiceRow component (M23 T1.1)", () => {
     expect(app.lastFrame()).toContain("❯ Allow once");
     app.unmount();
   });
+
+  it("re_clamps_the_active_index_when_choices_shrink", async () => {
+    // A dynamic/streamed choice set (ADR D3): move to the last of 3, then
+    // re-render with only 2. The active index must re-clamp to the new tail so
+    // the marker stays visible and a commit never lands on `undefined` (MEDIUM-2).
+    const committed: string[] = [];
+    const three = [
+      { value: "a", label: "AA" },
+      { value: "b", label: "BB" },
+      { value: "c", label: "CC" },
+    ];
+    const app = render(
+      createElement(ChoiceRow, {
+        choices: three,
+        onCommit: (v: string) => committed.push(v),
+      }),
+    );
+    await app.flush();
+    app.stdin.write("3"); // jump to the 3rd ("CC")
+    await app.flush();
+    expect(app.lastFrame()).toContain("❯ CC");
+    app.rerender(
+      createElement(ChoiceRow, {
+        choices: three.slice(0, 2), // now only AA, BB
+        onCommit: (v: string) => committed.push(v),
+      }),
+    );
+    await app.flush();
+    await app.flush();
+    expect(app.lastFrame()).toContain("❯ BB"); // clamped to the new tail
+    app.stdin.write("\r"); // Enter commits the clamped choice, not undefined
+    await app.flush();
+    expect(committed).toEqual(["b"]);
+    app.unmount();
+  });
 });

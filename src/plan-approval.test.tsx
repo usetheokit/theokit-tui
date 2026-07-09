@@ -26,6 +26,32 @@ async function waitForFrame(
   );
 }
 
+/** Type an atomic key burst, retrying until it echoes (subscribe lags focus). */
+async function typeWhenReady(app: ItlInstance, text: string): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    app.stdin.write(text);
+    try {
+      await waitForFrame(app, text, 300);
+      return;
+    } catch {
+      /* not subscribed yet — retry the atomic burst */
+    }
+  }
+  throw new Error(`input never accepted ${JSON.stringify(text)}`);
+}
+
+/** Press a key, retrying until `done()` — used for submits with no echo. */
+async function pressUntil(
+  app: ItlInstance,
+  bytes: string,
+  done: () => boolean,
+): Promise<void> {
+  for (let attempt = 0; attempt < 20 && !done(); attempt += 1) {
+    app.stdin.write(bytes);
+    await app.flush();
+  }
+}
+
 describe("PlanApproval component (M23 T3.1)", () => {
   it("renders_the_plan_markdown_body_and_choices", async () => {
     const app = render(<PlanApproval plan={PLAN} onDecision={() => {}} />);
@@ -60,6 +86,27 @@ describe("PlanApproval component (M23 T3.1)", () => {
     app.unmount();
   });
 
+  it("esc_from_the_feedback_input_returns_to_the_choice_bar", async () => {
+    // review HIGH-2: the free-text branch is not a dead end — Esc cancels back.
+    const decisions: PlanDecision[] = [];
+    const app = render(
+      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
+    );
+    await app.flush();
+    app.stdin.write("\x1b[C"); // → revise
+    await app.flush();
+    app.stdin.write("\r"); // → feedback mode
+    await waitForFrame(app, "Type feedback:");
+    await typeWhenReady(app, "z"); // ensure the input is focused before Esc
+    app.stdin.write("\x1b"); // Esc → cancel back to the choice bar
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    await waitForFrame(app, "Approve"); // the choice bar is back
+    expect(app.lastFrame()).toContain("Revise");
+    expect(app.lastFrame()).not.toContain("Type feedback:");
+    expect(decisions).toEqual([]); // Esc-cancel is not a decision
+    app.unmount();
+  });
+
   it("revise_with_feedback_emits_the_feedback", async () => {
     const decisions: PlanDecision[] = [];
     const app = render(
@@ -70,8 +117,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
     await app.flush();
     app.stdin.write("\r"); // → feedback mode
     await waitForFrame(app, "Type feedback:");
-    app.stdin.write("add tests");
-    await waitForFrame(app, "add tests");
+    await typeWhenReady(app, "add tests"); // subscribe lags focus — retry
     app.stdin.write("\r"); // submit feedback
     expect(decisions).toEqual([{ kind: "revise", feedback: "add tests" }]);
     app.unmount();
@@ -87,7 +133,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
     await app.flush();
     app.stdin.write("\r"); // → feedback mode
     await waitForFrame(app, "Type feedback:");
-    app.stdin.write("\r"); // submit with no text
+    await pressUntil(app, "\r", () => decisions.length > 0); // submit empty
     expect(decisions).toEqual([{ kind: "revise", feedback: "" }]);
     app.unmount();
   });
