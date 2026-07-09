@@ -23,6 +23,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   affordance (glyph — survives monochrome); no global toggle registry. Plus a
   `ThinkingBlock` preset (collapsed-default, dim+italic summary, MarkdownText body
   when the children are a markdown string) (M24 T3.1).
+- `Toast` — a transient message on a bounded one-shot auto-dismiss timer (default
+  5000ms, self-clearing at fire + torn down on unmount; an inline `onDismiss` does
+  not reset the countdown). Plus `notify(message)` — a desktop notification helper
+  with a conservative capability gate: OSC-9 only where known-supported
+  (iTerm2/ConEmu), BEL fallback, suppressed under a multiplexer or on a non-TTY
+  (M24 T4.1).
 
 ### Changed
 
