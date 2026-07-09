@@ -38,6 +38,9 @@ describe("examples/live-turn.tsx (T5.1)", () => {
       expect(out).toContain("Thinking");
       // Toast.
       expect(out).toContain("build finished");
+      // RISK-2 end-to-end: the example calls notify(), but piped stdout is a
+      // non-TTY, so no OSC-9 desktop-notify sequence leaks into the output.
+      expect(raw).not.toContain("]9;"); // the OSC-9 signature
     },
   );
 });

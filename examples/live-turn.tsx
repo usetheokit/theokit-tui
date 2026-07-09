@@ -1,9 +1,11 @@
 import { Box, render, Text } from "ink";
+import { useEffect } from "react";
 
 import {
   AgentStreaming,
   CollapsibleBlock,
   MultiStepProgress,
+  notify,
   ThinkingBlock,
   Toast,
   TodoList,
@@ -31,6 +33,12 @@ const STEPS: TodoItem[] = [
 ];
 
 function Demo() {
+  // Fire a desktop notification once — on a real TTY it emits OSC-9/BEL per the
+  // capability matrix; piped (this example's smoke test), stdout is a non-TTY so
+  // `notify` is a no-op (no stray escape bytes — the RISK-2 guard, end-to-end).
+  useEffect(() => {
+    notify("build finished ✓");
+  }, []);
   return (
     <Box flexDirection="column" gap={1}>
       <TodoList items={TODOS} />

@@ -22,6 +22,7 @@ import { AgentStreaming } from "./agent-streaming.js";
 // opt-in; zero timers when reduced-motion is on.
 
 const PHRASE_INTERVAL_MS = 2000;
+const SHIMMER_PULSE_MS = 600;
 
 /** Mount with stdout.isTTY shadowed BEFORE the streaming indicator's render, so
  * its per-render motion gate sees a real TTY. */
@@ -122,6 +123,47 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
     expect(instance.lastFrame()).toContain("Only one");
     act(() => vi.advanceTimersByTime(PHRASE_INTERVAL_MS * 3));
     expect(instance.lastFrame()).toContain("Only one"); // nothing to cycle
+    act(() => instance.unmount());
+  });
+
+  // Shimmer oracle: dimColor emits the SGR `\x1b[2m`; without the cancel hint the
+  // primary line is the only possible dim source, so its presence/absence pins the
+  // pulse. (review HIGH-2 — shimmer shipped untested.)
+  const DIM = "\x1b[2m";
+
+  it("shimmer_pulses_the_primary_line_dim_under_a_tty", () => {
+    vi.stubEnv("THEOKIT_TUI_NO_MOTION", "");
+    const instance = mountGated(
+      true,
+      <AgentStreaming thought="working" shimmer />,
+    );
+    expect(instance.lastFrame()).not.toContain(DIM); // on=false at mount
+    act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS));
+    expect(instance.lastFrame()).toContain(DIM); // pulsed on
+    act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS));
+    expect(instance.lastFrame()).not.toContain(DIM); // pulsed back off
+    act(() => instance.unmount());
+  });
+
+  it("shimmer_never_dims_under_reduced_motion", () => {
+    vi.stubEnv("THEOKIT_TUI_NO_MOTION", "1");
+    const instance = mountGated(
+      true,
+      <AgentStreaming thought="working" shimmer />,
+    );
+    act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS * 4));
+    expect(instance.lastFrame()).not.toContain(DIM); // motion off → never pulses
+    act(() => instance.unmount());
+  });
+
+  it("shimmer_does_not_dim_on_a_non_tty", () => {
+    vi.stubEnv("THEOKIT_TUI_NO_MOTION", "");
+    const instance = mountGated(
+      false,
+      <AgentStreaming thought="working" shimmer />,
+    );
+    act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS * 4));
+    expect(instance.lastFrame()).not.toContain(DIM); // piped → never pulses
     act(() => instance.unmount());
   });
 });

@@ -36,6 +36,10 @@ export function detectNotifyProtocol(
  * Fire a desktop notification: OSC-9 where supported, BEL as the fallback,
  * nothing under a multiplexer or on a non-TTY sink (never write escape bytes into
  * a pipe). `out`/`env` are injectable for deterministic tests.
+ *
+ * NOTE: `message` is written VERBATIM into the OSC-9 payload (matching the codex
+ * `osc9.rs` plain path). An embedded BEL (`\x07`) or ESC (`\x1b`) would terminate
+ * or corrupt the sequence — sanitize upstream if the message is untrusted.
  */
 export function notify(
   message: string,
