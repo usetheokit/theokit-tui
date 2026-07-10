@@ -149,9 +149,9 @@ function Demo() {
         {showTools && (
           <Box flexDirection="column" marginTop={1}>
             <ToolCallCard
-              name="bash pnpm vitest run retry"
+              name="Bash"
               status="failed"
-              summary="reproduce the flake"
+              summary="pnpm vitest run retry"
               result={{
                 kind: "output",
                 shell: {
@@ -162,9 +162,9 @@ function Demo() {
               }}
             />
             <ToolCallCard
-              name="edit retry.ts"
+              name="Edit"
               status="success"
-              summary="linear capped backoff"
+              summary="retry.ts"
               result={{
                 kind: "diff",
                 patch: [
@@ -179,9 +179,9 @@ function Demo() {
               }}
             />
             <ToolCallCard
-              name="read retry.test.ts"
+              name="Read"
               status="success"
-              summary="verify the regression oracle"
+              summary="retry.test.ts"
               result={{
                 kind: "preview",
                 text: [
@@ -226,14 +226,14 @@ function Demo() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message ('/' opens commands, Enter sends)"
+            placeholder="Type a message ('/' commands · '@' files · Enter sends)"
             commands={[
               { name: "help", description: "show available commands" },
               { name: "clear", description: "clear the thread" },
               { name: "model", description: "switch the model" },
               { name: "retry", description: "re-run the failing test" },
             ]}
-            hint="esc dismisses the menu · Alt+Enter newline · Ctrl+C quits"
+            hint="esc dismisses · Alt+Enter newline · @ browses files (try @~/) · Ctrl+C quits"
             bordered
             onSubmit={(text) => {
               setMessages((current) => [

@@ -1,4 +1,4 @@
-export const VERSION = "0.27.0";
+export const VERSION = "0.28.0";
 
 export {
   TheoTUIProvider,
@@ -187,3 +187,8 @@ export {
   supportsHyperlinks,
 } from "./terminal-osc.js";
 export type { OscSink } from "./terminal-osc.js";
+
+// Keyboard-shortcut help panel (Claude Code's `?` overlay). Pairs with
+// ChatComposer.onHelpToggle (fires when `?` is pressed on an empty buffer).
+export { KeyboardHelp, DEFAULT_COMPOSER_SHORTCUTS } from "./keyboard-help.js";
+export type { KeyboardHelpProps, KeyboardShortcut } from "./keyboard-help.js";

@@ -64,6 +64,21 @@ describe("searchFiles (M21 T4.1)", () => {
     expect(results).toEqual(["app.ts"]);
   });
 
+  it("hides_dotfiles_and_dot_directories_by_default", async () => {
+    // Reported bug: `@` (empty query) surfaced `.claude/.active_plan` etc. A
+    // file picker hides hidden entries by default (Claude Code parity); the
+    // dot-dir is never even walked into.
+    const fs = fakeFs({
+      "/repo": [subdir(".claude"), subdir("src"), ...dir(".env", "app.ts")],
+      "/repo/.claude": dir(".active_plan"),
+      "/repo/src": dir("index.ts"),
+    });
+    const results = await searchFiles("", { cwd: CWD, fs });
+    expect(results.sort()).toEqual(["app.ts", "src/index.ts"]);
+    expect(results.some((p) => p.includes(".claude"))).toBe(false);
+    expect(results).not.toContain(".env");
+  });
+
   it("aborts_when_the_signal_is_already_aborted", async () => {
     const fs = fakeFs({ "/repo": dir("a.ts", "b.ts") });
     const controller = new AbortController();
@@ -209,5 +224,21 @@ describe("searchFiles — @ path navigation", () => {
       fs,
     });
     expect(results).toContain("retry.ts");
+  });
+
+  it("hides_hidden_entries_unless_the_partial_starts_with_a_dot", async () => {
+    const fs = fakeFs({
+      "/home/dev": [
+        subdir(".ansible"),
+        subdir("Documents"),
+        ...dir(".bashrc", "notes.txt"),
+      ],
+    });
+    // `@~/` lists the home dir but hides the dotfiles (the `@~/` clutter bug).
+    const shown = await searchFiles("~/", { cwd: "/repo", home: HOME, fs });
+    expect(shown).toEqual(["~/Documents/", "~/notes.txt"]);
+    // Typing the dot opts back in — `@~/.` reveals hidden entries, dirs-first.
+    const dotted = await searchFiles("~/.", { cwd: "/repo", home: HOME, fs });
+    expect(dotted).toEqual(["~/.ansible/", "~/.bashrc"]);
   });
 });

@@ -60,6 +60,12 @@ export interface ToolCallProps {
 /** Collapse any newlines so the header stays a single line (EC-8). */
 const singleLine = (value: string): string => value.replace(/\r?\n/g, " ");
 
+/** M26: the `(args)` suffix of a `name(args)` header — empty when there is no
+ * summary, so a bare name never renders empty parens. Exported for unit tests. */
+export function formatArgs(summary: string | undefined): string {
+  return summary === undefined || summary === "" ? "" : `(${summary})`;
+}
+
 function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
   if (status === "running") {
     // Each mounted running indicator owns one interval timer (ink-spinner);
@@ -93,6 +99,11 @@ export function ToolCall({ name, status, summary }: ToolCallProps) {
     );
   }
   const theme = useTheoTheme();
+  // M26: `name(args)` — the summary becomes a parenthesized, dim arg suffix
+  // glued to the name (Claude Code header shape), single-lined + truncated.
+  const args = formatArgs(
+    summary === undefined ? undefined : singleLine(summary),
+  );
   // wrap="truncate-end" keeps the header genuinely one line at ANY terminal
   // width (review dom-frontend-3 — gemini-cli ToolGroupDisplay idiom); a
   // wrapping row of sibling Texts misrenders as parallel columns.
@@ -104,10 +115,9 @@ export function ToolCall({ name, status, summary }: ToolCallProps) {
       <Text bold wrap="truncate-end">
         {singleLine(name)}
       </Text>
-      {summary !== undefined && (
+      {args !== "" && (
         <Text dimColor wrap="truncate-end">
-          {" "}
-          {singleLine(summary)}
+          {args}
         </Text>
       )}
     </Box>
@@ -187,44 +197,69 @@ function ResultBody({ result }: { result: ToolCardResult }) {
   }
 }
 
-export function ToolCallCard({ children, result, ...row }: ToolCallCardProps) {
-  // Boundary validation (fail-fast, before any hook in ToolCall).
-  if (result !== undefined) {
-    assertToolCardResult(result);
-    if (result.kind === "diff") {
-      // EC-1 (contract as PROVED at review r2-F3): this synchronous parse
-      // makes the typed error testable via plain-call with a stack at the
-      // card boundary — under a MOUNTED ink render ANY throw (here or in a
-      // child) is absorbed by ink's error boundary (apps observe it via
-      // waitUntilExit). Only the diff kind carries runtime DATA (a patch
-      // string); output/preview payload shapes are programmer errors the
-      // type system covers (r1-F6 — recorded decision). The duplicate
-      // parse is the price on a render-once card.
-      parseUnifiedDiff(result.patch);
-    }
+/**
+ * M16 boundary: validate the result union and eagerly parse a diff patch so a
+ * malformed patch throws a TYPED error at the card boundary (EC-1) — testable
+ * via a plain call with a stack, before any hook. Only the diff kind carries
+ * runtime DATA; output/preview payload shapes are compile-time programmer errors.
+ */
+function assertResultBoundary(result: ToolCardResult | undefined): void {
+  if (result === undefined) {
+    return;
   }
-  // SEPA phase-1 F5: numbers crash Ink like strings do (auto-wrap both);
-  // booleans are the `{cond && <X/>}` idiom's residue — no body.
+  assertToolCardResult(result);
+  if (result.kind === "diff") {
+    parseUnifiedDiff(result.patch);
+  }
+}
+
+/** True when `children` is renderable content (not undefined/null/""/boolean —
+ * the `{cond && <X/>}` idiom's residue). SEPA phase-1 F5. */
+function hasRenderableBody(children: ReactNode): boolean {
+  return (
+    children !== undefined &&
+    children !== null &&
+    children !== "" &&
+    typeof children !== "boolean"
+  );
+}
+
+export function ToolCallCard({ children, result, ...row }: ToolCallCardProps) {
+  assertResultBoundary(result);
+  // SEPA phase-1 F5: numbers crash Ink like strings do (auto-wrap both).
   const body =
     typeof children === "string" || typeof children === "number" ? (
       <Text>{children}</Text>
     ) : (
       children
     );
-  const hasBody =
-    children !== undefined &&
-    children !== null &&
-    children !== "" &&
-    typeof children !== "boolean";
+  const hasBody = hasRenderableBody(children);
   return (
     <Box flexDirection="column">
       <ToolCall {...row} />
-      {result !== undefined && (
-        <Box paddingLeft={STATUS_INDICATOR_WIDTH}>
-          <ResultBody result={result} />
-        </Box>
+      {(result !== undefined || hasBody) && (
+        <ToolTree>
+          {result !== undefined && <ResultBody result={result} />}
+          {hasBody && body}
+        </ToolTree>
       )}
-      {hasBody && <Box paddingLeft={STATUS_INDICATOR_WIDTH}>{body}</Box>}
+    </Box>
+  );
+}
+
+/**
+ * M26: renders the result/children body under a `⎿` (U+23BF) corner connector —
+ * the Claude Code tool-tree idiom. The connector shows once at the top-left; the
+ * body flows to its right so multi-line continuation aligns under the body, not
+ * the connector (codex `"  └ "` first-line / `"    "` continuation shape).
+ */
+function ToolTree({ children }: { children: ReactNode }) {
+  return (
+    <Box paddingLeft={2}>
+      <Box flexShrink={0}>
+        <Text dimColor>⎿ </Text>
+      </Box>
+      <Box flexDirection="column">{children}</Box>
     </Box>
   );
 }

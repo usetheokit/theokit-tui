@@ -55,6 +55,49 @@ export interface ChatComposerProps {
    * scope the search. Return `[]` (or omit results) to disable mentions.
    */
   fileSearch?: (query: string, signal?: AbortSignal) => Promise<string[]>;
+  /**
+   * Bang mode (Claude Code parity): when provided, typing `!` at the START of
+   * the buffer enters a distinct "shell mode" (the prompt + hint change); Enter
+   * calls THIS with the command (buffer text after the `!`, trimmed) instead of
+   * `onSubmit`, and Esc cancels the draft. The library NEVER spawns a process —
+   * the consumer decides how to run the command (fail-fast boundary / DIP).
+   * Omit it and a leading `!` is plain text submitted through `onSubmit`.
+   */
+  onShellCommand?: (command: string) => void;
+  /**
+   * Keyboard-help toggle (Claude Code parity): when provided, pressing `?` on an
+   * EMPTY buffer calls this instead of typing the `?` — the app toggles a
+   * `KeyboardHelp` panel. A `?` typed mid-text stays literal. Omit it and `?` is
+   * always ordinary text (non-breaking).
+   */
+  onHelpToggle?: () => void;
+}
+
+/**
+ * Parses a bang-mode buffer. Returns the command (text after a leading `!`,
+ * trimmed) when the buffer is `!`-prefixed, else null. A bare `!` yields `""`.
+ * Exported for tests; not part of the package public surface.
+ */
+export function parseShellCommand(text: string): string | null {
+  if (!text.startsWith("!")) {
+    return null;
+  }
+  return text.slice(1).trim();
+}
+
+/** The hint shown while the composer is in bang (shell-command) mode. */
+const SHELL_MODE_HINT = "shell mode · Enter runs the command · esc cancels";
+
+/** The InputRow prompt (glyph + color) for the current mode. Shell mode drops
+ * the user glyph so the typed `!` reads as the prompt (Claude Code look:
+ * `! git status`) and recolors to accent; normal mode uses the user role. */
+function promptFor(
+  shellMode: boolean,
+  theme: ReturnType<typeof useTheoTheme>,
+): { glyph: string; prefixColor: string } {
+  return shellMode
+    ? { glyph: "", prefixColor: theme.accent }
+    : { glyph: theme.role.user.glyph, prefixColor: theme.role.user.prefix };
 }
 
 const defaultFileSearch = (
@@ -371,6 +414,8 @@ export function ChatComposer({
   hint,
   bordered = false,
   fileSearch = defaultFileSearch,
+  onShellCommand,
+  onHelpToggle,
 }: ChatComposerProps) {
   const [editor, dispatchEditor] = useReducer(
     editorReducer,
@@ -488,22 +533,66 @@ export function ChatComposer({
     return true;
   };
 
-  const handleBufferKey = (input: string, key: ComposerKey): void => {
-    if (key.return && !isNewlineChord(input, key, multiLine)) {
-      const text = buffer.text.trim();
-      if (text.length > 0) {
-        // onSubmit BEFORE clear: a throwing handler propagates (EC-5) AND
-        // the user's draft survives (review F-dom-6). `submit` also records the
-        // entry in the input history (M21).
-        onSubmit(text);
+  // Bang mode is active only when a shell handler is wired AND the buffer opens
+  // with `!` — otherwise a leading `!` is ordinary text (non-breaking default).
+  const shellMode = onShellCommand !== undefined && buffer.text.startsWith("!");
+
+  // Enter: run the `!`-command via onShellCommand (bang mode) OR submit via
+  // onSubmit. Both fire BEFORE clear so a throwing handler propagates (EC-5)
+  // and the draft survives (review F-dom-6); `submit` also records history.
+  const submitOrRun = (): void => {
+    const text = buffer.text.trim();
+    if (text.length === 0) {
+      return;
+    }
+    const command = onShellCommand ? parseShellCommand(text) : null;
+    if (command !== null) {
+      if (command.length > 0) {
+        onShellCommand!(command);
         dispatchEditor({ type: "submit", entry: text });
       }
+      return; // bare `!` is a no-op; never falls through to onSubmit
+    }
+    onSubmit(text);
+    dispatchEditor({ type: "submit", entry: text });
+  };
+
+  const handleBufferKey = (input: string, key: ComposerKey): void => {
+    if (key.return && !isNewlineChord(input, key, multiLine)) {
+      submitOrRun();
       return;
     }
     const action = actionForKey(input, key, multiLine);
     if (action !== undefined) {
       dispatchEditor({ type: "buffer", action });
     }
+  };
+
+  // Bang mode: Esc cancels the draft (clears the buffer, leaving shell mode).
+  // Reclaims focus the same way the menu-esc does — ink's App blurs on Esc.
+  const handleShellKey = (key: ComposerKey): boolean => {
+    if (shellMode && key.escape) {
+      dispatchEditor({ type: "buffer", action: { type: "clear" } });
+      focus(focusId);
+      return true;
+    }
+    return false;
+  };
+
+  // `?` on an empty buffer toggles the app's keyboard-help panel instead of
+  // typing the char (Claude Code parity); mid-text it stays a literal `?`.
+  const handleHelpKey = (input: string, key: ComposerKey): boolean => {
+    if (
+      onHelpToggle !== undefined &&
+      input === "?" &&
+      buffer.text.length === 0 &&
+      !key.ctrl &&
+      !key.meta
+    ) {
+      onHelpToggle();
+      return true;
+    }
+    return false;
   };
 
   useInput(
@@ -515,6 +604,12 @@ export function ChatComposer({
         return;
       }
       if (handleMenuKey(input, composerKey)) {
+        return;
+      }
+      if (handleShellKey(composerKey)) {
+        return;
+      }
+      if (handleHelpKey(input, composerKey)) {
         return;
       }
       if (handleEditorKey(input, composerKey)) {
@@ -537,8 +632,7 @@ export function ChatComposer({
           placeholder={placeholder}
           isFocused={isFocused}
           monochrome={isMonochrome(theme)}
-          glyph={theme.role.user.glyph}
-          prefixColor={theme.role.user.prefix}
+          {...promptFor(shellMode, theme)}
         />
       </ComposerFrame>
       <ComposerFooter
@@ -546,6 +640,7 @@ export function ChatComposer({
         mentionMenu={mention.menu}
         accent={theme.accent}
         hint={hint}
+        shellMode={shellMode}
       />
     </Box>
   );
@@ -557,19 +652,23 @@ function ComposerFooter({
   mentionMenu,
   accent,
   hint,
+  shellMode,
 }: {
   menu: SlashMenu;
   mentionMenu: SlashMenu;
   accent: string;
   hint: string | undefined;
+  shellMode: boolean;
 }) {
+  // Shell mode overrides the caller's hint with the bang-mode affordance line.
+  const shown = shellMode ? SHELL_MODE_HINT : hint;
   return (
     <>
       {menu.open && <SlashMenuList menu={menu} accent={accent} />}
       {mentionMenu.open && <SlashMenuList menu={mentionMenu} accent={accent} />}
-      {hint !== undefined && hint !== "" && (
+      {shown !== undefined && shown !== "" && (
         <Box paddingLeft={2}>
-          <Text dimColor>{hint}</Text>
+          <Text dimColor>{shown}</Text>
         </Box>
       )}
     </>

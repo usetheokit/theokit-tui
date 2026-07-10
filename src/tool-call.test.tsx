@@ -1,11 +1,12 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import spinners from "cli-spinners";
+import stringWidth from "string-width";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import { preloadHighlighter } from "./code-block.js";
-import { ToolCall, ToolCallCard } from "./tool-call.js";
+import { ToolCall, ToolCallCard, formatArgs } from "./tool-call.js";
 import { TheoTUIProvider } from "./theme.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
@@ -15,27 +16,36 @@ const DOTS_FRAME_0 = "⠋";
 // eslint-disable-next-line no-control-regex
 const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
 
+describe("formatArgs (M26 name(args) header)", () => {
+  it("formats_a_present_summary_in_parens", () => {
+    expect(formatArgs("src/**")).toBe("(src/**)");
+  });
+  it("returns_empty_string_for_undefined_or_empty", () => {
+    expect(formatArgs(undefined)).toBe("");
+    expect(formatArgs("")).toBe("");
+  });
+});
+
 describe("ToolCall — status lifecycle (T1.1)", () => {
-  it("renders_pending_with_circle_glyph", async () => {
+  it("renders_pending_with_status_bullet", async () => {
     const frame = await renderFrame(
       <ToolCall name="search" status="pending" />,
     );
-    // Positional oracle (SEPA phase-1 F3): "o" must be the INDICATOR, not a
-    // char inside the name.
-    expect(stripAnsi(frame).startsWith("o")).toBe(true);
+    // M26: the status bullet `●` is the INDICATOR (positional oracle, SEPA F3).
+    expect(stripAnsi(frame).startsWith("●")).toBe(true);
     expect(frame).toContain("search");
   });
 
-  it("renders_success_with_check_glyph", async () => {
+  it("renders_success_with_status_bullet", async () => {
     const frame = await renderFrame(
       <ToolCall name="search" status="success" />,
     );
-    expect(frame).toContain("✓");
+    expect(stripAnsi(frame).startsWith("●")).toBe(true);
   });
 
-  it("renders_failed_with_x_glyph", async () => {
+  it("renders_failed_with_status_bullet", async () => {
     const frame = await renderFrame(<ToolCall name="search" status="failed" />);
-    expect(stripAnsi(frame).startsWith("x")).toBe(true);
+    expect(stripAnsi(frame).startsWith("●")).toBe(true);
   });
 
   it("running_shows_spinner_first_frame", async () => {
@@ -66,18 +76,45 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     );
   });
 
-  it("summary_renders_dim_after_name", async () => {
+  it("summary_renders_as_args_in_parens_after_name", async () => {
+    // M26: `name(args)` — the summary is the arg detail, in dim parens.
     const frame = await renderFrame(
       <ToolCall name="grep" status="success" summary="in 3 files" />,
     );
-    expect(frame).toContain("in 3 files");
+    expect(stripAnsi(frame)).toContain("grep(in 3 files)");
   });
 
   it("empty_name_renders_indicator_only", async () => {
     // EC-9: empty-but-valid name is legal — indicator still renders.
     // Frames carry ANSI (FORCE_COLOR=1 pin) — strip before the exact-equality.
     const frame = await renderFrame(<ToolCall name="" status="success" />);
-    expect(stripAnsi(frame).trim()).toBe("✓");
+    expect(stripAnsi(frame).trim()).toBe("●");
+  });
+
+  it("header_without_summary_shows_the_bare_name_no_parens", async () => {
+    const frame = await renderFrame(<ToolCall name="grep" status="success" />);
+    expect(stripAnsi(frame)).toContain("grep");
+    expect(stripAnsi(frame)).not.toContain("()");
+  });
+
+  it("long_name_args_truncate_to_width_never_overflow", async () => {
+    // Width-matrix oracle: the header row never exceeds the terminal columns.
+    for (const columns of [80, 40, 20]) {
+      const frame = await renderFrame(
+        <Box width={columns}>
+          <ToolCall
+            name="Bash"
+            status="running"
+            summary={"cd /very/long/path && git add -A && ".repeat(4)}
+          />
+        </Box>,
+      );
+      for (const line of stripAnsi(frame).split("\n")) {
+        // Display width (string-width), not codepoint count — the repo's oracle
+        // (markdown-table-render.test.tsx:62); catches a real CJK-arg overflow.
+        expect(stringWidth(line)).toBeLessThanOrEqual(columns);
+      }
+    }
   });
 
   it("name_with_newline_renders_single_header_line", async () => {
@@ -100,15 +137,84 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
 });
 
 describe("ToolCallCard — header + indented body (T1.2)", () => {
-  it("card_renders_header_and_indented_body", async () => {
+  // The per-kind ⎿ test renders diff/preview bodies which need the highlighter.
+  beforeAll(async () => {
+    await preloadHighlighter();
+  });
+
+  it("card_renders_header_and_body_under_a_corner_connector", async () => {
     const frame = await renderFrame(
       <ToolCallCard name="grep" status="success">
         <Text>12 matches</Text>
       </ToolCallCard>,
     );
-    expect(frame).toContain("✓");
+    expect(stripAnsi(frame).startsWith("●")).toBe(true);
     expect(frame).toContain("12 matches");
-    expect(frame.split("\n")[1]).toMatch(/^ {3}\S/); // exactly the indicator width (F8)
+    // M26: the body renders under a `⎿` corner connector (Claude Code tree).
+    expect(frame).toContain("⎿");
+    expect(stripAnsi(frame).split("\n")[1]).toMatch(/⎿ .*12 matches/);
+  });
+
+  it("multiline_body_shows_the_connector_once_and_indents_continuation", async () => {
+    const frame = await renderFrame(
+      <Box width={40}>
+        <ToolCallCard name="cat" status="success">
+          <Text>{"line one\nline two"}</Text>
+        </ToolCallCard>
+      </Box>,
+    );
+    const lines = stripAnsi(frame).split("\n");
+    const connectorLines = lines.filter((l) => l.includes("⎿"));
+    expect(connectorLines).toHaveLength(1); // connector shows exactly once
+    const two = lines.find((l) => l.includes("line two")) ?? "";
+    expect(two.includes("⎿")).toBe(false); // continuation aligns under the body
+    expect(two.startsWith(" ")).toBe(true);
+  });
+
+  it("bodyless_card_omits_the_connector", async () => {
+    const frame = await renderFrame(
+      <ToolCallCard name="grep" status="success" />,
+    );
+    expect(frame).not.toContain("⎿");
+  });
+
+  it("each_result_kind_renders_under_the_connector", async () => {
+    const diff = await renderFrame(
+      <Box width={70}>
+        <ToolCallCard
+          name="edit"
+          status="success"
+          summary="retry.ts"
+          result={{ kind: "diff", patch: VALID_PATCH }}
+        />
+      </Box>,
+    );
+    expect(diff).toContain("⎿");
+    const output = await renderFrame(
+      <Box width={70}>
+        <ToolCallCard
+          name="bash"
+          status="failed"
+          summary="pnpm test"
+          result={{
+            kind: "output",
+            shell: { stdout: "1 failing", stderr: "", exitCode: 1 },
+          }}
+        />
+      </Box>,
+    );
+    expect(output).toContain("⎿");
+    const preview = await renderFrame(
+      <Box width={70}>
+        <ToolCallCard
+          name="read"
+          status="success"
+          summary="notes.md"
+          result={{ kind: "preview", text: "hello\nworld" }}
+        />
+      </Box>,
+    );
+    expect(preview).toContain("⎿");
   });
 
   it("card_without_children_equals_row", async () => {
@@ -196,7 +302,7 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
     await delay(0);
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    expect(frame).toContain("✓");
+    expect(stripAnsi(frame).startsWith("●")).toBe(true);
     expect(frame).not.toContain(DOTS_FRAME_0);
   });
 
@@ -207,7 +313,7 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
     await delay(0);
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    expect(stripAnsi(frame).startsWith("x")).toBe(true);
+    expect(stripAnsi(frame).startsWith("●")).toBe(true);
   });
 
   it(

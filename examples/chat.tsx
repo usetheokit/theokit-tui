@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+
 import { Box, render, useApp } from "ink";
 import { useEffect, useRef, useState } from "react";
 
@@ -6,6 +8,8 @@ import {
   AppStatusBar,
   ChatComposer,
   ChatThread,
+  DEFAULT_COMPOSER_SHORTCUTS,
+  KeyboardHelp,
   TheoTUIProvider,
   VERSION,
   WelcomeBanner,
@@ -99,12 +103,30 @@ function App() {
   const { exit } = useApp();
   const [messages, setMessages] = useState(initialMessages);
   const [streaming, setStreaming] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const stream = useFakeStreaming(setMessages);
   // M14: the lib-shipped turn clock drives AgentStreaming.elapsedSeconds.
   // NOTE: the scripted stream lasts < 1 s, so elapsed stays 0 in this demo
   // — the 1 Hz path is exercised end-to-end by the app-status-bar bench
   // (ticking mode), not here (review r2-F8, honest scope).
   const elapsed = useTurnElapsed(streaming);
+
+  // Bang mode runner — the APP executes the shell command (the library never
+  // spawns a process). The `!`-prefix + Enter routes here via onShellCommand;
+  // we echo the command and append its captured output to the thread.
+  const runShell = (command: string) => {
+    setMessages((current) => [
+      ...current,
+      { id: makeId(), role: "user", content: `! ${command}` },
+    ]);
+    const result = spawnSync(command, { shell: true, encoding: "utf8" });
+    const output =
+      `${result.stdout ?? ""}${result.stderr ?? ""}`.trimEnd() || "(no output)";
+    setMessages((current) => [
+      ...current,
+      { id: makeId(), role: "system", content: output },
+    ]);
+  };
 
   useEffect(() => {
     if (!interactive) {
@@ -148,13 +170,13 @@ function App() {
         />
         {interactive && (
           <ChatComposer
-            placeholder="Type a message (Enter sends, Alt+Enter newline, / commands)"
+            placeholder="Type a message (Enter sends · / commands · @ files · ! shell · ? help)"
             commands={[
               { name: "help", description: "show available commands" },
               { name: "clear", description: "clear the thread" },
               { name: "model", description: "switch the model" },
             ]}
-            hint="esc dismisses the menu / cancels · Alt+Enter for a new line"
+            hint="? toggles shortcuts · @ browses files · ! runs a shell command"
             bordered
             onSubmit={(text) => {
               setMessages((current) => [
@@ -163,7 +185,12 @@ function App() {
               ]);
               stream();
             }}
+            onShellCommand={runShell}
+            onHelpToggle={() => setHelpOpen((open) => !open)}
           />
+        )}
+        {interactive && helpOpen && (
+          <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />
         )}
       </Box>
     </TheoTUIProvider>

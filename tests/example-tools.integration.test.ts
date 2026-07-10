@@ -19,7 +19,12 @@ it(
         FORCE_COLOR: "1",
       },
     });
-    expect(out).toContain("✓");
+    // M26 parity: the `●` status bullet, the `name(args)` header, and the `⎿`
+    // result-tree connector all render in the piped scene.
+    expect(out).toContain("●");
+    expect(out).toContain("Bash");
+    expect(out).toContain("(pnpm install)");
+    expect(out).toContain("⎿");
     expect(out).toContain("… +");
     expect(out).toContain("exited");
   },

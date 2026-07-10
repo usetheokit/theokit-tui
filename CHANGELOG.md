@@ -19,6 +19,52 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.28.0] - 2026-07-10
+
+### Added
+
+- `ChatComposer` **bang mode** (`!` quick command — Claude Code parity). New optional
+  `onShellCommand?: (command: string) => void` prop: when provided, typing `!` at the start
+  of the buffer enters a distinct shell mode (the prompt drops to `!` and the hint changes);
+  Enter calls `onShellCommand` with the command (text after the `!`, trimmed) instead of
+  `onSubmit`, and Esc cancels the draft. The library NEVER spawns a process — the consumer
+  decides how to run it (fail-fast boundary / DIP). Omit the prop and a leading `!` is plain
+  text submitted through `onSubmit` (non-breaking). The `chat` example wires a real runner
+  (`spawnSync`) to demonstrate. New pure export: `parseShellCommand`.
+- `KeyboardHelp` component + `DEFAULT_COMPOSER_SHORTCUTS` — a bordered keyboard-shortcut
+  help panel (keys column + description; monochrome-degrading border), plus a ready-made
+  list of the composer's built-in chords. Pairs with a new `ChatComposer` prop
+  `onHelpToggle?: () => void`: pressing `?` on an EMPTY buffer calls it (the app toggles the
+  panel) instead of typing the `?`; a `?` mid-text stays literal. Claude Code `?` parity.
+  Omit the prop and `?` is always ordinary text (non-breaking). The `chat` example wires it.
+- Roadmap amended: added M26 Component UX parity — Claude Code tool-card look
+  (`/roadmap-feature component-ux-parity`).
+
+### Changed
+
+- **Tool cards — Claude Code look (M26).** `ToolCallCard` / `ToolResult` now render
+  the Claude Code tool idiom by DEFAULT: a `●` status bullet colored by status
+  (pending gray · success green · failed red; running still animates), a `name(args)`
+  header (the `summary` becomes a dim parenthesized arg suffix, truncated to width),
+  and the result body under a `⎿` corner connector with the continuation indented
+  (per kind — diff/output/preview — unchanged inside). The default `theme.toolStatus`
+  glyph is now `●` across dark/light/no-color (color carries status). New pure export:
+  `formatArgs`. The tool cards were the last agent-surface gap; the other components
+  (ChatMessage, AgentStreaming, AppStatusBar, ChatThread) are documented `no-change`
+  in `docs/component-parity.md`. No consumers existed, so this ships as the default
+  (no opt-in). Accessibility note: under `no-color`, status is color-encoded (matches
+  Claude Code) — see `docs/component-parity.md`.
+- Examples (`chat`, `showcase`, `all-components`, `tools`) — tool cards pass a
+  tool-name + args-shaped `summary` so the header reads `Bash(pnpm install)`; earlier
+  copy advertising the `@`-file mention + path navigation is retained.
+
+### Fixed
+
+- `ChatComposer` `@`-mentions — hidden entries (names starting with `.`) are now excluded
+  by default (file-picker convention): typing `@` no longer surfaces `.claude/…` and other
+  dotfiles/dot-directories, and `@~/` no longer lists `.ansible/` etc. Typing the dot opts
+  back in (`@~/.` reveals hidden entries). The cwd walk never descends into dot-directories.
+
 ## [0.27.0] - 2026-07-09
 
 ### Added
