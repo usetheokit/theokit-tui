@@ -581,7 +581,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 **Top risks (new):** 1. Table layout under narrow widths — width-matrix oracles (M9 idiom). 2. Re-audit temptation to self-grade leniently — the audit runs as an adversarial review panel, not a checkbox pass.
 
-### M26 — [ ] Component UX parity — Claude Code tool-card look
+### M26 — [x] Component UX parity — Claude Code tool-card look
 
 > Added 2026-07-09 by `/roadmap-feature` (slug: `component-ux-parity`). See CHANGELOG `[Unreleased] § Added`.
 
@@ -605,6 +605,31 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 **Why now (from grill Q1):**
 
 The composer already reached input parity (`/ @ ! ?`), but the tool cards / outputs still diverge from the Claude Code look — the biggest perceived gap when running the live demos. Anchoring on ToolCallCard/ToolResult delivers the highest-visibility parity win, with a bounded sweep of the remaining agent-surface components.
+
+### M27 — [ ] ASCII-art banner header (`<Banner>`)
+
+> Added 2026-07-10 by `/roadmap-feature` (slug: `ascii-banner-header`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Ship a `<Banner>` agent-surface component — a big ASCII-art logo (ready `art` string, or generated from `text`+`font` via an OPTIONAL `figlet` peer, degrading to the bold product name when absent) plus an optional framed status panel (model/agent/dir rows in a themed bordered box), with a `minimal|banner` layout — a Qwen/OpenCode-style polished agent-CLI startup header, extending the WelcomeBanner/AppStatusBar family.
+
+**Definition of done:**
+
+- [ ] `<Banner>` renders an ASCII-art logo from a ready `art` string (verbatim, themed accent) OR degrades to the bold product name when `art` is absent (WelcomeBanner style). The component is PURE/sync (no async in render). (snapshot tests)
+- [ ] Optional framed status panel: `status?: {label,value}[]` renders in a themed bordered box (round/accent; `single` under monochrome) — the `┌─ model/dir ─┐` look. (snapshot test)
+- [ ] Layout `layout?: 'minimal' | 'banner'` (default `minimal` = current behavior; `banner` = art + status panel). Non-breaking; export-surface stays green.
+- [ ] `renderFigletArt(text, font?)` async helper: `figlet` is an OPTIONAL peer (`peerDependenciesMeta` optional). Absent → returns null → app falls back to the bold name; a test proves the degrade WITHOUT figlet installed.
+- [ ] Live tmux evidence of the banner layout (art + status box) + `pnpm gates` green.
+
+**Dependencies:** M9, M25
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Optional-peer degrade — `figlet` as an OPTIONAL peer must degrade cleanly when absent (a hard import would break consumers without it). Mitigation: dynamic import + null return + a test that runs WITHOUT figlet (CodeBlock/highlighter precedent).
+2. Art width/wrap — block-letter art is wide (>80 cols) and multi-line; it can overflow narrow terminals and misalign next to the status box. Mitigation: art in its own Box (no wrap-mangling); side-by-side degrades to stacked when narrow; width-matrix oracle + live tmux check.
+
+**Why now (from grill Q1):**
+
+Explicit user request (Qwen/OpenCode parity). The current header is minimal (name + model only) and it is the first impression of any agent CLI built on the lib. A polished ASCII-art banner + framed status box is the highest-visibility first-run improvement, extending the already-shipped WelcomeBanner/AppStatusBar family.
 
 ## State-of-the-art references
 

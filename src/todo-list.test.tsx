@@ -2,7 +2,8 @@ import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 
 import { render } from "../tests/renderer/itl-adapter.js";
-import { TodoList, type TodoItem } from "./todo-list.js";
+import { renderFrame } from "../tests/helpers.js";
+import { TodoList, todoRowStyle, type TodoItem } from "./todo-list.js";
 import { TheoTUIProvider, themes } from "./theme.js";
 
 // M24 T1.2 — TodoList over the itl-adapter. A live checklist keyed by stable id
@@ -123,5 +124,39 @@ describe("TodoList (M24 T1.2)", () => {
     expect(frame).toContain("◐ wire up");
     expect(frame).toContain("☐ test");
     app.unmount();
+  });
+});
+
+describe("todoRowStyle (M26.1 Claude Code parity)", () => {
+  it("done_is_dim_and_struck_through", () => {
+    expect(todoRowStyle("done")).toEqual({
+      dimColor: true,
+      strikethrough: true,
+    });
+  });
+  it("active_is_bold", () => {
+    expect(todoRowStyle("active")).toEqual({ bold: true });
+  });
+  it("pending_has_no_emphasis", () => {
+    expect(todoRowStyle("pending")).toEqual({});
+  });
+});
+
+describe("TodoList render attributes (SGR — ink harness)", () => {
+  it("a_done_row_renders_the_strikethrough_SGR", async () => {
+    // itl-adapter strips SGR; the ink renderFrame preserves it — assert the
+    // strikethrough attribute (SGR 9) actually reaches the terminal bytes.
+    const frame = await renderFrame(
+      <TodoList items={[{ id: "a", label: "shipped", status: "done" }]} />,
+    );
+    expect(frame).toMatch(/\[[0-9;]*9m/); // strikethrough opened
+    expect(frame).toContain("shipped");
+  });
+
+  it("an_active_row_renders_the_bold_SGR", async () => {
+    const frame = await renderFrame(
+      <TodoList items={[{ id: "a", label: "working", status: "active" }]} />,
+    );
+    expect(frame).toMatch(/\[[0-9;]*1m/); // bold opened
   });
 });

@@ -33,5 +33,9 @@ it(
     const once = out.split("Theo TUI").length - 1;
     expect(once).toBe(1);
     expect(out).toContain("/help for commands");
+    // M27: the <Banner> banner layout — the ASCII art + the framed status panel.
+    expect(out).toContain("|_.__/"); // a distinctive art fragment (verbatim)
+    expect(out).toContain("model");
+    expect(out).toContain("theo-demo-1");
   },
 );

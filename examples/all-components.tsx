@@ -15,6 +15,7 @@ import {
   CostMeter,
   DiffViewer,
   ExpandableOutput,
+  FreeTextInput,
   MarkdownText,
   MultiStepProgress,
   PlanApproval,
@@ -165,20 +166,20 @@ const PAGES: { title: string; body: ReactNode }[] = [
     title: "3/7 · Tool cards & results",
     body: (
       <Box flexDirection="column" gap={1}>
-        <ToolCall name="search files" status="running" />
+        <ToolCall name="Grep" status="running" summary="retry" />
         <ToolCallCard
-          name="bash pnpm vitest run"
+          name="Bash"
           status="failed"
-          summary="reproduce the flake"
+          summary="pnpm vitest run"
           result={{
             kind: "output",
             shell: { stdout: "573 passed", stderr: "1 flaky", exitCode: 1 },
           }}
         />
         <ToolCallCard
-          name="edit retry.ts"
+          name="Edit"
           status="success"
-          summary="linear capped backoff"
+          summary="retry.ts"
           result={{ kind: "diff", patch: PATCH }}
         />
         <Text dimColor>ToolResult (interactive — ctrl+o):</Text>
@@ -228,7 +229,8 @@ const PAGES: { title: string; body: ReactNode }[] = [
           <Text dimColor>… expanded body …</Text>
         </CollapsibleBlock>
         <Toast
-          message="build finished ✓"
+          message="build finished"
+          variant="success"
           durationMs={9_999_999}
           onDismiss={() => {}}
         />
@@ -260,6 +262,12 @@ const PAGES: { title: string; body: ReactNode }[] = [
         <PlanApproval
           plan={"# Plan\n\n1. Ship it\n2. Celebrate"}
           onDecision={() => {}}
+          autoFocus={false}
+        />
+        <Text dimColor>FreeTextInput (single-line prompt):</Text>
+        <FreeTextInput
+          label="Commit message:"
+          onSubmit={() => {}}
           autoFocus={false}
         />
       </Box>

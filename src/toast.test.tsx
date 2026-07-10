@@ -42,6 +42,47 @@ describe("Toast (M24 T4.1)", () => {
     });
   });
 
+  it("success_variant_shows_a_green_status_bullet", () => {
+    // M26.1: a success/error variant prefixes a `●` status bullet colored by the
+    // theme status token (green success / red error); info (default) has none.
+    let instance!: ReturnType<typeof render>;
+    act(() => {
+      instance = render(
+        <Toast
+          message="build finished"
+          variant="success"
+          onDismiss={() => {}}
+        />,
+      );
+    });
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("●");
+    expect(frame).toMatch(/\[32m/); // green SGR
+    act(() => instance.unmount());
+  });
+
+  it("error_variant_shows_a_red_status_bullet", () => {
+    let instance!: ReturnType<typeof render>;
+    act(() => {
+      instance = render(
+        <Toast message="build broke" variant="error" onDismiss={() => {}} />,
+      );
+    });
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("●");
+    expect(frame).toMatch(/\[31m/); // red SGR
+    act(() => instance.unmount());
+  });
+
+  it("default_info_variant_has_no_status_bullet", () => {
+    let instance!: ReturnType<typeof render>;
+    act(() => {
+      instance = render(<Toast message="heads up" onDismiss={() => {}} />);
+    });
+    expect(instance.lastFrame()).not.toContain("●");
+    act(() => instance.unmount());
+  });
+
   it("fires_onDismiss_at_exactly_durationMs", () => {
     let dismissed = 0;
     let instance!: ReturnType<typeof render>;

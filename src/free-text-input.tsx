@@ -25,15 +25,22 @@ export interface FreeTextInputProps {
   onSubmit: (text: string) => void;
   /** Called when Esc blurs the input (cancel back to the parent surface). */
   onCancel?: () => void;
+  /**
+   * Take focus on mount (default true). Set false for a non-interactive render
+   * (e.g. a component gallery) so the input does not grab stdin — parity with
+   * `ChatComposer` / `SelectList` / the agent-decision surfaces.
+   */
+  autoFocus?: boolean;
 }
 
 export function FreeTextInput({
   label,
   onSubmit,
   onCancel,
+  autoFocus = true,
 }: FreeTextInputProps) {
   const [state, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
-  const { isFocused } = useFocus({ autoFocus: true });
+  const { isFocused } = useFocus({ autoFocus });
 
   // Esc-cancel via the M20 priority arbiter: once the input has been focused, a
   // subsequent blur can only be an Esc (nothing else is focusable while this is

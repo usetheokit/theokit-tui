@@ -67,6 +67,26 @@ describe("FreeTextInput (M23)", () => {
     app.unmount();
   });
 
+  it("autoFocus_false_does_not_grab_input", async () => {
+    // Parity with the other interactive components (SelectList/ChatComposer):
+    // an unfocused input echoes nothing and never submits — safe in a gallery.
+    const submitted: string[] = [];
+    const app = render(
+      createElement(FreeTextInput, {
+        label: "Type:",
+        onSubmit: (t: string) => submitted.push(t),
+        autoFocus: false,
+      }),
+    );
+    await waitForFrame(app, "Type:");
+    app.stdin.write("hello");
+    app.stdin.write("\r");
+    await app.flush();
+    expect(app.lastFrame()).not.toContain("hello");
+    expect(submitted).toEqual([]);
+    app.unmount();
+  });
+
   it("backspace_deletes_the_last_grapheme", async () => {
     const app = render(
       createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }),

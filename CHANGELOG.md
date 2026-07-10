@@ -19,6 +19,45 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.29.0] - 2026-07-10
+
+### Added
+
+- `Banner` (M27) — an ASCII-art startup header. Renders a provided `art` string verbatim
+  (accent-themed) OR degrades to the bold product `name` when `art` is absent (the
+  WelcomeBanner idiom); PURE/sync. Optional framed status panel (`status?: {label,value}[]`
+  in a themed bordered box — round/accent, `single` under monochrome) and a
+  `layout?: 'minimal' | 'banner'` prop (default `minimal`; `banner` stacks the art above
+  the status panel). Plus `renderFigletArt(text, font?)` — an async helper that generates
+  art via an OPTIONAL `figlet` peer (`peerDependenciesMeta.figlet.optional`) and returns
+  `null` when figlet is absent or the font is unknown (so callers fall back to `name`);
+  and a pure `bannerArtWidth(art)` (widest line via `string-width`). New exports: `Banner`,
+  `BannerProps`, `BannerStatusRow`, `renderFigletArt`, `bannerArtWidth`, `FigletLike`,
+  `FigletLoader`. No new REQUIRED dependency (figlet is an optional peer).
+- Roadmap amended: added M27 ASCII-art banner header (`<Banner>`)
+  (`/roadmap-feature ascii-banner-header`).
+- `Toast` — a `variant?: 'info' | 'success' | 'error'` prop (default `info`). `success`/`error`
+  color the border by the theme status token and prefix a `●` status bullet; `info` keeps the
+  accent border with no bullet. Additive, non-breaking. New export `ToastVariant`.
+- `FreeTextInput` — an `autoFocus?: boolean` prop (default true), matching the rest of
+  the interactive component family (`ChatComposer` / `SelectList` / the agent-decision
+  surfaces). `autoFocus={false}` renders the input without grabbing stdin — required to
+  demo it in a non-interactive component gallery. Found by an examples↔components
+  coverage audit: `FreeTextInput` had zero example coverage AND was the only interactive
+  component missing focus control. Now demonstrated in `examples/decisions.tsx` (the
+  round-trip) and `examples/all-components.tsx` (the gallery).
+
+### Changed
+
+- Examples (`all-components`, `stream`) — tool cards now pass a tool-name + args-shaped
+  `summary` (e.g. `Edit(retry.ts)`, `Bash(pnpm test)`), matching the M26 `name(args)`
+  convention already applied to `tools`/`showcase`. All five tool-card examples are now
+  consistent.
+- Live-progress UX (Claude Code parity): `TodoList` now renders `done` items dim +
+  **strikethrough** and the `active` item **bold** (the signature completed-todo look;
+  propagates to `MultiStepProgress`, which reuses it). `ThinkingBlock` prefixes its summary
+  with the `✻` thinking marker. New pure export `todoRowStyle`.
+
 ## [0.28.0] - 2026-07-10
 
 ### Added

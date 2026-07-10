@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   ApprovalPrompt,
   DiffViewer,
+  FreeTextInput,
   PlanApproval,
   QuestionPrompt,
   type PlanDecision,
@@ -14,9 +15,10 @@ import { createInputSource } from "../src/renderer/input/input-source.js";
 import { InputContext } from "../src/renderer/input/use-input.js";
 
 // M23 example: a scripted agent-decision ROUND-TRIP — ApprovalPrompt (composing a
-// DiffViewer preview) → QuestionPrompt (options + free text) → PlanApproval
-// (markdown body + approve/revise). Each surface is callback-only; the app owns
-// the sequencing (this state machine lives HERE, never in the lib). Run:
+// DiffViewer preview) → QuestionPrompt (options + free text) → FreeTextInput
+// (single-line prompt) → PlanApproval (markdown body + approve/revise). Each
+// surface is callback-only; the app owns the sequencing (this state machine lives
+// HERE, never in the lib). Run:
 // `pnpm tsx examples/decisions.tsx`. Requires a raw-mode TTY.
 
 const PATCH = [
@@ -32,7 +34,7 @@ const PATCH = [
 
 const PLAN = "# Plan\n\n1. Bump retries to 5\n2. Add a regression test\n";
 
-type Stage = "approve" | "question" | "plan" | "done";
+type Stage = "approve" | "question" | "freetext" | "plan" | "done";
 
 function Demo() {
   const [stage, setStage] = useState<Stage>("approve");
@@ -66,6 +68,17 @@ function Demo() {
         allowFreeText
         onAnswer={(a: QuestionAnswer) => {
           record(`question: ${JSON.stringify(a)}`);
+          setStage("freetext");
+        }}
+      />
+    );
+  }
+  if (stage === "freetext") {
+    return (
+      <FreeTextInput
+        label="Commit message:"
+        onSubmit={(text) => {
+          record(`freetext: ${text}`);
           setStage("plan");
         }}
       />
