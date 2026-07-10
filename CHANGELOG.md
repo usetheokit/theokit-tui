@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.28.0] - 2026-07-10
+
+### Added
+
 - `ChatComposer` **bang mode** (`!` quick command — Claude Code parity). New optional
   `onShellCommand?: (command: string) => void` prop: when provided, typing `!` at the start
   of the buffer enters a distinct shell mode (the prompt drops to `!` and the hint changes);
@@ -44,18 +58,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tool-name + args-shaped `summary` so the header reads `Bash(pnpm install)`; earlier
   copy advertising the `@`-file mention + path navigation is retained.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - `ChatComposer` `@`-mentions — hidden entries (names starting with `.`) are now excluded
   by default (file-picker convention): typing `@` no longer surfaces `.claude/…` and other
   dotfiles/dot-directories, and `@~/` no longer lists `.ansible/` etc. Typing the dot opts
   back in (`@~/.` reveals hidden entries). The cwd walk never descends into dot-directories.
-
-### Security
 
 ## [0.27.0] - 2026-07-09
 
