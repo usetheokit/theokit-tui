@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.29.0] - 2026-07-10
+
+### Added
+
 - `Banner` (M27) — an ASCII-art startup header. Renders a provided `art` string verbatim
   (accent-themed) OR degrades to the bold product `name` when `art` is absent (the
   WelcomeBanner idiom); PURE/sync. Optional framed status panel (`status?: {label,value}[]`
@@ -43,14 +57,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **strikethrough** and the `active` item **bold** (the signature completed-todo look;
   propagates to `MultiStepProgress`, which reuses it). `ThinkingBlock` prefixes its summary
   with the `✻` thinking marker. New pure export `todoRowStyle`.
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.28.0] - 2026-07-10
 

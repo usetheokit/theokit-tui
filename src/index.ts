@@ -1,4 +1,4 @@
-export const VERSION = "0.28.0";
+export const VERSION = "0.29.0";
 
 export {
   TheoTUIProvider,
