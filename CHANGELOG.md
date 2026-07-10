@@ -22,6 +22,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Examples — the `banner` / `all-components` ASCII logo now reads **"Theo"** (was
+  "Thoo"): the hand-typed art had collapsed figlet's 5-row rendering into 4 rows,
+  dropping the `e`-crossbar row so the `e` rendered as a round `o`. Replaced with the
+  verified 5-row figlet "Standard" art; the integration test asserts the `\___|\___/`
+  bottom row (the `\___|` proves the `e`). Examples only — no shipped code affected.
+
 ### Security
 
 ## [0.29.0] - 2026-07-10
