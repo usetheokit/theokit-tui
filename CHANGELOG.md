@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Examples — `all-components` gallery (page 1) now demonstrates the M27 `<Banner>`
+  (ASCII-art logo + framed status box) alongside `WelcomeBanner`, closing the
+  examples↔components coverage gap; `banner` example wires `renderFigletArt`
+  (optional figlet peer) with a ready-art fallback to document the real pattern.
+
 ### Deprecated
 
 ### Removed

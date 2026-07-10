@@ -5,6 +5,7 @@ import {
   TheoTUIProvider,
   VERSION,
   WelcomeBanner,
+  renderFigletArt,
 } from "../src/index.js";
 
 // Banner demos (plan m9 WelcomeBanner + m27 <Banner>): the startup header every
@@ -28,6 +29,12 @@ const THEO_ART = [
   "   |_| |_||_\\___|_.__/\\___/",
 ].join("\n");
 
+// The real integration pattern: generate the art from text via the OPTIONAL
+// `figlet` peer, and fall back to a ready art string when figlet is not
+// installed (`renderFigletArt` returns null). With no figlet in this repo, the
+// fallback wins — install `figlet` to see the generated 400-font art instead.
+const ART = (await renderFigletArt("Theo", "Standard")) ?? THEO_ART;
+
 function Demo() {
   return (
     <TheoTUIProvider>
@@ -46,12 +53,12 @@ function Demo() {
           <Text dimColor>cwd: ~/projects/demo</Text>
         </WelcomeBanner>
         {/* M27: the <Banner> banner layout — ASCII-art logo + framed status box.
-            Generate `art` from text with `renderFigletArt` (optional figlet peer);
-            here we pass a ready art string. */}
+            `ART` is generated via renderFigletArt (optional figlet peer) with a
+            ready-string fallback when figlet is absent — see the top of the file. */}
         <Banner
           name="Theo TUI"
           version={VERSION}
-          art={THEO_ART}
+          art={ART}
           layout="banner"
           status={[
             { label: "model", value: "theo-demo-1" },
