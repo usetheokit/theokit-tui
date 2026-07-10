@@ -581,7 +581,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 **Top risks (new):** 1. Table layout under narrow widths — width-matrix oracles (M9 idiom). 2. Re-audit temptation to self-grade leniently — the audit runs as an adversarial review panel, not a checkbox pass.
 
-### M26 — [ ] Component UX parity — Claude Code tool-card look
+### M26 — [x] Component UX parity — Claude Code tool-card look
 
 > Added 2026-07-09 by `/roadmap-feature` (slug: `component-ux-parity`). See CHANGELOG `[Unreleased] § Added`.
 
