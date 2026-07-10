@@ -581,6 +581,31 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 **Top risks (new):** 1. Table layout under narrow widths — width-matrix oracles (M9 idiom). 2. Re-audit temptation to self-grade leniently — the audit runs as an adversarial review panel, not a checkbox pass.
 
+### M26 — [ ] Component UX parity — Claude Code tool-card look
+
+> Added 2026-07-09 by `/roadmap-feature` (slug: `component-ux-parity`). See CHANGELOG `[Unreleased] § Added`.
+
+**Objective:** Evolve the agent-surface components toward Claude Code visual/interaction parity, anchored on ToolCallCard/ToolResult (the `● Bash(...)` header + `⎿` result-tree look).
+
+**Definition of done:**
+
+- [ ] `ToolCallCard`: Claude-Code-style header — a status glyph `●` colored by status (running / success / failed) + `name(args)` on one line, args truncated to width (snapshot test).
+- [ ] `ToolResult`: body rendered under a `⎿` corner connector with indented lines, per kind (diff / output / preview) — snapshot test per kind.
+- [ ] The new look ships as the DEFAULT (no consumers yet — owner decision Q4: no backward-compat constraint, do what's best for the system); full suite + export-surface stay green.
+- [ ] Parity sweep of the other agent-surface components (ChatMessage, AgentStreaming, AppStatusBar, ChatThread): each gets ONE documented tweak OR a `no-change` with rationale — recorded in `docs/component-parity.md`.
+- [ ] Live verification (tmux) of the tool cards across all 3 kinds + a captured frame in the parity doc.
+
+**Dependencies:** M25
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Render regression — the `●` / `⎿` glyphs are ambiguous/wide-width; the new indentation/tree can break wrap, alignment, and existing snapshots under the V4 renderer. Mitigation: per-kind snapshot tests + live verification at real width.
+2. Scope creep — the parity sweep (DoD 4) is subjective and can balloon. Mitigation: cap at ONE documented change-or-no-change per named component.
+
+**Why now (from grill Q1):**
+
+The composer already reached input parity (`/ @ ! ?`), but the tool cards / outputs still diverge from the Claude Code look — the biggest perceived gap when running the live demos. Anchoring on ToolCallCard/ToolResult delivers the highest-visibility parity win, with a bounded sweep of the remaining agent-surface components.
+
 ## State-of-the-art references
 
 Cloned under `.claude/knowledge-base/references/` (shallow, blob-filter). Full catalog + what-to-study in

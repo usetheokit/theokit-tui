@@ -23,6 +23,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `onHelpToggle?: () => void`: pressing `?` on an EMPTY buffer calls it (the app toggles the
   panel) instead of typing the `?`; a `?` mid-text stays literal. Claude Code `?` parity.
   Omit the prop and `?` is always ordinary text (non-breaking). The `chat` example wires it.
+- Roadmap amended: added M26 Component UX parity — Claude Code tool-card look
+  (`/roadmap-feature component-ux-parity`).
 
 ### Changed
 
