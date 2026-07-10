@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Roadmap amended: added M27 ASCII-art banner header (`<Banner>`)
+  (`/roadmap-feature ascii-banner-header`).
 - `Toast` — a `variant?: 'info' | 'success' | 'error'` prop (default `info`). `success`/`error`
   color the border by the theme status token and prefix a `●` status bullet; `info` keeps the
   accent border with no bullet. Additive, non-breaking. New export `ToastVariant`.
