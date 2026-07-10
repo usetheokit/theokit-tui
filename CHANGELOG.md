@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Examples (`all-components`, `stream`) — tool cards now pass a tool-name + args-shaped
+  `summary` (e.g. `Edit(retry.ts)`, `Bash(pnpm test)`), matching the M26 `name(args)`
+  convention already applied to `tools`/`showcase`. All five tool-card examples are now
+  consistent.
+
 ### Deprecated
 
 ### Removed

@@ -165,20 +165,20 @@ const PAGES: { title: string; body: ReactNode }[] = [
     title: "3/7 · Tool cards & results",
     body: (
       <Box flexDirection="column" gap={1}>
-        <ToolCall name="search files" status="running" />
+        <ToolCall name="Grep" status="running" summary="retry" />
         <ToolCallCard
-          name="bash pnpm vitest run"
+          name="Bash"
           status="failed"
-          summary="reproduce the flake"
+          summary="pnpm vitest run"
           result={{
             kind: "output",
             shell: { stdout: "573 passed", stderr: "1 flaky", exitCode: 1 },
           }}
         />
         <ToolCallCard
-          name="edit retry.ts"
+          name="Edit"
           status="success"
-          summary="linear capped backoff"
+          summary="retry.ts"
           result={{ kind: "diff", patch: PATCH }}
         />
         <Text dimColor>ToolResult (interactive — ctrl+o):</Text>

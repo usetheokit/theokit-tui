@@ -86,8 +86,9 @@ function Demo() {
         {!streaming.active && (
           <Box flexDirection="column" marginTop={1}>
             <ToolCallCard
-              name="edit retry.ts"
+              name="Edit"
               status="success"
+              summary="retry.ts"
               result={{
                 kind: "diff",
                 patch: [
@@ -102,8 +103,9 @@ function Demo() {
               }}
             />
             <ToolCallCard
-              name="bash pnpm test"
+              name="Bash"
               status="failed"
+              summary="pnpm test"
               result={{
                 kind: "output",
                 shell: {
@@ -114,8 +116,9 @@ function Demo() {
               }}
             />
             <ToolCallCard
-              name="read retry.ts"
+              name="Read"
               status="success"
+              summary="retry.ts"
               result={{
                 kind: "preview",
                 text: Array.from(
