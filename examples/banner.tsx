@@ -1,16 +1,37 @@
 import { Box, Text, render } from "ink";
 
-import { TheoTUIProvider, VERSION, WelcomeBanner } from "../src/index.js";
+import {
+  Banner,
+  TheoTUIProvider,
+  VERSION,
+  WelcomeBanner,
+} from "../src/index.js";
 
-// Welcome-banner demo (plan m9-welcome-banner T2.2 — TTFATT caller): the
-// startup banner every agent CLI mounts first. Piped (non-TTY) stdout is the
-// EC-2 environment by construction — columns undefined → width fallback 60.
-// M12: `animated` opts into the < 2 s reveal on an interactive terminal;
-// piped runs stay on the static path (the gate is TTY-gated).
+// Banner demos (plan m9 WelcomeBanner + m27 <Banner>): the startup header every
+// agent CLI mounts first. Piped (non-TTY) stdout is the EC-2 environment by
+// construction — columns undefined → width fallback 60. M12: `animated` opts into
+// the < 2 s reveal on an interactive terminal; piped runs stay on the static path.
+//
+// M27 <Banner> banner layout (piped, `pnpm example:banner | cat`):
+//   ___          _
+//  |_   _|_ _  ___| |__  ___
+//    | | | ' \/ -_) '_ \/ _ \
+//    |_| |_||_\___|_.__/\___/
+//  ╭────────────────────────────╮
+//  │ model theo-demo-1           │
+//  │ cwd   ~/projects/app        │
+//  ╰────────────────────────────╯
+const THEO_ART = [
+  "  ___          _",
+  " |_   _|_ _  ___| |__  ___",
+  "   | | | ' \\/ -_) '_ \\/ _ \\",
+  "   |_| |_||_\\___|_.__/\\___/",
+].join("\n");
+
 function Demo() {
   return (
     <TheoTUIProvider>
-      <Box flexDirection="column">
+      <Box flexDirection="column" gap={1}>
         <WelcomeBanner
           name="Theo TUI"
           version={VERSION}
@@ -24,6 +45,19 @@ function Demo() {
         >
           <Text dimColor>cwd: ~/projects/demo</Text>
         </WelcomeBanner>
+        {/* M27: the <Banner> banner layout — ASCII-art logo + framed status box.
+            Generate `art` from text with `renderFigletArt` (optional figlet peer);
+            here we pass a ready art string. */}
+        <Banner
+          name="Theo TUI"
+          version={VERSION}
+          art={THEO_ART}
+          layout="banner"
+          status={[
+            { label: "model", value: "theo-demo-1" },
+            { label: "cwd", value: "~/projects/app" },
+          ]}
+        />
       </Box>
     </TheoTUIProvider>
   );

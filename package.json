@@ -55,6 +55,7 @@
     "prepublishOnly": "pnpm gates && pnpm build"
   },
   "peerDependencies": {
+    "figlet": "^1.7.0",
     "lowlight": "^3.0.0",
     "react": "^19.2.0"
   },
@@ -107,6 +108,9 @@
     }
   },
   "peerDependenciesMeta": {
+    "figlet": {
+      "optional": true
+    },
     "lowlight": {
       "optional": true
     }

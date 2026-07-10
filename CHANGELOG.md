@@ -9,6 +9,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `Banner` (M27) — an ASCII-art startup header. Renders a provided `art` string verbatim
+  (accent-themed) OR degrades to the bold product `name` when `art` is absent (the
+  WelcomeBanner idiom); PURE/sync. Optional framed status panel (`status?: {label,value}[]`
+  in a themed bordered box — round/accent, `single` under monochrome) and a
+  `layout?: 'minimal' | 'banner'` prop (default `minimal`; `banner` stacks the art above
+  the status panel). Plus `renderFigletArt(text, font?)` — an async helper that generates
+  art via an OPTIONAL `figlet` peer (`peerDependenciesMeta.figlet.optional`) and returns
+  `null` when figlet is absent or the font is unknown (so callers fall back to `name`);
+  and a pure `bannerArtWidth(art)` (widest line via `string-width`). New exports: `Banner`,
+  `BannerProps`, `BannerStatusRow`, `renderFigletArt`, `bannerArtWidth`, `FigletLike`,
+  `FigletLoader`. No new REQUIRED dependency (figlet is an optional peer).
 - Roadmap amended: added M27 ASCII-art banner header (`<Banner>`)
   (`/roadmap-feature ascii-banner-header`).
 - `Toast` — a `variant?: 'info' | 'success' | 'error'` prop (default `info`). `success`/`error`

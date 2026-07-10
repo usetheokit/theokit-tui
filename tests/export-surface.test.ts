@@ -124,10 +124,21 @@ describe("public entry surface (T0.2)", () => {
       peerDependenciesMeta: Record<string, { optional?: boolean }>;
     };
     expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "figlet",
       "lowlight",
       "react",
     ]);
     expect(pkg.peerDependenciesMeta["lowlight"]?.optional).toBe(true);
+    // M27: figlet is also an OPTIONAL peer (renderFigletArt degrades to null).
+    expect(pkg.peerDependenciesMeta["figlet"]?.optional).toBe(true);
+  });
+
+  it("public_entry_exposes_banner_surface", async () => {
+    const mod = await import("../src/index.js");
+    expect(typeof mod.Banner).toBe("function");
+    expect(typeof mod.renderFigletArt).toBe("function");
+    expect(typeof mod.bannerArtWidth).toBe("function");
+    expect(mod.bannerArtWidth("ab\nabcd")).toBe(4);
   });
 
   it("public_entry_exposes_agent_surface", async () => {

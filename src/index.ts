@@ -192,3 +192,11 @@ export type { OscSink } from "./terminal-osc.js";
 // ChatComposer.onHelpToggle (fires when `?` is pressed on an empty buffer).
 export { KeyboardHelp, DEFAULT_COMPOSER_SHORTCUTS } from "./keyboard-help.js";
 export type { KeyboardHelpProps, KeyboardShortcut } from "./keyboard-help.js";
+
+// M27 — ASCII-art banner header. <Banner> is pure/sync (renders a provided `art`
+// string or degrades to the bold name); `renderFigletArt` generates art via an
+// OPTIONAL `figlet` peer (degrades to null when absent).
+export { Banner } from "./banner.js";
+export type { BannerProps, BannerStatusRow } from "./banner.js";
+export { renderFigletArt, bannerArtWidth } from "./figlet-art.js";
+export type { FigletLike, FigletLoader } from "./figlet-art.js";
