@@ -229,7 +229,8 @@ const PAGES: { title: string; body: ReactNode }[] = [
           <Text dimColor>… expanded body …</Text>
         </CollapsibleBlock>
         <Toast
-          message="build finished ✓"
+          message="build finished"
+          variant="success"
           durationMs={9_999_999}
           onDismiss={() => {}}
         />

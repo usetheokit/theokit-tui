@@ -39,11 +39,25 @@ function statusColor(status: TodoStatus, theme: TheoTheme): string | undefined {
   return undefined;
 }
 
+/** Row text emphasis by status (M26.1 Claude Code parity): a done item is dim +
+ * struck through (the signature completed-todo look); the active item is bold;
+ * pending is plain. The status GLYPH still carries the meaning under monochrome
+ * (M6 degrade-as-data) — these attributes only reinforce it. Exported for tests. */
+export function todoRowStyle(status: TodoStatus): {
+  dimColor?: boolean;
+  strikethrough?: boolean;
+  bold?: boolean;
+} {
+  if (status === "done") return { dimColor: true, strikethrough: true };
+  if (status === "active") return { bold: true };
+  return {};
+}
+
 const Row = memo(
   ({ item, theme }: { item: TodoItem; theme: TheoTheme }) => {
     const color = statusColor(item.status, theme);
     return (
-      <Text {...(item.status === "done" ? { dimColor: true } : {})}>
+      <Text {...todoRowStyle(item.status)}>
         <Text {...(color ? { color } : {})}>{STATUS_GLYPH[item.status]}</Text>{" "}
         {item.label}
       </Text>

@@ -9,6 +9,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `Toast` — a `variant?: 'info' | 'success' | 'error'` prop (default `info`). `success`/`error`
+  color the border by the theme status token and prefix a `●` status bullet; `info` keeps the
+  accent border with no bullet. Additive, non-breaking. New export `ToastVariant`.
 - `FreeTextInput` — an `autoFocus?: boolean` prop (default true), matching the rest of
   the interactive component family (`ChatComposer` / `SelectList` / the agent-decision
   surfaces). `autoFocus={false}` renders the input without grabbing stdin — required to
@@ -23,6 +26,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `summary` (e.g. `Edit(retry.ts)`, `Bash(pnpm test)`), matching the M26 `name(args)`
   convention already applied to `tools`/`showcase`. All five tool-card examples are now
   consistent.
+- Live-progress UX (Claude Code parity): `TodoList` now renders `done` items dim +
+  **strikethrough** and the `active` item **bold** (the signature completed-todo look;
+  propagates to `MultiStepProgress`, which reuses it). `ThinkingBlock` prefixes its summary
+  with the `✻` thinking marker. New pure export `todoRowStyle`.
 
 ### Deprecated
 

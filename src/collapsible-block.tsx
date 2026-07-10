@@ -82,6 +82,7 @@ export function ThinkingBlock({
     <CollapsibleBlock
       summary={
         <Text dimColor italic>
+          {"✻ "}
           {summary}
         </Text>
       }

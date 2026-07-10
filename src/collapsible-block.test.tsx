@@ -122,6 +122,14 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
     app.unmount();
   });
 
+  it("thinking_block_preset_shows_the_sparkle_glyph_and_summary", async () => {
+    // M26.1 Claude Code parity: the thinking marker `✻` precedes the summary.
+    const app = render(<ThinkingBlock>reasoning</ThinkingBlock>);
+    await app.flush();
+    expect(app.lastFrame()).toContain("✻ Thinking…");
+    app.unmount();
+  });
+
   it("thinking_block_preset_is_collapsed_and_renders_markdown_body_when_expanded", async () => {
     const app = render(
       <ThinkingBlock>Let me **reason** about it</ThinkingBlock>,
