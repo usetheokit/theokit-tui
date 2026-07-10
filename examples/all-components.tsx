@@ -131,10 +131,11 @@ const PAGES: { title: string; body: ReactNode }[] = [
           version={VERSION}
           layout="banner"
           art={[
-            "  _____ _              ",
+            "  _____ _",
             " |_   _| |__   ___  ___",
             "   | | | '_ \\ / _ \\/ _ \\",
-            "   |_| |_| |_|\\___/\\___/",
+            "   | | | | | |  __/ (_) |",
+            "   |_| |_| |_|\\___|\\___/",
           ].join("\n")}
           status={[
             { label: "model", value: "theo-demo-1" },

@@ -13,20 +13,23 @@ import {
 // construction — columns undefined → width fallback 60. M12: `animated` opts into
 // the < 2 s reveal on an interactive terminal; piped runs stay on the static path.
 //
-// M27 <Banner> banner layout (piped, `pnpm example:banner | cat`):
-//   ___          _
-//  |_   _|_ _  ___| |__  ___
-//    | | | ' \/ -_) '_ \/ _ \
-//    |_| |_||_\___|_.__/\___/
+// M27 <Banner> banner layout (piped, `pnpm example:banner | cat`) — figlet
+// "Standard" rendering of "Theo" (T-h-e-o; the `e` keeps its `__/` crossbar):
+//    _____ _
+//   |_   _| |__   ___  ___
+//     | | | '_ \ / _ \/ _ \
+//     | | | | | |  __/ (_) |
+//     |_| |_| |_|\___|\___/
 //  ╭────────────────────────────╮
 //  │ model theo-demo-1           │
 //  │ cwd   ~/projects/app        │
 //  ╰────────────────────────────╯
 const THEO_ART = [
-  "  ___          _",
-  " |_   _|_ _  ___| |__  ___",
-  "   | | | ' \\/ -_) '_ \\/ _ \\",
-  "   |_| |_||_\\___|_.__/\\___/",
+  "  _____ _",
+  " |_   _| |__   ___  ___",
+  "   | | | '_ \\ / _ \\/ _ \\",
+  "   | | | | | |  __/ (_) |",
+  "   |_| |_| |_|\\___|\\___/",
 ].join("\n");
 
 // The real integration pattern: generate the art from text via the OPTIONAL
