@@ -149,9 +149,9 @@ function Demo() {
         {showTools && (
           <Box flexDirection="column" marginTop={1}>
             <ToolCallCard
-              name="bash pnpm vitest run retry"
+              name="Bash"
               status="failed"
-              summary="reproduce the flake"
+              summary="pnpm vitest run retry"
               result={{
                 kind: "output",
                 shell: {
@@ -162,9 +162,9 @@ function Demo() {
               }}
             />
             <ToolCallCard
-              name="edit retry.ts"
+              name="Edit"
               status="success"
-              summary="linear capped backoff"
+              summary="retry.ts"
               result={{
                 kind: "diff",
                 patch: [
@@ -179,9 +179,9 @@ function Demo() {
               }}
             />
             <ToolCallCard
-              name="read retry.test.ts"
+              name="Read"
               status="success"
-              summary="verify the regression oracle"
+              summary="retry.test.ts"
               result={{
                 kind: "preview",
                 text: [

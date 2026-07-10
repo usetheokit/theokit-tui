@@ -28,9 +28,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Examples (`chat`, `showcase`, `all-components`) — placeholder/hint copy now advertises
-  the `@`-file mention + path navigation (e.g. "try `@~/` to browse paths"), so the 0.27.0
-  headline feature is discoverable when running the live demos.
+- **Tool cards — Claude Code look (M26).** `ToolCallCard` / `ToolResult` now render
+  the Claude Code tool idiom by DEFAULT: a `●` status bullet colored by status
+  (pending gray · success green · failed red; running still animates), a `name(args)`
+  header (the `summary` becomes a dim parenthesized arg suffix, truncated to width),
+  and the result body under a `⎿` corner connector with the continuation indented
+  (per kind — diff/output/preview — unchanged inside). The default `theme.toolStatus`
+  glyph is now `●` across dark/light/no-color (color carries status). New pure export:
+  `formatArgs`. The tool cards were the last agent-surface gap; the other components
+  (ChatMessage, AgentStreaming, AppStatusBar, ChatThread) are documented `no-change`
+  in `docs/component-parity.md`. No consumers existed, so this ships as the default
+  (no opt-in). Accessibility note: under `no-color`, status is color-encoded (matches
+  Claude Code) — see `docs/component-parity.md`.
+- Examples (`chat`, `showcase`, `all-components`, `tools`) — tool cards pass a
+  tool-name + args-shaped `summary` so the header reads `Bash(pnpm install)`; earlier
+  copy advertising the `@`-file mention + path navigation is retained.
 
 ### Deprecated
 

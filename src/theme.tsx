@@ -118,10 +118,10 @@ export const defaultTheme: TheoTheme = Object.freeze({
     variable: "magenta",
   }),
   toolStatus: Object.freeze({
-    pending: Object.freeze({ glyph: "o", color: "gray" }),
+    pending: Object.freeze({ glyph: "●", color: "gray" }),
     running: Object.freeze({ color: "yellow" }),
-    success: Object.freeze({ glyph: "✓", color: "green" }),
-    failed: Object.freeze({ glyph: "x", color: "red" }),
+    success: Object.freeze({ glyph: "●", color: "green" }),
+    failed: Object.freeze({ glyph: "●", color: "red" }),
   }),
 });
 
@@ -159,10 +159,10 @@ const lightTheme: TheoTheme = Object.freeze({
     variable: "blue",
   }),
   toolStatus: Object.freeze({
-    pending: Object.freeze({ glyph: "o", color: "gray" }),
+    pending: Object.freeze({ glyph: "●", color: "gray" }),
     running: Object.freeze({ color: "yellow" }),
-    success: Object.freeze({ glyph: "✓", color: "green" }),
-    failed: Object.freeze({ glyph: "x", color: "red" }),
+    success: Object.freeze({ glyph: "●", color: "green" }),
+    failed: Object.freeze({ glyph: "●", color: "red" }),
   }),
 });
 
@@ -187,10 +187,10 @@ const noColorTheme: TheoTheme = Object.freeze({
     variable: "",
   }),
   toolStatus: Object.freeze({
-    pending: Object.freeze({ glyph: "o", color: "" }),
+    pending: Object.freeze({ glyph: "●", color: "" }),
     running: Object.freeze({ color: "" }),
-    success: Object.freeze({ glyph: "✓", color: "" }),
-    failed: Object.freeze({ glyph: "x", color: "" }),
+    success: Object.freeze({ glyph: "●", color: "" }),
+    failed: Object.freeze({ glyph: "●", color: "" }),
   }),
 });
 

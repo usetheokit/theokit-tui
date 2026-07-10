@@ -129,7 +129,7 @@ describe("public API integration (M2 T3.1 — tool scene)", () => {
         </Box>
       </TheoTUIProvider>,
     );
-    expect(frame).toContain("✓");
+    expect(frame).toContain("●");
     expect(frame).toContain("130 passed");
     expect(frame).toContain("stderr:");
     expect(frame).toContain("deprecation warning");
@@ -157,7 +157,7 @@ describe("public API integration (M2 T3.1 — tool scene)", () => {
     );
     expect(frame).toContain("run the tests");
     expect(frame).toContain("on it");
-    expect(frame).toContain("✓");
+    expect(frame).toContain("●");
     expect(frame).toContain("vitest");
     expect(frame).toContain("all suites green");
   });
@@ -186,7 +186,7 @@ describe("public API integration (M3 T3.1 — agent scene)", () => {
       </TheoTUIProvider>,
     );
     expect(frame).toContain("•"); // thinking glyph (dom-frontend-2)
-    expect(frame).toContain("✓");
+    expect(frame).toContain("●");
     expect(frame).toContain("Ready.");
     expect(frame).toContain("Thinking…");
   });
@@ -401,7 +401,7 @@ describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
     const plain = stripAnsi(frame);
-    expect(plain).toContain("✓");
+    expect(plain).toContain("●");
     expect(plain).toContain("vitest");
     expect(plain).toContain("inspecting the failing test");
     expect(plain).toContain("All green now.");
@@ -420,7 +420,7 @@ describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
     const plain = stripAnsi(frame);
     expect(plain).toContain("All green now.");
     expect(plain).toContain("vitest");
-    expect(plain).toContain("✓");
+    expect(plain).toContain("●");
     expect(frame).toMatchSnapshot("stream-adapter-scene");
   });
 });

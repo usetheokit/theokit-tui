@@ -47,11 +47,11 @@ function Demo() {
       <Box flexDirection="column">
         <ChatMessage role="user">install the deps and lint</ChatMessage>
         <ChatMessage role="assistant">Running the toolchain now.</ChatMessage>
-        <ToolCall name="resolve-registry" status="pending" summary="queued" />
-        <ToolCallCard name="pnpm install" status={buildStatus}>
+        <ToolCall name="Read" status="pending" summary="registry.json" />
+        <ToolCallCard name="Bash" status={buildStatus} summary="pnpm install">
           <ToolResult lines={longOutput.split("\n")} maxLines={6} />
         </ToolCallCard>
-        <ToolCallCard name="pnpm lint" status="failed" summary="exit 1">
+        <ToolCallCard name="Bash" status="failed" summary="pnpm lint">
           <ToolResult
             shell={{
               stdout: "checked 42 files",
