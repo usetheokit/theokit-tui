@@ -16,7 +16,10 @@ The tool cards now render the Claude Code idiom by default:
 - **`⎿` result tree** — the result/children body renders under a single `⎿`
   (U+23BF) corner connector; continuation lines align under the body. `ToolTree`.
 
-### Live evidence (tmux, real pane width, `examples/tools.tsx`)
+### Live evidence
+
+**Output kind** — `examples/tools.tsx` (real pane width, piped; the `Read` pending
+card + two `Bash` output cards, one truncated):
 
 ```
 > install the deps and lint
@@ -36,12 +39,31 @@ The tool cards now render the Claude Code idiom by default:
     exited 1
 ```
 
-All three result kinds verified live: output (`Bash(pnpm install)` → truncated
-`⎿ … +N lines`), diff (`Edit(retry.ts)` → `⎿ retry.ts +1 -1`), preview
-(`Read(retry.test.ts)` → `⎿ it("…`). Snapshot coverage:
-`src/tool-call.test.tsx` (`each_result_kind_renders_under_the_connector`,
-per-status bullet, header width-matrix) + the piped smoke
-`tests/example-tools.integration.test.ts`.
+**Diff + preview kinds** — `examples/showcase.tsx` (piped; `Edit` diff card +
+`Read` preview card):
+
+```
+●  Bash(pnpm vitest run retry)
+  ⎿ 573 passed
+    stderr:
+    1 flaky: retry_backoff_caps
+●  Edit(retry.ts)
+  ⎿ retry.ts +1 -1
+    1   const attempts = 3;
+    2 - const backoff = 0;
+    2 + const backoff = attempt * 250;
+●  Read(retry.test.ts)
+  ⎿ it("retry_backoff_caps", () => {
+      const waits = plan(3);
+      expect(waits).toEqual([250, 500, 750]);
+```
+
+All three result kinds are verified live: output (`Bash(pnpm install)` → truncated
+`⎿ … +N lines`, from `tools.tsx`), diff (`Edit(retry.ts)` → `⎿ retry.ts +1 -1`, from
+`showcase.tsx`), preview (`Read(retry.test.ts)` → `⎿ it("…`, from `showcase.tsx`).
+Snapshot coverage: `src/tool-call.test.tsx`
+(`each_result_kind_renders_under_the_connector`, per-status bullet, header
+width-matrix) + the piped smoke `tests/example-tools.integration.test.ts`.
 
 ## Parity sweep — the other agent-surface components
 
@@ -64,5 +86,12 @@ asked for). Under the `no-color` theme all statuses render an identical `●`
 Code's own behavior. This is a conscious trade-off to honor the project's D6
 invariant ("theming changes only color bytes, never text/layout") — encoding
 status in the glyph would break D6 across themes. Running still animates (spinner)
-in every theme. A future enhancement could add a no-color-only distinct-glyph
-channel behind an opt-in without violating D6; deferred (YAGNI, no consumer need).
+in every theme (mechanically verified by `tests/degrade-matrix.integration.test.tsx`
+under `NO_COLOR=1`).
+
+Full-honesty note (Rule 3): this DID remove a pre-M26 affordance — the old theme
+used distinct glyphs (`o` pending / `✓` success / `x` failed) that WERE
+glyph-distinguishable under no-color. M26 collapses them to `●` for Claude Code
+visual parity (the owner's explicit ask). A future enhancement could add a
+no-color-only distinct-glyph channel behind an opt-in without violating D6;
+deferred (YAGNI, no consumer need).

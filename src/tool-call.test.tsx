@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import spinners from "cli-spinners";
+import stringWidth from "string-width";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
@@ -109,7 +110,9 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
         </Box>,
       );
       for (const line of stripAnsi(frame).split("\n")) {
-        expect([...line].length).toBeLessThanOrEqual(columns);
+        // Display width (string-width), not codepoint count — the repo's oracle
+        // (markdown-table-render.test.tsx:62); catches a real CJK-arg overflow.
+        expect(stringWidth(line)).toBeLessThanOrEqual(columns);
       }
     }
   });
