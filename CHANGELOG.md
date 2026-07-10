@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `FreeTextInput` — an `autoFocus?: boolean` prop (default true), matching the rest of
+  the interactive component family (`ChatComposer` / `SelectList` / the agent-decision
+  surfaces). `autoFocus={false}` renders the input without grabbing stdin — required to
+  demo it in a non-interactive component gallery. Found by an examples↔components
+  coverage audit: `FreeTextInput` had zero example coverage AND was the only interactive
+  component missing focus control. Now demonstrated in `examples/decisions.tsx` (the
+  round-trip) and `examples/all-components.tsx` (the gallery).
+
 ### Changed
 
 - Examples (`all-components`, `stream`) — tool cards now pass a tool-name + args-shaped

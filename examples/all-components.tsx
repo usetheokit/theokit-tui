@@ -15,6 +15,7 @@ import {
   CostMeter,
   DiffViewer,
   ExpandableOutput,
+  FreeTextInput,
   MarkdownText,
   MultiStepProgress,
   PlanApproval,
@@ -260,6 +261,12 @@ const PAGES: { title: string; body: ReactNode }[] = [
         <PlanApproval
           plan={"# Plan\n\n1. Ship it\n2. Celebrate"}
           onDecision={() => {}}
+          autoFocus={false}
+        />
+        <Text dimColor>FreeTextInput (single-line prompt):</Text>
+        <FreeTextInput
+          label="Commit message:"
+          onSubmit={() => {}}
           autoFocus={false}
         />
       </Box>
