@@ -29,8 +29,9 @@ describe("package manifest contract (T0.1)", () => {
   it("package_manifest_declares_esm_only_types_first_exports", () => {
     expect(pkg.type).toBe("module");
     // M17 T3.1: the renderer ships at the `./renderer` subpath (ADR 0003);
-    // the root entry stays first. Both entries are types-first ESM.
-    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer"]);
+    // the root entry stays first. UI-track Step A adds `./ai-sdk` (the ai SDK
+    // UIMessage adapter). All entries are types-first ESM.
+    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./ai-sdk"]);
     const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);
@@ -40,6 +41,10 @@ describe("package manifest contract (T0.1)", () => {
     expect(Object.keys(renderer)).toEqual(["types", "default"]);
     expect(renderer["types"]).toBe("./dist/renderer/index.d.ts");
     expect(renderer["default"]).toBe("./dist/renderer/index.js");
+    const aiSdk = pkg.exports["./ai-sdk"] ?? {};
+    expect(Object.keys(aiSdk)).toEqual(["types", "default"]);
+    expect(aiSdk["types"]).toBe("./dist/ai-sdk/index.d.ts");
+    expect(aiSdk["default"]).toBe("./dist/ai-sdk/index.js");
     expect(pkg.files).toEqual(["dist"]);
     // Legacy resolution fields must point at the same ESM artifacts
     // (review F-arch-3 — a stale "main" passes exports-only assertions).
@@ -64,13 +69,16 @@ describe("package manifest contract (T0.1)", () => {
 
   it("package_manifest_declares_react_required_peer_and_ink_as_dependency", () => {
     // M4 evolves the contract: lowlight joins as an OPTIONAL peer (plan D2);
-    // M27: figlet joins as a second OPTIONAL peer (renderFigletArt). react stays
-    // the only REQUIRED peer.
+    // M27: figlet joins as a second OPTIONAL peer (renderFigletArt). UI-track
+    // Step A: `ai` joins as an OPTIONAL peer (the `./ai-sdk` adapter's UIMessage
+    // types). react stays the only REQUIRED peer.
     expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "ai",
       "figlet",
       "lowlight",
       "react",
     ]);
+    expect(pkg.peerDependenciesMeta["ai"]?.optional).toBe(true);
     expect(pkg.peerDependenciesMeta["figlet"]?.optional).toBe(true);
     // ^19.2.0 — mirrors ink7's exact floor (react >=19.2.0, blueprint M10
     // Corner 2); the 0.10.x line remains the ink5/react18 track.

@@ -9,6 +9,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `@theokit/tui/ai-sdk` — a new subpath that adapts the `ai` SDK's `UIMessage[]`
+  (the shape TheoKit's unified agent client produces) into this package's render
+  shapes: `uiMessagesToChatThread(messages)` → `ChatThreadMessage[]` for
+  `<ChatThread>` (one bubble per text turn, tool/reasoning-only turns skipped),
+  and `uiMessagesToAgentEvents(messages)` → `AgentEvent[]` for `<AgentTimeline>`
+  (text → `message`, reasoning → `thinking`, each tool invocation → a `tool`
+  event with status mapped from the ai part `state`; ids stay unique for the
+  timeline's duplicate-id contract). Pure functions, no React/Ink. `ai` is an
+  OPTIONAL peer (type-only import) — a terminal app renders the unified client's
+  output with the same primitives the web/desktop surfaces use. UI-track Step A.
+
 ### Changed
 
 - Examples — `all-components` gallery (page 1) now demonstrates the M27 `<Banner>`
