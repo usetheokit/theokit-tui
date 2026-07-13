@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Examples: `example:ai-sdk` (the `@theokit/tui/ai-sdk` UIMessage adapter — one
+  `UIMessage[]` folded into both `<ChatThread>` and `<AgentTimeline>`) and
+  `example:margin` (the universal margin API across several components), each with
+  a piped-smoke integration test.
+
 ### Changed
 
 ### Deprecated
