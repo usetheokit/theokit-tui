@@ -15,6 +15,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   so the assistant reply reads as the prominent output. The default `theme.role.assistant`
   glyph changes across dark/light/no-color. `>` (user) and `·` (system) prefixes are
   unchanged. Consumers can override the glyph via the theme as before.
+- `ChatThread` — inter-turn spacing. Turns are now separated by one blank line (Claude
+  Code cadence) so the conversation breathes; there is **no** leading blank above the
+  first turn. Spacing lives in `ChatThread`'s row layout — standalone `<ChatMessage>`
+  keeps zero margin, so embedding it elsewhere is unaffected.
 
 ### Fixed
 

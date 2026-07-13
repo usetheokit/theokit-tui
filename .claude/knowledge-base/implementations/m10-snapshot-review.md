@@ -43,3 +43,17 @@ four snapshot files. Visible-text change is intentional and reviewed.
 
 Verified NOT changed by M27.1: welcome-banner, banner, diff-viewer, metrics,
 code-block — none render the chat role glyph.
+
+## M27.1 polish — ChatThread inter-turn spacing (2026-07-13)
+
+`ChatThread` now inserts one blank line above every turn EXCEPT the first
+rendered element (Claude Code cadence). Re-recorded ONE snapshot; diff is a
+single `+` blank line — no glyph/text/border change.
+
+| File | Snapshot | What changed | Justifying delta |
+|---|---|---|---|
+| public-api.integration.test.tsx.snap | welcome-banner-scene | one blank line inserted between the `> hello` user turn and the `● welcome aboard` assistant turn | ChatThread inter-turn `marginTop={1}` (M27.1 spacing polish) |
+
+Verified NOT changed: every non-ChatThread scene (the spacing lives in
+ChatThread's row wrapper; standalone ChatMessage is untouched — no leading/
+trailing margin).
