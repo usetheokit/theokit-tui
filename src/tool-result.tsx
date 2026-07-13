@@ -2,6 +2,8 @@ import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 
 import { ExpandableOutput } from "./expandable-output.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
 
@@ -50,7 +52,7 @@ export interface ShellEnvelope {
   exitCode?: number;
 }
 
-export interface ToolResultProps {
+export interface ToolResultProps extends LayoutMarginProps {
   /** Plain-string content, split on newlines. Exclusive with lines/shell. */
   children?: string;
   /** Pre-split content lines. Exclusive with children/shell. */
@@ -285,6 +287,7 @@ export function ToolResult(props: ToolResultProps) {
   const content = resolveContent(props);
   const lineTruncation = truncateLines(content.rows, maxLines);
   const theme = useTheoTheme();
+  const m = pickMargin(props);
 
   const truncation = expanded
     ? { visible: content.rows, hidden: 0 }
@@ -321,7 +324,7 @@ export function ToolResult(props: ToolResultProps) {
     : view.indicator;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...m}>
       {indicator !== undefined && (
         <Text dimColor wrap="truncate-end">
           {indicator}

@@ -1,4 +1,4 @@
-export const VERSION = "0.29.0";
+export const VERSION = "0.31.0";
 
 export {
   TheoTUIProvider,
@@ -16,6 +16,12 @@ export type {
   TheoThemeProp,
   ToolStatusTokens,
 } from "./theme.js";
+
+// Universal layout margin API — every public component's props extend
+// LayoutMarginProps, so any component accepts margin/marginX/marginY and the
+// four sides and applies them to its root layout.
+export { LAYOUT_MARGIN_KEYS, omitMargin, pickMargin } from "./layout-props.js";
+export type { LayoutMarginProps } from "./layout-props.js";
 
 export { CHAT_ROLES, ChatMessage } from "./chat-message.js";
 export type { ChatMessageProps, ChatRole } from "./chat-message.js";

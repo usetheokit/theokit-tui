@@ -5,6 +5,7 @@ import {
   TheoTUIProvider,
   VERSION,
   WelcomeBanner,
+  renderFigletArt,
 } from "../src/index.js";
 
 // Banner demos (plan m9 WelcomeBanner + m27 <Banner>): the startup header every
@@ -12,21 +13,30 @@ import {
 // construction — columns undefined → width fallback 60. M12: `animated` opts into
 // the < 2 s reveal on an interactive terminal; piped runs stay on the static path.
 //
-// M27 <Banner> banner layout (piped, `pnpm example:banner | cat`):
-//   ___          _
-//  |_   _|_ _  ___| |__  ___
-//    | | | ' \/ -_) '_ \/ _ \
-//    |_| |_||_\___|_.__/\___/
+// M27 <Banner> banner layout (piped, `pnpm example:banner | cat`) — figlet
+// "Standard" rendering of "Theo" (T-h-e-o; the `e` keeps its `__/` crossbar):
+//    _____ _
+//   |_   _| |__   ___  ___
+//     | | | '_ \ / _ \/ _ \
+//     | | | | | |  __/ (_) |
+//     |_| |_| |_|\___|\___/
 //  ╭────────────────────────────╮
 //  │ model theo-demo-1           │
 //  │ cwd   ~/projects/app        │
 //  ╰────────────────────────────╯
 const THEO_ART = [
-  "  ___          _",
-  " |_   _|_ _  ___| |__  ___",
-  "   | | | ' \\/ -_) '_ \\/ _ \\",
-  "   |_| |_||_\\___|_.__/\\___/",
+  "  _____ _",
+  " |_   _| |__   ___  ___",
+  "   | | | '_ \\ / _ \\/ _ \\",
+  "   | | | | | |  __/ (_) |",
+  "   |_| |_| |_|\\___|\\___/",
 ].join("\n");
+
+// The real integration pattern: generate the art from text via the OPTIONAL
+// `figlet` peer, and fall back to a ready art string when figlet is not
+// installed (`renderFigletArt` returns null). With no figlet in this repo, the
+// fallback wins — install `figlet` to see the generated 400-font art instead.
+const ART = (await renderFigletArt("Theo", "Standard")) ?? THEO_ART;
 
 function Demo() {
   return (
@@ -46,12 +56,12 @@ function Demo() {
           <Text dimColor>cwd: ~/projects/demo</Text>
         </WelcomeBanner>
         {/* M27: the <Banner> banner layout — ASCII-art logo + framed status box.
-            Generate `art` from text with `renderFigletArt` (optional figlet peer);
-            here we pass a ready art string. */}
+            `ART` is generated via renderFigletArt (optional figlet peer) with a
+            ready-string fallback when figlet is absent — see the top of the file. */}
         <Banner
           name="Theo TUI"
           version={VERSION}
-          art={THEO_ART}
+          art={ART}
           layout="banner"
           status={[
             { label: "model", value: "theo-demo-1" },

@@ -1,6 +1,8 @@
-import { Text } from "ink";
+import { Box, Text } from "ink";
 import { useEffect, useReducer, useRef } from "react";
 
+import { pickMargin } from "./layout-props.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import type { Key } from "./renderer/input/key.js";
 import { useInput } from "./renderer/input/use-input.js";
@@ -18,7 +20,7 @@ import { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
 // is the exclusive interactive branch, a blur can only mean Esc — so a
 // focused→blurred transition fires `onCancel`.
 
-export interface FreeTextInputProps {
+export interface FreeTextInputProps extends LayoutMarginProps {
   /** The prompt label shown before the buffer (e.g. "Type your answer:"). */
   label: string;
   /** Called with the buffer text on Enter (empty string allowed). */
@@ -38,6 +40,7 @@ export function FreeTextInput({
   onSubmit,
   onCancel,
   autoFocus = true,
+  ...margin
 }: FreeTextInputProps) {
   const [state, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
   const { isFocused } = useFocus({ autoFocus });
@@ -69,10 +72,17 @@ export function FreeTextInput({
     },
     { isActive: isFocused },
   );
-  return (
+  const content = (
     <Text>
       {label} {state.text}
       <Text dimColor>▏</Text>
     </Text>
   );
+  // Ink `<Text>` cannot carry margin. Wrap in a margin `<Box>` ONLY when a
+  // consumer actually passes margin — otherwise return the bare `<Text>` so no
+  // extra layout node is added (this input is focus/timing sensitive; an
+  // always-on wrapper delays the input subscription and the no-op invariant
+  // must hold structurally, not just visually).
+  const m = pickMargin(margin);
+  return Object.keys(m).length > 0 ? <Box {...m}>{content}</Box> : content;
 }

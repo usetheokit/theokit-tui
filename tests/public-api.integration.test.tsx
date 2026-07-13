@@ -452,7 +452,7 @@ describe("public API integration (M9 T2.1 — welcome banner scene)", () => {
     expect(plain).toContain("Theo TUI");
     expect(plain).toContain("v0.9.0");
     expect(plain).toContain("/help for commands");
-    expect(plain).toContain("✦");
+    expect(plain).toContain("●");
     expect(plain).toContain("welcome aboard");
     expect(frame).toMatchSnapshot("welcome-banner-scene");
   });

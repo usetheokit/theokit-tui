@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 
 import { ChatMessage } from "./chat-message.js";
 import type { ChatRole } from "./chat-message.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
 export interface ChatThreadMessage {
   /** Stable unique identity — React key + Static watermark anchor. */
@@ -15,7 +16,7 @@ export interface ChatThreadMessage {
   markdown?: boolean;
 }
 
-export interface ChatThreadProps {
+export interface ChatThreadProps extends LayoutMarginProps {
   /**
    * Ordered messages. STREAMING CONTRACT (plan ADR D2): replace the LAST
    * message with a new object carrying longer `content`; rows are memoized by
@@ -53,12 +54,16 @@ const HEADER_SENTINEL = Symbol("theokit-tui-header");
 type StaticItem = typeof HEADER_SENTINEL | ChatThreadMessage;
 
 const Row = memo(
-  ({ message }: { message: ChatThreadMessage }) => (
-    <ChatMessage role={message.role} markdown={message.markdown === true}>
-      {message.content}
-    </ChatMessage>
+  ({ message, spaced }: { message: ChatThreadMessage; spaced: boolean }) => (
+    // M27.1 Claude Code parity: one blank line above every turn EXCEPT the very
+    // first rendered one — the conversation breathes without a leading gap.
+    <Box marginTop={spaced ? 1 : 0} flexDirection="column">
+      <ChatMessage role={message.role} markdown={message.markdown === true}>
+        {message.content}
+      </ChatMessage>
+    </Box>
   ),
-  (prev, next) => prev.message === next.message,
+  (prev, next) => prev.message === next.message && prev.spaced === next.spaced,
 );
 Row.displayName = "ChatThread.Row";
 
@@ -90,6 +95,7 @@ export function ChatThread({
   windowSize = 8,
   windowOverscan = 4,
   header,
+  ...margin
 }: ChatThreadProps) {
   assertUniqueIds(messages);
   // MOUNT-FREEZE (M11 D1): the sentinel's contribution to items.length is
@@ -115,20 +121,30 @@ export function ChatThread({
     <>
       {items.length > 0 && (
         <Static items={items}>
-          {(item) =>
+          {(item, index) =>
             item === HEADER_SENTINEL ? (
               <Box key={HEADER_SENTINEL_KEY} flexDirection="column">
                 {frozenHeader}
               </Box>
             ) : (
-              <Row key={item.id} message={item} />
+              // Space every turn except the first rendered element (index 0).
+              <Row key={item.id} message={item} spaced={index > 0} />
             )
           }
         </Static>
       )}
-      <Box flexDirection="column">
-        {tail.map((message) => (
-          <Row key={message.id} message={message} />
+      {/* Margin lands on the LIVE region. The `<Static>` history is append-only
+          terminal scrollback and is not margined (a graduated row's position is
+          frozen); the consumer margin spaces the thread's on-screen tail. */}
+      <Box flexDirection="column" {...margin}>
+        {tail.map((message, index) => (
+          // First tail row is the thread's first turn ONLY when nothing
+          // graduated into Static above it (items empty).
+          <Row
+            key={message.id}
+            message={message}
+            spaced={items.length > 0 || index > 0}
+          />
         ))}
       </Box>
     </>

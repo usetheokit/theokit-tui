@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { useState } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useInput } from "./renderer/input/use-input.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import { deriveSelectList, type SelectListItem } from "./select-list-model.js";
@@ -14,7 +15,7 @@ import { useTheoTheme } from "./theme.js";
 // column for multi-select. Under a monochrome theme the marker degrades to a
 // visible glyph (M6 precedent) rather than relying on color.
 
-export interface SelectListProps {
+export interface SelectListProps extends LayoutMarginProps {
   items: readonly SelectListItem[];
   /** Called with the chosen values on Enter (always an array; single = one). */
   onSubmit: (values: string[]) => void;
@@ -69,6 +70,7 @@ export function SelectList({
   fuzzy = false,
   window = DEFAULT_WINDOW,
   autoFocus = true,
+  ...margin
 }: SelectListProps) {
   const [filter, setFilter] = useState("");
   const [selectionIndex, setSelectionIndex] = useState(0);
@@ -150,7 +152,7 @@ export function SelectList({
       : "(0/0)";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       <Text dimColor>filter: {filter || "…"}</Text>
       {view.overflowUp && <Text dimColor>▲</Text>}
       {visible.map((item, index) => {

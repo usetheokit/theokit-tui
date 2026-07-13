@@ -2,6 +2,8 @@ import { Box, Text } from "ink";
 import { foldDiffLines, parseUnifiedDiff } from "./diff-model.js";
 import type { DiffFile, DiffLine, DiffRow } from "./diff-model.js";
 import { pairIntraLines, type WordSegment } from "./diff-word.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
 
@@ -14,7 +16,7 @@ type ViewRow =
   | { kind: "degenerate"; text: string }
   | DiffRow;
 
-export interface DiffViewerProps {
+export interface DiffViewerProps extends LayoutMarginProps {
   /** Unified-diff text (the shape agent tools emit — plan ADR D1). */
   patch: string;
   /** Dim right-aligned line-number gutter (default true). */
@@ -274,9 +276,11 @@ export function DiffViewer({
   maxLines,
   contextLines,
   intraLineHighlight = false,
+  ...marginProps
 }: DiffViewerProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   assertValidBounds(maxLines, contextLines);
+  const m = pickMargin(marginProps);
   // Parse BEFORE hooks (DV-2 vs plan EC-12): the typed malformed error must
   // fire ahead of any hook so the direct-invocation contract tests (F10 —
   // Ink swallows render throws) can pin it. Same-string reparse per render
@@ -291,7 +295,11 @@ export function DiffViewer({
   const theme = useTheoTheme();
 
   if (files.length === 0) {
-    return <Text dimColor>(no changes)</Text>;
+    return (
+      <Box {...m}>
+        <Text dimColor>(no changes)</Text>
+      </Box>
+    );
   }
   // Cap AFTER folding (EC-3), GLOBAL across files incl. headers (EC-4),
   // HEAD retention (EC-5 — documents rule). The trailer counts SOURCE lines
@@ -314,7 +322,7 @@ export function DiffViewer({
   const width = gutterWidth(files);
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...m}>
       {visible.map((row, index) =>
         viewRowElement(row, index, theme, showLineNumbers, width, intraMap),
       )}

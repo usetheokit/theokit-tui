@@ -19,6 +19,75 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.31.0] - 2026-07-13
+
+### Added
+
+- **Universal margin API** — every public visual component (all 32) now accepts the CSS/Ink
+  margin family (`margin`, `marginX`, `marginY`, `marginTop`, `marginRight`, `marginBottom`,
+  `marginLeft`) and applies it to its root layout, so any component can be spaced from its
+  neighbours without a wrapper `<Box>`. Backed by a shared `LayoutMarginProps` type (now
+  exported) plus `pickMargin` / `omitMargin` / `LAYOUT_MARGIN_KEYS` helpers. Backward-compat
+  invariant: when no margin is passed the spread is a no-op and output is byte-identical to
+  before (no existing snapshot changed). Text-rooted components (`FreeTextInput`) and
+  `<Static>`-based surfaces (`ChatThread`, `AgentTimeline`) carry the margin on a margin-only
+  wrapper / their live region respectively — documented per component.
+
+### Changed
+
+- `ChatMessage` — Claude Code chat differentiation. The **assistant** turn is now
+  marked with a `●` bullet (an aligned width-1 filled circle, matching the tool-status
+  bullet) instead of `✦`; the **user** turn renders its text **dim** (the input echo),
+  so the assistant reply reads as the prominent output. The default `theme.role.assistant`
+  glyph changes across dark/light/no-color. `>` (user) and `·` (system) prefixes are
+  unchanged. Consumers can override the glyph via the theme as before.
+- `ChatThread` — inter-turn spacing. Turns are now separated by one blank line (Claude
+  Code cadence) so the conversation breathes; there is **no** leading blank above the
+  first turn. Spacing lives in `ChatThread`'s row layout — standalone `<ChatMessage>`
+  keeps zero margin, so embedding it elsewhere is unaffected.
+
+### Fixed
+
+- `VERSION` constant drift — `src/index.ts` exported `0.29.0` while `package.json` was
+  already `0.30.0` (the 0.30.0 release bumped the manifest but not the constant). Synced
+  to `0.30.0`; the export-surface guard (`VERSION === package.json`) is green again.
+
+## [0.30.0] - 2026-07-12
+
+### Added
+
+- `@theokit/tui/ai-sdk` — a new subpath that adapts the `ai` SDK's `UIMessage[]`
+  (the shape TheoKit's unified agent client produces) into this package's render
+  shapes: `uiMessagesToChatThread(messages)` → `ChatThreadMessage[]` for
+  `<ChatThread>` (one bubble per text turn, tool/reasoning-only turns skipped),
+  and `uiMessagesToAgentEvents(messages)` → `AgentEvent[]` for `<AgentTimeline>`
+  (text → `message`, reasoning → `thinking`, each tool invocation → a `tool`
+  event with status mapped from the ai part `state`; ids stay unique for the
+  timeline's duplicate-id contract). Pure functions, no React/Ink. `ai` is an
+  OPTIONAL peer (type-only import) — a terminal app renders the unified client's
+  output with the same primitives the web/desktop surfaces use. UI-track Step A.
+
+### Changed
+
+- Examples — `all-components` gallery (page 1) now demonstrates the M27 `<Banner>`
+  (ASCII-art logo + framed status box) alongside `WelcomeBanner`, closing the
+  examples↔components coverage gap; `banner` example wires `renderFigletArt`
+  (optional figlet peer) with a ready-art fallback to document the real pattern.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Examples — the `banner` / `all-components` ASCII logo now reads **"Theo"** (was
+  "Thoo"): the hand-typed art had collapsed figlet's 5-row rendering into 4 rows,
+  dropping the `e`-crossbar row so the `e` rendered as a round `o`. Replaced with the
+  verified 5-row figlet "Standard" art; the integration test asserts the `\___|\___/`
+  bottom row (the `\___|` proves the `e`). Examples only — no shipped code affected.
+
+### Security
+
 ## [0.29.0] - 2026-07-10
 
 ### Added

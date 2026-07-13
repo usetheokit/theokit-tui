@@ -1,8 +1,9 @@
 import { Box, Text } from "ink";
 
 import { assertFiniteNonNegative, formatCost } from "./format.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
-export interface CostMeterProps {
+export interface CostMeterProps extends LayoutMarginProps {
   /**
    * Precomputed session cost in USD (M5 renders, M7 adapters compute — no
    * pricing tables in this package). Finite, >= 0.
@@ -20,7 +21,11 @@ export interface CostMeterProps {
  * Honest cost display: `cost ~$1.23`; a nonzero sub-cent cost renders
  * `<$0.01`, never `$0.00`. No bar, no thresholds (no budget semantics at M5).
  */
-export function CostMeter({ costUsd, approx = true }: CostMeterProps) {
+export function CostMeter({
+  costUsd,
+  approx = true,
+  ...margin
+}: CostMeterProps) {
   // Boundary guard FIRST (F10 idiom) — the component names itself in the
   // error; formatCost re-validates at its own boundary (single shared guard).
   assertFiniteNonNegative(
@@ -28,7 +33,7 @@ export function CostMeter({ costUsd, approx = true }: CostMeterProps) {
     "CostMeter: costUsd must be a finite number >= 0",
   );
   return (
-    <Box>
+    <Box {...margin}>
       <Text dimColor>cost </Text>
       <Text>{formatCost(costUsd, { approx })}</Text>
     </Box>

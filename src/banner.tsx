@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 
 import { isMonochrome, useTheoTheme } from "./theme.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
 // M27 <Banner> (plan ascii-banner-header): a startup header — a big ASCII-art
 // logo (a provided `art` string, rendered verbatim) OR the bold product `name`
@@ -14,7 +15,7 @@ export interface BannerStatusRow {
   value: string;
 }
 
-export interface BannerProps {
+export interface BannerProps extends LayoutMarginProps {
   /** Product name — the degrade target when `art` is absent (single line). */
   name: string;
   /** Rendered dim as ` v{version}` after the name on the degrade path. */
@@ -104,6 +105,7 @@ export function Banner({
   art,
   status,
   layout = "minimal",
+  ...margin
 }: BannerProps) {
   const theme = useTheoTheme();
   const accent = isMonochrome(theme) ? undefined : theme.accent;
@@ -113,11 +115,14 @@ export function Banner({
     ) : (
       <NameHeader name={name} version={version} accent={accent} />
     );
+  // The header alone is either a `<Box>` (art) or a `<Text>` (name degrade);
+  // wrapping in a margin `<Box>` gives a uniform margin surface on BOTH paths
+  // (Ink `<Text>` cannot carry margin). Layout-neutral around one child.
   if (layout !== "banner" || status === undefined || status.length === 0) {
-    return header;
+    return <Box {...margin}>{header}</Box>;
   }
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       {header}
       <StatusPanel status={status} accent={accent} />
     </Box>

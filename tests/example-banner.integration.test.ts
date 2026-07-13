@@ -34,7 +34,9 @@ it(
     expect(once).toBe(1);
     expect(out).toContain("/help for commands");
     // M27: the <Banner> banner layout — the ASCII art + the framed status panel.
-    expect(out).toContain("|_.__/"); // a distinctive art fragment (verbatim)
+    // `\___|\___/` is the figlet "Theo" e+o bottom row — the `\___|` proves the
+    // `e` (with its crossbar), i.e. the art reads "Theo", not "Thoo".
+    expect(out).toContain("\\___|\\___/");
     expect(out).toContain("model");
     expect(out).toContain("theo-demo-1");
   },

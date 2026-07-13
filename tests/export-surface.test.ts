@@ -19,7 +19,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.TheoTUIProvider).toBe("function");
     expect(typeof mod.useTheoTheme).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("> ");
-    expect(mod.defaultTheme.role.assistant.glyph).toBe("✦ ");
+    expect(mod.defaultTheme.role.assistant.glyph).toBe("● ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
     // M6: built-ins exported; dark IS the default theme (same object).
     expect(Object.keys(mod.themes).sort()).toEqual([
@@ -124,6 +124,7 @@ describe("public entry surface (T0.2)", () => {
       peerDependenciesMeta: Record<string, { optional?: boolean }>;
     };
     expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "ai",
       "figlet",
       "lowlight",
       "react",
@@ -131,6 +132,8 @@ describe("public entry surface (T0.2)", () => {
     expect(pkg.peerDependenciesMeta["lowlight"]?.optional).toBe(true);
     // M27: figlet is also an OPTIONAL peer (renderFigletArt degrades to null).
     expect(pkg.peerDependenciesMeta["figlet"]?.optional).toBe(true);
+    // UI-track Step A: `ai` is an OPTIONAL peer (the `./ai-sdk` UIMessage adapter's types).
+    expect(pkg.peerDependenciesMeta["ai"]?.optional).toBe(true);
   });
 
   it("public_entry_exposes_banner_surface", async () => {

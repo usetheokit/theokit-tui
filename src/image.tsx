@@ -1,6 +1,7 @@
-import { Text } from "ink";
+import { Box, Text } from "ink";
 import { createElement, useEffect, useMemo, type ReactElement } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useStdout } from "./renderer/hooks/use-stdout.js";
 import {
   allocateImageId,
@@ -24,7 +25,7 @@ import {
 // convention (kitty: sequence on the first line; iTerm2: cursor-up + sequence
 // on the last line, so cursor accounting stays inside the frame).
 
-export interface ImageProps {
+export interface ImageProps extends LayoutMarginProps {
   /** Raw image bytes as base64 (the app reads the file; the component is pure). */
   base64Data: string;
   /** `image/png` | `image/jpeg` | `image/gif` | `image/webp`. */
@@ -74,6 +75,7 @@ export function Image({
   maxWidthCells = 40,
   filename,
   protocol,
+  ...margin
 }: ImageProps): ReactElement {
   const resolvedProtocol =
     protocol === undefined ? detectImageProtocol() : protocol;
@@ -96,12 +98,17 @@ export function Image({
     return () => write(deleteKittyImage(imageId));
   }, [resolvedProtocol, imageId, write]);
 
-  // No protocol, or unreadable bytes → the text fallback.
+  // No protocol, or unreadable bytes → the text fallback (wrapped in a
+  // margin-capable Box — Ink `<Text>` cannot carry margin).
   if (!resolvedProtocol || !dimensions) {
     return createElement(
-      Text,
-      {},
-      imageFallback(mimeType, dimensions ?? undefined, filename),
+      Box,
+      margin,
+      createElement(
+        Text,
+        {},
+        imageFallback(mimeType, dimensions ?? undefined, filename),
+      ),
     );
   }
 
@@ -113,8 +120,14 @@ export function Image({
     size.rows,
     imageId,
   );
-  return createElement("ink-image", {
-    internal_image_lines: lines,
-    style: { height: lines.length, width: size.columns },
-  });
+  // The image host node carries the protocol escape + filler rows; margin goes
+  // on a wrapping Box so the filler-row accounting inside the node is untouched.
+  return createElement(
+    Box,
+    margin,
+    createElement("ink-image", {
+      internal_image_lines: lines,
+      style: { height: lines.length, width: size.columns },
+    }),
+  );
 }

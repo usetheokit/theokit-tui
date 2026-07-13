@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { MarkdownText } from "./markdown-text.js";
 import { useTheoTheme } from "./theme.js";
 import { unionMessage } from "./union-message.js";
@@ -13,7 +14,7 @@ export const CHAT_ROLES = ["user", "assistant", "system"] as const;
 /** Message author roles supported by the chat surface (M1: three roles). */
 export type ChatRole = (typeof CHAT_ROLES)[number];
 
-export interface ChatMessageProps {
+export interface ChatMessageProps extends LayoutMarginProps {
   /** Message author — selects the glyph prefix and role colors. */
   role: ChatRole;
   /** Message content (text-only at M0). */
@@ -29,7 +30,12 @@ export interface ChatMessageProps {
  * One chat message with a role glyph prefix (gemini-cli idiom) colored via
  * the theme tokens (plan ADR D4 — explicit role prop, no runtime context).
  */
-export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  children,
+  markdown,
+  ...margin
+}: ChatMessageProps) {
   // Boundary validation (EC-1, rules/error-handling.md § 2): fail fast with a
   // typed error BEFORE any hook — JS consumers get the contract, not a crash.
   if (!CHAT_ROLES.includes(role)) {
@@ -48,11 +54,16 @@ export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
   // forbids an explicit `undefined` under exactOptionalPropertyTypes — omit
   // the prop entirely instead (SEPA iteration-4 finding 1).
   const textColor = tokens.text !== undefined ? { color: tokens.text } : {};
+  // M27.1 Claude Code parity: the user turn is the input echo — render it dim so
+  // the assistant reply (normal weight) reads as the prominent output. The
+  // attribute stays component-level, never a token (the tool-call `failed`-bold
+  // precedent: attributes are the channel that survives color loss).
+  const dim = role === "user" ? { dimColor: true } : {};
   if (markdown === true) {
     // Markdown is multi-block: the content slot becomes a column next to
     // the glyph. The default (raw) path below is BYTE-IDENTICAL to pre-M13.
     return (
-      <Box>
+      <Box {...margin}>
         <Text color={tokens.prefix}>{tokens.glyph}</Text>
         <Box flexDirection="column" flexGrow={1}>
           <MarkdownText text={children as string} />
@@ -61,9 +72,11 @@ export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
     );
   }
   return (
-    <Box>
+    <Box {...margin}>
       <Text color={tokens.prefix}>{tokens.glyph}</Text>
-      <Text {...textColor}>{children}</Text>
+      <Text {...textColor} {...dim}>
+        {children}
+      </Text>
     </Box>
   );
 }

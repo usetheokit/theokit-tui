@@ -154,6 +154,31 @@ describe("ChatThread (T2.1)", () => {
     expect(frame).toContain("anonymous id");
   });
 
+  it("inserts_a_blank_line_between_turns_not_before_the_first", async () => {
+    // M27.1 Claude Code parity: turns are separated by one blank line so the
+    // conversation breathes — but there is NO leading blank above the first
+    // turn (the thread starts flush at the top).
+    const raw = await renderFrame(
+      <ChatThread
+        messages={[
+          { id: "a", role: "user", content: "first turn" },
+          { id: "b", role: "assistant", content: "second turn" },
+        ]}
+      />,
+    );
+    // eslint-disable-next-line no-control-regex
+    const frame = raw.replace(/\[[0-9;]*m/g, "");
+    const lines = frame.split("\n");
+    const iFirst = lines.findIndex((l) => l.includes("first turn"));
+    const iSecond = lines.findIndex((l) => l.includes("second turn"));
+    expect(iFirst).toBe(0); // no leading blank before the first turn
+    // A blank line sits between the two turns.
+    expect(iSecond - iFirst).toBeGreaterThanOrEqual(2);
+    expect(lines.slice(iFirst + 1, iSecond).some((l) => l.trim() === "")).toBe(
+      true,
+    );
+  });
+
   it("negative_window_values_clamp_to_zero", async () => {
     // EC-2 (negative case): invalid numbers degrade to "everything static".
     const frame = await renderFrame(

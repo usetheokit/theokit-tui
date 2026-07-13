@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ApprovalChoice, PlanDecision } from "./agent-decision-model.js";
 import { ChoiceRow } from "./choice-row.js";
 import { FreeTextInput } from "./free-text-input.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 import { MarkdownText } from "./markdown-text.js";
 
 // M23 PlanApproval (plan m23-agent-decision-surfaces T3.1, ADR D2): the Claude
@@ -18,7 +19,7 @@ const PLAN_CHOICES: readonly ApprovalChoice[] = [
   { value: "revise", label: "Revise" },
 ];
 
-export interface PlanApprovalProps {
+export interface PlanApprovalProps extends LayoutMarginProps {
   /** The proposed plan, as markdown (streaming partials are safe). */
   plan: string;
   onDecision: (decision: PlanDecision) => void;
@@ -29,6 +30,7 @@ export function PlanApproval({
   plan,
   onDecision,
   autoFocus = true,
+  ...margin
 }: PlanApprovalProps) {
   const [revising, setRevising] = useState(false);
 
@@ -41,7 +43,7 @@ export function PlanApproval({
   };
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       <MarkdownText text={plan} />
       {revising ? (
         <FreeTextInput

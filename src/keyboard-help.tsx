@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
 // A presentational keyboard-shortcut help panel (Claude Code's `?` overlay).
@@ -15,7 +16,7 @@ export interface KeyboardShortcut {
   description: string;
 }
 
-export interface KeyboardHelpProps {
+export interface KeyboardHelpProps extends LayoutMarginProps {
   /** The rows to render (see `DEFAULT_COMPOSER_SHORTCUTS` for a ready set). */
   shortcuts: readonly KeyboardShortcut[];
   /** Panel title (default `"Keyboard shortcuts"`). */
@@ -54,6 +55,7 @@ export const DEFAULT_COMPOSER_SHORTCUTS: readonly KeyboardShortcut[] = [
 export function KeyboardHelp({
   shortcuts,
   title = "Keyboard shortcuts",
+  ...margin
 }: KeyboardHelpProps) {
   const theme = useTheoTheme();
   const mono = isMonochrome(theme);
@@ -65,6 +67,7 @@ export function KeyboardHelp({
       borderStyle={mono ? "single" : "round"}
       paddingX={1}
       {...(mono ? {} : { borderColor: theme.accent })}
+      {...margin}
     >
       <Text bold {...accentText}>
         {title}

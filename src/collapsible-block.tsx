@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { useState, type ReactNode } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { MarkdownText } from "./markdown-text.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import type { Key } from "./renderer/input/key.js";
@@ -14,7 +15,7 @@ import { useInput } from "./renderer/input/use-input.js";
 // (survives a monochrome theme — no color needed). NO global toggle registry —
 // each block owns only its own state (the M15/M23 declarative rule).
 
-export interface CollapsibleBlockProps {
+export interface CollapsibleBlockProps extends LayoutMarginProps {
   /** The always-visible summary line (after the ▶/▼ affordance). */
   summary: ReactNode;
   /** The body shown only when expanded. */
@@ -35,6 +36,7 @@ export function CollapsibleBlock({
   defaultExpanded = false,
   onToggle,
   autoFocus = true,
+  ...margin
 }: CollapsibleBlockProps) {
   const isControlled = expanded !== undefined;
   const [internal, setInternal] = useState(defaultExpanded);
@@ -52,7 +54,7 @@ export function CollapsibleBlock({
   );
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       <Text>
         {shown ? "▼" : "▶"} {summary}
       </Text>
@@ -61,7 +63,7 @@ export function CollapsibleBlock({
   );
 }
 
-export interface ThinkingBlockProps {
+export interface ThinkingBlockProps extends LayoutMarginProps {
   /** Summary line; defaults to "Thinking…". */
   summary?: string;
   /** The reasoning body — a markdown string renders via MarkdownText. */
@@ -75,11 +77,13 @@ export function ThinkingBlock({
   summary = "Thinking…",
   children,
   defaultExpanded = false,
+  ...margin
 }: ThinkingBlockProps) {
   const body =
     typeof children === "string" ? <MarkdownText text={children} /> : children;
   return (
     <CollapsibleBlock
+      {...margin}
       summary={
         <Text dimColor italic>
           {"✻ "}

@@ -2,6 +2,8 @@ import { Box, Text, useStdout } from "ink";
 import stringWidth from "string-width";
 
 import { CodeBlock } from "./code-block.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { computeTableLayout } from "./markdown-table.js";
 import { parseMarkdown } from "./markdown-model.js";
 import type {
@@ -17,7 +19,7 @@ import { useTheoTheme } from "./theme.js";
 // SGR attributes survive — the M10 ToolCall precedent). Fences render
 // through the existing CodeBlock (language forwarded to lowlight).
 
-export interface MarkdownTextProps {
+export interface MarkdownTextProps extends LayoutMarginProps {
   /** Markdown source (the AI-chat subset). Streaming partials are safe —
    * an unclosed code fence still renders as code. */
   text: string;
@@ -225,12 +227,13 @@ export function MarkdownText(props: MarkdownTextProps) {
     );
   }
   const theme = useTheoTheme();
+  const m = pickMargin(props);
   const nodes = parseMarkdown(props.text);
   if (nodes.length === 0) {
     return null;
   }
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...m}>
       {nodes.map((node, index) => (
         <BlockNode key={`md-${index}`} node={node} accent={theme.accent} />
       ))}

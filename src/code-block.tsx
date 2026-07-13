@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { ExpandableOutput } from "./expandable-output.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 import type { CodeTokens } from "./theme.js";
 
@@ -192,7 +194,7 @@ function toCodeLines(code: string): string[] {
   return lines;
 }
 
-export interface CodeBlockProps {
+export interface CodeBlockProps extends LayoutMarginProps {
   /** Source text. ANSI escapes are stripped on input (EC-16). */
   code: string;
   /** Explicit language id (lowlight/common). No auto-detect (determinism). */
@@ -228,9 +230,11 @@ export function CodeBlock({
   showLineNumbers = false,
   maxLines,
   interactive = false,
+  ...marginProps
 }: CodeBlockProps) {
   // Boundary guard FIRST, before hooks (F10 idiom).
   assertPositiveMaxLines(maxLines);
+  const m = pickMargin(marginProps);
   const theme = useTheoTheme();
   const [highlighter, setHighlighter] = useState<HighlighterLike | undefined>(
     undefined,
@@ -285,6 +289,7 @@ export function CodeBlock({
   if (interactive && capped) {
     return (
       <ExpandableOutput
+        {...m}
         collapsed={rows(visible)}
         expanded={rows(allLines)}
         hiddenCount={hidden}
@@ -293,7 +298,7 @@ export function CodeBlock({
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...m}>
       {rows(visible)}
       {capped && <Text dimColor>… (+{hidden} more lines)</Text>}
     </Box>

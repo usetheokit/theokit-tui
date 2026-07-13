@@ -606,7 +606,7 @@ TheoCode dogfood against the 5 peers produced the gap table — peers render too
 
 The composer already reached input parity (`/ @ ! ?`), but the tool cards / outputs still diverge from the Claude Code look — the biggest perceived gap when running the live demos. Anchoring on ToolCallCard/ToolResult delivers the highest-visibility parity win, with a bounded sweep of the remaining agent-surface components.
 
-### M27 — [ ] ASCII-art banner header (`<Banner>`)
+### M27 — [x] ASCII-art banner header (`<Banner>`)
 
 > Added 2026-07-10 by `/roadmap-feature` (slug: `ascii-banner-header`). See CHANGELOG `[Unreleased] § Added`.
 

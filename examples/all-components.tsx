@@ -6,6 +6,7 @@ import {
   AgentTimeline,
   AppStatusBar,
   ApprovalPrompt,
+  Banner,
   ChatComposer,
   ChatThread,
   ChoiceRow,
@@ -123,6 +124,23 @@ const PAGES: { title: string; body: ReactNode }[] = [
           name="Theo TUI"
           version={VERSION}
           tagline="every component, one gallery"
+        />
+        <Text dimColor>Banner (ASCII-art logo + framed status — M27):</Text>
+        <Banner
+          name="Theo TUI"
+          version={VERSION}
+          layout="banner"
+          art={[
+            "  _____ _",
+            " |_   _| |__   ___  ___",
+            "   | | | '_ \\ / _ \\/ _ \\",
+            "   | | | | | |  __/ (_) |",
+            "   |_| |_| |_|\\___|\\___/",
+          ].join("\n")}
+          status={[
+            { label: "model", value: "theo-demo-1" },
+            { label: "cwd", value: "~/projects/app" },
+          ]}
         />
         <ChatThread messages={THREAD} />
         <AgentStreaming
