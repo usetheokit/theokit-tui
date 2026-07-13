@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.31.0] - 2026-07-13
+
+### Added
+
 - **Universal margin API** — every public visual component (all 32) now accepts the CSS/Ink
   margin family (`margin`, `marginX`, `marginY`, `marginTop`, `marginRight`, `marginBottom`,
   `marginLeft`) and applies it to its root layout, so any component can be spaced from its
