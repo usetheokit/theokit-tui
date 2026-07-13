@@ -36,7 +36,7 @@ function assertDegradedScene(out: string): void {
   expect(out).toContain("hint row");
   // M1: all three role glyphs distinguishable without color.
   expect(out).toContain("·");
-  expect(out).toContain("✦");
+  expect(out).toContain("●");
   expect(out).toContain("degraded but readable");
   // M2: tool statuses + shell envelope — the stderr LABEL is the mechanism.
   expect(out).toContain("●");

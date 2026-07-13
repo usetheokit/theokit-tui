@@ -217,7 +217,7 @@ describe("theme token growth (M6 T1.1)", () => {
     );
     expect(captured?.role.user.glyph).toBe("$ ");
     expect(captured?.status.error).toBe("redBright");
-    expect(captured?.role.assistant.glyph).toBe("✦ ");
+    expect(captured?.role.assistant.glyph).toBe("● ");
   });
 });
 

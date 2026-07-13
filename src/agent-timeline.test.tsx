@@ -39,7 +39,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     const frame = await renderFrame(
       <AgentTimeline events={[message("m1", "hello there")]} />,
     );
-    expect(frame).toContain("✦");
+    expect(frame).toContain("●");
     expect(frame).toContain("hello there");
   });
 

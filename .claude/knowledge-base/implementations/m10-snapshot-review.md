@@ -27,3 +27,19 @@ snapshot files. Visible-text change is intentional and reviewed line-by-line.
 
 Verified NOT changed by M26: welcome-banner, diff-viewer intra-line, metrics,
 code-block, markdown-table — none render tool-status glyphs.
+
+## M27.1 re-record — Claude Code chat differentiation (2026-07-10)
+
+The assistant role glyph (`✦` → `●`, an aligned width-1 filled circle matching the
+tool-status bullet) and the user turn rendering dim (input-echo contrast) re-recorded
+four snapshot files. Visible-text change is intentional and reviewed.
+
+| File | Snapshots | What changed | Justifying delta |
+|---|---|---|---|
+| chat-message.test.tsx.snap | chat-message-user/assistant/system | assistant glyph `✦ ` → `● `; user text now wrapped in `[2m` dim (input echo) | M27.1 Claude Code parity — differentiate user (dim echo) vs agent (`●` bullet, normal) |
+| agent-timeline.test.tsx.snap | message/turn scenes | assistant rows adopt the `●` bullet (composed ChatMessage) | same — downstream of ChatMessage |
+| public-api.test.tsx.snap → public-api.integration.test.tsx.snap | tool/agent/theme/stream scenes | `●` assistant bullet + dim user across composed public-API scenes | same |
+| tool-call.test.tsx.snap | (unchanged this milestone; M26 entry stands) | — | — |
+
+Verified NOT changed by M27.1: welcome-banner, banner, diff-viewer, metrics,
+code-block — none render the chat role glyph.

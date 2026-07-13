@@ -48,6 +48,11 @@ export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
   // forbids an explicit `undefined` under exactOptionalPropertyTypes — omit
   // the prop entirely instead (SEPA iteration-4 finding 1).
   const textColor = tokens.text !== undefined ? { color: tokens.text } : {};
+  // M27.1 Claude Code parity: the user turn is the input echo — render it dim so
+  // the assistant reply (normal weight) reads as the prominent output. The
+  // attribute stays component-level, never a token (the tool-call `failed`-bold
+  // precedent: attributes are the channel that survives color loss).
+  const dim = role === "user" ? { dimColor: true } : {};
   if (markdown === true) {
     // Markdown is multi-block: the content slot becomes a column next to
     // the glyph. The default (raw) path below is BYTE-IDENTICAL to pre-M13.
@@ -63,7 +68,9 @@ export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
   return (
     <Box>
       <Text color={tokens.prefix}>{tokens.glyph}</Text>
-      <Text {...textColor}>{children}</Text>
+      <Text {...textColor} {...dim}>
+        {children}
+      </Text>
     </Box>
   );
 }

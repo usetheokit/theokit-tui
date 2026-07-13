@@ -7,6 +7,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `ChatMessage` — Claude Code chat differentiation. The **assistant** turn is now
+  marked with a `●` bullet (an aligned width-1 filled circle, matching the tool-status
+  bullet) instead of `✦`; the **user** turn renders its text **dim** (the input echo),
+  so the assistant reply reads as the prominent output. The default `theme.role.assistant`
+  glyph changes across dark/light/no-color. `>` (user) and `·` (system) prefixes are
+  unchanged. Consumers can override the glyph via the theme as before.
+
+### Fixed
+
+- `VERSION` constant drift — `src/index.ts` exported `0.29.0` while `package.json` was
+  already `0.30.0` (the 0.30.0 release bumped the manifest but not the constant). Synced
+  to `0.30.0`; the export-surface guard (`VERSION === package.json`) is green again.
+
 ## [0.30.0] - 2026-07-12
 
 ### Added

@@ -14,12 +14,34 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("hello");
   });
 
-  it("renders_assistant_message_with_glyph_prefix", async () => {
+  it("renders_assistant_message_with_the_bullet_glyph", async () => {
+    // M27.1 Claude Code parity: the assistant turn is marked with a `●` bullet
+    // (aligned width-1 filled circle), distinct from the user's `>` prompt.
     const frame = await renderFrame(
       <ChatMessage role="assistant">hi there</ChatMessage>,
     );
-    expect(frame).toContain("✦");
+    expect(frame).toContain("●");
     expect(frame).toContain("hi there");
+  });
+
+  it("user_message_text_renders_dim_the_input_echo", async () => {
+    // M27.1: the user turn is the input echo — dim it so the assistant reply
+    // (normal) reads as the prominent output (Claude Code contrast).
+    const frame = await renderFrame(
+      <ChatMessage role="user">my prompt</ChatMessage>,
+    );
+    expect(frame).toMatch(/\[2m/); // dim SGR on the user text
+    expect(frame).toContain("my prompt");
+  });
+
+  it("assistant_message_text_is_not_dim", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant">the reply</ChatMessage>,
+    );
+    // The reply is the prominent output — the content is not dim-wrapped.
+    // (The bullet may carry color, but the text stays normal weight.)
+    expect(frame).toContain("the reply");
+    expect(frame).not.toMatch(/\[2mthe reply/);
   });
 
   it("renders_system_message_with_glyph_prefix", async () => {
@@ -110,14 +132,17 @@ describe("ChatMessage (T2.1)", () => {
   });
 
   it("applies_custom_text_color_token_when_defined", async () => {
-    // Covers the color-prop branch (default text token is undefined).
+    // Covers the color-prop branch (default text token is undefined). M27.1: the
+    // user turn is also dim (input echo), so green + dim co-apply on the text —
+    // the custom color is still emitted, just alongside the `[2m` dim attribute.
     const frame = await renderFrame(
       <TheoTUIProvider theme={{ role: { user: { text: "green" } } }}>
         <ChatMessage role="user">tinted</ChatMessage>
       </TheoTUIProvider>,
     );
-    // green foreground = ESC[32m under FORCE_COLOR=1.
-    expect(frame).toContain("[32mtinted");
+    expect(frame).toContain("[32m"); // green foreground still emitted
+    expect(frame).toMatch(/\[2m/); // dim (input echo)
+    expect(frame).toContain("tinted");
   });
 
   // The NO_COLOR subprocess probe MOVED to
