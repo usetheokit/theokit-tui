@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { useEffect, useRef } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useTheoTheme, isMonochrome } from "./theme.js";
 import type { TheoTheme } from "./theme.js";
 
@@ -15,7 +16,7 @@ import type { TheoTheme } from "./theme.js";
  * `●` status bullet; `info` (default) keeps the accent border, no bullet. */
 export type ToastVariant = "info" | "success" | "error";
 
-export interface ToastProps {
+export interface ToastProps extends LayoutMarginProps {
   message: string;
   /** Auto-dismiss delay in ms (default 5000 — the opencode default). */
   durationMs?: number;
@@ -37,6 +38,7 @@ export function Toast({
   durationMs = 5000,
   onDismiss,
   variant = "info",
+  ...margin
 }: ToastProps) {
   const onDismissRef = useRef(onDismiss);
   onDismissRef.current = onDismiss;
@@ -54,6 +56,7 @@ export function Toast({
       borderStyle={mono ? "single" : "round"}
       paddingX={1}
       {...(mono ? {} : { borderColor: color })}
+      {...margin}
     >
       {variant !== "info" && <Text {...(mono ? {} : { color })}>{"● "}</Text>}
       <Text>{message}</Text>

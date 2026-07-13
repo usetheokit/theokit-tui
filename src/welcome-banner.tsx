@@ -1,6 +1,8 @@
 import { Box, Text, useStdout } from "ink";
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
@@ -12,7 +14,7 @@ import { isMonochrome, useTheoTheme } from "./theme.js";
 // AgentTimeline/ChatThread); suppression is the consumer's responsibility
 // (don't render it — no `hidden` prop, gemini's own leaves take none).
 
-export interface WelcomeBannerProps {
+export interface WelcomeBannerProps extends LayoutMarginProps {
   /** Product name — single line (embedded newlines throw, D5). */
   name: string;
   /** Rendered dim as ` v{version}` on the name line; single line. */
@@ -189,13 +191,15 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
   }
 
   const width = Math.min(columns, MAX_WIDTH);
-  // One box definition shared by the reveal frame and the static tree.
+  // One box definition shared by the reveal frame and the static tree. The
+  // consumer margin is spread LAST so it wins over any box default.
   const boxProps = {
     flexDirection: "column" as const,
     width,
     paddingX: 1,
     borderStyle: isMonochrome(theme) ? ("single" as const) : ("round" as const),
     borderColor: theme.accent,
+    ...pickMargin(props),
   };
   if (revealing) {
     // Mid-reveal frame: name typewriter only — version/tagline/hints/

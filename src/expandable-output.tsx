@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { useState, type ReactNode } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import type { Key } from "./renderer/input/key.js";
 import { useInput } from "./renderer/input/use-input.js";
@@ -17,7 +18,7 @@ import { useInput } from "./renderer/input/use-input.js";
 // is a three-line inline — cleaner than a controlled CollapsibleBlock with a dead
 // key handler. The ▶/▼ glyph carries the affordance under a monochrome theme.
 
-export interface ExpandableOutputProps {
+export interface ExpandableOutputProps extends LayoutMarginProps {
   /** The capped preview shown while collapsed. */
   collapsed: ReactNode;
   /** The full body shown while expanded. */
@@ -32,6 +33,7 @@ export function ExpandableOutput({
   expanded,
   hiddenCount,
   autoFocus = true,
+  ...margin
 }: ExpandableOutputProps) {
   const [open, setOpen] = useState(false);
   const { isFocused } = useFocus({ autoFocus });
@@ -50,7 +52,7 @@ export function ExpandableOutput({
   // BELOW the content (the gemini/pi "… N more" idiom). The glyph carries the
   // affordance under a monochrome theme.
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       {open ? expanded : collapsed}
       <Text dimColor>
         {open ? "▼ (ctrl+o to collapse)" : `▶ … ${hiddenCount} more (ctrl+o)`}

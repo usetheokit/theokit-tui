@@ -11,6 +11,8 @@ import { assertToolCardResult } from "./tool-card-result.js";
 import type { ToolCardResult } from "./tool-card-result.js";
 import { ToolResult } from "./tool-result.js";
 import { unionMessage } from "./union-message.js";
+import { omitMargin, pickMargin } from "./layout-props.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
@@ -36,7 +38,7 @@ export const STATUS_INDICATOR_WIDTH = 3;
 // they are the channel that survives color loss). NOTE: pending's color is a
 // token literal — it no longer follows role.system.prefix overrides.
 
-export interface ToolCallProps {
+export interface ToolCallProps extends LayoutMarginProps {
   /**
    * Tool name rendered bold after the indicator. The header is ONE line by
    * contract — newlines are sanitized to spaces (EC-8). ANSI/control chars
@@ -88,7 +90,7 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
  * Inline tool-call row: 3-cell status indicator + bold name + dim summary.
  * Status arrives via props — transitions are plain rerenders (ADR D3).
  */
-export function ToolCall({ name, status, summary }: ToolCallProps) {
+export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
   // error BEFORE any hook — JS consumers get the contract, not a crash.
   // Guards MUST stay above the first hook: tests invoke this component as a
@@ -108,7 +110,7 @@ export function ToolCall({ name, status, summary }: ToolCallProps) {
   // width (review dom-frontend-3 — gemini-cli ToolGroupDisplay idiom); a
   // wrapping row of sibling Texts misrenders as parallel columns.
   return (
-    <Box>
+    <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>
         {statusIndicator(status, theme)}
       </Box>
@@ -235,8 +237,10 @@ export function ToolCallCard({ children, result, ...row }: ToolCallCardProps) {
     );
   const hasBody = hasRenderableBody(children);
   return (
-    <Box flexDirection="column">
-      <ToolCall {...row} />
+    // Margin lands on the card's outer Box; the inner ToolCall gets the row
+    // WITHOUT margin so the gap is not applied twice (composition, F-arch).
+    <Box flexDirection="column" {...pickMargin(row)}>
+      <ToolCall {...omitMargin(row)} />
       {(result !== undefined || hasBody) && (
         <ToolTree>
           {result !== undefined && <ResultBody result={result} />}

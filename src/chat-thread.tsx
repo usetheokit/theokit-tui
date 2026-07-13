@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 
 import { ChatMessage } from "./chat-message.js";
 import type { ChatRole } from "./chat-message.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
 export interface ChatThreadMessage {
   /** Stable unique identity — React key + Static watermark anchor. */
@@ -15,7 +16,7 @@ export interface ChatThreadMessage {
   markdown?: boolean;
 }
 
-export interface ChatThreadProps {
+export interface ChatThreadProps extends LayoutMarginProps {
   /**
    * Ordered messages. STREAMING CONTRACT (plan ADR D2): replace the LAST
    * message with a new object carrying longer `content`; rows are memoized by
@@ -94,6 +95,7 @@ export function ChatThread({
   windowSize = 8,
   windowOverscan = 4,
   header,
+  ...margin
 }: ChatThreadProps) {
   assertUniqueIds(messages);
   // MOUNT-FREEZE (M11 D1): the sentinel's contribution to items.length is
@@ -131,7 +133,10 @@ export function ChatThread({
           }
         </Static>
       )}
-      <Box flexDirection="column">
+      {/* Margin lands on the LIVE region. The `<Static>` history is append-only
+          terminal scrollback and is not margined (a graduated row's position is
+          frozen); the consumer margin spaces the thread's on-screen tail. */}
+      <Box flexDirection="column" {...margin}>
         {tail.map((message, index) => (
           // First tail row is the thread's first turn ONLY when nothing
           // graduated into Static above it (items empty).

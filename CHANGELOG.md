@@ -7,6 +7,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Universal margin API** — every public visual component (all 32) now accepts the CSS/Ink
+  margin family (`margin`, `marginX`, `marginY`, `marginTop`, `marginRight`, `marginBottom`,
+  `marginLeft`) and applies it to its root layout, so any component can be spaced from its
+  neighbours without a wrapper `<Box>`. Backed by a shared `LayoutMarginProps` type (now
+  exported) plus `pickMargin` / `omitMargin` / `LAYOUT_MARGIN_KEYS` helpers. Backward-compat
+  invariant: when no margin is passed the spread is a no-op and output is byte-identical to
+  before (no existing snapshot changed). Text-rooted components (`FreeTextInput`) and
+  `<Static>`-based surfaces (`ChatThread`, `AgentTimeline`) carry the margin on a margin-only
+  wrapper / their live region respectively — documented per component.
+
 ### Changed
 
 - `ChatMessage` — Claude Code chat differentiation. The **assistant** turn is now

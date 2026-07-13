@@ -2,6 +2,7 @@ import { Box, Text, useStdout } from "ink";
 import Spinner from "ink-spinner";
 import { useEffect, useState } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
@@ -65,7 +66,7 @@ export function formatElapsed(seconds: number): string {
   return `${hours}h ${minutes % 60}m ${rest}s`;
 }
 
-export interface AgentStreamingProps {
+export interface AgentStreamingProps extends LayoutMarginProps {
   /**
    * Thought subject shown as the primary line (italic, truncate-end). Empty
    * or absent falls back to `Thinking…` (EC-3 — `||`). Newlines sanitized to
@@ -133,6 +134,7 @@ export function AgentStreaming({
   showCancelHint = false,
   phrases,
   shimmer = false,
+  ...margin
 }: AgentStreamingProps) {
   // Boundary validation before hooks (F10 idiom): elapsed is validated even
   // when the hint is hidden — prop validity must not depend on another prop.
@@ -147,7 +149,7 @@ export function AgentStreaming({
   const suffix =
     elapsed !== undefined ? `(esc to cancel, ${elapsed})` : "(esc to cancel)";
   return (
-    <Box>
+    <Box {...margin}>
       <Box minWidth={3}>
         <Text color={theme.toolStatus.running.color}>
           <Spinner type="dots" />

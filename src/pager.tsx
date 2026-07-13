@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { useEffect, useReducer } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import { useInput } from "./renderer/input/use-input.js";
 import { useStdout } from "./renderer/hooks/use-stdout.js";
@@ -18,7 +19,7 @@ import {
 // C-u/C-d half-page, g/G top/bottom, q close). Consumes OUR M19/M20 hooks; meant
 // to be pushed as an overlay (Esc-dismiss is the overlay's — see use-overlay).
 
-export interface PagerProps {
+export interface PagerProps extends LayoutMarginProps {
   /** Pre-wrapped content (the app wraps; the pager does not — ADR C2). */
   content: string;
   /** Called on `q` (the overlay owns Esc). */
@@ -59,7 +60,12 @@ function resolvePagerKey(
   return CHAR_ACTIONS[input];
 }
 
-export function Pager({ content, onClose, autoFocus = true }: PagerProps) {
+export function Pager({
+  content,
+  onClose,
+  autoFocus = true,
+  ...margin
+}: PagerProps) {
   const { isFocused } = useFocus({ autoFocus });
   const { stdout } = useStdout();
   const lines = content.split("\n");
@@ -102,7 +108,7 @@ export function Pager({ content, onClose, autoFocus = true }: PagerProps) {
     );
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       {visible.map((line, index) => (
         <Text key={start + index}>{line || " "}</Text>
       ))}

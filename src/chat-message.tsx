@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { MarkdownText } from "./markdown-text.js";
 import { useTheoTheme } from "./theme.js";
 import { unionMessage } from "./union-message.js";
@@ -13,7 +14,7 @@ export const CHAT_ROLES = ["user", "assistant", "system"] as const;
 /** Message author roles supported by the chat surface (M1: three roles). */
 export type ChatRole = (typeof CHAT_ROLES)[number];
 
-export interface ChatMessageProps {
+export interface ChatMessageProps extends LayoutMarginProps {
   /** Message author — selects the glyph prefix and role colors. */
   role: ChatRole;
   /** Message content (text-only at M0). */
@@ -29,7 +30,12 @@ export interface ChatMessageProps {
  * One chat message with a role glyph prefix (gemini-cli idiom) colored via
  * the theme tokens (plan ADR D4 — explicit role prop, no runtime context).
  */
-export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  children,
+  markdown,
+  ...margin
+}: ChatMessageProps) {
   // Boundary validation (EC-1, rules/error-handling.md § 2): fail fast with a
   // typed error BEFORE any hook — JS consumers get the contract, not a crash.
   if (!CHAT_ROLES.includes(role)) {
@@ -57,7 +63,7 @@ export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
     // Markdown is multi-block: the content slot becomes a column next to
     // the glyph. The default (raw) path below is BYTE-IDENTICAL to pre-M13.
     return (
-      <Box>
+      <Box {...margin}>
         <Text color={tokens.prefix}>{tokens.glyph}</Text>
         <Box flexDirection="column" flexGrow={1}>
           <MarkdownText text={children as string} />
@@ -66,7 +72,7 @@ export function ChatMessage({ role, children, markdown }: ChatMessageProps) {
     );
   }
   return (
-    <Box>
+    <Box {...margin}>
       <Text color={tokens.prefix}>{tokens.glyph}</Text>
       <Text {...textColor} {...dim}>
         {children}

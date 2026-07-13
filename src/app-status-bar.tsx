@@ -3,6 +3,8 @@ import { homedir } from "node:os";
 import { Fragment } from "react";
 
 import { formatTokens } from "./format.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 
 // M14 AppStatusBar (plan m14-status-bar, ADR D1): the persistent AI-native
@@ -18,7 +20,7 @@ export interface AppStatusBarTokens {
   limit: number;
 }
 
-export interface AppStatusBarProps {
+export interface AppStatusBarProps extends LayoutMarginProps {
   /** Model identifier (rendered accent). */
   model?: string;
   /** Working directory — home prefix tildeified, truncate-start. */
@@ -75,6 +77,7 @@ export function AppStatusBar(props: AppStatusBarProps) {
     assertTokens(props.tokens);
   }
   const theme = useTheoTheme();
+  const m = pickMargin(props);
   // Empty strings are ABSENT (review r2-F5): a "" slot must not emit a
   // dangling separator — presence means non-empty content.
   const model = props.model === "" ? undefined : props.model;
@@ -120,7 +123,7 @@ export function AppStatusBar(props: AppStatusBarProps) {
     return null;
   }
   return (
-    <Box flexWrap="nowrap">
+    <Box flexWrap="nowrap" {...m}>
       {slots.map((slot, index) => (
         <Fragment key={slot.key}>
           {index > 0 && (

@@ -5,6 +5,7 @@ import { deriveMentionMenu, findMentionToken } from "./mention-menu-model.js";
 import { searchFiles } from "./file-search.js";
 import { SLASH_MENU_WINDOW, deriveSlashMenu } from "./slash-menu-model.js";
 import type { SlashCommand, SlashMenu } from "./slash-menu-model.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 import { graphemeAt } from "./text-buffer.js";
 import type { TextBufferAction } from "./text-buffer.js";
 import {
@@ -17,7 +18,7 @@ import { isMonochrome, useTheoTheme } from "./theme.js";
 
 export type { SlashCommand as ChatComposerCommand } from "./slash-menu-model.js";
 
-export interface ChatComposerProps {
+export interface ChatComposerProps extends LayoutMarginProps {
   /**
    * Called with the trimmed buffer text on Enter. Exceptions propagate —
    * the composer never swallows caller errors (plan EC-5).
@@ -416,6 +417,7 @@ export function ChatComposer({
   fileSearch = defaultFileSearch,
   onShellCommand,
   onHelpToggle,
+  ...margin
 }: ChatComposerProps) {
   const [editor, dispatchEditor] = useReducer(
     editorReducer,
@@ -621,7 +623,7 @@ export function ChatComposer({
   );
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       <ComposerFrame
         bordered={bordered}
         monochrome={isMonochrome(theme)}

@@ -7,12 +7,14 @@ import {
   renderFillBar,
 } from "./fill-bar.js";
 import { assertFiniteNonNegative, formatTokens } from "./format.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 
 /** Warn when the used ratio reaches this fraction (gemini default). */
 const WARNING_RATIO = 0.5;
 
-export interface ContextWindowBarProps {
+export interface ContextWindowBarProps extends LayoutMarginProps {
   /** Absolute tokens currently in the context window. Finite, >= 0. */
   usedTokens: number;
   /**
@@ -92,6 +94,7 @@ function assertProps(props: ContextWindowBarProps): void {
 export function ContextWindowBar(props: ContextWindowBarProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   assertProps(props);
+  const m = pickMargin(props);
   const {
     usedTokens,
     limitTokens,
@@ -102,7 +105,11 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
   const theme = useTheoTheme();
 
   if (limitTokens === undefined) {
-    return <Text dimColor>{formatTokens(usedTokens)} tokens used</Text>;
+    return (
+      <Box {...m}>
+        <Text dimColor>{formatTokens(usedTokens)} tokens used</Text>
+      </Box>
+    );
   }
 
   const usedRatio =
@@ -118,7 +125,11 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
 
   const barCells = width - label.length - detail.length - 2;
   if (barCells < MIN_BAR_CELLS) {
-    return <Text>{label}</Text>;
+    return (
+      <Box {...m}>
+        <Text>{label}</Text>
+      </Box>
+    );
   }
 
   const segments = renderFillBar(usedRatio, barCells);
@@ -129,7 +140,7 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
         ? theme.status.warning
         : theme.accent;
   return (
-    <Box>
+    <Box {...m}>
       <Text color={fillColor}>{segments.filled}</Text>
       <Text dimColor>{segments.empty}</Text>
       <Text> {label}</Text>

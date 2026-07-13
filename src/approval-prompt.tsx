@@ -7,6 +7,7 @@ import {
   type ApprovalDecision,
 } from "./agent-decision-model.js";
 import { ChoiceRow } from "./choice-row.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 
 // M23 ApprovalPrompt (plan m23-agent-decision-surfaces T1.2, ADR D1/D2/D3/D5): a
@@ -18,7 +19,7 @@ import { useTheoTheme } from "./theme.js";
 // ONE `onDecision` callback; the component holds no app state (callback-only —
 // the M15 declarative rule).
 
-export interface ApprovalPromptProps {
+export interface ApprovalPromptProps extends LayoutMarginProps {
   /** The heading (e.g. "Run command?" / "Apply edit?"). */
   title: string;
   /** The preview — composed by the app (DiffViewer / command line / any body). */
@@ -36,10 +37,11 @@ export function ApprovalPrompt({
   choices = DEFAULT_APPROVAL_CHOICES,
   onDecision,
   autoFocus = true,
+  ...margin
 }: ApprovalPromptProps) {
   const theme = useTheoTheme();
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       <Text color={theme.accent}>{title}</Text>
       {children}
       <ChoiceRow

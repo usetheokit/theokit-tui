@@ -14,10 +14,11 @@ import {
 import { ToolResult } from "./tool-result.js";
 import { useTheoTheme } from "./theme.js";
 import { unionMessage } from "./union-message.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
 const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 
-export interface AgentTimelineProps {
+export interface AgentTimelineProps extends LayoutMarginProps {
   /**
    * Ordered agent events. ORDERING CONTRACT (plan ADR D2): caller-ordered
    * array; unique ids (duplicates throw); graduated events are IMMUTABLE —
@@ -205,6 +206,7 @@ export function AgentTimeline({
   windowSize = 8,
   windowOverscan = 4,
   header,
+  ...margin
 }: AgentTimelineProps) {
   // Boundary validation FIRST, before any hook (F10 — tests invoke this as a
   // plain function; Ink swallows render-time throws).
@@ -238,7 +240,10 @@ export function AgentTimeline({
           }
         </Static>
       )}
-      <Box flexDirection="column">
+      {/* Margin lands on the LIVE region. The `<Static>` history is append-only
+          terminal scrollback and is not margined (a graduated row's position is
+          frozen); the consumer margin spaces the timeline's on-screen tail. */}
+      <Box flexDirection="column" {...margin}>
         {tail.map((event) => (
           <Row key={event.id} event={event} />
         ))}

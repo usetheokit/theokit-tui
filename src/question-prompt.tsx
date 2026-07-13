@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import type { QuestionAnswer } from "./agent-decision-model.js";
 import { FreeTextInput } from "./free-text-input.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 import { SelectList } from "./select-list.js";
 import type { SelectListItem } from "./select-list-model.js";
 import { useTheoTheme } from "./theme.js";
@@ -17,7 +18,7 @@ import { useTheoTheme } from "./theme.js";
 /** The sentinel value of the injected free-text option (ADR D6). */
 export const OTHER_OPTION_VALUE = "__theo_other__";
 
-export interface QuestionPromptProps {
+export interface QuestionPromptProps extends LayoutMarginProps {
   /** The per-question header (emphasis). */
   header: string;
   /** The question text. */
@@ -39,6 +40,7 @@ export function QuestionPrompt({
   allowFreeText = false,
   onAnswer,
   autoFocus = true,
+  ...margin
 }: QuestionPromptProps) {
   const theme = useTheoTheme();
   const [pendingValues, setPendingValues] = useState<string[] | null>(null);
@@ -59,7 +61,7 @@ export function QuestionPrompt({
   };
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       <Text bold color={theme.accent}>
         {header}
       </Text>

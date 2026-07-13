@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { memo } from "react";
 
+import type { LayoutMarginProps } from "./layout-props.js";
 import { isMonochrome, useTheoTheme, type TheoTheme } from "./theme.js";
 
 // M24 TodoList (plan m24-live-progress-surfaces T1.2, ADR D1): a live checklist
@@ -21,7 +22,7 @@ export interface TodoItem {
   status: TodoStatus;
 }
 
-export interface TodoListProps {
+export interface TodoListProps extends LayoutMarginProps {
   items: readonly TodoItem[];
 }
 
@@ -79,11 +80,11 @@ function assertUniqueIds(items: readonly TodoItem[]): void {
   }
 }
 
-export function TodoList({ items }: TodoListProps) {
+export function TodoList({ items, ...margin }: TodoListProps) {
   assertUniqueIds(items);
   const theme = useTheoTheme();
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...margin}>
       {items.map((item) => (
         <Row key={item.id} item={item} theme={theme} />
       ))}

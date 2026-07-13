@@ -1,6 +1,8 @@
 import { Box, Text } from "ink";
 
 import { MIN_BAR_CELLS, renderFillBar } from "./fill-bar.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 import { assertFiniteNonNegative, formatTokens } from "./format.js";
 
@@ -9,7 +11,7 @@ const TOKEN_CATEGORIES = ["input", "output", "cached", "reasoning"] as const;
 
 export type TokenCategory = (typeof TOKEN_CATEGORIES)[number];
 
-export interface TokenUsageChartProps {
+export interface TokenUsageChartProps extends LayoutMarginProps {
   /**
    * Token counts per category. Only PRESENT keys render (absent ≠ zero — a
    * present 0 renders an empty bar + "0"). All absent → renders nothing.
@@ -46,7 +48,11 @@ function collectRows(usage: TokenUsageChartProps["usage"]): ChartRow[] {
  * category (relative comparison — "where did tokens go"; total tokens is NOT
  * a limit, the gauge for that is ContextWindowBar — plan ADR D8).
  */
-export function TokenUsageChart({ usage, width = 40 }: TokenUsageChartProps) {
+export function TokenUsageChart({
+  usage,
+  width = 40,
+  ...marginProps
+}: TokenUsageChartProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   const rows = collectRows(usage);
   if (!Number.isInteger(width) || width < 0) {
@@ -55,6 +61,7 @@ export function TokenUsageChart({ usage, width = 40 }: TokenUsageChartProps) {
     );
   }
   const theme = useTheoTheme();
+  const m = pickMargin(marginProps);
   if (rows.length === 0) {
     return null;
   }
@@ -67,7 +74,7 @@ export function TokenUsageChart({ usage, width = 40 }: TokenUsageChartProps) {
   const maxValue = Math.max(...rows.map((r) => r.value));
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...m}>
       {rows.map((row) => {
         const label = row.category.padEnd(labelCol);
         const value = row.formatted.padStart(valueCol);

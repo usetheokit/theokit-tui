@@ -6,6 +6,7 @@ import {
   type ApprovalChoice,
   type ChoiceKey,
 } from "./agent-decision-model.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 import { useFocus } from "./renderer/hooks/use-focus.js";
 import { useInput } from "./renderer/input/use-input.js";
 import { useTheoTheme } from "./theme.js";
@@ -19,7 +20,7 @@ import { useTheoTheme } from "./theme.js";
 // accent color is decorative, the glyph carries the meaning). Consumes OUR
 // M19/M20 input/focus hooks; holds only the highlighted-index UI state.
 
-export interface ChoiceRowProps {
+export interface ChoiceRowProps extends LayoutMarginProps {
   choices: readonly ApprovalChoice[];
   /** Called with the active choice's `value` on Enter (or a digit jump + Enter). */
   onCommit: (value: string) => void;
@@ -33,6 +34,7 @@ export function ChoiceRow({
   onCommit,
   onCancel,
   autoFocus = true,
+  ...margin
 }: ChoiceRowProps) {
   const [index, setIndex] = useState(0);
   // The committed index is mirrored in a ref so a commit reads the LATEST index
@@ -77,7 +79,7 @@ export function ChoiceRow({
   );
 
   return (
-    <Box>
+    <Box {...margin}>
       {choices.map((choice, position) => {
         const active = position === index;
         const marker = active ? "❯ " : "  ";
