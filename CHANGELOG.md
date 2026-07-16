@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.35.0] - 2026-07-16
+
+### Added
+
 - Examples: `example:ai-sdk` (the `@theokit/tui/ai-sdk` UIMessage adapter — one
   `UIMessage[]` folded into both `<ChatThread>` and `<AgentTimeline>`) and
   `example:margin` (the universal margin API across several components), each with
@@ -21,10 +35,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   three themes — for the assistant role glyph and the tool-status pending/success/failed
   glyphs. `⏺` and `●` are both one cell wide, so nothing shifts; only the character changes.
   Override it via the theme's `role.assistant.glyph` / `toolStatus.*.glyph` as before.
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -42,8 +52,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   provides that context: mount it once, high in the tree, around this library's interactive
   surfaces. (The `examples/decisions.tsx` demo now uses it instead of reaching into renderer
   internals.)
-
-### Security
 
 ## [0.34.0] - 2026-07-16
 
