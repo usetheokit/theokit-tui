@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.36.0] - 2026-07-16
+
+### Added
+
 - **`ModeIndicator` — the Claude Code permission-mode footer.** Renders
   `⏵⏵ auto-accept edits on (shift+tab to cycle)` / `⏸ plan mode on …`; `default`
   renders nothing. Callback-only (the app owns the mode + the shift+tab cycling);
@@ -37,14 +51,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (was `(esc to cancel[, {elapsed}])`) — Claude Code wording.
 - **`ExpandableOutput` toggles on `ctrl+r`** (was `ctrl+o`) and shows `(ctrl+r to expand)` /
   `(ctrl+r to collapse)` — matching Claude Code's `⎿ … (ctrl+r to expand)` affordance.
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.35.0] - 2026-07-16
 
