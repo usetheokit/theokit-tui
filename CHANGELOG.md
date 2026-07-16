@@ -9,14 +9,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **`ProgressActivity` — the Claude Code compaction-style progress surface.** Two lines: a
-  sparkle header (`✳ Compacting conversation… (7m 3s · ↑ 24.6k tokens)` — label + optional
-  elapsed + directional `↑`/`↓` token count) over a `ProgressBar`. Determinate (a percentage),
-  unlike `AgentStreaming` (the indeterminate stream with an interrupt hint).
-- **`ProgressBar` — a determinate progress bar primitive** (`█████░░░░░ 50%`): a filled run
-  (theme accent) + an empty run (dim) + an optional `N%` label; `percent` clamps to [0,100].
-  Configurable `fullChar` / `emptyChar` / `width` / `showPercent`. Built on the shared fill-bar.
-
 ### Changed
 
 ### Deprecated
@@ -26,6 +18,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 ### Security
+
+## [0.39.0] - 2026-07-16
+
+### Added
+
+- **`ProgressActivity` — the Claude Code compaction-style progress surface.** Two lines: a
+  sparkle header (`✳ Compacting conversation… (7m 3s · ↑ 24.6k tokens)` — label + optional
+  elapsed + directional `↑`/`↓` token count) over a `ProgressBar`. Determinate (a percentage),
+  unlike `AgentStreaming` (the indeterminate stream with an interrupt hint).
+- **`ProgressBar` — a determinate progress bar primitive** (`█████░░░░░ 50%`): a filled run
+  (theme accent) + an empty run (dim) + an optional `N%` label; `percent` clamps to [0,100].
+  Configurable `fullChar` / `emptyChar` / `width` / `showPercent`. Built on the shared fill-bar.
 
 ## [0.38.0] - 2026-07-16
 
