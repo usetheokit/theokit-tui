@@ -9,20 +9,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **`findPendingApproval(messages)` + `PendingApproval` — surface a HITL-gated tool awaiting a human
-  decision.** When a gated tool pauses the run, ai-sdk reconstructs a tool part with
-  `state: "approval-requested"` + `approval: { id }`; this reader (structural, ai-free, newest-first)
-  returns `{ approvalId, toolName, input }` so a surface renders an `ApprovalPrompt` and settles it via
-  the agent client's `approve(approvalId, decision)`. `undefined` when nothing is pending.
-- **`readTurnUsage(message)` + `TurnUsage` — read per-turn usage from a message's
-  metadata for the status bar / cost meter.** The agent stream now rides each turn's
-  usage (input/output/total tokens + reasoning/cache buckets), cost, and durationMs on
-  the assistant `UIMessage.metadata`; `readTurnUsage` reads it structurally (ai-free,
-  never throws — a user turn or malformed shape yields `undefined`). This is the seam a
-  terminal footer renders real tokens/cost from, instead of a static `model · cwd` line.
-- **`AppStatusBar` gained a `cost?` slot** — rendered `cost ~$X` (via `formatCost`)
-  between the tokens and state slots, absent when undefined. The footer is now
-  `model · cwd · tokens · cost · state` — the Claude-Code shape.
 - Examples: `example:ai-sdk` (the `@theokit/tui/ai-sdk` UIMessage adapter — one
   `UIMessage[]` folded into both `<ChatThread>` and `<AgentTimeline>`) and
   `example:margin` (the universal margin API across several components), each with
@@ -58,6 +44,44 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   internals.)
 
 ### Security
+
+## [0.34.0] - 2026-07-16
+
+### Added
+
+- **`findPendingApproval(messages)` + `PendingApproval` — surface a HITL-gated tool awaiting a human
+  decision.** When a gated tool pauses the run, ai-sdk reconstructs a tool part with
+  `state: "approval-requested"` + `approval: { id }`; this reader (structural, ai-free, newest-first)
+  returns `{ approvalId, toolName, input }` so a surface renders an `ApprovalPrompt` and settles it via
+  the agent client's `approve(approvalId, decision)`. `undefined` when nothing is pending.
+
+## [0.33.0] - 2026-07-16
+
+### Added
+
+- **`readTurnUsage(message)` + `TurnUsage` — read per-turn usage from a message's
+  metadata for the status bar / cost meter.** The agent stream now rides each turn's
+  usage (input/output/total tokens + reasoning/cache buckets), cost, and durationMs on
+  the assistant `UIMessage.metadata`; `readTurnUsage` reads it structurally (ai-free,
+  never throws — a user turn or malformed shape yields `undefined`). This is the seam a
+  terminal footer renders real tokens/cost from, instead of a static `model · cwd` line.
+- **`AppStatusBar` gained a `cost?` slot** — rendered `cost ~$X` (via `formatCost`)
+  between the tokens and state slots, absent when undefined. The footer is now
+  `model · cwd · tokens · cost · state` — the Claude-Code shape.
+
+### Fixed
+
+- **`AppStatusBar` accepts an explicit `undefined` on the `tokens` / `cost` slots** — so a
+  consumer under `exactOptionalPropertyTypes` can wire the natural `cond ? value : undefined`
+  without a conditional-spread dance (the App footer pattern).
+
+## [0.32.0] - 2026-07-16
+
+### Added
+
+- **ai-free message projection: `messagesToAgentEvents` / `messagesToChatThread`** — the
+  same fold as the `./ai-sdk` adapter but over a structural `UIMessageLike` with **no `ai`
+  import**, exported from the main barrel. `AgentTimeline` now renders assistant Markdown.
 
 ## [0.31.0] - 2026-07-13
 
