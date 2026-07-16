@@ -1,5 +1,4 @@
 import { Box, Text, useStdout } from "ink";
-import Spinner from "ink-spinner";
 import { useEffect, useState } from "react";
 
 import { assertFiniteNonNegative, formatTokens } from "./format.js";
@@ -13,6 +12,25 @@ import { isMonochrome, useTheoTheme } from "./theme.js";
 // down on unmount, and scheduling ZERO timers when motion is disabled or there is
 // nothing to cycle. Not per-frame (2s cadence), so no OWN bench is required.
 const PHRASE_INTERVAL_MS = 2000;
+
+// #44: the Claude Code working glyph is a cycling sparkle (not a braille
+// spinner). Frames advance on a fast cadence while motion is enabled; under
+// reduced-motion / non-TTY / monochrome the first frame renders static.
+const SPARKLE_FRAMES = ["✳", "✷", "✶", "✵"] as const;
+const SPARKLE_INTERVAL_MS = 120;
+
+function useSparkle(active: boolean): string {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(
+      () => setIndex((current) => (current + 1) % SPARKLE_FRAMES.length),
+      SPARKLE_INTERVAL_MS,
+    );
+    return () => clearInterval(id);
+  }, [active]);
+  return SPARKLE_FRAMES[active ? index : 0]!;
+}
 
 function usePhraseCycler(count: number, active: boolean): number {
   const [index, setIndex] = useState(0);
@@ -89,6 +107,11 @@ export interface AgentStreamingProps extends LayoutMarginProps {
    */
   tokens?: number;
   /**
+   * #44: prefixes the token count with a direction arrow — `↓` (context
+   * shrinking) or `↑` (growing): `↓ 30.6k tokens`. Absent → the bare count.
+   */
+  tokenDirection?: "up" | "down";
+  /**
    * Renders the dim interrupt hint — the Claude-Code-shaped
    * `({elapsed} · {N} tokens · esc to interrupt)`, with the elapsed and tokens
    * segments present only when their props are supplied.
@@ -125,10 +148,14 @@ const singleLine = (value: string): string => value.replace(/\r?\n/g, " ");
 function buildInterruptHint(
   elapsed: string | undefined,
   tokens: number | undefined,
+  direction: "up" | "down" | undefined,
 ): string {
   const parts: string[] = [];
   if (elapsed !== undefined) parts.push(elapsed);
-  if (tokens !== undefined) parts.push(`${formatTokens(tokens)} tokens`);
+  if (tokens !== undefined) {
+    const arrow = direction === "up" ? "↑ " : direction === "down" ? "↓ " : "";
+    parts.push(`${arrow}${formatTokens(tokens)} tokens`);
+  }
   parts.push("esc to interrupt");
   return `(${parts.join(" · ")})`;
 }
@@ -156,6 +183,7 @@ export function AgentStreaming({
   thought,
   elapsedSeconds,
   tokens,
+  tokenDirection,
   showCancelHint = false,
   phrases,
   shimmer = false,
@@ -174,13 +202,12 @@ export function AgentStreaming({
 
   const primary = usePhraseLine(phrases, thought, motion);
   const dimPulse = useShimmerPulse(shimmer && motion);
-  const suffix = buildInterruptHint(elapsed, tokens);
+  const sparkle = useSparkle(motion);
+  const suffix = buildInterruptHint(elapsed, tokens, tokenDirection);
   return (
     <Box {...margin}>
       <Box minWidth={3}>
-        <Text color={theme.toolStatus.running.color}>
-          <Spinner type="dots" />
-        </Text>
+        <Text color={theme.toolStatus.running.color}>{sparkle}</Text>
       </Box>
       <Text
         italic

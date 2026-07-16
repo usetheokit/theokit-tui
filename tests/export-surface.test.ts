@@ -201,6 +201,8 @@ describe("public entry surface (T0.2)", () => {
       "success",
       "error",
     ]);
+    // #45: the two-line StatusFooter.
+    expect(typeof mod.StatusFooter).toBe("function");
   });
 
   it("public_entry_exposes_stream_adapter", async () => {
