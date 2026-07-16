@@ -26,6 +26,14 @@ export interface WelcomeBannerProps extends LayoutMarginProps {
   hints?: readonly string[];
   /** Single free-composition slot inside the box (D1 — no layout props). */
   children?: ReactNode;
+  /**
+   * #5 Claude Code parity: an optional RIGHT column rendered alongside the main
+   * content (the "Tips for getting started" / "What's new" panel). When present
+   * the box lays out as two columns (main | aside); when absent the banner is
+   * the single-column layout, byte-identical to before. The caller composes the
+   * aside's rows (`<Text>` lines) — no layout props on this slot.
+   */
+  aside?: ReactNode;
   /** M12: opt-in < 2 s typewriter reveal (12 phases × 80 ms). MOUNT-TIME
    * gate, evaluated once: runs ONLY when stdout is an interactive TTY with
    * rows ≥ 15 and columns ≥ 44, the theme is not monochrome, and the
@@ -129,13 +137,13 @@ function staticBannerTree(
   accent: string,
   boxProps: ComponentProps<typeof Box>,
 ) {
-  const { name, tagline, hints, children } = props;
+  const { name, tagline, hints, children, aside } = props;
   const taglineLines =
     tagline === undefined
       ? []
       : tagline.split("\n").filter((line) => line.trim() !== "");
-  return (
-    <Box {...boxProps}>
+  const mainContent = (
+    <>
       <Text wrap="truncate-end" color={accent} bold>
         {name}
         {version === undefined ? "" : <Text dimColor> v{version}</Text>}
@@ -155,6 +163,22 @@ function staticBannerTree(
         </Box>
       ) : undefined}
       {children}
+    </>
+  );
+  // No aside → the single-column box (byte-identical to pre-#5).
+  if (aside === undefined) {
+    return <Box {...boxProps}>{mainContent}</Box>;
+  }
+  // Two columns: main content grows on the left; the aside is a fixed right
+  // column separated by a two-cell gutter (the Claude Code welcome layout).
+  return (
+    <Box {...boxProps} flexDirection="row">
+      <Box flexDirection="column" flexGrow={1}>
+        {mainContent}
+      </Box>
+      <Box flexDirection="column" flexShrink={0} marginLeft={2}>
+        {aside}
+      </Box>
     </Box>
   );
 }

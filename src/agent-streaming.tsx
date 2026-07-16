@@ -2,6 +2,7 @@ import { Box, Text, useStdout } from "ink";
 import Spinner from "ink-spinner";
 import { useEffect, useState } from "react";
 
+import { assertFiniteNonNegative, formatTokens } from "./format.js";
 import type { LayoutMarginProps } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
@@ -81,7 +82,17 @@ export interface AgentStreamingProps extends LayoutMarginProps {
    * another prop).
    */
   elapsedSeconds?: number;
-  /** Renders the dim `(esc to cancel[, {elapsed}])` suffix. */
+  /**
+   * Live token count shown in the interrupt hint as `· {formatTokens(tokens)}
+   * tokens` (Claude Code shape). Finite, >= 0. Only rendered when
+   * `showCancelHint` is set, but validated regardless (fail-fast).
+   */
+  tokens?: number;
+  /**
+   * Renders the dim interrupt hint — the Claude-Code-shaped
+   * `({elapsed} · {N} tokens · esc to interrupt)`, with the elapsed and tokens
+   * segments present only when their props are supplied.
+   */
   showCancelHint?: boolean;
   /**
    * M24 opt-in: a set of witty status phrases cycled (round-robin, ~2s) while
@@ -109,6 +120,19 @@ function useShimmerPulse(active: boolean): boolean {
 
 const singleLine = (value: string): string => value.replace(/\r?\n/g, " ");
 
+/** The Claude-Code interrupt hint: `({elapsed} · {N} tokens · esc to interrupt)`,
+ * with each leading segment present only when supplied. */
+function buildInterruptHint(
+  elapsed: string | undefined,
+  tokens: number | undefined,
+): string {
+  const parts: string[] = [];
+  if (elapsed !== undefined) parts.push(elapsed);
+  if (tokens !== undefined) parts.push(`${formatTokens(tokens)} tokens`);
+  parts.push("esc to interrupt");
+  return `(${parts.join(" · ")})`;
+}
+
 /** The primary line: the cycled phrase while cycling, else the static fallback
  * (`thought || first phrase || "Thinking…"` — byte-identical for no-opt-in callers). */
 function resolvePrimaryLine(
@@ -131,23 +155,26 @@ function resolvePrimaryLine(
 export function AgentStreaming({
   thought,
   elapsedSeconds,
+  tokens,
   showCancelHint = false,
   phrases,
   shimmer = false,
   ...margin
 }: AgentStreamingProps) {
-  // Boundary validation before hooks (F10 idiom): elapsed is validated even
-  // when the hint is hidden — prop validity must not depend on another prop.
+  // Boundary validation before hooks (F10 idiom): elapsed + tokens are validated
+  // even when the hint is hidden — prop validity must not depend on another prop.
   const elapsed =
     elapsedSeconds !== undefined ? formatElapsed(elapsedSeconds) : undefined;
+  if (tokens !== undefined) {
+    assertFiniteNonNegative(tokens, "AgentStreaming: tokens must be >= 0");
+  }
   const theme = useTheoTheme();
   const { stdout } = useStdout();
   const motion = isMotionEnabled(process.env, stdout, isMonochrome(theme));
 
   const primary = usePhraseLine(phrases, thought, motion);
   const dimPulse = useShimmerPulse(shimmer && motion);
-  const suffix =
-    elapsed !== undefined ? `(esc to cancel, ${elapsed})` : "(esc to cancel)";
+  const suffix = buildInterruptHint(elapsed, tokens);
   return (
     <Box {...margin}>
       <Box minWidth={3}>

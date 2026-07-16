@@ -189,6 +189,20 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.WelcomeBanner).toBe("function");
   });
 
+  it("public_entry_exposes_claude_code_parity_surfaces", async () => {
+    const mod = await import("../src/index.js");
+    // ModeIndicator (permission-mode footer) + Notice (inline banner).
+    expect(typeof mod.ModeIndicator).toBe("function");
+    expect(mod.PERMISSION_MODES).toEqual(["default", "auto-accept", "plan"]);
+    expect(typeof mod.Notice).toBe("function");
+    expect(mod.NOTICE_VARIANTS).toEqual([
+      "info",
+      "warning",
+      "success",
+      "error",
+    ]);
+  });
+
   it("public_entry_exposes_stream_adapter", async () => {
     const mod = await import("../src/index.js");
     // M7 (plan ADR D8): hook + reducer + initial state are the public trio.

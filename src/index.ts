@@ -128,6 +128,13 @@ export type {
 // M9 — welcome banner (plan ADR D1): the startup-banner primitive.
 export { WelcomeBanner } from "./welcome-banner.js";
 export type { WelcomeBannerProps } from "./welcome-banner.js";
+
+// Claude Code parity surfaces: the permission-mode footer (⏵⏵ auto-accept edits
+// on) and the persistent inline Notice banner (!! warning / │ info).
+export { ModeIndicator, PERMISSION_MODES } from "./mode-indicator.js";
+export type { ModeIndicatorProps, PermissionMode } from "./mode-indicator.js";
+export { Notice, NOTICE_VARIANTS } from "./notice.js";
+export type { NoticeProps, NoticeVariant } from "./notice.js";
 export { Image } from "./image.js";
 export type { ImageProps } from "./image.js";
 

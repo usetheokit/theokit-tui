@@ -32,7 +32,7 @@ describe("examples/parity-polish.tsx (T5.1)", () => {
       // DiffViewer.
       expect(out).toContain("const retries = 5;");
       // ExpandableOutput affordance.
-      expect(out).toContain("ctrl+o");
+      expect(out).toContain("ctrl+r to expand");
       // Non-TTY guard: no OSC-8 hyperlink sequence leaks (osc8Link degraded to
       // plain text; setTerminalTitle no-op).
       expect(raw).not.toContain("]8;;"); // the OSC-8 signature

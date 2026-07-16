@@ -81,3 +81,14 @@ glyph — out of "no tema" scope), the thinking marker `•`/`✻`, and every
 non-glyph scene. The dependency bump alone changed no snapshot (only ⏺'s width
 moved, and nothing used ⏺ before the swap — 153 width-sensitive tests stayed
 green pre-swap).
+
+## Claude Code parity — AgentStreaming interrupt hint (2026-07-16)
+
+The streaming hint gained the Claude Code shape `({elapsed} · {N} tokens · esc to
+interrupt)` (was `(esc to cancel[, {elapsed}])`). One snapshot re-recorded; the
+diff is the suffix wording only (plus a one-char-longer primary truncation, as the
+longer suffix leaves one fewer column for the truncate-end thought).
+
+| File | Snapshot | What changed | Justifying delta |
+|---|---|---|---|
+| agent-streaming.test.tsx.snap | agent-streaming | `(esc to cancel, 12s)` → `(12s · esc to interrupt)` | #1 Claude Code parity (tokens + interrupt wording) |

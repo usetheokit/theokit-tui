@@ -9,7 +9,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`ModeIndicator` — the Claude Code permission-mode footer.** Renders
+  `⏵⏵ auto-accept edits on (shift+tab to cycle)` / `⏸ plan mode on …`; `default`
+  renders nothing. Callback-only (the app owns the mode + the shift+tab cycling);
+  the glyph carries the mode under a monochrome theme. Exports `PERMISSION_MODES`.
+- **`Notice` — a persistent inline banner** (distinct from the transient `Toast`):
+  `!! warning …` (yellow) / `│ info · /cmd` (accent) / `✓ success` / `✗ error`, with
+  a leading variant marker that stays legible under `NO_COLOR`. Exports `NOTICE_VARIANTS`.
+- **`AgentStreaming` gained a `tokens?` prop** — the working indicator now renders the
+  Claude Code shape `(27s · 47k tokens · esc to interrupt)`.
+- **`WelcomeBanner` gained an `aside?` slot** — an optional right column (the "Tips for
+  getting started" / "What's new" panel) rendered alongside the main content. Absent →
+  the single-column layout, byte-identical to before.
+
 ### Changed
+
+- **`AgentStreaming` interrupt hint** is now `({elapsed} · {N} tokens · esc to interrupt)`
+  (was `(esc to cancel[, {elapsed}])`) — Claude Code wording.
+- **`ExpandableOutput` toggles on `ctrl+r`** (was `ctrl+o`) and shows `(ctrl+r to expand)` /
+  `(ctrl+r to collapse)` — matching Claude Code's `⎿ … (ctrl+r to expand)` affordance.
 
 ### Deprecated
 

@@ -13,7 +13,7 @@ import { createInputSource } from "../src/renderer/input/input-source.js";
 import { InputContext } from "../src/renderer/input/use-input.js";
 
 // M25 example: the parity-polish surfaces composed — a Markdown table, a DiffViewer
-// with intra-line word highlight, an ExpandableOutput (ctrl+o), and the terminal
+// with intra-line word highlight, an ExpandableOutput (ctrl+r), and the terminal
 // title + OSC-8 hyperlink helpers. Run: `pnpm tsx examples/parity-polish.tsx`.
 // Requires a raw-mode TTY for the expand toggle.
 

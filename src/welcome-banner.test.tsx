@@ -117,6 +117,41 @@ describe("WelcomeBanner", () => {
     expect(childIndex).toBe(lines.length - 2);
   });
 
+  it("aside_renders_a_right_column_alongside_the_main_content", () => {
+    // #5 Claude Code parity: the two-column welcome (left: name/tagline,
+    // right: Tips / What's new). `aside` is the right column.
+    const instance = render(
+      <WelcomeBanner
+        name="Theo"
+        tagline="Welcome back!"
+        aside={
+          <>
+            <Text>Tips for getting started</Text>
+            <Text>Run /init to create a CLAUDE.md</Text>
+          </>
+        }
+      />,
+    );
+    const frame = instance.lastFrame() ?? "";
+    instance.unmount();
+    expect(frame).toContain("Welcome back!");
+    expect(frame).toContain("Tips for getting started");
+    // The aside sits on the SAME row as the name (two columns), not below it.
+    const nameLine = stripAnsi(frame)
+      .split("\n")
+      .find((l) => l.includes("Theo"));
+    expect(nameLine).toContain("Tips for getting started");
+  });
+
+  it("without_aside_the_layout_is_the_single_column_banner", () => {
+    // Backward-compat: no aside → the name and any content stack vertically.
+    const instance = render(<WelcomeBanner name="Theo" tagline="hi there" />);
+    const frame = stripAnsi(instance.lastFrame() ?? "");
+    instance.unmount();
+    const nameLine = frame.split("\n").find((l) => l.includes("Theo"));
+    expect(nameLine).not.toContain("hi there"); // stacked, not side-by-side
+  });
+
   it("width_floor_boundary_pair_border_at_24_plain_at_23", () => {
     // Under the DEFAULT theme (provider-less fallback — EC-6).
     const at = renderAtColumns(24, { name: "Theo", version: "1.0.0" });
