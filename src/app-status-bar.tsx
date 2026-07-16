@@ -25,10 +25,13 @@ export interface AppStatusBarProps extends LayoutMarginProps {
   model?: string;
   /** Working directory — home prefix tildeified, truncate-start. */
   cwd?: string;
+  // `| undefined` on the two conditionally-supplied slots so a consumer under
+  // `exactOptionalPropertyTypes` can pass the natural React `cond ? value : undefined`
+  // without a conditional-spread dance (the App footer wires both this way).
   /** Token usage rendered compacted as `used/limit` (formatTokens). */
-  tokens?: AppStatusBarTokens;
+  tokens?: AppStatusBarTokens | undefined;
   /** Session/turn cost in USD, rendered `cost ~$X` (formatCost). Omitted when undefined. */
-  cost?: number;
+  cost?: number | undefined;
   /** Free-text turn state (idle/streaming/error…) — never truncated. */
   state?: string;
 }
