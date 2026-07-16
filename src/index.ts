@@ -214,7 +214,4 @@ export {
   messagesToAgentEvents,
   messagesToChatThread,
 } from "./messages-to-events.js";
-export type {
-  UIMessageLike,
-  UIMessagePartLike,
-} from "./messages-to-events.js";
+export type { UIMessageLike, UIMessagePartLike } from "./messages-to-events.js";
