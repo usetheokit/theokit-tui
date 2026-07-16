@@ -30,6 +30,7 @@ import {
   PlanApproval,
   QuestionPrompt,
   SelectList,
+  Stack,
   ThinkingBlock,
   Toast,
   TodoList,
@@ -206,12 +207,20 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
     ),
   ],
   ["Banner", (m) => <Banner {...m} name="Theo" />],
+  [
+    "Stack",
+    (m) => (
+      <Stack {...m}>
+        <Text>x</Text>
+      </Stack>
+    ),
+  ],
 ];
 
 describe("universal margin contract (LayoutMarginProps)", () => {
   it("covers_every_public_visual_component", () => {
     // Guard against silent drift: if a new component ships, add it here.
-    expect(CASES.length).toBe(32);
+    expect(CASES.length).toBe(33);
   });
 
   for (const [name, make] of CASES) {

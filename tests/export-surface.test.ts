@@ -203,6 +203,8 @@ describe("public entry surface (T0.2)", () => {
     ]);
     // #45: the two-line StatusFooter.
     expect(typeof mod.StatusFooter).toBe("function");
+    // Stack — the vertical-rhythm primitive.
+    expect(typeof mod.Stack).toBe("function");
   });
 
   it("public_entry_exposes_stream_adapter", async () => {

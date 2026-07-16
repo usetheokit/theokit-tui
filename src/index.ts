@@ -1,4 +1,4 @@
-export const VERSION = "0.37.0";
+export const VERSION = "0.38.0";
 
 export {
   TheoTUIProvider,
@@ -22,6 +22,13 @@ export type {
 // four sides and applies them to its root layout.
 export { LAYOUT_MARGIN_KEYS, omitMargin, pickMargin } from "./layout-props.js";
 export type { LayoutMarginProps } from "./layout-props.js";
+
+// Vertical-rhythm primitive: spacing between blocks is a CONTAINER concern —
+// wrap a column of surfaces in <Stack gap={1}> instead of putting default
+// margins on every component (which would double up inside ChatThread /
+// AgentTimeline). The SwiftUI VStack(spacing:) / Braid <Stack> idiom.
+export { Stack } from "./stack.js";
+export type { StackProps } from "./stack.js";
 
 // #41 bridge: makes the custom-renderer interactive components (ChoiceRow,
 // SelectList, Pager, FreeTextInput, and the decision prompts) receive keyboard
