@@ -5,14 +5,12 @@ import {
   ApprovalPrompt,
   DiffViewer,
   FreeTextInput,
+  InkInputProvider,
   PlanApproval,
   QuestionPrompt,
   type PlanDecision,
   type QuestionAnswer,
 } from "../src/index.js";
-import { FocusProvider } from "../src/renderer/hooks/use-focus.js";
-import { createInputSource } from "../src/renderer/input/input-source.js";
-import { InputContext } from "../src/renderer/input/use-input.js";
 
 // M23 example: a scripted agent-decision ROUND-TRIP — ApprovalPrompt (composing a
 // DiffViewer preview) → QuestionPrompt (options + free text) → FreeTextInput
@@ -108,18 +106,12 @@ function Demo() {
   );
 }
 
-// Wire OUR input + focus providers (the composition root an app owns).
-const source = createInputSource(process.stdin as never, (d) =>
-  process.stdout.write(d),
-);
-source.start();
-
+// One <InkInputProvider> at the composition root bridges Ink's stdin to the
+// library's input+focus system, so the decision prompts receive keys under Ink.
 const instance = render(
-  <InputContext.Provider value={source}>
-    <FocusProvider>
-      <Demo />
-    </FocusProvider>
-  </InputContext.Provider>,
+  <InkInputProvider>
+    <Demo />
+  </InkInputProvider>,
 );
 
 // Piped (non-TTY) — print the first decision frame once, then exit cleanly so
@@ -127,7 +119,6 @@ const instance = render(
 if (!process.stdin.isTTY) {
   setTimeout(() => {
     instance.unmount();
-    source.stop();
     process.exit(0);
   }, 300);
 }

@@ -15,12 +15,12 @@ describe("ChatMessage (T2.1)", () => {
   });
 
   it("renders_assistant_message_with_the_bullet_glyph", async () => {
-    // M27.1 Claude Code parity: the assistant turn is marked with a `●` bullet
+    // M27.1 Claude Code parity: the assistant turn is marked with a `⏺` bullet
     // (aligned width-1 filled circle), distinct from the user's `>` prompt.
     const frame = await renderFrame(
       <ChatMessage role="assistant">hi there</ChatMessage>,
     );
-    expect(frame).toContain("●");
+    expect(frame).toContain("⏺");
     expect(frame).toContain("hi there");
   });
 

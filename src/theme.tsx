@@ -98,7 +98,7 @@ export const defaultTheme: TheoTheme = Object.freeze({
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "cyan", text: undefined }),
     assistant: Object.freeze({
-      glyph: "● ",
+      glyph: "⏺ ",
       prefix: "magenta",
       text: undefined,
     }),
@@ -118,10 +118,10 @@ export const defaultTheme: TheoTheme = Object.freeze({
     variable: "magenta",
   }),
   toolStatus: Object.freeze({
-    pending: Object.freeze({ glyph: "●", color: "gray" }),
+    pending: Object.freeze({ glyph: "⏺", color: "gray" }),
     running: Object.freeze({ color: "yellow" }),
-    success: Object.freeze({ glyph: "●", color: "green" }),
-    failed: Object.freeze({ glyph: "●", color: "red" }),
+    success: Object.freeze({ glyph: "⏺", color: "green" }),
+    failed: Object.freeze({ glyph: "⏺", color: "red" }),
   }),
 });
 
@@ -141,7 +141,7 @@ const lightTheme: TheoTheme = Object.freeze({
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "blue", text: undefined }),
     assistant: Object.freeze({
-      glyph: "● ",
+      glyph: "⏺ ",
       prefix: "magenta",
       text: undefined,
     }),
@@ -159,10 +159,10 @@ const lightTheme: TheoTheme = Object.freeze({
     variable: "blue",
   }),
   toolStatus: Object.freeze({
-    pending: Object.freeze({ glyph: "●", color: "gray" }),
+    pending: Object.freeze({ glyph: "⏺", color: "gray" }),
     running: Object.freeze({ color: "yellow" }),
-    success: Object.freeze({ glyph: "●", color: "green" }),
-    failed: Object.freeze({ glyph: "●", color: "red" }),
+    success: Object.freeze({ glyph: "⏺", color: "green" }),
+    failed: Object.freeze({ glyph: "⏺", color: "red" }),
   }),
 });
 
@@ -172,7 +172,7 @@ const noColorTheme: TheoTheme = Object.freeze({
   name: "no-color",
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "", text: undefined }),
-    assistant: Object.freeze({ glyph: "● ", prefix: "", text: undefined }),
+    assistant: Object.freeze({ glyph: "⏺ ", prefix: "", text: undefined }),
     system: Object.freeze({ glyph: "· ", prefix: "", text: undefined }),
   }),
   status: Object.freeze({ error: "", success: "", warning: "" }),
@@ -187,10 +187,10 @@ const noColorTheme: TheoTheme = Object.freeze({
     variable: "",
   }),
   toolStatus: Object.freeze({
-    pending: Object.freeze({ glyph: "●", color: "" }),
+    pending: Object.freeze({ glyph: "⏺", color: "" }),
     running: Object.freeze({ color: "" }),
-    success: Object.freeze({ glyph: "●", color: "" }),
-    failed: Object.freeze({ glyph: "●", color: "" }),
+    success: Object.freeze({ glyph: "⏺", color: "" }),
+    failed: Object.freeze({ glyph: "⏺", color: "" }),
   }),
 });
 

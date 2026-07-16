@@ -68,6 +68,32 @@ describe("AppStatusBar (M14 T1.2)", () => {
     expect(frame).toContain("12.3k/128k");
   });
 
+  it("cost_slot_renders_between_tokens_and_state", () => {
+    // The Claude-Code footer shows the turn/session cost; `cost` sits after tokens, before state.
+    const frame = stripAnsi(
+      renderBar(
+        <AppStatusBar
+          tokens={{ used: 12300, limit: 128000 }}
+          cost={0.0021}
+          state="idle"
+        />,
+      ),
+    );
+    const iTokens = frame.indexOf("12.3k");
+    const iCost = frame.indexOf("$");
+    const iState = frame.indexOf("idle");
+    expect(iCost).toBeGreaterThanOrEqual(0);
+    expect(iTokens).toBeLessThan(iCost);
+    expect(iCost).toBeLessThan(iState);
+  });
+
+  it("cost_slot_absent_when_undefined", () => {
+    const frame = stripAnsi(
+      renderBar(<AppStatusBar model="gpt-x" state="idle" />),
+    );
+    expect(frame).not.toContain("$");
+  });
+
   it("cwd_tildeifies_home_prefix", () => {
     const frame = stripAnsi(
       renderBar(<AppStatusBar cwd={`${homedir()}/work/repo`} />),

@@ -31,8 +31,8 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     const frame = await renderFrame(
       <ToolCall name="search" status="pending" />,
     );
-    // M26: the status bullet `●` is the INDICATOR (positional oracle, SEPA F3).
-    expect(stripAnsi(frame).startsWith("●")).toBe(true);
+    // M26: the status bullet `⏺` is the INDICATOR (positional oracle, SEPA F3).
+    expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
     expect(frame).toContain("search");
   });
 
@@ -40,12 +40,12 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     const frame = await renderFrame(
       <ToolCall name="search" status="success" />,
     );
-    expect(stripAnsi(frame).startsWith("●")).toBe(true);
+    expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
   });
 
   it("renders_failed_with_status_bullet", async () => {
     const frame = await renderFrame(<ToolCall name="search" status="failed" />);
-    expect(stripAnsi(frame).startsWith("●")).toBe(true);
+    expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
   });
 
   it("running_shows_spinner_first_frame", async () => {
@@ -88,7 +88,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     // EC-9: empty-but-valid name is legal — indicator still renders.
     // Frames carry ANSI (FORCE_COLOR=1 pin) — strip before the exact-equality.
     const frame = await renderFrame(<ToolCall name="" status="success" />);
-    expect(stripAnsi(frame).trim()).toBe("●");
+    expect(stripAnsi(frame).trim()).toBe("⏺");
   });
 
   it("header_without_summary_shows_the_bare_name_no_parens", async () => {
@@ -148,7 +148,7 @@ describe("ToolCallCard — header + indented body (T1.2)", () => {
         <Text>12 matches</Text>
       </ToolCallCard>,
     );
-    expect(stripAnsi(frame).startsWith("●")).toBe(true);
+    expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
     expect(frame).toContain("12 matches");
     // M26: the body renders under a `⎿` corner connector (Claude Code tree).
     expect(frame).toContain("⎿");
@@ -302,7 +302,7 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
     await delay(0);
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    expect(stripAnsi(frame).startsWith("●")).toBe(true);
+    expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
     expect(frame).not.toContain(DOTS_FRAME_0);
   });
 
@@ -313,7 +313,7 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
     await delay(0);
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    expect(stripAnsi(frame).startsWith("●")).toBe(true);
+    expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
   });
 
   it(

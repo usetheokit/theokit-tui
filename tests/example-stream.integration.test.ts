@@ -19,7 +19,7 @@ it(
       },
     });
     expect(out).toContain("inspecting the failing test"); // thinking row
-    expect(out).toContain("●"); // tool success glyph
+    expect(out).toContain("⏺"); // tool success glyph
     expect(out).toContain("All green now.");
     // M11: timeline header slot in a production caller.
     expect(out).toContain("Theo Stream");

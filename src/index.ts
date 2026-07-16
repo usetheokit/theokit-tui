@@ -1,4 +1,4 @@
-export const VERSION = "0.31.0";
+export const VERSION = "0.35.0";
 
 export {
   TheoTUIProvider,
@@ -22,6 +22,12 @@ export type {
 // four sides and applies them to its root layout.
 export { LAYOUT_MARGIN_KEYS, omitMargin, pickMargin } from "./layout-props.js";
 export type { LayoutMarginProps } from "./layout-props.js";
+
+// #41 bridge: makes the custom-renderer interactive components (ChoiceRow,
+// SelectList, Pager, FreeTextInput, and the decision prompts) receive keyboard
+// input under pure Ink's `render`. Mount once, high in the tree.
+export { InkInputProvider } from "./ink-input-provider.js";
+export type { InkInputProviderProps } from "./ink-input-provider.js";
 
 export { CHAT_ROLES, ChatMessage } from "./chat-message.js";
 export type { ChatMessageProps, ChatRole } from "./chat-message.js";
@@ -206,3 +212,19 @@ export { Banner } from "./banner.js";
 export type { BannerProps, BannerStatusRow } from "./banner.js";
 export { renderFigletArt, bannerArtWidth } from "./figlet-art.js";
 export type { FigletLike, FigletLoader } from "./figlet-art.js";
+
+// ai-free projection of a client message snapshot (id + role + parts) onto the render shapes. The ai SDK's
+// `UIMessage` is structurally assignable to `UIMessageLike`, so `useAgent().thread` passes straight through
+// without importing `ai`. (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases.)
+export {
+  findPendingApproval,
+  messagesToAgentEvents,
+  messagesToChatThread,
+  readTurnUsage,
+} from "./messages-to-events.js";
+export type {
+  PendingApproval,
+  TurnUsage,
+  UIMessageLike,
+  UIMessagePartLike,
+} from "./messages-to-events.js";

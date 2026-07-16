@@ -9,11 +9,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Examples: `example:ai-sdk` (the `@theokit/tui/ai-sdk` UIMessage adapter — one
-  `UIMessage[]` folded into both `<ChatThread>` and `<AgentTimeline>`) and
-  `example:margin` (the universal margin API across several components), each with
-  a piped-smoke integration test.
-
 ### Changed
 
 ### Deprecated
@@ -23,6 +18,78 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 ### Security
+
+## [0.35.0] - 2026-07-16
+
+### Added
+
+- Examples: `example:ai-sdk` (the `@theokit/tui/ai-sdk` UIMessage adapter — one
+  `UIMessage[]` folded into both `<ChatThread>` and `<AgentTimeline>`) and
+  `example:margin` (the universal margin API across several components), each with
+  a piped-smoke integration test.
+
+### Changed
+
+- **Claude-Code bullet restored to `⏺` (#40).** With the width fix below, the theme's
+  filled-circle bullet changes from `●` (the interim workaround) to `⏺` (U+23FA) across all
+  three themes — for the assistant role glyph and the tool-status pending/success/failed
+  glyphs. `⏺` and `●` are both one cell wide, so nothing shifts; only the character changes.
+  Override it via the theme's `role.assistant.glyph` / `toolStatus.*.glyph` as before.
+
+### Fixed
+
+- **Renderer no longer over-counts the `⏺` glyph's width (#40).** The custom cell-grid
+  measured `⏺` (U+23FA) as 2 columns while Ink measures it as 1, misaligning any line
+  that used it. Root cause: `string-width` was pinned to 7.2.0 (and `widest-line` to 5.0.0,
+  which pulls its own 7.x) while Ink 7.1.0 is on the string-width `^8` line. Bumped
+  `string-width` → 8.2.1 and `widest-line` → 6.0.0 so both measurement paths agree with Ink
+  (`measureText("⏺") === 1`).
+- **Interactive components now receive keyboard input under pure Ink (#41).** `ChoiceRow`,
+  `SelectList`, `Pager`, `FreeTextInput` and the decision prompts (`ApprovalPrompt`,
+  `QuestionPrompt`, `PlanApproval`) consume the custom renderer's input+focus hooks, whose
+  context is not mounted under Ink's `render` — so they rendered but silently ignored every
+  key. New public **`InkInputProvider`** bridge wires an input source to Ink's stdin and
+  provides that context: mount it once, high in the tree, around this library's interactive
+  surfaces. (The `examples/decisions.tsx` demo now uses it instead of reaching into renderer
+  internals.)
+
+## [0.34.0] - 2026-07-16
+
+### Added
+
+- **`findPendingApproval(messages)` + `PendingApproval` — surface a HITL-gated tool awaiting a human
+  decision.** When a gated tool pauses the run, ai-sdk reconstructs a tool part with
+  `state: "approval-requested"` + `approval: { id }`; this reader (structural, ai-free, newest-first)
+  returns `{ approvalId, toolName, input }` so a surface renders an `ApprovalPrompt` and settles it via
+  the agent client's `approve(approvalId, decision)`. `undefined` when nothing is pending.
+
+## [0.33.0] - 2026-07-16
+
+### Added
+
+- **`readTurnUsage(message)` + `TurnUsage` — read per-turn usage from a message's
+  metadata for the status bar / cost meter.** The agent stream now rides each turn's
+  usage (input/output/total tokens + reasoning/cache buckets), cost, and durationMs on
+  the assistant `UIMessage.metadata`; `readTurnUsage` reads it structurally (ai-free,
+  never throws — a user turn or malformed shape yields `undefined`). This is the seam a
+  terminal footer renders real tokens/cost from, instead of a static `model · cwd` line.
+- **`AppStatusBar` gained a `cost?` slot** — rendered `cost ~$X` (via `formatCost`)
+  between the tokens and state slots, absent when undefined. The footer is now
+  `model · cwd · tokens · cost · state` — the Claude-Code shape.
+
+### Fixed
+
+- **`AppStatusBar` accepts an explicit `undefined` on the `tokens` / `cost` slots** — so a
+  consumer under `exactOptionalPropertyTypes` can wire the natural `cond ? value : undefined`
+  without a conditional-spread dance (the App footer pattern).
+
+## [0.32.0] - 2026-07-16
+
+### Added
+
+- **ai-free message projection: `messagesToAgentEvents` / `messagesToChatThread`** — the
+  same fold as the `./ai-sdk` adapter but over a structural `UIMessageLike` with **no `ai`
+  import**, exported from the main barrel. `AgentTimeline` now renders assistant Markdown.
 
 ## [0.31.0] - 2026-07-13
 

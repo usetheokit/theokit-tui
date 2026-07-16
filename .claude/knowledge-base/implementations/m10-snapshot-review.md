@@ -57,3 +57,27 @@ single `+` blank line — no glyph/text/border change.
 Verified NOT changed: every non-ChatThread scene (the spacing lives in
 ChatThread's row wrapper; standalone ChatMessage is untouched — no leading/
 trailing margin).
+
+## #40 re-record — ⏺ glyph restored (string-width bump, 2026-07-16)
+
+The width bug that forced `●` (the M27.1 workaround) is fixed: `string-width`
+7.2.0 → 8.2.1 and `widest-line` 5.0.0 → 6.0.0 (both now on the string-width ^8
+line Ink 7.1.0 uses), so `⏺` (U+23FA) measures **1** cell (`measureText("⏺")
+=== 1`), matching Ink. With the width correct, the theme's Claude-Code bullet
+`●` → `⏺` across all three themes (role.assistant + tool-status
+pending/success/failed). 13 snapshots re-recorded; the diff is a pure `●`→`⏺`
+character swap (17 lines each side, same columns — `⏺` and `●` are both width 1,
+so nothing shifted).
+
+| File | Snapshots | What changed | Justifying delta |
+|---|---|---|---|
+| chat-message.test.tsx.snap | chat-message-assistant | assistant glyph `●` → `⏺` | #40 — string-width fix enables the intended ⏺ |
+| tool-call.test.tsx.snap | tool-call-pending/success/failed + card | tool-status glyph `●` → `⏺` | same |
+| agent-timeline.test.tsx.snap | message/tool scenes | `⏺` via composed ChatMessage/ToolCallCard | same |
+| public-api.integration.test.tsx.snap | tool/agent/theme/stream scenes | `●` → `⏺` across composed scenes | same |
+
+Verified NOT changed: the `Toast` bullet (component-local `●`, not a theme role
+glyph — out of "no tema" scope), the thinking marker `•`/`✻`, and every
+non-glyph scene. The dependency bump alone changed no snapshot (only ⏺'s width
+moved, and nothing used ⏺ before the swap — 153 width-sensitive tests stayed
+green pre-swap).

@@ -5,7 +5,6 @@ import { TheoTUIProvider, themes } from "./theme.js";
 import { renderFrame } from "../tests/helpers.js";
 
 // M27 T1.1 — <Banner> art path + name degrade over the ink renderFrame harness.
-// eslint-disable-next-line no-control-regex
 const ANSI_RE = /\[[0-9;]*m/g;
 const strip = (v: string): string => v.replace(ANSI_RE, "");
 

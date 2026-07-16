@@ -23,7 +23,7 @@ it(
     expect(out).toContain("uiMessagesToAgentEvents");
     // Chat surface: the user text and the assistant reply (bullet differentiation).
     expect(out).toContain("Add a margin prop to the Button.");
-    expect(out).toContain("●"); // the assistant bullet
+    expect(out).toContain("⏺"); // the assistant bullet
     expect(out).toContain("Button now accepts the margin family.");
     // Timeline surface: the tool invocation + its result under the corner connector.
     expect(out).toContain("readFile");
