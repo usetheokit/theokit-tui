@@ -241,6 +241,12 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.PlanApproval).toBe("function");
     expect(typeof mod.ChoiceRow).toBe("function");
     expect(typeof mod.FreeTextInput).toBe("function");
+    // The Claude Code tool-approval card + its default Yes/No choices.
+    expect(typeof mod.PermissionPrompt).toBe("function");
+    expect(mod.DEFAULT_PERMISSION_CHOICES.map((c) => c.value)).toEqual([
+      "yes",
+      "no",
+    ]);
     // The pure oracle + the canonical approval triad (values only — the lib
     // never enumerates policy semantics, ADR D3/D5).
     expect(typeof mod.resolveChoiceKey).toBe("function");

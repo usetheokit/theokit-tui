@@ -14,6 +14,8 @@ import {
 const KEY = (over: Partial<ChoiceKey> = {}): ChoiceKey => ({
   leftArrow: false,
   rightArrow: false,
+  upArrow: false,
+  downArrow: false,
   return: false,
   escape: false,
   ...over,
@@ -36,6 +38,20 @@ describe("resolveChoiceKey (M23 T1.1)", () => {
 
   it("left_arrow_wraps_at_first", () => {
     expect(resolveChoiceKey("", KEY({ leftArrow: true }), 3, 0)).toEqual({
+      type: "move",
+      index: 2,
+    });
+  });
+
+  it("down_arrow_moves_to_next_choice_like_right", () => {
+    expect(resolveChoiceKey("", KEY({ downArrow: true }), 3, 0)).toEqual({
+      type: "move",
+      index: 1,
+    });
+  });
+
+  it("up_arrow_wraps_at_first_like_left", () => {
+    expect(resolveChoiceKey("", KEY({ upArrow: true }), 3, 0)).toEqual({
       type: "move",
       index: 2,
     });
