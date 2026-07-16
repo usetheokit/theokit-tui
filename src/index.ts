@@ -179,6 +179,11 @@ export { ChoiceRow } from "./choice-row.js";
 export type { ChoiceRowProps } from "./choice-row.js";
 export { ApprovalPrompt } from "./approval-prompt.js";
 export type { ApprovalPromptProps } from "./approval-prompt.js";
+export {
+  PermissionPrompt,
+  DEFAULT_PERMISSION_CHOICES,
+} from "./permission-prompt.js";
+export type { PermissionPromptProps } from "./permission-prompt.js";
 export { QuestionPrompt, OTHER_OPTION_VALUE } from "./question-prompt.js";
 export type { QuestionPromptProps } from "./question-prompt.js";
 export { PlanApproval } from "./plan-approval.js";

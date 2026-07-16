@@ -9,7 +9,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`PermissionPrompt` — the Claude Code tool-approval card.** A top-ruled frame around a
+  tool-type header (`Bash command`), the command + optional description, an optional
+  permission-rule note + hint (`/permissions to update rules`), the `Do you want to proceed?`
+  question, and a **vertical numbered** Yes/No list (`❯ 1. Yes` / `2. No`). Enter commits the
+  active choice; Esc is the safe default (the last choice — reject). Exports
+  `DEFAULT_PERMISSION_CHOICES`.
+
 ### Changed
+
+- **`ChoiceRow` gains a `vertical` + `numbered` mode** (opt-in; the default horizontal bar is
+  byte-identical). Vertical stacks each choice on its own line with a `{n}. ` prefix; ↑/↓ now
+  move alongside ←/→ (the shared keyboard oracle handles both). Powers `PermissionPrompt`.
 
 ### Deprecated
 

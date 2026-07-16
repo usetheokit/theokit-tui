@@ -169,3 +169,88 @@ describe("ChoiceRow component (M23 T1.1)", () => {
     app.unmount();
   });
 });
+
+// Vertical + numbered mode (PermissionPrompt parity): same keyboard oracle, a
+// column layout with `{n}. ` prefixes. The digit-jump already exists in the
+// oracle — this only changes the render.
+const YES_NO = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
+describe("ChoiceRow vertical + numbered", () => {
+  it("numbered_prefixes_each_choice", async () => {
+    const app = render(
+      createElement(ChoiceRow, {
+        choices: YES_NO,
+        onCommit: () => {},
+        numbered: true,
+      }),
+    );
+    await app.flush();
+    const frame = app.lastFrame();
+    expect(frame).toContain("1. Yes");
+    expect(frame).toContain("2. No");
+    app.unmount();
+  });
+
+  it("vertical_renders_each_choice_on_its_own_line", async () => {
+    const app = render(
+      createElement(ChoiceRow, {
+        choices: YES_NO,
+        onCommit: () => {},
+        orientation: "vertical",
+        numbered: true,
+      }),
+    );
+    await app.flush();
+    const lines = app
+      .lastFrame()
+      .split("\n")
+      .filter((l: string) => l.trim() !== "");
+    // ❯ 1. Yes  on its own line, then  2. No on the next.
+    expect(lines[0]).toContain("❯ 1. Yes");
+    expect(lines[1]).toContain("2. No");
+    expect(lines[1]).not.toContain("❯");
+    app.unmount();
+  });
+
+  it("down_arrow_moves_the_marker_in_vertical_mode", async () => {
+    const app = render(
+      createElement(ChoiceRow, {
+        choices: YES_NO,
+        onCommit: () => {},
+        orientation: "vertical",
+        numbered: true,
+      }),
+    );
+    await app.flush();
+    app.stdin.write("\x1b[B"); // down arrow → second choice
+    await app.flush();
+    const lines = app
+      .lastFrame()
+      .split("\n")
+      .filter((l: string) => l.trim() !== "");
+    expect(lines[1]).toContain("❯ 2. No");
+    app.unmount();
+  });
+
+  it("digit_jump_then_enter_commits_in_vertical_mode", async () => {
+    const committed: string[] = [];
+    const app = render(
+      createElement(ChoiceRow, {
+        choices: YES_NO,
+        onCommit: (v: string) => committed.push(v),
+        orientation: "vertical",
+        numbered: true,
+      }),
+    );
+    await app.flush();
+    app.stdin.write("2"); // jump to No
+    await app.flush();
+    app.stdin.write("\r");
+    await app.flush();
+    expect(committed).toEqual(["no"]);
+    app.unmount();
+  });
+});

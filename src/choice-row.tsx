@@ -26,6 +26,11 @@ export interface ChoiceRowProps extends LayoutMarginProps {
   onCommit: (value: string) => void;
   /** Called on Esc (the caller decides the safe default — reject/revise). */
   onCancel?: () => void;
+  /** `horizontal` (default) is a one-line bar; `vertical` stacks each choice on
+   * its own line (the PermissionPrompt / numbered-menu idiom). ↑/↓ also move. */
+  orientation?: "horizontal" | "vertical";
+  /** Prefix each label with `{n}. ` (matches the digit-jump shortcut). */
+  numbered?: boolean;
   autoFocus?: boolean;
 }
 
@@ -33,6 +38,8 @@ export function ChoiceRow({
   choices,
   onCommit,
   onCancel,
+  orientation = "horizontal",
+  numbered = false,
   autoFocus = true,
   ...margin
 }: ChoiceRowProps) {
@@ -78,19 +85,25 @@ export function ChoiceRow({
     { isActive: isFocused },
   );
 
+  const vertical = orientation === "vertical";
   return (
-    <Box {...margin}>
+    <Box flexDirection={vertical ? "column" : "row"} {...margin}>
       {choices.map((choice, position) => {
         const active = position === index;
         const marker = active ? "❯ " : "  ";
+        const prefix = numbered ? `${position + 1}. ` : "";
+        // Horizontal keeps a 3-space gap between choices; vertical needs none
+        // (each choice owns its line).
+        const gap = !vertical && position < count - 1 ? "   " : "";
         return (
           <Text
             key={choice.value}
             {...(active ? { color: theme.accent } : { dimColor: true })}
           >
             {marker}
+            {prefix}
             {choice.label}
-            {position < count - 1 ? "   " : ""}
+            {gap}
           </Text>
         );
       })}

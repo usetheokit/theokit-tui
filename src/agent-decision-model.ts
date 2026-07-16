@@ -34,6 +34,9 @@ export const DEFAULT_APPROVAL_CHOICES: readonly ApprovalChoice[] = [
 export interface ChoiceKey {
   leftArrow: boolean;
   rightArrow: boolean;
+  /** Vertical navigation (numbered/vertical ChoiceRow): down = next, up = prev. */
+  upArrow: boolean;
+  downArrow: boolean;
   return: boolean;
   escape: boolean;
 }
@@ -44,9 +47,9 @@ export type ChoiceKeyAction =
 
 /**
  * Resolve one keypress over a `count`-choice bar at active `index` to an action
- * (or `undefined` when the key is unbound). Pure: ←/→ move (wrapping), Enter
- * commits the active choice, Esc cancels, a digit `1..count` jumps to that
- * choice. Arrows on an empty bar are a no-op.
+ * (or `undefined` when the key is unbound). Pure: ←/→ (and ↑/↓ for the vertical
+ * layout) move (wrapping), Enter commits the active choice, Esc cancels, a digit
+ * `1..count` jumps to that choice. Arrows on an empty bar are a no-op.
  */
 export function resolveChoiceKey(
   input: string,
@@ -57,8 +60,9 @@ export function resolveChoiceKey(
   if (key.return) return { type: "commit" };
   if (key.escape) return { type: "cancel" };
   if (count <= 0) return undefined;
-  if (key.rightArrow) return { type: "move", index: (index + 1) % count };
-  if (key.leftArrow)
+  if (key.rightArrow || key.downArrow)
+    return { type: "move", index: (index + 1) % count };
+  if (key.leftArrow || key.upArrow)
     return { type: "move", index: (index - 1 + count) % count };
   if (/^[1-9]$/.test(input)) {
     const nth = Number(input) - 1;
