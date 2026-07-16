@@ -4,6 +4,7 @@ import {
   AgentStreaming,
   AgentTimeline,
   Notice,
+  Stack,
   StatusFooter,
   TheoTUIProvider,
   WelcomeBanner,
@@ -54,10 +55,13 @@ const TRANSCRIPT: AgentEvent[] = [
 function Scene() {
   return (
     <TheoTUIProvider>
-      <Box flexDirection="column">
+      {/* One <Stack> owns the vertical rhythm — no per-component marginTop. Every
+          block (banner, notices group, timeline, working line, footer) is spaced
+          by the same gap, so nothing is ever accidentally cramped. */}
+      <Stack>
         <WelcomeBanner
           name="Theo Code"
-          version="0.35.0"
+          version="0.36.0"
           tagline="Welcome back!"
           aside={
             <Box flexDirection="column">
@@ -66,30 +70,30 @@ function Scene() {
             </Box>
           }
         />
-        <Notice variant="info" marginTop={1}>
-          Opus 4.8 is now available! · /model to switch
-        </Notice>
-        <Notice variant="warning">
-          Both apiKeyHelper and ANTHROPIC_API_KEY set · auth may not work
-        </Notice>
-        <Box marginTop={1}>
-          <AgentTimeline events={TRANSCRIPT} />
-        </Box>
+        {/* the two notices are one tight group (gap 0), spaced from the rest by
+            the outer Stack */}
+        <Stack gap={0}>
+          <Notice variant="info">
+            Opus 4.8 is now available! · /model to switch
+          </Notice>
+          <Notice variant="warning">
+            Both apiKeyHelper and ANTHROPIC_API_KEY set · auth may not work
+          </Notice>
+        </Stack>
+        <AgentTimeline events={TRANSCRIPT} />
         <AgentStreaming
           thought="Searching"
           showCancelHint
           elapsedSeconds={27}
           tokens={47_000}
           tokenDirection="down"
-          marginTop={1}
         />
         <StatusFooter
           left={<Text>main · plan mode</Text>}
           right={<Text>42% context · add a hello world website</Text>}
           mode="auto-accept"
-          marginTop={1}
         />
-      </Box>
+      </Stack>
     </TheoTUIProvider>
   );
 }

@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`Stack` — the vertical-rhythm primitive.** Spacing between transcript blocks is a
+  container concern, not a per-component one: wrap a column of surfaces (banner, notices,
+  timeline, working indicator, footer) in one `<Stack gap={1}>` and every child is separated
+  by the same gap — regardless of type — so nothing is ever accidentally cramped (the
+  `AgentStreaming` "thinking" line included). Named over Ink's `<Box flexDirection="column"
+gap>` (the SwiftUI `VStack(spacing:)` / Braid `<Stack>` idiom); `gap` applies only between
+  children, never as leading/trailing padding. Default `gap` is 1 (the Claude Code cadence).
+  Accepts the margin family. `example:claude-code` now uses it instead of per-component margins.
+
 ### Changed
 
 ### Deprecated
