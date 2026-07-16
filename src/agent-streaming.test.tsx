@@ -69,18 +69,33 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
     const frame = await renderFrame(
       <AgentStreaming showCancelHint elapsedSeconds={125} />,
     );
-    expect(frame).toContain("(esc to cancel, 2m 5s)");
+    expect(frame).toContain("(2m 5s · esc to interrupt)");
   });
 
   it("streaming_suffix_exact_without_elapsed", async () => {
     const frame = await renderFrame(<AgentStreaming showCancelHint />);
-    expect(frame).toContain("(esc to cancel)");
-    expect(frame).not.toContain(",");
+    expect(frame).toContain("(esc to interrupt)");
+  });
+
+  it("streaming_suffix_with_tokens_is_claude_code_shaped", async () => {
+    // #1 Claude Code parity: `✳ Searching… (27s · 47k tokens · esc to interrupt)`.
+    const frame = await renderFrame(
+      <AgentStreaming
+        thought="Searching"
+        showCancelHint
+        elapsedSeconds={27}
+        tokens={47_000}
+      />,
+    );
+    expect(frame).toContain("(27s · 47k tokens · esc to interrupt)");
   });
 
   it("streaming_no_suffix_without_hint", async () => {
-    const frame = await renderFrame(<AgentStreaming elapsedSeconds={5} />);
-    expect(frame).not.toContain("esc to cancel");
+    const frame = await renderFrame(
+      <AgentStreaming elapsedSeconds={5} tokens={47_000} />,
+    );
+    expect(frame).not.toContain("esc to interrupt");
+    expect(frame).not.toContain("tokens");
     expect(frame).not.toContain("5s");
   });
 

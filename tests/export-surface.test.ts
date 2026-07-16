@@ -19,7 +19,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.TheoTUIProvider).toBe("function");
     expect(typeof mod.useTheoTheme).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("> ");
-    expect(mod.defaultTheme.role.assistant.glyph).toBe("⏺ ");
+    expect(mod.defaultTheme.role.assistant.glyph).toBe("⏺  ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
     // M6: built-ins exported; dark IS the default theme (same object).
     expect(Object.keys(mod.themes).sort()).toEqual([
@@ -187,6 +187,20 @@ describe("public entry surface (T0.2)", () => {
     const mod = await import("../src/index.js");
     // M9 (plan ADR D1): the banner primitive.
     expect(typeof mod.WelcomeBanner).toBe("function");
+  });
+
+  it("public_entry_exposes_claude_code_parity_surfaces", async () => {
+    const mod = await import("../src/index.js");
+    // ModeIndicator (permission-mode footer) + Notice (inline banner).
+    expect(typeof mod.ModeIndicator).toBe("function");
+    expect(mod.PERMISSION_MODES).toEqual(["default", "auto-accept", "plan"]);
+    expect(typeof mod.Notice).toBe("function");
+    expect(mod.NOTICE_VARIANTS).toEqual([
+      "info",
+      "warning",
+      "success",
+      "error",
+    ]);
   });
 
   it("public_entry_exposes_stream_adapter", async () => {

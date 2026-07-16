@@ -49,7 +49,7 @@ function assertDegradedScene(out: string): void {
   // M3: thinking + streaming readable without color.
   expect(out).toMatch(/^•\s+inspecting the failing test/m);
   expect(out).toContain("agent turn");
-  expect(out).toContain("(esc to cancel, 12s)");
+  expect(out).toContain("(12s · esc to interrupt)");
   // M4: diff signs + fold indicator (the sign column is THE mechanism).
   expect(out).toMatch(/^\s*\d+ \+ new probe line/m);
   expect(out).toMatch(/^\s*\d+ - old probe line/m);

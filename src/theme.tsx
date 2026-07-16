@@ -98,7 +98,7 @@ export const defaultTheme: TheoTheme = Object.freeze({
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "cyan", text: undefined }),
     assistant: Object.freeze({
-      glyph: "⏺ ",
+      glyph: "⏺  ",
       prefix: "magenta",
       text: undefined,
     }),
@@ -141,7 +141,7 @@ const lightTheme: TheoTheme = Object.freeze({
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "blue", text: undefined }),
     assistant: Object.freeze({
-      glyph: "⏺ ",
+      glyph: "⏺  ",
       prefix: "magenta",
       text: undefined,
     }),
@@ -172,7 +172,7 @@ const noColorTheme: TheoTheme = Object.freeze({
   name: "no-color",
   role: Object.freeze({
     user: Object.freeze({ glyph: "> ", prefix: "", text: undefined }),
-    assistant: Object.freeze({ glyph: "⏺ ", prefix: "", text: undefined }),
+    assistant: Object.freeze({ glyph: "⏺  ", prefix: "", text: undefined }),
     system: Object.freeze({ glyph: "· ", prefix: "", text: undefined }),
   }),
   status: Object.freeze({ error: "", success: "", warning: "" }),

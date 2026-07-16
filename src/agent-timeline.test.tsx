@@ -43,6 +43,26 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(frame).toContain("hello there");
   });
 
+  it("inserts_a_blank_line_between_event_blocks_not_before_the_first", async () => {
+    // Claude Code cadence: every ⏺ block (message / thinking / tool) has one
+    // blank line above it — except the very first rendered block.
+    const raw = await renderFrame(
+      <AgentTimeline
+        events={[message("a", "first block"), message("b", "second block")]}
+      />,
+    );
+    // eslint-disable-next-line no-control-regex
+    const frame = raw.replace(/\[[0-9;]*m/g, "");
+    const lines = frame.split("\n");
+    const iFirst = lines.findIndex((l) => l.includes("first block"));
+    const iSecond = lines.findIndex((l) => l.includes("second block"));
+    expect(iFirst).toBe(0); // no leading blank above the first block
+    expect(iSecond - iFirst).toBeGreaterThanOrEqual(2);
+    expect(lines.slice(iFirst + 1, iSecond).some((l) => l.trim() === "")).toBe(
+      true,
+    );
+  });
+
   it("thinking_event_renders_dim_italic_text", async () => {
     const frame = await renderFrame(
       <AgentTimeline

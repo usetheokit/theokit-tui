@@ -193,8 +193,14 @@ function eventRow(event: AgentEvent) {
 }
 
 const Row = memo(
-  ({ event }: { event: AgentEvent }) => eventRow(event),
-  (prev, next) => prev.event === next.event,
+  ({ event, spaced }: { event: AgentEvent; spaced: boolean }) => (
+    // Claude Code cadence: one blank line above every block EXCEPT the first
+    // rendered one — the transcript breathes (mirrors ChatThread's spacing).
+    <Box marginTop={spaced ? 1 : 0} flexDirection="column">
+      {eventRow(event)}
+    </Box>
+  ),
+  (prev, next) => prev.event === next.event && prev.spaced === next.spaced,
 );
 Row.displayName = "AgentTimeline.Row";
 
@@ -236,13 +242,14 @@ export function AgentTimeline({
     <>
       {items.length > 0 && (
         <Static items={items}>
-          {(item) =>
+          {(item, index) =>
             item === HEADER_SENTINEL ? (
               <Box key={HEADER_SENTINEL_KEY} flexDirection="column">
                 {frozenHeader}
               </Box>
             ) : (
-              <Row key={item.id} event={item} />
+              // Space every block except the first rendered element (index 0).
+              <Row key={item.id} event={item} spaced={index > 0} />
             )
           }
         </Static>
@@ -251,8 +258,14 @@ export function AgentTimeline({
           terminal scrollback and is not margined (a graduated row's position is
           frozen); the consumer margin spaces the timeline's on-screen tail. */}
       <Box flexDirection="column" {...margin}>
-        {tail.map((event) => (
-          <Row key={event.id} event={event} />
+        {tail.map((event, index) => (
+          // First tail block is the timeline's first ONLY when nothing graduated
+          // into Static above it (items empty).
+          <Row
+            key={event.id}
+            event={event}
+            spaced={items.length > 0 || index > 0}
+          />
         ))}
       </Box>
     </>

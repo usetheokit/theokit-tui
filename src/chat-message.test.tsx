@@ -24,6 +24,17 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toContain("hi there");
   });
 
+  it("assistant_bullet_has_a_two_space_gap_aligning_with_tool_rows", async () => {
+    // The `⏺` bullet sits two columns from its text — the same gap the tool
+    // indicator uses — so message and tool rows align in a transcript.
+    const frame = await renderFrame(
+      <ChatMessage role="assistant">reply</ChatMessage>,
+    );
+    // eslint-disable-next-line no-control-regex
+    const plain = frame.replace(/\u001B\[[0-9;]*m/g, "");
+    expect(plain).toContain("⏺  reply");
+  });
+
   it("user_message_text_renders_dim_the_input_echo", async () => {
     // M27.1: the user turn is the input echo — dim it so the assistant reply
     // (normal) reads as the prominent output (Claude Code contrast).

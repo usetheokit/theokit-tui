@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "../tests/renderer/itl-adapter.js";
 import { ExpandableOutput } from "./expandable-output.js";
 
-// M25 T3.1 — ExpandableOutput over the itl-adapter. A capped view + a ctrl+o /
+// M25 T3.1 — ExpandableOutput over the itl-adapter. A capped view + a ctrl+r /
 // Space / Enter toggle (per-component state, no global registry) revealing the
 // full body, with a ▶/▼ affordance line below the content.
 
@@ -21,7 +21,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     const frame = app.lastFrame();
     expect(frame).toContain("first 3 lines");
     expect(frame).toContain("39 more");
-    expect(frame).toContain("ctrl+o");
+    expect(frame).toContain("ctrl+r to expand");
     expect(frame).toContain("▶"); // collapsed affordance
     expect(frame).not.toContain("all 42 lines");
     app.unmount();
@@ -60,7 +60,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
       />,
     );
     await app.flush();
-    app.stdin.write("\x0f"); // Ctrl+O
+    app.stdin.write("\x12"); // Ctrl+R
     await app.flush();
     expect(app.lastFrame()).toContain("the full body here");
     expect(app.lastFrame()).toContain("▼"); // expanded affordance
@@ -100,7 +100,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
       </>,
     );
     await app.flush();
-    app.stdin.write("\x0f"); // Ctrl+O → only the focused (b) expands
+    app.stdin.write("\x12"); // Ctrl+R → only the focused (b) expands
     await app.flush();
     const frame = app.lastFrame();
     expect(frame).toContain("b-full");
@@ -113,7 +113,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     // review H1: composing CollapsibleBlock registered a second (dead) focusable
     // per instance, so a single Tab landed on a phantom stop that swallowed keys.
     // With the glyph inlined there is exactly ONE focusable per ExpandableOutput,
-    // so ONE Tab moves focus from the first to the second and ctrl+o expands it.
+    // so ONE Tab moves focus from the first to the second and ctrl+r expands it.
     const app = render(
       <>
         <ExpandableOutput
@@ -133,7 +133,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     await app.flush();
     app.stdin.write("\t"); // Tab → focus the SECOND instance (no dead stop)
     await app.flush();
-    app.stdin.write("\x0f"); // Ctrl+O → the second expands
+    app.stdin.write("\x12"); // Ctrl+R → the second expands
     await app.flush();
     expect(app.lastFrame()).toContain("b-full");
     expect(app.lastFrame()).not.toContain("a-full"); // the first stays collapsed
@@ -150,7 +150,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
       />,
     );
     await app.flush();
-    app.stdin.write("\x0f");
+    app.stdin.write("\x12"); // Ctrl+R
     await app.flush();
     expect(app.lastFrame()).not.toContain("nf-full");
     app.unmount();

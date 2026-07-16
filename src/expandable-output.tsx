@@ -7,7 +7,8 @@ import type { Key } from "./renderer/input/key.js";
 import { useInput } from "./renderer/input/use-input.js";
 
 // M25 ExpandableOutput (plan m25-parity-polish-audit T3.1, ADR C): a capped view
-// that reveals its full body on ctrl+o / Space / Enter (the gemini ctrl+o idiom).
+// that reveals its full body on ctrl+r / Space / Enter (the Claude Code
+// `(ctrl+r to expand)` idiom).
 // Per-component state (no global registry — the M15/M23/M24 declarative rule);
 // multiple instances toggle independently.
 //
@@ -40,7 +41,7 @@ export function ExpandableOutput({
 
   useInput(
     (input, key: Key) => {
-      if (key.return || input === " " || (key.ctrl && input === "o")) {
+      if (key.return || input === " " || (key.ctrl && input === "r")) {
         setOpen((value) => !value);
       }
     },
@@ -55,7 +56,9 @@ export function ExpandableOutput({
     <Box flexDirection="column" {...margin}>
       {open ? expanded : collapsed}
       <Text dimColor>
-        {open ? "▼ (ctrl+o to collapse)" : `▶ … ${hiddenCount} more (ctrl+o)`}
+        {open
+          ? "▼ (ctrl+r to collapse)"
+          : `▶ … ${hiddenCount} more (ctrl+r to expand)`}
       </Text>
     </Box>
   );

@@ -81,3 +81,35 @@ glyph — out of "no tema" scope), the thinking marker `•`/`✻`, and every
 non-glyph scene. The dependency bump alone changed no snapshot (only ⏺'s width
 moved, and nothing used ⏺ before the swap — 153 width-sensitive tests stayed
 green pre-swap).
+
+## Claude Code parity — AgentStreaming interrupt hint (2026-07-16)
+
+The streaming hint gained the Claude Code shape `({elapsed} · {N} tokens · esc to
+interrupt)` (was `(esc to cancel[, {elapsed}])`). One snapshot re-recorded; the
+diff is the suffix wording only (plus a one-char-longer primary truncation, as the
+longer suffix leaves one fewer column for the truncate-end thought).
+
+| File | Snapshot | What changed | Justifying delta |
+|---|---|---|---|
+| agent-streaming.test.tsx.snap | agent-streaming | `(esc to cancel, 12s)` → `(12s · esc to interrupt)` | #1 Claude Code parity (tokens + interrupt wording) |
+
+## AgentTimeline inter-block spacing (2026-07-16)
+
+`AgentTimeline` now inserts one blank line above every event block (message /
+thinking / tool) EXCEPT the first rendered one — the Claude Code cadence, mirroring
+ChatThread's inter-turn spacing. Two snapshots re-recorded; the diff is blank-line
+insertions only (no glyph/text change).
+
+| File | Snapshots | What changed | Justifying delta |
+|---|---|---|---|
+| agent-timeline.test.tsx.snap | agent-turn + timeline-header-scene | one blank line above each block after the first | AgentTimeline row `marginTop={1}` (Claude Code cadence) |
+| public-api.integration.test.tsx.snap | stream-scene | same inter-block blank lines in the composed AgentTimeline stream scene | same — downstream of AgentTimeline |
+
+## Assistant bullet gap — ⏺ two-space (2026-07-16)
+
+`theme.role.assistant.glyph` `⏺ ` → `⏺  ` (one → two trailing spaces) so the
+assistant message text aligns with the tool-status rows (STATUS_INDICATOR_WIDTH 3)
+— the Claude Code transcript where message and tool blocks share a column. Six
+snapshots re-recorded across the assistant-glyph-bearing scenes; the diff is the
+one added space after `⏺` (no other change). Tool-status glyphs (`⏺`, no trailing
+space) are untouched.
