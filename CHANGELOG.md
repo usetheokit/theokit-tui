@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`readTurnUsage(message)` + `TurnUsage` — read per-turn usage from a message's
+  metadata for the status bar / cost meter.** The agent stream now rides each turn's
+  usage (input/output/total tokens + reasoning/cache buckets), cost, and durationMs on
+  the assistant `UIMessage.metadata`; `readTurnUsage` reads it structurally (ai-free,
+  never throws — a user turn or malformed shape yields `undefined`). This is the seam a
+  terminal footer renders real tokens/cost from, instead of a static `model · cwd` line.
+- **`AppStatusBar` gained a `cost?` slot** — rendered `cost ~$X` (via `formatCost`)
+  between the tokens and state slots, absent when undefined. The footer is now
+  `model · cwd · tokens · cost · state` — the Claude-Code shape.
 - Examples: `example:ai-sdk` (the `@theokit/tui/ai-sdk` UIMessage adapter — one
   `UIMessage[]` folded into both `<ChatThread>` and `<AgentTimeline>`) and
   `example:margin` (the universal margin API across several components), each with

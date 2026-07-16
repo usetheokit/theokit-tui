@@ -2,16 +2,16 @@ import { Box, Text } from "ink";
 import { homedir } from "node:os";
 import { Fragment } from "react";
 
-import { formatTokens } from "./format.js";
+import { formatCost, formatTokens } from "./format.js";
 import type { LayoutMarginProps } from "./layout-props.js";
 import { pickMargin } from "./layout-props.js";
 import { useTheoTheme } from "./theme.js";
 
 // M14 AppStatusBar (plan m14-status-bar, ADR D1): the persistent AI-native
-// status line — model · cwd · tokens · state — gemini's FooterRow recipe
-// reduced to four fixed slots (no config system, KISS). Separators are
+// status line — model · cwd · tokens · cost · state — gemini's FooterRow recipe
+// reduced to fixed slots (no config system, KISS). Separators are
 // emitted between PRESENT slots only; the cwd slot shrinks first
-// (truncate-start keeps the informative path TAIL); state never shrinks.
+// (truncate-start keeps the informative path TAIL); cost/state never shrink.
 
 export interface AppStatusBarTokens {
   /** Tokens consumed so far (finite, >= 0). */
@@ -27,6 +27,8 @@ export interface AppStatusBarProps extends LayoutMarginProps {
   cwd?: string;
   /** Token usage rendered compacted as `used/limit` (formatTokens). */
   tokens?: AppStatusBarTokens;
+  /** Session/turn cost in USD, rendered `cost ~$X` (formatCost). Omitted when undefined. */
+  cost?: number;
   /** Free-text turn state (idle/streaming/error…) — never truncated. */
   state?: string;
 }
@@ -107,6 +109,17 @@ export function AppStatusBar(props: AppStatusBarProps) {
         // (review r2-F3).
         <Text dimColor wrap="truncate-end">
           {formatTokens(props.tokens.used)}/{formatTokens(props.tokens.limit)}
+        </Text>
+      ),
+      shrinks: false,
+    });
+  }
+  if (props.cost !== undefined && Number.isFinite(props.cost) && props.cost >= 0) {
+    slots.push({
+      key: "cost",
+      node: (
+        <Text dimColor>
+          cost {formatCost(props.cost, { approx: true })}
         </Text>
       ),
       shrinks: false,

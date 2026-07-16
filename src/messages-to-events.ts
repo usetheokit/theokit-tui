@@ -23,6 +23,68 @@ export interface UIMessageLike {
   id: string;
   role: "user" | "assistant" | "system";
   parts: readonly UIMessagePartLike[];
+  /** Per-turn metadata the agent stream rides on the finish chunk (usage/cost) — read by {@link readTurnUsage}. */
+  metadata?: unknown;
+}
+
+/**
+ * Per-turn usage extracted from a message's {@link UIMessageLike.metadata} — the totals the agent stream
+ * attaches to the finish chunk's `messageMetadata` (and `readUIMessageStream` lands on `UIMessage.metadata`).
+ * Optional fields are OMITTED when the provider/agent did not report them (never fabricated as 0).
+ */
+export interface TurnUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  reasoningTokens?: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
+  /** Total cost in USD for the turn (present iff the agent reported it). */
+  cost?: number;
+  durationMs?: number;
+}
+
+const USAGE_TOKEN_KEYS = [
+  "reasoningTokens",
+  "cacheReadTokens",
+  "cacheWriteTokens",
+] as const;
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null;
+const isFiniteNumber = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v);
+
+/**
+ * Read the per-turn usage from a message's metadata, or `undefined` when absent/malformed. Structural and
+ * DEFENSIVE (never throws): a user turn, a run that ended without `done`, or a foreign metadata shape all
+ * yield `undefined`. The three required token counts must be finite numbers; optional buckets/cost/duration
+ * are copied only when finite. This is the seam a status bar / cost meter renders — see {@link TurnUsage}.
+ */
+export function readTurnUsage(message: UIMessageLike): TurnUsage | undefined {
+  const metadata = message.metadata;
+  if (!isRecord(metadata)) return undefined;
+  const usage = metadata.usage;
+  if (!isRecord(usage)) return undefined;
+  if (
+    !isFiniteNumber(usage.inputTokens) ||
+    !isFiniteNumber(usage.outputTokens) ||
+    !isFiniteNumber(usage.totalTokens)
+  ) {
+    return undefined;
+  }
+  const out: TurnUsage = {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens: usage.totalTokens,
+  };
+  for (const key of USAGE_TOKEN_KEYS) {
+    const value = usage[key];
+    if (isFiniteNumber(value)) out[key] = value;
+  }
+  if (isFiniteNumber(metadata.cost)) out.cost = metadata.cost;
+  if (isFiniteNumber(metadata.durationMs)) out.durationMs = metadata.durationMs;
+  return out;
 }
 
 /** ai SDK tool-part `state` → tui {@link ToolCallStatus}. Approval-pending states read as `pending`. */

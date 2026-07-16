@@ -1,4 +1,4 @@
-export const VERSION = "0.32.0";
+export const VERSION = "0.33.0";
 
 export {
   TheoTUIProvider,
@@ -213,5 +213,10 @@ export type { FigletLike, FigletLoader } from "./figlet-art.js";
 export {
   messagesToAgentEvents,
   messagesToChatThread,
+  readTurnUsage,
 } from "./messages-to-events.js";
-export type { UIMessageLike, UIMessagePartLike } from "./messages-to-events.js";
+export type {
+  TurnUsage,
+  UIMessageLike,
+  UIMessagePartLike,
+} from "./messages-to-events.js";
