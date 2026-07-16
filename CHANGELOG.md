@@ -15,6 +15,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   no mode is active). Display-only slots.
 - **`AgentStreaming` gained a `tokenDirection?` prop** — `↓` / `↑` before the token count
   (`↓ 30.6k tokens`), the Claude Code context-trend arrow.
+- Example: `example:claude-code` now showcases the full parity surface — the sparkle working
+  glyph + `↓` token arrow and the two-line `StatusFooter` (justified status row + mode/agents row).
 
 ### Changed
 
