@@ -4,6 +4,7 @@ import {
   AgentStreaming,
   AgentTimeline,
   Notice,
+  ProgressActivity,
   Stack,
   StatusFooter,
   TheoTUIProvider,
@@ -87,6 +88,13 @@ function Scene() {
           elapsedSeconds={27}
           tokens={47_000}
           tokenDirection="down"
+        />
+        <ProgressActivity
+          label="Compacting conversation…"
+          percent={10}
+          elapsedSeconds={423}
+          tokens={24_600}
+          tokenDirection="up"
         />
         <StatusFooter
           left={<Text>main · plan mode</Text>}

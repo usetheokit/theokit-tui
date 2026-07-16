@@ -4,9 +4,7 @@ import { describe, expect, it } from "vitest";
 import { renderFrame } from "../tests/helpers.js";
 import { Stack } from "./stack.js";
 
-const strip = (v: string): string =>
-  // eslint-disable-next-line no-control-regex
-  v.replace(/\[[0-9;]*m/g, "");
+const strip = (v: string): string => v.replace(/\[[0-9;]*m/g, "");
 
 describe("Stack (vertical rhythm)", () => {
   it("inserts_one_blank_line_between_children_by_default", async () => {

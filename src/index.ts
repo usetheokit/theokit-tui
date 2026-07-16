@@ -1,4 +1,4 @@
-export const VERSION = "0.38.0";
+export const VERSION = "0.39.0";
 
 export {
   TheoTUIProvider,
@@ -145,6 +145,12 @@ export type { NoticeProps, NoticeVariant } from "./notice.js";
 // #45: the two-line footer (justified status row + mode/agents row).
 export { StatusFooter } from "./status-footer.js";
 export type { StatusFooterProps } from "./status-footer.js";
+// Determinate progress: the bar primitive + the compaction-style activity
+// (`✳ Compacting conversation… (7m 3s · ↑ 24.6k tokens)` over a bar).
+export { ProgressBar } from "./progress-bar.js";
+export type { ProgressBarProps } from "./progress-bar.js";
+export { ProgressActivity } from "./progress-activity.js";
+export type { ProgressActivityProps } from "./progress-activity.js";
 export { Image } from "./image.js";
 export type { ImageProps } from "./image.js";
 
