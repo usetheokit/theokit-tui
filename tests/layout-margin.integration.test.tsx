@@ -28,6 +28,8 @@ import {
   MultiStepProgress,
   Pager,
   PlanApproval,
+  ProgressActivity,
+  ProgressBar,
   QuestionPrompt,
   SelectList,
   Stack,
@@ -215,12 +217,17 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
       </Stack>
     ),
   ],
+  ["ProgressBar", (m) => <ProgressBar {...m} percent={50} />],
+  [
+    "ProgressActivity",
+    (m) => <ProgressActivity {...m} label="Compacting…" percent={10} />,
+  ],
 ];
 
 describe("universal margin contract (LayoutMarginProps)", () => {
   it("covers_every_public_visual_component", () => {
     // Guard against silent drift: if a new component ships, add it here.
-    expect(CASES.length).toBe(33);
+    expect(CASES.length).toBe(35);
   });
 
   for (const [name, make] of CASES) {

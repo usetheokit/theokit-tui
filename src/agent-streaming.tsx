@@ -1,9 +1,14 @@
 import { Box, Text, useStdout } from "ink";
 import { useEffect, useState } from "react";
 
-import { assertFiniteNonNegative, formatTokens } from "./format.js";
+import {
+  assertFiniteNonNegative,
+  formatElapsed,
+  formatTokens,
+} from "./format.js";
 import type { LayoutMarginProps } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
+import { useSparkle } from "./sparkle.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 
 // M24 (plan m24-live-progress-surfaces T5.1, ADR D7): the phrase-cycler is a
@@ -12,25 +17,6 @@ import { isMonochrome, useTheoTheme } from "./theme.js";
 // down on unmount, and scheduling ZERO timers when motion is disabled or there is
 // nothing to cycle. Not per-frame (2s cadence), so no OWN bench is required.
 const PHRASE_INTERVAL_MS = 2000;
-
-// #44: the Claude Code working glyph is a cycling sparkle (not a braille
-// spinner). Frames advance on a fast cadence while motion is enabled; under
-// reduced-motion / non-TTY / monochrome the first frame renders static.
-const SPARKLE_FRAMES = ["✳", "✷", "✶", "✵"] as const;
-const SPARKLE_INTERVAL_MS = 120;
-
-function useSparkle(active: boolean): string {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    const id = setInterval(
-      () => setIndex((current) => (current + 1) % SPARKLE_FRAMES.length),
-      SPARKLE_INTERVAL_MS,
-    );
-    return () => clearInterval(id);
-  }, [active]);
-  return SPARKLE_FRAMES[active ? index : 0]!;
-}
 
 function usePhraseCycler(count: number, active: boolean): number {
   const [index, setIndex] = useState(0);
@@ -58,31 +44,6 @@ function usePhraseLine(
   const index = usePhraseCycler(count, active);
   const cycled = count > 0 ? phrases![index] : undefined;
   return resolvePrimaryLine(active, cycled, thought, phrases);
-}
-
-/**
- * Human elapsed-time formatting (plan ADR D4): `0s`…`59s`, `1m 5s`,
- * `1h 2m 3s` — NO days unit (`86400` → `24h 0m 0s`, EC-11). Fractional input
- * is FLOORED first (EC-4 — `Date.now()` diffs produce 59.9). Exported for
- * unit tests; NOT re-exported from the package entry (EC-10, D7 precedent).
- */
-export function formatElapsed(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) {
-    throw new TypeError(
-      `formatElapsed: seconds must be a finite number >= 0 — got ${String(seconds)}`,
-    );
-  }
-  const total = Math.floor(seconds);
-  if (total < 60) {
-    return `${total}s`;
-  }
-  const minutes = Math.floor(total / 60);
-  const rest = total % 60;
-  if (minutes < 60) {
-    return `${minutes}m ${rest}s`;
-  }
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m ${rest}s`;
 }
 
 export interface AgentStreamingProps extends LayoutMarginProps {

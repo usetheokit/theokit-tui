@@ -92,3 +92,27 @@ export function formatCost(
   const remainder = String(cents % 100).padStart(2, "0");
   return `${approx ? "~" : ""}$${dollars}.${remainder}`;
 }
+
+/**
+ * Human elapsed-time formatting: `0s`…`59s`, `1m 5s`, `1h 2m 3s` — NO days unit
+ * (`86400` → `24h 0m 0s`). Fractional input is FLOORED first (`Date.now()` diffs
+ * produce 59.9). Module-internal (not re-exported from the package entry).
+ */
+export function formatElapsed(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new TypeError(
+      `formatElapsed: seconds must be a finite number >= 0 — got ${String(seconds)}`,
+    );
+  }
+  const total = Math.floor(seconds);
+  if (total < 60) {
+    return `${total}s`;
+  }
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  if (minutes < 60) {
+    return `${minutes}m ${rest}s`;
+  }
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m ${rest}s`;
+}

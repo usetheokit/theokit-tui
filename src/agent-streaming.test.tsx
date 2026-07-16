@@ -2,7 +2,8 @@ import { Box } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
-import { AgentStreaming, formatElapsed } from "./agent-streaming.js";
+import { AgentStreaming } from "./agent-streaming.js";
+import { formatElapsed } from "./format.js";
 import { TheoTUIProvider } from "./theme.js";
 
 /** The sparkle's static frame — motion is off in a non-TTY test env. */

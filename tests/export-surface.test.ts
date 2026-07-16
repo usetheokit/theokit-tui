@@ -205,6 +205,9 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.StatusFooter).toBe("function");
     // Stack — the vertical-rhythm primitive.
     expect(typeof mod.Stack).toBe("function");
+    // Determinate progress: bar + compaction-style activity.
+    expect(typeof mod.ProgressBar).toBe("function");
+    expect(typeof mod.ProgressActivity).toBe("function");
   });
 
   it("public_entry_exposes_stream_adapter", async () => {
