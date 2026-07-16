@@ -107,28 +107,37 @@ export interface PendingApproval {
  * Structural + DEFENSIVE (never throws): mirrors ai-sdk's reconstruction — `approval.id` (else the
  * `toolCallId`) is the settle id; `toolName`/`input` come off the same part.
  */
+/** The settle id: `approval.id`, else the `toolCallId`, else none. */
+function resolveApprovalId(p: Record<string, unknown>): string | undefined {
+  const approval = p.approval as { id?: unknown } | undefined;
+  if (typeof approval?.id === "string") return approval.id;
+  if (typeof p.toolCallId === "string") return p.toolCallId;
+  return undefined;
+}
+
+/** Read a single part as a {@link PendingApproval}, or `undefined` when it is
+ * not an approval-requested tool part with a settle id. */
+function partToPendingApproval(part: unknown): PendingApproval | undefined {
+  const p = part as Record<string, unknown>;
+  if (p.state !== "approval-requested") return undefined;
+  const approvalId = resolveApprovalId(p);
+  if (approvalId === undefined) return undefined;
+  const result: PendingApproval = {
+    approvalId,
+    toolName: typeof p.toolName === "string" ? p.toolName : "tool",
+  };
+  if (p.input !== undefined) result.input = p.input;
+  return result;
+}
+
 export function findPendingApproval(
   messages: readonly UIMessageLike[],
 ): PendingApproval | undefined {
   for (let i = messages.length - 1; i >= 0; i--) {
     const parts = messages[i]?.parts ?? [];
     for (const part of parts) {
-      const p = part as Record<string, unknown>;
-      if (p.state !== "approval-requested") continue;
-      const approval = p.approval as { id?: unknown } | undefined;
-      const approvalId =
-        typeof approval?.id === "string"
-          ? approval.id
-          : typeof p.toolCallId === "string"
-            ? p.toolCallId
-            : undefined;
-      if (approvalId === undefined) continue;
-      const result: PendingApproval = {
-        approvalId,
-        toolName: typeof p.toolName === "string" ? p.toolName : "tool",
-      };
-      if (p.input !== undefined) result.input = p.input;
-      return result;
+      const pending = partToPendingApproval(part);
+      if (pending !== undefined) return pending;
     }
   }
   return undefined;

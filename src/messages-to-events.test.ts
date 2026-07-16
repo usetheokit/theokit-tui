@@ -20,7 +20,10 @@ const withMetadata = (metadata: unknown): UIMessageLike => ({
 // A gated tool pauses the run: ai-sdk reconstructs a tool part with `state: "approval-requested"` +
 // `approval: { id }` (verified against readUIMessageStream). `findPendingApproval` surfaces it so the
 // App renders an ApprovalPrompt and settles via `useAgent().approve(approvalId, decision)`.
-const approvalRequestedMsg = (approvalId: string, toolName: string): UIMessageLike => ({
+const approvalRequestedMsg = (
+  approvalId: string,
+  toolName: string,
+): UIMessageLike => ({
   id: "a2",
   role: "assistant",
   parts: [
@@ -54,7 +57,14 @@ describe("findPendingApproval", () => {
       {
         id: "a1",
         role: "assistant",
-        parts: [{ type: "dynamic-tool", toolName: "t", toolCallId: "c1", state: "output-available" }],
+        parts: [
+          {
+            type: "dynamic-tool",
+            toolName: "t",
+            toolCallId: "c1",
+            state: "output-available",
+          },
+        ],
       },
     ];
     expect(findPendingApproval(thread)).toBeUndefined();
@@ -74,7 +84,12 @@ describe("readTurnUsage", () => {
   it("reads usage + cost + durationMs from a well-formed metadata", () => {
     const usage = readTurnUsage(
       withMetadata({
-        usage: { inputTokens: 12, outputTokens: 34, totalTokens: 46, reasoningTokens: 5 },
+        usage: {
+          inputTokens: 12,
+          outputTokens: 34,
+          totalTokens: 46,
+          reasoningTokens: 5,
+        },
         cost: 0.0021,
         durationMs: 1234,
       }),
@@ -91,19 +106,31 @@ describe("readTurnUsage", () => {
 
   it("omits absent optional fields (cost/reasoning) rather than fabricating zeros", () => {
     const usage = readTurnUsage(
-      withMetadata({ usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 }, durationMs: 9 }),
+      withMetadata({
+        usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
+        durationMs: 9,
+      }),
     );
-    expect(usage).toEqual({ inputTokens: 1, outputTokens: 2, totalTokens: 3, durationMs: 9 });
+    expect(usage).toEqual({
+      inputTokens: 1,
+      outputTokens: 2,
+      totalTokens: 3,
+      durationMs: 9,
+    });
   });
 
   it("returns undefined for a message with no metadata (a user turn, or a run without done)", () => {
-    expect(readTurnUsage({ id: "u1", role: "user", parts: [] })).toBeUndefined();
+    expect(
+      readTurnUsage({ id: "u1", role: "user", parts: [] }),
+    ).toBeUndefined();
     expect(readTurnUsage(withMetadata(undefined))).toBeUndefined();
   });
 
   it("returns undefined for malformed metadata (defensive — never throws)", () => {
     expect(readTurnUsage(withMetadata({ usage: "nope" }))).toBeUndefined();
-    expect(readTurnUsage(withMetadata({ usage: { inputTokens: "x" } }))).toBeUndefined();
+    expect(
+      readTurnUsage(withMetadata({ usage: { inputTokens: "x" } })),
+    ).toBeUndefined();
     expect(readTurnUsage(withMetadata(42))).toBeUndefined();
   });
 });

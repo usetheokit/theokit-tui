@@ -88,7 +88,9 @@ describe("AppStatusBar (M14 T1.2)", () => {
   });
 
   it("cost_slot_absent_when_undefined", () => {
-    const frame = stripAnsi(renderBar(<AppStatusBar model="gpt-x" state="idle" />));
+    const frame = stripAnsi(
+      renderBar(<AppStatusBar model="gpt-x" state="idle" />),
+    );
     expect(frame).not.toContain("$");
   });
 

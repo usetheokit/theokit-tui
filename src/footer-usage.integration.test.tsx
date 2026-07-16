@@ -48,7 +48,11 @@ const turn = (id: string, metadata: unknown): UIMessageLike => ({
 describe("scaffold TUI footer — usage wiring (Front 1 render proof)", () => {
   it("shows context tokens (last-turn input / window) + summed session cost after turns report usage", () => {
     const thread: UIMessageLike[] = [
-      { id: "greeting", role: "assistant", parts: [{ type: "text", text: "hi" }] },
+      {
+        id: "greeting",
+        role: "assistant",
+        parts: [{ type: "text", text: "hi" }],
+      },
       { id: "u1", role: "user", parts: [{ type: "text", text: "q1" }] },
       turn("a1", {
         usage: { inputTokens: 8000, outputTokens: 120, totalTokens: 8120 },
@@ -63,7 +67,8 @@ describe("scaffold TUI footer — usage wiring (Front 1 render proof)", () => {
       }),
     ];
     const frame = stripAnsi(
-      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ?? "",
+      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ??
+        "",
     );
     // Context window = the LAST turn's input tokens (12.3k) over the model window (128k).
     expect(frame).toContain("12.3k/128k");
@@ -75,11 +80,16 @@ describe("scaffold TUI footer — usage wiring (Front 1 render proof)", () => {
 
   it("omits tokens + cost before any turn reports usage (only greeting/user turns)", () => {
     const thread: UIMessageLike[] = [
-      { id: "greeting", role: "assistant", parts: [{ type: "text", text: "hi" }] },
+      {
+        id: "greeting",
+        role: "assistant",
+        parts: [{ type: "text", text: "hi" }],
+      },
       { id: "u1", role: "user", parts: [{ type: "text", text: "q1" }] },
     ];
     const frame = stripAnsi(
-      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ?? "",
+      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ??
+        "",
     );
     expect(frame).not.toContain("/128k");
     expect(frame).not.toContain("$");

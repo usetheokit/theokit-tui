@@ -66,25 +66,21 @@ interface Slot {
   shrinks: boolean;
 }
 
+/** A cost renders only when it is a real, finite, non-negative number. */
+function isRenderableCost(cost: number | undefined): cost is number {
+  return cost !== undefined && Number.isFinite(cost) && cost >= 0;
+}
+
 /**
- * One-line status bar: model · cwd · tokens · state. Absent slots
- * (undefined OR empty string) are omitted WITH their separators (never a
- * dangling `·`). Colors come from theme tokens — monochrome themes drop
- * color, keep the dim separator. Designed width floor ≈ 30 columns with
- * all slots (the cwd absorbs the squeeze; below the floor ink clips
- * visibly rather than lying). NOTE: the tokens TypeError fires at the
- * component boundary — under a live ink render the framework surfaces it
- * via waitUntilExit rather than the render call (review r2-F7).
+ * Build the ordered, present-only slot list (model · cwd · tokens · cost ·
+ * state). Empty strings are ABSENT (a "" slot must not emit a dangling
+ * separator). Extracted from the component so each stays within the complexity
+ * budget — behaviour is identical to the inline construction.
  */
-export function AppStatusBar(props: AppStatusBarProps) {
-  // Boundary validation before hooks (house F10 idiom).
-  if (props.tokens !== undefined) {
-    assertTokens(props.tokens);
-  }
-  const theme = useTheoTheme();
-  const m = pickMargin(props);
-  // Empty strings are ABSENT (review r2-F5): a "" slot must not emit a
-  // dangling separator — presence means non-empty content.
+function buildSlots(
+  props: AppStatusBarProps,
+  theme: ReturnType<typeof useTheoTheme>,
+): Slot[] {
   const model = props.model === "" ? undefined : props.model;
   const cwd = props.cwd === "" ? undefined : props.cwd;
   const state = props.state === "" ? undefined : props.state;
@@ -106,10 +102,9 @@ export function AppStatusBar(props: AppStatusBarProps) {
   if (props.tokens !== undefined) {
     slots.push({
       key: "tokens",
+      // truncate-end keeps any clipping VISIBLE (`12.3k/12…`) — a silently cut
+      // "12.3k/128" reads as a complete-but-wrong limit (review r2-F3).
       node: (
-        // truncate-end keeps any clipping VISIBLE (`12.3k/12…`) — a
-        // silently cut "12.3k/128" reads as a complete-but-wrong limit
-        // (review r2-F3).
         <Text dimColor wrap="truncate-end">
           {formatTokens(props.tokens.used)}/{formatTokens(props.tokens.limit)}
         </Text>
@@ -117,24 +112,39 @@ export function AppStatusBar(props: AppStatusBarProps) {
       shrinks: false,
     });
   }
-  if (props.cost !== undefined && Number.isFinite(props.cost) && props.cost >= 0) {
+  if (isRenderableCost(props.cost)) {
     slots.push({
       key: "cost",
       node: (
-        <Text dimColor>
-          cost {formatCost(props.cost, { approx: true })}
-        </Text>
+        <Text dimColor>cost {formatCost(props.cost, { approx: true })}</Text>
       ),
       shrinks: false,
     });
   }
   if (state !== undefined) {
-    slots.push({
-      key: "state",
-      node: <Text>{state}</Text>,
-      shrinks: false,
-    });
+    slots.push({ key: "state", node: <Text>{state}</Text>, shrinks: false });
   }
+  return slots;
+}
+
+/**
+ * One-line status bar: model · cwd · tokens · state. Absent slots
+ * (undefined OR empty string) are omitted WITH their separators (never a
+ * dangling `·`). Colors come from theme tokens — monochrome themes drop
+ * color, keep the dim separator. Designed width floor ≈ 30 columns with
+ * all slots (the cwd absorbs the squeeze; below the floor ink clips
+ * visibly rather than lying). NOTE: the tokens TypeError fires at the
+ * component boundary — under a live ink render the framework surfaces it
+ * via waitUntilExit rather than the render call (review r2-F7).
+ */
+export function AppStatusBar(props: AppStatusBarProps) {
+  // Boundary validation before hooks (house F10 idiom).
+  if (props.tokens !== undefined) {
+    assertTokens(props.tokens);
+  }
+  const theme = useTheoTheme();
+  const m = pickMargin(props);
+  const slots = buildSlots(props, theme);
   if (slots.length === 0) {
     return null;
   }
