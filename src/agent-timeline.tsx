@@ -168,7 +168,14 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
 function eventRow(event: AgentEvent) {
   switch (event.kind) {
     case "message":
-      return <ChatMessage role={event.role}>{event.text}</ChatMessage>;
+      // Claude Code parity: an assistant turn is Markdown (headings, lists, fenced code → CodeBlock with
+      // syntax highlight), so render it through MarkdownText. The user echo stays raw (dim) — a user's typed
+      // input is not Markdown source; rendering it as such would mangle a literal `#` or `*`.
+      return (
+        <ChatMessage role={event.role} markdown={event.role === "assistant"}>
+          {event.text}
+        </ChatMessage>
+      );
     case "thinking":
       return <ThinkingRow text={event.text} />;
     case "tool":

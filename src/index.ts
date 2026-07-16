@@ -206,3 +206,15 @@ export { Banner } from "./banner.js";
 export type { BannerProps, BannerStatusRow } from "./banner.js";
 export { renderFigletArt, bannerArtWidth } from "./figlet-art.js";
 export type { FigletLike, FigletLoader } from "./figlet-art.js";
+
+// ai-free projection of a client message snapshot (id + role + parts) onto the render shapes. The ai SDK's
+// `UIMessage` is structurally assignable to `UIMessageLike`, so `useAgent().thread` passes straight through
+// without importing `ai`. (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases.)
+export {
+  messagesToAgentEvents,
+  messagesToChatThread,
+} from "./messages-to-events.js";
+export type {
+  UIMessageLike,
+  UIMessagePartLike,
+} from "./messages-to-events.js";
