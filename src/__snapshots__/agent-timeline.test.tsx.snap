@@ -7,7 +7,7 @@ exports[`AgentTimeline header slot (M11 T1.2) > timeline_header_scene_matches_sn
 
 [32m⏺[39m  [1mvitest[22m
 
-[35m⏺ [39mdone"
+[35m⏺  [39mdone"
 `;
 
 exports[`AgentTimeline — representative turn (T3.1, roadmap DoD-3) > representative_turn_matches_snapshot > agent-turn 1`] = `
@@ -18,5 +18,5 @@ exports[`AgentTimeline — representative turn (T3.1, roadmap DoD-3) > represent
 [32m⏺[39m  [1meslint[22m
   [2m⎿ [22m0 problems
 
-[35m⏺ [39mAll green now."
+[35m⏺  [39mAll green now."
 `;

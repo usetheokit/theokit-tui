@@ -29,6 +29,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`AgentTimeline` now spaces its event blocks** — one blank line above every message /
   thinking / tool block except the first, matching `ChatThread`'s inter-turn cadence (the
   Claude Code transcript rhythm). Consumers rendering a live turn get the spacing for free.
+- **Assistant bullet gap** — `theme.role.assistant.glyph` is now `⏺ ` + an extra space
+  (two-space gap) so the assistant message text aligns with the tool-status rows in a
+  transcript (both sit one column past the `⏺`). Override via the theme as before.
 
 - **`AgentStreaming` interrupt hint** is now `({elapsed} · {N} tokens · esc to interrupt)`
   (was `(esc to cancel[, {elapsed}])`) — Claude Code wording.

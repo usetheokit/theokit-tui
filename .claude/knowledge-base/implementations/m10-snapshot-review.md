@@ -104,3 +104,12 @@ insertions only (no glyph/text change).
 |---|---|---|---|
 | agent-timeline.test.tsx.snap | agent-turn + timeline-header-scene | one blank line above each block after the first | AgentTimeline row `marginTop={1}` (Claude Code cadence) |
 | public-api.integration.test.tsx.snap | stream-scene | same inter-block blank lines in the composed AgentTimeline stream scene | same — downstream of AgentTimeline |
+
+## Assistant bullet gap — ⏺ two-space (2026-07-16)
+
+`theme.role.assistant.glyph` `⏺ ` → `⏺  ` (one → two trailing spaces) so the
+assistant message text aligns with the tool-status rows (STATUS_INDICATOR_WIDTH 3)
+— the Claude Code transcript where message and tool blocks share a column. Six
+snapshots re-recorded across the assistant-glyph-bearing scenes; the diff is the
+one added space after `⏺` (no other change). Tool-status glyphs (`⏺`, no trailing
+space) are untouched.
