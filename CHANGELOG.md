@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.37.0] - 2026-07-16
+
+### Added
+
 - **`StatusFooter` — the two-line Claude Code footer.** A justified status row (`left`
   space-between `right`, e.g. `main · plan … 42% context · fix the bug`) above a mode /
   agents row (`ModeIndicator` + `← for agents`, or `? for shortcuts · ← for agents` when
@@ -23,14 +37,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`AgentStreaming` working glyph is now the sparkle `✳`** (cycling `✳ ✷ ✶ ✵` under
   motion; static under reduced-motion / non-TTY / monochrome) instead of the braille
   spinner — the Claude Code look.
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.36.0] - 2026-07-16
 
