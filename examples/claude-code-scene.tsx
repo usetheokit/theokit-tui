@@ -3,8 +3,8 @@ import { Box, Text, render } from "ink";
 import {
   AgentStreaming,
   AgentTimeline,
-  ModeIndicator,
   Notice,
+  StatusFooter,
   TheoTUIProvider,
   WelcomeBanner,
 } from "../src/index.js";
@@ -80,9 +80,15 @@ function Scene() {
           showCancelHint
           elapsedSeconds={27}
           tokens={47_000}
+          tokenDirection="down"
           marginTop={1}
         />
-        <ModeIndicator mode="auto-accept" marginTop={1} />
+        <StatusFooter
+          left={<Text>main · plan mode</Text>}
+          right={<Text>42% context · add a hello world website</Text>}
+          mode="auto-accept"
+          marginTop={1}
+        />
       </Box>
     </TheoTUIProvider>
   );
