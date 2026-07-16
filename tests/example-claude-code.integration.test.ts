@@ -32,6 +32,9 @@ it(
     expect(plain).toContain("Search(pattern:"); // tool name(args)
     expect(plain).toContain("✳"); // #44 sparkle working glyph
     expect(plain).toContain("(27s · ↓ 47k tokens · esc to interrupt)"); // #44 arrow
+    expect(plain).toContain("Compacting conversation…"); // ProgressActivity label
+    expect(plain).toContain("↑ 24.6k tokens"); // ProgressActivity meta
+    expect(plain).toContain("10%"); // ProgressActivity bar
     expect(plain).toContain("⏵⏵ auto-accept edits on"); // #45 mode footer row
     expect(plain).toContain("← for agents"); // #45 agents hint
     expect(plain).toContain("42% context"); // #45 justified right slot
