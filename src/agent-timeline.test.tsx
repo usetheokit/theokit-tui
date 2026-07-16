@@ -51,7 +51,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         events={[message("a", "first block"), message("b", "second block")]}
       />,
     );
-    // eslint-disable-next-line no-control-regex
+
     const frame = raw.replace(/\[[0-9;]*m/g, "");
     const lines = frame.split("\n");
     const iFirst = lines.findIndex((l) => l.includes("first block"));

@@ -3,9 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderFrame } from "../tests/helpers.js";
 import { ProgressActivity } from "./progress-activity.js";
 
-const strip = (v: string): string =>
-  // eslint-disable-next-line no-control-regex
-  v.replace(/\[[0-9;]*m/g, "");
+const strip = (v: string): string => v.replace(/\[[0-9;]*m/g, "");
 
 describe("ProgressActivity (compaction-style progress)", () => {
   it("reproduces_the_two_line_compaction_look", async () => {
