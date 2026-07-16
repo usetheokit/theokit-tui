@@ -139,18 +139,18 @@ describe("theme token growth (M6 T1.1)", () => {
   });
 
   it("default_tool_status_matches_current_visuals", () => {
-    // M26: the status bullet is a `●` (U+25CF) colored by status (Claude Code
+    // M26: the status bullet is a `⏺` (U+25CF) colored by status (Claude Code
     // tool-card parity) — color carries the meaning, one glyph across states.
     expect(defaultTheme.toolStatus.pending).toEqual({
-      glyph: "●",
+      glyph: "⏺",
       color: "gray",
     });
     expect(defaultTheme.toolStatus.success).toEqual({
-      glyph: "●",
+      glyph: "⏺",
       color: "green",
     });
     expect(defaultTheme.toolStatus.failed).toEqual({
-      glyph: "●",
+      glyph: "⏺",
       color: "red",
     });
     // running carries NO glyph slot — ink-spinner animates (D1).
@@ -217,7 +217,7 @@ describe("theme token growth (M6 T1.1)", () => {
     );
     expect(captured?.role.user.glyph).toBe("$ ");
     expect(captured?.status.error).toBe("redBright");
-    expect(captured?.role.assistant.glyph).toBe("● ");
+    expect(captured?.role.assistant.glyph).toBe("⏺ ");
   });
 });
 
@@ -271,7 +271,7 @@ describe("built-in themes + provider resolution (M6 T1.2)", () => {
     expect(nc.status.error).toBe("");
     expect(nc.accent).toBe("");
     expect(nc.code.keyword).toBe("");
-    expect(nc.toolStatus.success.glyph).toBe("●");
+    expect(nc.toolStatus.success.glyph).toBe("⏺");
     expect(nc.role.user.glyph).toBe("> ");
     expect(nc.name).toBe("no-color");
   });

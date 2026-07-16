@@ -36,6 +36,14 @@ describe("text-measure (M18 T2.1)", () => {
     expect(measureText("你好").width).toBe(4);
   });
 
+  it("measure_text_filled_circle_glyph_counts_one_matching_ink", () => {
+    // #40: ⏺ (U+23FA) is a NARROW glyph — Ink (string-width ^8.2.0) measures it
+    // as width 1. The renderer's measurement must agree, or the assistant/tool
+    // bullet over-counts by a cell and every following character misaligns
+    // against the `> ` / `· ` prefixes. (string-width 7.x wrongly returned 2.)
+    expect(measureText("⏺").width).toBe(1);
+  });
+
   it("squash_concatenates_children", () => {
     const node = inkText([textNode("hello "), textNode("world")]);
     expect(squashTextNodes(node)).toBe("hello world");

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ChatMessage (T2.1) > assistant_frame_matches_snapshot_under_forced_color > chat-message-assistant 1`] = `"[35m● [39mTheo is an AI toolkit."`;
+exports[`ChatMessage (T2.1) > assistant_frame_matches_snapshot_under_forced_color > chat-message-assistant 1`] = `"[35m⏺ [39mTheo is an AI toolkit."`;
 
 exports[`ChatMessage (T2.1) > renders_glyph_only_for_empty_children > chat-message-empty 1`] = `"[36m> [39m"`;
 

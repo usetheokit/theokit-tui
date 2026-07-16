@@ -18,7 +18,7 @@ describe("examples/chat.tsx (T4.2)", () => {
         },
       });
       expect(out).toContain(">");
-      expect(out).toContain("●");
+      expect(out).toContain("⏺");
       expect(out).toContain("·");
       expect(out).toContain("appended in place.");
       // M11: banner in the header slot — present, ABOVE the thread, once.

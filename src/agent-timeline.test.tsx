@@ -39,7 +39,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     const frame = await renderFrame(
       <AgentTimeline events={[message("m1", "hello there")]} />,
     );
-    expect(frame).toContain("●");
+    expect(frame).toContain("⏺");
     expect(frame).toContain("hello there");
   });
 
@@ -67,7 +67,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         ]}
       />,
     );
-    expect(stripAnsi(frame)).toMatch(/^●\s+grep/m); // line-anchored (tests-6)
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+grep/m); // line-anchored (tests-6)
     expect(frame).toContain("3 matches");
   });
 
@@ -77,7 +77,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         events={[{ id: "x1", kind: "tool", name: "grep", status: "success" }]}
       />,
     );
-    expect(frame).toContain("●");
+    expect(frame).toContain("⏺");
     expect(frame.split("\n")).toHaveLength(1);
   });
 
@@ -333,7 +333,7 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
     await tick();
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    expect(stripAnsi(frame)).toMatch(/^●\s+vitest/m);
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+vitest/m);
     expect(rowRenders.count).toBe(0); // message rows untouched by memo
   });
 
@@ -471,7 +471,7 @@ describe("AgentTimeline — representative turn (T3.1, roadmap DoD-3)", () => {
     );
     expect(stripAnsi(frame)).toMatch(/^•\s+inspecting/m);
     expect(frame).toContain("⠋");
-    expect(frame).toContain("●");
+    expect(frame).toContain("⏺");
     expect(frame).toContain("All green now.");
     expect(frame).toMatchSnapshot("agent-turn");
   });
@@ -580,7 +580,7 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
       </Box>,
     );
     expect(frame).toContain("BANNER");
-    expect(frame).toContain("●");
+    expect(frame).toContain("⏺");
     expect(frame).toContain("done");
     expect(frame).toMatchSnapshot("timeline-header-scene");
     expect(errorSpy).not.toHaveBeenCalled();

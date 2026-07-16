@@ -30,12 +30,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Claude-Code bullet restored to `⏺` (#40).** With the width fix below, the theme's
+  filled-circle bullet changes from `●` (the interim workaround) to `⏺` (U+23FA) across all
+  three themes — for the assistant role glyph and the tool-status pending/success/failed
+  glyphs. `⏺` and `●` are both one cell wide, so nothing shifts; only the character changes.
+  Override it via the theme's `role.assistant.glyph` / `toolStatus.*.glyph` as before.
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
+- **Renderer no longer over-counts the `⏺` glyph's width (#40).** The custom cell-grid
+  measured `⏺` (U+23FA) as 2 columns while Ink measures it as 1, misaligning any line
+  that used it. Root cause: `string-width` was pinned to 7.2.0 (and `widest-line` to 5.0.0,
+  which pulls its own 7.x) while Ink 7.1.0 is on the string-width `^8` line. Bumped
+  `string-width` → 8.2.1 and `widest-line` → 6.0.0 so both measurement paths agree with Ink
+  (`measureText("⏺") === 1`).
 - **Interactive components now receive keyboard input under pure Ink (#41).** `ChoiceRow`,
   `SelectList`, `Pager`, `FreeTextInput` and the decision prompts (`ApprovalPrompt`,
   `QuestionPrompt`, `PlanApproval`) consume the custom renderer's input+focus hooks, whose
