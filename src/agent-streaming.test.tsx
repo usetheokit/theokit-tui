@@ -5,8 +5,8 @@ import { renderFrame } from "../tests/helpers.js";
 import { AgentStreaming, formatElapsed } from "./agent-streaming.js";
 import { TheoTUIProvider } from "./theme.js";
 
-/** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick. */
-const DOTS_FRAME_0 = "⠋";
+/** The sparkle's static frame — motion is off in a non-TTY test env. */
+const SPARKLE_FRAME_0 = "✳";
 
 describe("formatElapsed — pure helper (T2.1, ADR D4)", () => {
   it("format_elapsed_renders_seconds_under_a_minute", () => {
@@ -51,9 +51,11 @@ describe("formatElapsed — pure helper (T2.1, ADR D4)", () => {
 });
 
 describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
-  it("streaming_renders_spinner_and_default_thought", async () => {
+  it("streaming_renders_sparkle_and_default_thought", async () => {
+    // #44: the working glyph is the Claude Code sparkle (✳), not a braille spinner.
     const frame = await renderFrame(<AgentStreaming />);
-    expect(frame).toContain(DOTS_FRAME_0);
+    expect(frame).toContain(SPARKLE_FRAME_0);
+    expect(frame).not.toContain("⠋"); // no braille
     expect(frame).toContain("Thinking…");
   });
 
@@ -88,6 +90,30 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
       />,
     );
     expect(frame).toContain("(27s · 47k tokens · esc to interrupt)");
+  });
+
+  it("token_direction_down_prefixes_a_down_arrow", async () => {
+    // #44: `↓ 30.6k tokens` (context shrinking) / `↑` (growing).
+    const frame = await renderFrame(
+      <AgentStreaming showCancelHint tokens={30_600} tokenDirection="down" />,
+    );
+    expect(frame).toContain("↓ 30.6k tokens");
+  });
+
+  it("token_direction_up_prefixes_an_up_arrow", async () => {
+    const frame = await renderFrame(
+      <AgentStreaming showCancelHint tokens={47_000} tokenDirection="up" />,
+    );
+    expect(frame).toContain("↑ 47k tokens");
+  });
+
+  it("no_token_direction_renders_the_bare_count", async () => {
+    const frame = await renderFrame(
+      <AgentStreaming showCancelHint tokens={47_000} />,
+    );
+    expect(frame).toContain("47k tokens");
+    expect(frame).not.toContain("↓");
+    expect(frame).not.toContain("↑");
   });
 
   it("streaming_no_suffix_without_hint", async () => {

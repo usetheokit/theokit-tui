@@ -113,3 +113,14 @@ assistant message text aligns with the tool-status rows (STATUS_INDICATOR_WIDTH 
 snapshots re-recorded across the assistant-glyph-bearing scenes; the diff is the
 one added space after `⏺` (no other change). Tool-status glyphs (`⏺`, no trailing
 space) are untouched.
+
+## AgentStreaming sparkle glyph — #44 (2026-07-16)
+
+The working glyph changed from the ink-spinner braille (`⠋`) to the Claude Code
+cycling sparkle (`✳`, static in a non-TTY test env). One snapshot re-recorded; the
+diff is the single glyph `⠋` → `✳` (no other change). ink-spinner stays a dep
+(tool-call's running status still uses it).
+
+| File | Snapshot | What changed | Justifying delta |
+|---|---|---|---|
+| agent-streaming.test.tsx.snap | agent-streaming | `⠋` → `✳` | #44 sparkle glyph |

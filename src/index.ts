@@ -1,4 +1,4 @@
-export const VERSION = "0.36.0";
+export const VERSION = "0.37.0";
 
 export {
   TheoTUIProvider,
@@ -135,6 +135,9 @@ export { ModeIndicator, PERMISSION_MODES } from "./mode-indicator.js";
 export type { ModeIndicatorProps, PermissionMode } from "./mode-indicator.js";
 export { Notice, NOTICE_VARIANTS } from "./notice.js";
 export type { NoticeProps, NoticeVariant } from "./notice.js";
+// #45: the two-line footer (justified status row + mode/agents row).
+export { StatusFooter } from "./status-footer.js";
+export type { StatusFooterProps } from "./status-footer.js";
 export { Image } from "./image.js";
 export type { ImageProps } from "./image.js";
 
