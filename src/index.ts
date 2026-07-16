@@ -1,4 +1,4 @@
-export const VERSION = "0.33.0";
+export const VERSION = "0.34.0";
 
 export {
   TheoTUIProvider,
@@ -211,11 +211,13 @@ export type { FigletLike, FigletLoader } from "./figlet-art.js";
 // `UIMessage` is structurally assignable to `UIMessageLike`, so `useAgent().thread` passes straight through
 // without importing `ai`. (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases.)
 export {
+  findPendingApproval,
   messagesToAgentEvents,
   messagesToChatThread,
   readTurnUsage,
 } from "./messages-to-events.js";
 export type {
+  PendingApproval,
   TurnUsage,
   UIMessageLike,
   UIMessagePartLike,

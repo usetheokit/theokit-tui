@@ -87,6 +87,53 @@ export function readTurnUsage(message: UIMessageLike): TurnUsage | undefined {
   return out;
 }
 
+/**
+ * A gated tool paused awaiting a human decision — surfaced by {@link findPendingApproval} from a
+ * reconstructed `approval-requested` tool part, so a surface renders an approval prompt and settles it
+ * via the agent client's `approve(approvalId, decision)`.
+ */
+export interface PendingApproval {
+  /** The id to settle: `useAgent().approve(approvalId, decision)`. */
+  approvalId: string;
+  /** The tool the human is being asked to allow (e.g. `send_email`). */
+  toolName: string;
+  /** The tool input the model proposed (shown to the approver). */
+  input?: unknown;
+}
+
+/**
+ * Scan a thread for a tool part awaiting human approval (`state === "approval-requested"`), newest first,
+ * and surface its {@link PendingApproval}. `undefined` when none is pending (settled, or never gated).
+ * Structural + DEFENSIVE (never throws): mirrors ai-sdk's reconstruction — `approval.id` (else the
+ * `toolCallId`) is the settle id; `toolName`/`input` come off the same part.
+ */
+export function findPendingApproval(
+  messages: readonly UIMessageLike[],
+): PendingApproval | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const parts = messages[i]?.parts ?? [];
+    for (const part of parts) {
+      const p = part as Record<string, unknown>;
+      if (p.state !== "approval-requested") continue;
+      const approval = p.approval as { id?: unknown } | undefined;
+      const approvalId =
+        typeof approval?.id === "string"
+          ? approval.id
+          : typeof p.toolCallId === "string"
+            ? p.toolCallId
+            : undefined;
+      if (approvalId === undefined) continue;
+      const result: PendingApproval = {
+        approvalId,
+        toolName: typeof p.toolName === "string" ? p.toolName : "tool",
+      };
+      if (p.input !== undefined) result.input = p.input;
+      return result;
+    }
+  }
+  return undefined;
+}
+
 /** ai SDK tool-part `state` → tui {@link ToolCallStatus}. Approval-pending states read as `pending`. */
 const TOOL_STATUS: Readonly<Record<string, ToolCallStatus>> = {
   "input-streaming": "pending",

@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`findPendingApproval(messages)` + `PendingApproval` — surface a HITL-gated tool awaiting a human
+  decision.** When a gated tool pauses the run, ai-sdk reconstructs a tool part with
+  `state: "approval-requested"` + `approval: { id }`; this reader (structural, ai-free, newest-first)
+  returns `{ approvalId, toolName, input }` so a surface renders an `ApprovalPrompt` and settles it via
+  the agent client's `approve(approvalId, decision)`. `undefined` when nothing is pending.
 - **`readTurnUsage(message)` + `TurnUsage` — read per-turn usage from a message's
   metadata for the status bar / cost meter.** The agent stream now rides each turn's
   usage (input/output/total tokens + reasoning/cache buckets), cost, and durationMs on
