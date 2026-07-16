@@ -21,8 +21,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`WelcomeBanner` gained an `aside?` slot** — an optional right column (the "Tips for
   getting started" / "What's new" panel) rendered alongside the main content. Absent →
   the single-column layout, byte-identical to before.
+- Example: `example:claude-code` — the full Claude Code look composed from the primitives
+  (two-column welcome, inline notices, spaced transcript, working indicator, mode footer).
 
 ### Changed
+
+- **`AgentTimeline` now spaces its event blocks** — one blank line above every message /
+  thinking / tool block except the first, matching `ChatThread`'s inter-turn cadence (the
+  Claude Code transcript rhythm). Consumers rendering a live turn get the spacing for free.
 
 - **`AgentStreaming` interrupt hint** is now `({elapsed} · {N} tokens · esc to interrupt)`
   (was `(esc to cancel[, {elapsed}])`) — Claude Code wording.

@@ -92,3 +92,15 @@ longer suffix leaves one fewer column for the truncate-end thought).
 | File | Snapshot | What changed | Justifying delta |
 |---|---|---|---|
 | agent-streaming.test.tsx.snap | agent-streaming | `(esc to cancel, 12s)` → `(12s · esc to interrupt)` | #1 Claude Code parity (tokens + interrupt wording) |
+
+## AgentTimeline inter-block spacing (2026-07-16)
+
+`AgentTimeline` now inserts one blank line above every event block (message /
+thinking / tool) EXCEPT the first rendered one — the Claude Code cadence, mirroring
+ChatThread's inter-turn spacing. Two snapshots re-recorded; the diff is blank-line
+insertions only (no glyph/text change).
+
+| File | Snapshots | What changed | Justifying delta |
+|---|---|---|---|
+| agent-timeline.test.tsx.snap | agent-turn + timeline-header-scene | one blank line above each block after the first | AgentTimeline row `marginTop={1}` (Claude Code cadence) |
+| public-api.integration.test.tsx.snap | stream-scene | same inter-block blank lines in the composed AgentTimeline stream scene | same — downstream of AgentTimeline |

@@ -58,7 +58,8 @@
     "example:renderer": "tsx examples/renderer-skeleton.tsx",
     "example:all": "tsx examples/all-components.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "prepublishOnly": "pnpm gates && pnpm build"
+    "prepublishOnly": "pnpm gates && pnpm build",
+    "example:claude-code": "tsx examples/claude-code-scene.tsx"
   },
   "peerDependencies": {
     "ai": "^7.0.0",

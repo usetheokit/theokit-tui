@@ -25,8 +25,10 @@ exports[`public API integration (M6 T3.2 — theme matrix) > light_composite_sce
 
 exports[`public API integration (M7 T3.2 — stream adapter scene) > composed_stream_scene_matches_snapshot > stream-adapter-scene 1`] = `
 "[90m•[39m  [3m[2minspecting the failing test[22m[23m
+
 [32m⏺[39m  [1mvitest[22m
   [2m⎿ [22m435 passed
+
 [35m⏺ [39mAll green now."
 `;
 
