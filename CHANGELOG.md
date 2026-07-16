@@ -36,6 +36,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Interactive components now receive keyboard input under pure Ink (#41).** `ChoiceRow`,
+  `SelectList`, `Pager`, `FreeTextInput` and the decision prompts (`ApprovalPrompt`,
+  `QuestionPrompt`, `PlanApproval`) consume the custom renderer's input+focus hooks, whose
+  context is not mounted under Ink's `render` — so they rendered but silently ignored every
+  key. New public **`InkInputProvider`** bridge wires an input source to Ink's stdin and
+  provides that context: mount it once, high in the tree, around this library's interactive
+  surfaces. (The `examples/decisions.tsx` demo now uses it instead of reaching into renderer
+  internals.)
+
 ### Security
 
 ## [0.31.0] - 2026-07-13

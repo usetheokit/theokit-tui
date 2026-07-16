@@ -45,6 +45,14 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ChatThread).toBe("function");
   });
 
+  it("public_entry_exposes_ink_input_provider", async () => {
+    const mod = await import("../src/index.js");
+    // #41 bridge: makes the custom-renderer interactive components (ChoiceRow,
+    // SelectList, Pager, FreeTextInput, decision prompts) receive keyboard
+    // input under pure Ink's `render`.
+    expect(typeof mod.InkInputProvider).toBe("function");
+  });
+
   it("public_entry_exposes_keyboard_help_surface", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.KeyboardHelp).toBe("function");

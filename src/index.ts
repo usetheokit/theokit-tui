@@ -23,6 +23,12 @@ export type {
 export { LAYOUT_MARGIN_KEYS, omitMargin, pickMargin } from "./layout-props.js";
 export type { LayoutMarginProps } from "./layout-props.js";
 
+// #41 bridge: makes the custom-renderer interactive components (ChoiceRow,
+// SelectList, Pager, FreeTextInput, and the decision prompts) receive keyboard
+// input under pure Ink's `render`. Mount once, high in the tree.
+export { InkInputProvider } from "./ink-input-provider.js";
+export type { InkInputProviderProps } from "./ink-input-provider.js";
+
 export { CHAT_ROLES, ChatMessage } from "./chat-message.js";
 export type { ChatMessageProps, ChatRole } from "./chat-message.js";
 
