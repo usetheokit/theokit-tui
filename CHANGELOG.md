@@ -19,6 +19,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.41.1] - 2026-07-16
+
+### Changed
+
+- `SelectList` multi-select checkbox now uses the smaller `○` / `●` circle instead of the bulky `◯` / `◉` LARGE CIRCLE, so dense option lists read lighter and less cramped.
+
 ## [0.41.0] - 2026-07-16
 
 ### Added

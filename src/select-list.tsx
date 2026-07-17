@@ -11,7 +11,7 @@ import { useTheoTheme } from "./theme.js";
 // list with prefix|fuzzy filter, single OR multi-select, over the shared pure
 // model. Consumes OUR M19 `useInput` + M20 `useFocus` (NOT ink's — new code, no
 // Ink-drop debt). The render generalizes M15's `SlashMenuList`: `❯` active
-// marker, ▲/▼ overflow, `(i/n)` / `k selected` counter, and a `◉`/`◯` checkbox
+// marker, ▲/▼ overflow, `(i/n)` / `k selected` counter, and a `●`/`○` checkbox
 // column for multi-select. Under a monochrome theme the marker degrades to a
 // visible glyph (M6 precedent) rather than relying on color.
 
@@ -198,7 +198,7 @@ export function SelectList({
             key={item.value}
             item={item}
             active={view.windowStart + index === view.clampedIndex}
-            checkbox={multi ? (selected.has(item.value) ? "◉ " : "◯ ") : ""}
+            checkbox={multi ? (selected.has(item.value) ? "● " : "○ ") : ""}
             accent={theme.accent}
           />
         ))}
