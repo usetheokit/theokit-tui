@@ -9,13 +9,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Opt-in inter-item `gap` on the list/menu components** (issue #50): `SelectList`, `TodoList`,
-  `MultiStepProgress`, `QuestionPrompt`, and vertical `ChoiceRow` now accept an optional
-  `gap?: number` (default `0`), mirroring `Stack`. It spaces **between items** only — the
-  filter / counter / header chrome stays flush — so consumers can add breathing room without
-  changing the tight default (which matches Claude Code / standard TUI menus). Purely additive:
-  `gap` unset is byte-identical to the current output.
-
 ### Changed
 
 ### Deprecated
@@ -25,6 +18,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 ### Security
+
+## [0.41.0] - 2026-07-16
+
+### Added
+
+- **Opt-in inter-item `gap` on the list/menu components** (issue #50): `SelectList`, `TodoList`,
+  `MultiStepProgress`, `QuestionPrompt`, and vertical `ChoiceRow` now accept an optional
+  `gap?: number` (default `0`), mirroring `Stack`. It spaces **between items** only — the
+  filter / counter / header chrome stays flush — so consumers can add breathing room without
+  changing the tight default (which matches Claude Code / standard TUI menus). Purely additive:
+  `gap` unset is byte-identical to the current output.
 
 ## [0.40.0] - 2026-07-16
 
