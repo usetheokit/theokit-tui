@@ -17,6 +17,8 @@ export interface MultiStepProgressProps extends LayoutMarginProps {
   current?: number;
   /** A subagent group header rendered above the lanes. */
   groupLabel?: string;
+  /** Blank rows between lanes (issue #50). Default 0. Forwarded to the TodoList. */
+  gap?: number;
 }
 
 function counterLine(steps: readonly TodoItem[], current?: number): string {
@@ -33,13 +35,14 @@ export function MultiStepProgress({
   steps,
   current,
   groupLabel,
+  gap = 0,
   ...margin
 }: MultiStepProgressProps) {
   return (
     <Box flexDirection="column" {...margin}>
       {groupLabel !== undefined ? <Text bold>{groupLabel}</Text> : null}
       <Text dimColor>{counterLine(steps, current)}</Text>
-      <TodoList items={steps} />
+      <TodoList items={steps} gap={gap} />
     </Box>
   );
 }

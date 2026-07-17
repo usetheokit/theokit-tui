@@ -28,6 +28,8 @@ export interface QuestionPromptProps extends LayoutMarginProps {
   multi?: boolean;
   /** Inject an "Other…" option that reveals a free-text input (ADR D6). */
   allowFreeText?: boolean;
+  /** Blank rows between options (issue #50). Default 0. Forwarded to the SelectList. */
+  gap?: number;
   onAnswer: (answer: QuestionAnswer) => void;
   autoFocus?: boolean;
 }
@@ -38,6 +40,7 @@ export function QuestionPrompt({
   options,
   multi = false,
   allowFreeText = false,
+  gap = 0,
   onAnswer,
   autoFocus = true,
   ...margin
@@ -70,6 +73,7 @@ export function QuestionPrompt({
         <SelectList
           items={items}
           multi={multi}
+          gap={gap}
           onSubmit={handleSubmit}
           autoFocus={autoFocus}
         />

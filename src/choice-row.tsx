@@ -31,6 +31,8 @@ export interface ChoiceRowProps extends LayoutMarginProps {
   orientation?: "horizontal" | "vertical";
   /** Prefix each label with `{n}. ` (matches the digit-jump shortcut). */
   numbered?: boolean;
+  /** Blank rows between choices in vertical mode (issue #50). Default 0. */
+  gap?: number;
   autoFocus?: boolean;
 }
 
@@ -40,6 +42,7 @@ export function ChoiceRow({
   onCancel,
   orientation = "horizontal",
   numbered = false,
+  gap = 0,
   autoFocus = true,
   ...margin
 }: ChoiceRowProps) {
@@ -87,14 +90,15 @@ export function ChoiceRow({
 
   const vertical = orientation === "vertical";
   return (
-    <Box flexDirection={vertical ? "column" : "row"} {...margin}>
+    <Box flexDirection={vertical ? "column" : "row"} gap={gap} {...margin}>
       {choices.map((choice, position) => {
         const active = position === index;
         const marker = active ? "❯ " : "  ";
         const prefix = numbered ? `${position + 1}. ` : "";
-        // Horizontal keeps a 3-space gap between choices; vertical needs none
-        // (each choice owns its line).
-        const gap = !vertical && position < count - 1 ? "   " : "";
+        // Horizontal keeps a 3-space separator between choices; vertical needs
+        // none (each choice owns its line). Distinct from the `gap` prop, which
+        // is the Box's row/column gap (issue #50).
+        const trailer = !vertical && position < count - 1 ? "   " : "";
         return (
           <Text
             key={choice.value}
@@ -103,7 +107,7 @@ export function ChoiceRow({
             {marker}
             {prefix}
             {choice.label}
-            {gap}
+            {trailer}
           </Text>
         );
       })}
