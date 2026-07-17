@@ -24,6 +24,8 @@ export interface TodoItem {
 
 export interface TodoListProps extends LayoutMarginProps {
   items: readonly TodoItem[];
+  /** Blank rows between items (issue #50). Default 0 — the tight Claude Code look. */
+  gap?: number;
 }
 
 const STATUS_GLYPH: Record<TodoStatus, string> = {
@@ -80,11 +82,11 @@ function assertUniqueIds(items: readonly TodoItem[]): void {
   }
 }
 
-export function TodoList({ items, ...margin }: TodoListProps) {
+export function TodoList({ items, gap = 0, ...margin }: TodoListProps) {
   assertUniqueIds(items);
   const theme = useTheoTheme();
   return (
-    <Box flexDirection="column" {...margin}>
+    <Box flexDirection="column" gap={gap} {...margin}>
       {items.map((item) => (
         <Row key={item.id} item={item} theme={theme} />
       ))}

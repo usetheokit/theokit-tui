@@ -25,6 +25,8 @@ export interface SelectListProps extends LayoutMarginProps {
   fuzzy?: boolean;
   /** Visible rows. Default 5. */
   window?: number;
+  /** Blank rows between items (issue #50). Default 0 — the tight menu look. */
+  gap?: number;
   autoFocus?: boolean;
 }
 
@@ -63,12 +65,49 @@ function resolveSelectAction(
   return undefined;
 }
 
+/** The footer counter: `k selected` (multi), `(i/n)` (single), or `(0/0)`. */
+function counterLabel(
+  multi: boolean,
+  selectedSize: number,
+  clampedIndex: number,
+  count: number,
+): string {
+  if (multi) return `${selectedSize} selected`;
+  return count > 0 ? `(${clampedIndex + 1}/${count})` : "(0/0)";
+}
+
+/** One rendered match row. The `❯` marker + glyph carry the state under a
+ * monochrome theme (chalk strips the accent; the glyph remains — M6 degrade). */
+function SelectRow({
+  item,
+  active,
+  checkbox,
+  accent,
+}: {
+  item: SelectListItem;
+  active: boolean;
+  checkbox: string;
+  accent: string;
+}) {
+  return (
+    <Box>
+      <Text {...(active ? { color: accent } : {})}>
+        {active ? "❯ " : "  "}
+        {checkbox}
+        {item.label}
+      </Text>
+      {item.description ? <Text dimColor> {item.description}</Text> : null}
+    </Box>
+  );
+}
+
 export function SelectList({
   items,
   onSubmit,
   multi = false,
   fuzzy = false,
   window = DEFAULT_WINDOW,
+  gap = 0,
   autoFocus = true,
   ...margin
 }: SelectListProps) {
@@ -145,35 +184,25 @@ export function SelectList({
     view.windowStart,
     view.windowStart + window,
   );
-  const counter = multi
-    ? `${selected.size} selected`
-    : count > 0
-      ? `(${view.clampedIndex + 1}/${count})`
-      : "(0/0)";
+  const counter = counterLabel(multi, selected.size, view.clampedIndex, count);
 
   return (
     <Box flexDirection="column" {...margin}>
       <Text dimColor>filter: {filter || "…"}</Text>
       {view.overflowUp && <Text dimColor>▲</Text>}
-      {visible.map((item, index) => {
-        const active = view.windowStart + index === view.clampedIndex;
-        // The `❯` marker is the affordance that survives a monochrome theme
-        // (chalk strips the accent color; the glyph remains — M6 degrade ladder).
-        const marker = active ? "❯ " : "  ";
-        const box = multi ? (selected.has(item.value) ? "◉ " : "◯ ") : "";
-        return (
-          <Box key={item.value}>
-            <Text {...(active ? { color: theme.accent } : {})}>
-              {marker}
-              {box}
-              {item.label}
-            </Text>
-            {item.description ? (
-              <Text dimColor> {item.description}</Text>
-            ) : null}
-          </Box>
-        );
-      })}
+      {/* Only the item rows are gapped — the filter / overflow / counter chrome
+          stays flush against the list (issue #50). */}
+      <Box flexDirection="column" gap={gap}>
+        {visible.map((item, index) => (
+          <SelectRow
+            key={item.value}
+            item={item}
+            active={view.windowStart + index === view.clampedIndex}
+            checkbox={multi ? (selected.has(item.value) ? "◉ " : "◯ ") : ""}
+            accent={theme.accent}
+          />
+        ))}
+      </Box>
       {view.overflowDown && <Text dimColor>▼</Text>}
       <Text dimColor>{counter}</Text>
     </Box>
