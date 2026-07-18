@@ -611,6 +611,12 @@ export function ChatComposer({
       if (handleShellKey(composerKey)) {
         return;
       }
+      // Ink's App handler BLURS the focused input on ESC (before subscribers). When ESC is not a
+      // menu/shell dismissal, the host app has likely used it to interrupt a streaming turn — re-take
+      // focus so the composer stays usable afterwards instead of going inert (theokit-tui#… / #10).
+      if (key.escape) {
+        focus(focusId);
+      }
       if (handleHelpKey(input, composerKey)) {
         return;
       }
