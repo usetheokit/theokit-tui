@@ -1,7 +1,29 @@
 import { describe, expect, it } from "vitest";
 
-import { extractAssistantText, isShellEnvelope } from "./agent-stream-event.js";
+import {
+  extractAssistantText,
+  isShellEnvelope,
+  looksLikeUnifiedDiff,
+} from "./agent-stream-event.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
+
+describe("looksLikeUnifiedDiff", () => {
+  it("detects a git-style unified diff (hunk + file header)", () => {
+    expect(
+      looksLikeUnifiedDiff("--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y\n"),
+    ).toBe(true);
+    expect(
+      looksLikeUnifiedDiff("diff --git a/x b/x\n@@ -1 +1 @@\n-x\n+y"),
+    ).toBe(true);
+  });
+
+  it("rejects plain text that merely mentions @@ or ---", () => {
+    // A directory listing / prose is NOT a diff: no BOTH signals present.
+    expect(looksLikeUnifiedDiff("README.md\ncalc.mjs")).toBe(false);
+    expect(looksLikeUnifiedDiff("see @@ below\n--- notes")).toBe(false); // no hunk header
+    expect(looksLikeUnifiedDiff("MCP_SUM=111")).toBe(false);
+  });
+});
 
 // T1.1 (plan m7-stream-adapter, ADR D1): the structural union's guards.
 describe("isShellEnvelope", () => {

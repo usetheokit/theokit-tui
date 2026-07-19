@@ -91,6 +91,28 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(frame).toContain("3 matches");
   });
 
+  it("tool_event_with_diff_renders_inline_diff", async () => {
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "x1",
+            kind: "tool",
+            name: "apply_patch",
+            status: "success",
+            diff: "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old line\n+new line\n",
+          },
+        ]}
+      />,
+    );
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+apply_patch/m);
+    // The DiffViewer renders the changed lines (colored +/- in a real terminal).
+    expect(frame).toContain("old line");
+    expect(frame).toContain("new line");
+    // NOT the raw unified-diff plumbing dumped as text.
+    expect(frame).not.toContain("@@ -1 +1 @@");
+  });
+
   it("tool_event_without_output_renders_bare_row", async () => {
     const frame = await renderFrame(
       <AgentTimeline

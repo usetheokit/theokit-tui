@@ -34,10 +34,14 @@ export interface AgentToolEvent {
   name: string;
   status: ToolCallStatus;
   summary?: string;
-  /** Plain output lines. EXCLUSIVE with `shell` (validated at the boundary). */
+  /** Plain output lines. EXCLUSIVE with `shell`/`diff` (validated at the boundary). */
   output?: string;
-  /** Shell envelope. EXCLUSIVE with `output`. */
+  /** Shell envelope. EXCLUSIVE with `output`/`diff`. */
   shell?: ShellEnvelope;
+  /** Unified-diff text — rendered as a colored inline diff (DiffViewer), the
+   * Codex-style edit render for a tool like `apply_patch`. EXCLUSIVE with
+   * `output`/`shell`. */
+  diff?: string;
   /** ToolResult line budget (default 10). */
   maxLines?: number;
 }

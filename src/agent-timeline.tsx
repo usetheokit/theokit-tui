@@ -6,6 +6,7 @@ import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
 import type { AgentEvent } from "./agent-event.js";
 import { CHAT_ROLES, ChatMessage } from "./chat-message.js";
 import { HEADER_SENTINEL_KEY } from "./chat-thread.js";
+import { DiffViewer } from "./diff-viewer.js";
 import {
   STATUS_INDICATOR_WIDTH,
   TOOL_CALL_STATUSES,
@@ -75,9 +76,13 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
       `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
     );
   }
-  if (event.output !== undefined && event.shell !== undefined) {
+  const bodyCount =
+    (event.output !== undefined ? 1 : 0) +
+    (event.shell !== undefined ? 1 : 0) +
+    (event.diff !== undefined ? 1 : 0);
+  if (bodyCount > 1) {
     throw new TypeError(
-      `AgentTimeline: tool event "${event.id}" — provide only one of output | shell`,
+      `AgentTimeline: tool event "${event.id}" — provide only one of output | shell | diff`,
     );
   }
   // SEPA F1: ToolResult's own maxLines guard would fire mid-render
@@ -145,22 +150,33 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
   // (EC-7). Empty output collapses to the bare row.
   const hasBody =
     (event.output !== undefined && event.output !== "") ||
-    event.shell !== undefined;
+    event.shell !== undefined ||
+    (event.diff !== undefined && event.diff !== "");
   return (
     <ToolCallCard
       name={event.name}
       status={event.status}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
-      {hasBody && (
-        <ToolResult
-          {...(event.output !== undefined ? { children: event.output } : {})}
-          {...(event.shell !== undefined ? { shell: event.shell } : {})}
-          {...(event.maxLines !== undefined
-            ? { maxLines: event.maxLines }
-            : {})}
-        />
-      )}
+      {hasBody &&
+        // A unified-diff result (e.g. apply_patch) renders as a colored inline
+        // diff; everything else goes through ToolResult (output / shell modes).
+        (event.diff !== undefined && event.diff !== "" ? (
+          <DiffViewer
+            patch={event.diff}
+            {...(event.maxLines !== undefined
+              ? { maxLines: event.maxLines }
+              : {})}
+          />
+        ) : (
+          <ToolResult
+            {...(event.output !== undefined ? { children: event.output } : {})}
+            {...(event.shell !== undefined ? { shell: event.shell } : {})}
+            {...(event.maxLines !== undefined
+              ? { maxLines: event.maxLines }
+              : {})}
+          />
+        ))}
     </ToolCallCard>
   );
 }

@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Timeline tool results now render a **colored inline diff** (via `DiffViewer`) when the result is a git-style unified diff — the Codex-style edit render for tools like `apply_patch`. `AgentToolEvent` gains an exclusive `diff` field (`output | shell | diff` — one only, validated at the boundary); a clean unified-diff result (no stderr, exit 0) routes to it automatically in both timeline projections. Shared routing lives in `routeToolResult` / `looksLikeUnifiedDiff` (`agent-stream-event.ts`).
+
 ### Changed
 
 ### Deprecated

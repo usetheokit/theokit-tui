@@ -182,6 +182,45 @@ describe("messagesToAgentEvents tool-result routing", () => {
     expect(ev.shell).toBeUndefined();
   });
 
+  it("routes a unified-diff result (apply_patch) to the diff field", () => {
+    // apply_patch returns a unified diff; the SDK wraps it in the shell envelope
+    // JSON string. A clean diff (no stderr, exit 0) renders as a colored inline
+    // diff — not shell output, not raw JSON.
+    const diff =
+      "Index: a.ts\n===\n--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
+    const ev = firstTool(
+      toolMsg(JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 })),
+    );
+    expect(ev.diff).toContain("@@");
+    expect(ev.diff).toContain("-old");
+    expect(ev.diff).toContain("+new");
+    expect(ev.output).toBeUndefined();
+    expect(ev.shell).toBeUndefined();
+  });
+
+  it("routes a bare unified-diff string to the diff field", () => {
+    const diff = "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
+    const ev = firstTool(toolMsg(diff));
+    expect(ev.diff).toContain("@@");
+    expect(ev.output).toBeUndefined();
+  });
+
+  it("keeps a diff-looking stdout as shell when the command also failed", () => {
+    // Guard: a non-clean envelope (stderr present) is NOT an apply_patch edit —
+    // it stays a shell result so the failure is visible.
+    const ev = firstTool(
+      toolMsg(
+        JSON.stringify({
+          stdout: "--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y",
+          stderr: "boom",
+          exitCode: 1,
+        }),
+      ),
+    );
+    expect(ev.shell).toBeDefined();
+    expect(ev.diff).toBeUndefined();
+  });
+
   it("surfaces an output-error as output text", () => {
     const ev = messagesToAgentEvents([
       {

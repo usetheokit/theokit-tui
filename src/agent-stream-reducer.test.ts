@@ -278,6 +278,19 @@ describe("agentStreamReducer", () => {
     expect(tool).not.toHaveProperty("output");
   });
 
+  it("json_string_unified_diff_routes_to_diff", () => {
+    // apply_patch returns a unified diff, wrapped by the SDK in the shell
+    // envelope JSON string. A clean diff routes to `diff` (colored inline diff).
+    const diff = "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
+    const s = fold(
+      toolCompleted("c1", JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 })),
+    );
+    const tool = find(s, "tool-c1");
+    expect((tool as { diff?: string }).diff).toContain("@@");
+    expect(tool).not.toHaveProperty("output");
+    expect(tool).not.toHaveProperty("shell");
+  });
+
   it("json_string_non_envelope_stays_output", () => {
     // A JSON string that is valid JSON but NOT a shell envelope must fall
     // through to the output ladder untouched (no regression).

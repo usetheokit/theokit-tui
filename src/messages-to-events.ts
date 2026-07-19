@@ -8,11 +8,7 @@
  * (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases for back-compat.)
  */
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
-import {
-  isShellEnvelope,
-  parseShellEnvelope,
-  toShell,
-} from "./agent-stream-event.js";
+import { routeToolResult } from "./agent-stream-event.js";
 import type { ChatThreadMessage } from "./chat-thread.js";
 import type { ToolCallStatus } from "./tool-call.js";
 
@@ -188,28 +184,23 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
 }
 
 /**
- * What the timeline shows for a tool result: a `shell` envelope (rendered by
- * ToolResult's shell mode — labeled stderr, non-zero exit badge) XOR plain
- * `output`. `errorText` wins on failure. The SDK serializes a shell envelope to
- * a JSON STRING before it surfaces the result, so a string that parses to an
- * envelope routes to `shell`; a plain string (file/grep/dir listings) or a
- * non-envelope object stays `output` (no regression). Shell-envelope helpers
- * are shared with the stream reducer — see `agent-stream-event.ts`.
+ * What the timeline shows for a tool result: an inline `diff` (unified-diff
+ * result — e.g. `apply_patch`), a `shell` envelope (labeled stderr, non-zero
+ * exit badge), or plain `output`. `errorText` wins on failure. The SDK
+ * serializes results to a JSON string, so a string that parses to a shell
+ * envelope routes to `shell` (and to `diff` when its stdout is a clean unified
+ * diff); a plain string (file/grep/dir listings) stays `output`. Routing logic
+ * is shared with the stream reducer — see `routeToolResult`.
  */
 function toolResultContent(
   tool: ToolPartView,
-): Pick<AgentToolEvent, "output" | "shell"> {
+): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
   if (tool.state === "output-error") {
     return tool.errorText !== undefined ? { output: tool.errorText } : {};
   }
   const { output } = tool;
   if (output === undefined) return {};
-  if (isShellEnvelope(output)) return { shell: toShell(output) };
-  if (typeof output === "string") {
-    const shell = parseShellEnvelope(output);
-    return shell !== undefined ? { shell } : { output };
-  }
-  return { output: JSON.stringify(output, null, 2) };
+  return routeToolResult(output) ?? { output: JSON.stringify(output, null, 2) };
 }
 
 function toToolEvent(

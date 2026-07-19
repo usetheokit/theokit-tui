@@ -116,6 +116,52 @@ export function parseShellEnvelope(raw: string): NormalizedShell | undefined {
   return isShellEnvelope(parsed) ? toShell(parsed) : undefined;
 }
 
+/** Whether `text` is a git-style unified diff — the signal to render it as a
+ * colored inline diff (DiffViewer) instead of plain output. STRICT on purpose:
+ * requires BOTH a `@@` hunk header AND a `---`/`diff --git` file header, so a
+ * plain listing that merely contains `@@` is never misrouted. */
+export function looksLikeUnifiedDiff(text: string): boolean {
+  return (
+    /^@@ .* @@/m.test(text) &&
+    (/^--- /m.test(text) || /^diff --git /m.test(text))
+  );
+}
+
+/** The timeline field that renders a tool-result VALUE best: an inline `diff`,
+ * a `shell` envelope, or plain `output`. Shared by both timeline projections
+ * (the message projection and the stream reducer) — DRY. A shell envelope whose
+ * stdout is a clean unified diff (no stderr, exit 0) is an `apply_patch`-style
+ * edit and routes to `diff`. Returns undefined when the value is neither a
+ * shell envelope, a diff, nor a string — the caller applies its own fallback
+ * (e.g. a `.text` field, or `JSON.stringify`). */
+export function routeToolResult(
+  value: unknown,
+):
+  | { diff: string }
+  | { shell: NormalizedShell }
+  | { output: string }
+  | undefined {
+  const envelope = isShellEnvelope(value)
+    ? toShell(value)
+    : typeof value === "string"
+      ? parseShellEnvelope(value)
+      : undefined;
+  if (envelope !== undefined) {
+    if (
+      envelope.stderr === "" &&
+      (envelope.exitCode === undefined || envelope.exitCode === 0) &&
+      looksLikeUnifiedDiff(envelope.stdout)
+    ) {
+      return { diff: envelope.stdout };
+    }
+    return { shell: envelope };
+  }
+  if (typeof value === "string") {
+    return looksLikeUnifiedDiff(value) ? { diff: value } : { output: value };
+  }
+  return undefined;
+}
+
 /**
  * Extracts the text of an assistant message: a plain string passes through
  * (the widened arm); an object's content array contributes its text blocks
