@@ -17,6 +17,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Tool results that arrive as a JSON-string-encoded shell envelope (`{"stdout":…,"stderr":…,"exitCode":…}` — how the in-process SDK serializes a tool's result) now render through `ToolResult`'s shell mode (clean stdout lines, labeled `stderr:`, non-zero exit badge) instead of dumping the raw JSON into the timeline. Fixed in BOTH projections: the message projection (`messagesToAgentEvents`) and the stream reducer (`agentStreamReducer`). Plain text results (file contents, `path:line:` grep, directory listings) and non-envelope JSON are unchanged. Shell-envelope helpers (`toShell`/`parseShellEnvelope`) are now shared from `agent-stream-event.ts`.
+
 ### Security
 
 ## [0.41.1] - 2026-07-16

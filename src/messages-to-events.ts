@@ -8,6 +8,11 @@
  * (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases for back-compat.)
  */
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import {
+  isShellEnvelope,
+  parseShellEnvelope,
+  toShell,
+} from "./agent-stream-event.js";
 import type { ChatThreadMessage } from "./chat-thread.js";
 import type { ToolCallStatus } from "./tool-call.js";
 
@@ -182,13 +187,29 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
   return view;
 }
 
-/** The plain-text output the timeline shows for a tool: `errorText` on failure, else the stringified output. */
-function toolOutput(tool: ToolPartView): string | undefined {
-  if (tool.state === "output-error") return tool.errorText;
-  if (tool.output === undefined) return undefined;
-  return typeof tool.output === "string"
-    ? tool.output
-    : JSON.stringify(tool.output, null, 2);
+/**
+ * What the timeline shows for a tool result: a `shell` envelope (rendered by
+ * ToolResult's shell mode — labeled stderr, non-zero exit badge) XOR plain
+ * `output`. `errorText` wins on failure. The SDK serializes a shell envelope to
+ * a JSON STRING before it surfaces the result, so a string that parses to an
+ * envelope routes to `shell`; a plain string (file/grep/dir listings) or a
+ * non-envelope object stays `output` (no regression). Shell-envelope helpers
+ * are shared with the stream reducer — see `agent-stream-event.ts`.
+ */
+function toolResultContent(
+  tool: ToolPartView,
+): Pick<AgentToolEvent, "output" | "shell"> {
+  if (tool.state === "output-error") {
+    return tool.errorText !== undefined ? { output: tool.errorText } : {};
+  }
+  const { output } = tool;
+  if (output === undefined) return {};
+  if (isShellEnvelope(output)) return { shell: toShell(output) };
+  if (typeof output === "string") {
+    const shell = parseShellEnvelope(output);
+    return shell !== undefined ? { shell } : { output };
+  }
+  return { output: JSON.stringify(output, null, 2) };
 }
 
 function toToolEvent(
@@ -196,16 +217,14 @@ function toToolEvent(
   messageId: string,
   index: number,
 ): AgentToolEvent {
-  const event: AgentToolEvent = {
+  return {
     id:
       tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
     name: tool.toolName,
     status: TOOL_STATUS[tool.state] ?? "pending",
+    ...toolResultContent(tool),
   };
-  const output = toolOutput(tool);
-  if (output !== undefined) event.output = output;
-  return event;
 }
 
 /**

@@ -1,6 +1,11 @@
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
-import { extractAssistantText, isShellEnvelope } from "./agent-stream-event.js";
+import {
+  extractAssistantText,
+  isShellEnvelope,
+  parseShellEnvelope,
+  toShell,
+} from "./agent-stream-event.js";
 import type { ToolCallStatus } from "./tool-call.js";
 
 // Pure mapping fold (plan m7-stream-adapter ADR D2): AgentStreamEvent →
@@ -156,7 +161,9 @@ const TOOL_STATUS_MAP: Record<string, ToolCallStatus> = {
   error: "failed",
 };
 
-/** Result mapping ladder: shell passthrough XOR output — NEVER both. */
+/** Result mapping ladder: shell passthrough XOR output — NEVER both. The
+ * shell-envelope helpers (`toShell`/`parseShellEnvelope`) are shared with the
+ * message projection — see `agent-stream-event.ts`. */
 function toolContent(
   result: unknown,
 ): Pick<AgentToolEvent, "output" | "shell"> {
@@ -164,18 +171,11 @@ function toolContent(
     return {};
   }
   if (isShellEnvelope(result)) {
-    return {
-      shell: {
-        stdout: result.stdout ?? "",
-        stderr: result.stderr ?? "",
-        ...(typeof result.exitCode === "number"
-          ? { exitCode: result.exitCode }
-          : {}),
-      },
-    };
+    return { shell: toShell(result) };
   }
   if (typeof result === "string") {
-    return { output: result };
+    const shell = parseShellEnvelope(result);
+    return shell !== undefined ? { shell } : { output: result };
   }
   const text = (result as { text?: unknown }).text;
   if (typeof text === "string") {

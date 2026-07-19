@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   findPendingApproval,
+  messagesToAgentEvents,
   readTurnUsage,
   type UIMessageLike,
 } from "./messages-to-events.js";
@@ -132,5 +133,70 @@ describe("readTurnUsage", () => {
       readTurnUsage(withMetadata({ usage: { inputTokens: "x" } })),
     ).toBeUndefined();
     expect(readTurnUsage(withMetadata(42))).toBeUndefined();
+  });
+});
+
+// The tool-result projection: `useAgent().thread` delivers a tool's result on
+// the `output-available` part. The in-process SDK serializes a shell envelope
+// {stdout,stderr,exitCode} to a JSON STRING — so without routing it to the
+// `shell` field the timeline dumps raw `{"stdout":...}` instead of firing
+// ToolResult's shell renderer (the observed UX gap vs Codex).
+const toolMsg = (output: unknown, state = "output-available"): UIMessageLike => ({
+  id: "a1",
+  role: "assistant",
+  parts: [{ type: "tool-run_shell", toolCallId: "c1", state, output }],
+});
+
+const firstTool = (msg: UIMessageLike) => {
+  const ev = messagesToAgentEvents([msg]).find((e) => e.kind === "tool");
+  if (ev === undefined || ev.kind !== "tool") throw new Error("no tool event");
+  return ev;
+};
+
+describe("messagesToAgentEvents tool-result routing", () => {
+  it("routes a JSON-string shell envelope to the shell field", () => {
+    const ev = firstTool(
+      toolMsg('{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'),
+    );
+    expect(ev.shell).toEqual({ stdout: "MCP_SUM=111", stderr: "", exitCode: 0 });
+    expect(ev.output).toBeUndefined();
+  });
+
+  it("routes a shell-envelope OBJECT to the shell field", () => {
+    const ev = firstTool(
+      toolMsg({ stdout: "", stderr: "boom\n", exitCode: 127 }),
+    );
+    expect(ev.shell).toEqual({ stdout: "", stderr: "boom\n", exitCode: 127 });
+    expect(ev.output).toBeUndefined();
+  });
+
+  it("keeps a plain non-JSON string as output (file/grep/dir listings)", () => {
+    const ev = firstTool(toolMsg("README.md\ncalc.mjs"));
+    expect(ev.output).toBe("README.md\ncalc.mjs");
+    expect(ev.shell).toBeUndefined();
+  });
+
+  it("keeps a non-envelope JSON string as output (no regression)", () => {
+    const ev = firstTool(toolMsg('{"weird":1}'));
+    expect(ev.output).toBe('{"weird":1}');
+    expect(ev.shell).toBeUndefined();
+  });
+
+  it("surfaces an output-error as output text", () => {
+    const ev = messagesToAgentEvents([
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-run_shell",
+            toolCallId: "c1",
+            state: "output-error",
+            errorText: "command failed",
+          },
+        ],
+      },
+    ]).find((e) => e.kind === "tool");
+    expect(ev).toMatchObject({ output: "command failed", status: "failed" });
   });
 });

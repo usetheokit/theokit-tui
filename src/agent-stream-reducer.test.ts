@@ -265,6 +265,35 @@ describe("agentStreamReducer", () => {
     expect(find(weird, "tool-c")).not.toHaveProperty("shell");
   });
 
+  it("json_string_shell_envelope_routes_to_shell", () => {
+    // The in-process SDK serializes a tool's {stdout,stderr,exitCode} envelope
+    // to a JSON STRING before emitting tool_call. Without parsing it here the
+    // timeline dumps `{"stdout":...}` raw instead of firing ToolResult's shell
+    // renderer (the observed UX gap vs Codex).
+    const s = fold(
+      toolCompleted("c1", '{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'),
+    );
+    const tool = find(s, "tool-c1");
+    expect(tool).toMatchObject({ shell: { stdout: "MCP_SUM=111", exitCode: 0 } });
+    expect(tool).not.toHaveProperty("output");
+  });
+
+  it("json_string_non_envelope_stays_output", () => {
+    // A JSON string that is valid JSON but NOT a shell envelope must fall
+    // through to the output ladder untouched (no regression).
+    const s = fold(toolCompleted("c1", '{"weird":1}'));
+    expect(find(s, "tool-c1")).toMatchObject({ output: '{"weird":1}' });
+    expect(find(s, "tool-c1")).not.toHaveProperty("shell");
+  });
+
+  it("plain_non_json_string_stays_output", () => {
+    // Clean text tool results (file contents, `path:line:` grep, dir listing)
+    // are NOT JSON — they must keep rendering as plain output lines.
+    const s = fold(toolCompleted("c1", "README.md\ncalc.mjs"));
+    expect(find(s, "tool-c1")).toMatchObject({ output: "README.md\ncalc.mjs" });
+    expect(find(s, "tool-c1")).not.toHaveProperty("shell");
+  });
+
   it("delta_replace_leaves_earlier_events_untouched", () => {
     // The non-live arm of the tail-replace map: the graduated prefix passes
     // through BY REFERENCE while the tail replaces (review F-8 — memo/Static
