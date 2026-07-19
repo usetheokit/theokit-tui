@@ -221,6 +221,71 @@ describe("messagesToAgentEvents tool-result routing", () => {
     expect(ev.diff).toBeUndefined();
   });
 
+  it("collapses consecutive read-only tools into one explored group", () => {
+    const explore = (name: string, id: string, input: unknown): UIMessageLike => ({
+      id: `msg-${id}`,
+      role: "assistant",
+      parts: [{ type: `tool-${name}`, toolCallId: id, state: "output-available", output: "ok", input }],
+    })
+    // Flatten three explores across messages into one thread turn.
+    const events = messagesToAgentEvents([
+      { id: "m1", role: "assistant", parts: [
+        { type: "tool-list_dir", toolCallId: "c1", state: "output-available", output: "a\nb", input: { path: "agents/tools" } },
+        { type: "tool-grep", toolCallId: "c2", state: "output-available", output: "x", input: { pattern: "foo" } },
+        { type: "tool-read_file", toolCallId: "c3", state: "output-available", output: "1\tcode", input: { path: "chat.ts" } },
+      ] },
+    ])
+    void explore
+    expect(events).toHaveLength(1)
+    const grouped = events[0] as { kind: string; tools: { name: string; input?: unknown }[] }
+    expect(grouped.kind).toBe("explored")
+    expect(grouped.tools.map((t) => t.name)).toEqual(["list_dir", "grep", "read_file"])
+    expect(grouped.tools[2]?.input).toEqual({ path: "chat.ts" }) // input captured for the summary
+  })
+
+  it("leaves a LONE read-only tool as a normal card (only ≥2 collapse)", () => {
+    const events = messagesToAgentEvents([
+      { id: "m1", role: "assistant", parts: [
+        { type: "tool-read_file", toolCallId: "c1", state: "output-available", output: "x", input: { path: "x.ts" } },
+      ] },
+    ])
+    expect(events).toHaveLength(1)
+    expect(events[0]?.kind).toBe("tool")
+  })
+
+  it("a message between reads breaks the run (no group)", () => {
+    const events = messagesToAgentEvents([
+      { id: "m1", role: "assistant", parts: [
+        { type: "tool-read_file", toolCallId: "c1", state: "output-available", output: "a", input: { path: "a" } },
+        { type: "text", text: "now the second" },
+        { type: "tool-read_file", toolCallId: "c2", state: "output-available", output: "b", input: { path: "b" } },
+      ] },
+    ])
+    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0)
+    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2)
+  })
+
+  it("does not group non-explore tools (run_shell stays discrete cards)", () => {
+    const events = messagesToAgentEvents([
+      { id: "m1", role: "assistant", parts: [
+        { type: "tool-run_shell", toolCallId: "c1", state: "output-available", output: "1" },
+        { type: "tool-run_shell", toolCallId: "c2", state: "output-available", output: "2" },
+      ] },
+    ])
+    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0)
+    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2)
+  })
+
+  it("exploreTools: [] disables grouping (back-compat opt-out)", () => {
+    const parts = [
+      { type: "tool-read_file", toolCallId: "c1", state: "output-available", output: "a", input: { path: "a" } },
+      { type: "tool-read_file", toolCallId: "c2", state: "output-available", output: "b", input: { path: "b" } },
+    ]
+    const events = messagesToAgentEvents([{ id: "m1", role: "assistant", parts }], { exploreTools: [] })
+    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0)
+    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2)
+  })
+
   it("surfaces an output-error as output text", () => {
     const ev = messagesToAgentEvents([
       {

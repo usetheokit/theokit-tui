@@ -160,6 +160,7 @@ interface ToolPartView {
   state: string;
   output?: unknown;
   errorText?: string;
+  input?: unknown;
 }
 
 /** Read the tool view from a part, or `null` when the part is not a tool invocation. */
@@ -180,6 +181,7 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
     output: p.output,
   };
   if (typeof p.errorText === "string") view.errorText = p.errorText;
+  if (p.input !== undefined) view.input = p.input;
   return view;
 }
 
@@ -214,8 +216,70 @@ function toToolEvent(
     kind: "tool",
     name: tool.toolName,
     status: TOOL_STATUS[tool.state] ?? "pending",
+    ...(hasKeys(tool.input) ? { input: tool.input } : {}),
     ...toolResultContent(tool),
   };
+}
+
+/** A non-empty object input worth keeping for the explore summary (an empty
+ * `{}` adds only noise, so it is dropped). */
+function hasKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0
+  )
+}
+
+/** Read-only exploration tools whose consecutive runs collapse into a Codex-style
+ * "Explored" block. An app whose tools are named differently sees NO change (its
+ * events never match → never grouped) — the default is back-compatible. */
+export const DEFAULT_EXPLORE_TOOLS: readonly string[] = [
+  "read_file",
+  "list_dir",
+  "grep",
+  "search_text",
+  "git_diff",
+  "glob",
+];
+
+/** A run of ≥ this many adjacent explore-tool events collapses into one block.
+ * A lone read stays a normal card (Codex only collapses when it reduces noise). */
+const EXPLORE_GROUP_MIN = 2;
+
+/** Collapse consecutive successful/running read-only tool events into
+ * `explored` groups. A failed explore stays a normal card so its error stays
+ * visible; a non-tool event (message/thinking) breaks the run. */
+function groupExploration(
+  events: readonly AgentEvent[],
+  explore: ReadonlySet<string>,
+): AgentEvent[] {
+  const out: AgentEvent[] = [];
+  let run: AgentToolEvent[] = [];
+  const flush = (): void => {
+    if (run.length >= EXPLORE_GROUP_MIN) {
+      const first = run[0] as AgentToolEvent;
+      out.push({ id: `explored-${first.id}`, kind: "explored", tools: run });
+    } else {
+      out.push(...run);
+    }
+    run = [];
+  };
+  for (const ev of events) {
+    const explorable =
+      ev.kind === "tool" &&
+      explore.has(ev.name) &&
+      (ev.status === "success" || ev.status === "running");
+    if (explorable) {
+      run.push(ev);
+    } else {
+      flush();
+      out.push(ev);
+    }
+  }
+  flush();
+  return out;
 }
 
 /**
@@ -238,13 +302,22 @@ export function messagesToChatThread(
   return out;
 }
 
+export interface MessagesToEventsOptions {
+  /** Tool names whose consecutive runs collapse into an `explored` block.
+   * Defaults to {@link DEFAULT_EXPLORE_TOOLS}. Pass `[]` to disable grouping. */
+  exploreTools?: Iterable<string>;
+}
+
 /**
  * Flatten messages into an ordered `AgentEvent[]` for `<AgentTimeline>`: each text part → a `message` event,
  * each reasoning part → a `thinking` event, each tool invocation → a `tool` event (status mapped from the
  * part `state`). Every id is unique. Non-renderable parts (file, source, step-start, data, custom) are skipped.
+ * Consecutive read-only exploration tools (see {@link DEFAULT_EXPLORE_TOOLS}) collapse into a Codex-style
+ * `explored` block — apps with differently-named tools are unaffected.
  */
 export function messagesToAgentEvents(
   messages: readonly UIMessageLike[],
+  opts?: MessagesToEventsOptions,
 ): AgentEvent[] {
   const events: AgentEvent[] = [];
   for (const message of messages) {
@@ -274,5 +347,6 @@ export function messagesToAgentEvents(
       if (tool !== null) events.push(toToolEvent(tool, message.id, index));
     });
   }
-  return events;
+  const explore = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
+  return explore.size === 0 ? events : groupExploration(events, explore);
 }

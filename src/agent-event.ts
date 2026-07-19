@@ -9,7 +9,12 @@ import type { ShellEnvelope } from "./tool-result.js";
 // guard and AgentTimeline's error message all derive from this array. The
 // discriminant is `kind`, NOT `type` — a deliberate divergence from all three
 // analogs (reserved-word-ambiguous naming; recorded in ADR D1).
-export const AGENT_EVENT_KINDS = ["message", "thinking", "tool"] as const;
+export const AGENT_EVENT_KINDS = [
+  "message",
+  "thinking",
+  "tool",
+  "explored",
+] as const;
 
 export type AgentEventKind = (typeof AGENT_EVENT_KINDS)[number];
 
@@ -42,8 +47,25 @@ export interface AgentToolEvent {
    * Codex-style edit render for a tool like `apply_patch`. EXCLUSIVE with
    * `output`/`shell`. */
   diff?: string;
+  /** The tool input the model proposed — used to render a Codex-style
+   * verb+target summary ("Read config.mjs") inside an `explored` group. */
+  input?: unknown;
   /** ToolResult line budget (default 10). */
   maxLines?: number;
+}
+
+/**
+ * A run of consecutive read-only exploration tool calls (read/list/grep),
+ * collapsed into ONE Codex-style "Explored" block — a header + one verb+target
+ * line per tool, output summarized away. Produced by the message projection
+ * (`messagesToAgentEvents`), so the timeline renders it as a single row and the
+ * `<Static>` windowing is untouched (1 event = 1 row holds).
+ */
+export interface AgentExploredEvent {
+  id: string;
+  kind: "explored";
+  /** The grouped tool calls, in order. */
+  tools: AgentToolEvent[];
 }
 
 /**
@@ -54,7 +76,10 @@ export interface AgentToolEvent {
  * M2 EC-16 parity). Extra properties are tolerated (M7 adapters may enrich).
  */
 export type AgentEvent =
-  AgentMessageEvent | AgentThinkingEvent | AgentToolEvent;
+  | AgentMessageEvent
+  | AgentThinkingEvent
+  | AgentToolEvent
+  | AgentExploredEvent;
 
 export function isAgentEventKind(value: unknown): value is AgentEventKind {
   return (AGENT_EVENT_KINDS as readonly unknown[]).includes(value);

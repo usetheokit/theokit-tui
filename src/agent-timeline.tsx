@@ -3,7 +3,7 @@ import { memo, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
-import type { AgentEvent } from "./agent-event.js";
+import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import { CHAT_ROLES, ChatMessage } from "./chat-message.js";
 import { HEADER_SENTINEL_KEY } from "./chat-thread.js";
 import { DiffViewer } from "./diff-viewer.js";
@@ -181,8 +181,59 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
   );
 }
 
+/** A Codex-style verb+target label for one explored tool ("Read config.mjs",
+ * "List agents/tools", 'Search "pattern"'), derived from its input. */
+function exploreSummary(tool: AgentToolEvent): string {
+  const input = (tool.input ?? {}) as Record<string, unknown>;
+  const str = (key: string): string | undefined =>
+    typeof input[key] === "string" ? (input[key] as string) : undefined;
+  const path = str("path") ?? str("file") ?? str("dir");
+  const pattern = str("pattern") ?? str("query") ?? str("regex");
+  switch (tool.name) {
+    case "read_file":
+      return path !== undefined ? `Read ${path}` : "Read";
+    case "list_dir":
+      return `List ${path ?? "."}`;
+    case "grep":
+    case "search_text":
+      return pattern !== undefined ? `Search "${pattern}"` : "Search";
+    case "git_diff":
+      return "Diff";
+    case "glob":
+      return pattern !== undefined ? `Glob ${pattern}` : "Glob";
+    default:
+      return path ?? pattern ?? tool.name;
+  }
+}
+
+/** A run of read-only exploration collapsed into one "Explored" block (Codex
+ * parity): a header + one dim verb+target line per tool, outputs summarized
+ * away so exploration does not dominate the transcript. */
+function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
+  const theme = useTheoTheme();
+  const token = theme.toolStatus.success;
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text color={token.color}>
+          {token.glyph.padEnd(STATUS_INDICATOR_WIDTH)}
+        </Text>
+        <Text bold>Explored</Text>
+        <Text dimColor>{` (${tools.length})`}</Text>
+      </Box>
+      {tools.map((tool) => (
+        <Text key={tool.id} dimColor>
+          {`  └ ${exploreSummary(tool)}`}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
 function eventRow(event: AgentEvent) {
   switch (event.kind) {
+    case "explored":
+      return <ExploredBlock tools={event.tools} />;
     case "message":
       // Claude Code parity: an assistant turn is Markdown (headings, lists, fenced code → CodeBlock with
       // syntax highlight), so render it through MarkdownText. The user echo stays raw (dim) — a user's typed

@@ -9,6 +9,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Consecutive read-only exploration tools (read/list/grep) now collapse into a Codex-style **"Explored" block** — a header + one dim verb+target line per tool ("Read chat.ts", 'Search "foo"', "List agents") instead of one full output card each, so exploration no longer dominates the transcript. Grouping happens in the `messagesToAgentEvents` projection (a new `explored` `AgentEvent` kind), so the `<Static>` windowing is untouched (1 event = 1 row). Tool events now carry their `input` (when non-empty). Configurable via `messagesToAgentEvents(messages, { exploreTools })` — default `DEFAULT_EXPLORE_TOOLS`; pass `[]` to disable. Apps whose tools are named differently are unaffected.
 - Timeline tool results now render a **colored inline diff** (via `DiffViewer`) when the result is a git-style unified diff — the Codex-style edit render for tools like `apply_patch`. `AgentToolEvent` gains an exclusive `diff` field (`output | shell | diff` — one only, validated at the boundary); a clean unified-diff result (no stderr, exit 0) routes to it automatically in both timeline projections. Shared routing lives in `routeToolResult` / `looksLikeUnifiedDiff` (`agent-stream-event.ts`).
 
 ### Changed

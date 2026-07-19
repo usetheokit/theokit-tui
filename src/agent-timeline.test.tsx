@@ -113,6 +113,30 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(frame).not.toContain("@@ -1 +1 @@");
   });
 
+  it("explored_event_renders_grouped_codex_block", async () => {
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "e1",
+            kind: "explored",
+            tools: [
+              { id: "c1", kind: "tool", name: "read_file", status: "success", input: { path: "chat.ts" } },
+              { id: "c2", kind: "tool", name: "grep", status: "success", input: { pattern: "foo" } },
+              { id: "c3", kind: "tool", name: "list_dir", status: "success", input: { path: "agents" } },
+            ],
+          },
+        ]}
+      />,
+    )
+    const plain = stripAnsi(frame)
+    expect(plain).toContain("Explored")
+    expect(plain).toContain("(3)") // count
+    expect(plain).toContain("Read chat.ts") // verb + target from input
+    expect(plain).toContain('Search "foo"')
+    expect(plain).toContain("List agents")
+  })
+
   it("tool_event_without_output_renders_bare_row", async () => {
     const frame = await renderFrame(
       <AgentTimeline

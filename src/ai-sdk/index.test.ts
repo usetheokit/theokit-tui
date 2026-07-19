@@ -132,6 +132,7 @@ describe("uiMessagesToAgentEvents", () => {
         kind: "tool",
         name: "search",
         status: "success",
+        input: { q: "x" },
         output: '{\n  "hits": 2\n}',
       },
     ]);
