@@ -209,9 +209,10 @@ function toToolEvent(
   tool: ToolPartView,
   messageId: string,
   index: number,
-  format?: ToolHeaderFormatter,
+  formatHeader?: ToolHeaderFormatter,
+  formatResult?: ToolResultFormatter,
 ): AgentToolEvent {
-  const event: AgentToolEvent = {
+  let event: AgentToolEvent = {
     id:
       tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
@@ -220,9 +221,21 @@ function toToolEvent(
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
     ...toolResultContent(tool),
   };
-  // App header override (Codex parity): swap the raw tool name for a human verb+target and drop the
+  // App RESULT-body override (Codex parity): map a tool's raw result (the SDK serializes it to a JSON
+  // string) to a clean output/shell/diff, replacing the default `JSON.stringify` fallback — e.g. a
+  // `{ ok, output }` shell result renders the terminal output, not raw JSON. Display-only: the model
+  // already consumed the raw result. `undefined` keeps the default routing, so unmapped tools are
+  // unchanged. output/shell/diff are EXCLUSIVE, so the override replaces all three.
+  if (formatResult !== undefined && tool.output !== undefined) {
+    const body = formatResult(event, tool.output);
+    if (body !== undefined) {
+      const { output: _o, shell: _s, diff: _d, ...rest } = event;
+      event = { ...rest, ...body };
+    }
+  }
+  // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
-  const header = format?.(event);
+  const header = formatHeader?.(event);
   if (header === undefined) return event;
   return {
     ...event,
@@ -239,7 +252,7 @@ function hasKeys(value: unknown): boolean {
     value !== null &&
     !Array.isArray(value) &&
     Object.keys(value).length > 0
-  )
+  );
 }
 
 /** Read-only exploration tools whose consecutive runs collapse into a Codex-style
@@ -323,12 +336,27 @@ export type ToolHeaderFormatter = (
   event: AgentToolEvent,
 ) => { name?: string; summary?: string } | undefined;
 
+/**
+ * Map a tool's RAW result to a Codex-style result body — the sibling of {@link ToolHeaderFormatter}.
+ * The app owns how ITS OWN tools' results render: a structured result (the SDK serializes tool results
+ * to a JSON string, so `rawResult` is usually that string) becomes a clean `output` (terminal text),
+ * `shell` envelope, or inline `diff`, instead of the default raw-JSON dump. Return `undefined` to keep
+ * the default routing, so unmapped tools are unchanged. **Display-only** — the model already consumed
+ * the raw result during the turn; this changes only how the past result renders in the timeline.
+ */
+export type ToolResultFormatter = (
+  event: AgentToolEvent,
+  rawResult: unknown,
+) => Pick<AgentToolEvent, "output" | "shell" | "diff"> | undefined;
+
 export interface MessagesToEventsOptions {
   /** Tool names whose consecutive runs collapse into an `explored` block.
    * Defaults to {@link DEFAULT_EXPLORE_TOOLS}. Pass `[]` to disable grouping. */
   exploreTools?: Iterable<string>;
   /** Map a tool call to a Codex-style human header (see {@link ToolHeaderFormatter}). */
   formatToolHeader?: ToolHeaderFormatter;
+  /** Map a tool's raw result to a Codex-style result body (see {@link ToolResultFormatter}). */
+  formatToolResult?: ToolResultFormatter;
 }
 
 /**
@@ -368,7 +396,15 @@ export function messagesToAgentEvents(
       }
       const tool = toolView(part);
       if (tool !== null)
-        events.push(toToolEvent(tool, message.id, index, opts?.formatToolHeader));
+        events.push(
+          toToolEvent(
+            tool,
+            message.id,
+            index,
+            opts?.formatToolHeader,
+            opts?.formatToolResult,
+          ),
+        );
     });
   }
   const explore = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);

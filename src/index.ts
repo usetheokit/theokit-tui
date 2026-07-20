@@ -251,7 +251,10 @@ export {
   readTurnUsage,
 } from "./messages-to-events.js";
 export type {
+  MessagesToEventsOptions,
   PendingApproval,
+  ToolHeaderFormatter,
+  ToolResultFormatter,
   TurnUsage,
   UIMessageLike,
   UIMessagePartLike,

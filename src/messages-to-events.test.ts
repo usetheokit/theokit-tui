@@ -141,7 +141,10 @@ describe("readTurnUsage", () => {
 // {stdout,stderr,exitCode} to a JSON STRING — so without routing it to the
 // `shell` field the timeline dumps raw `{"stdout":...}` instead of firing
 // ToolResult's shell renderer (the observed UX gap vs Codex).
-const toolMsg = (output: unknown, state = "output-available"): UIMessageLike => ({
+const toolMsg = (
+  output: unknown,
+  state = "output-available",
+): UIMessageLike => ({
   id: "a1",
   role: "assistant",
   parts: [{ type: "tool-run_shell", toolCallId: "c1", state, output }],
@@ -158,7 +161,11 @@ describe("messagesToAgentEvents tool-result routing", () => {
     const ev = firstTool(
       toolMsg('{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'),
     );
-    expect(ev.shell).toEqual({ stdout: "MCP_SUM=111", stderr: "", exitCode: 0 });
+    expect(ev.shell).toEqual({
+      stdout: "MCP_SUM=111",
+      stderr: "",
+      exitCode: 0,
+    });
     expect(ev.output).toBeUndefined();
   });
 
@@ -222,69 +229,165 @@ describe("messagesToAgentEvents tool-result routing", () => {
   });
 
   it("collapses consecutive read-only tools into one explored group", () => {
-    const explore = (name: string, id: string, input: unknown): UIMessageLike => ({
+    const explore = (
+      name: string,
+      id: string,
+      input: unknown,
+    ): UIMessageLike => ({
       id: `msg-${id}`,
       role: "assistant",
-      parts: [{ type: `tool-${name}`, toolCallId: id, state: "output-available", output: "ok", input }],
-    })
+      parts: [
+        {
+          type: `tool-${name}`,
+          toolCallId: id,
+          state: "output-available",
+          output: "ok",
+          input,
+        },
+      ],
+    });
     // Flatten three explores across messages into one thread turn.
     const events = messagesToAgentEvents([
-      { id: "m1", role: "assistant", parts: [
-        { type: "tool-list_dir", toolCallId: "c1", state: "output-available", output: "a\nb", input: { path: "agents/tools" } },
-        { type: "tool-grep", toolCallId: "c2", state: "output-available", output: "x", input: { pattern: "foo" } },
-        { type: "tool-read_file", toolCallId: "c3", state: "output-available", output: "1\tcode", input: { path: "chat.ts" } },
-      ] },
-    ])
-    void explore
-    expect(events).toHaveLength(1)
-    const grouped = events[0] as { kind: string; tools: { name: string; input?: unknown }[] }
-    expect(grouped.kind).toBe("explored")
-    expect(grouped.tools.map((t) => t.name)).toEqual(["list_dir", "grep", "read_file"])
-    expect(grouped.tools[2]?.input).toEqual({ path: "chat.ts" }) // input captured for the summary
-  })
+      {
+        id: "m1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-list_dir",
+            toolCallId: "c1",
+            state: "output-available",
+            output: "a\nb",
+            input: { path: "agents/tools" },
+          },
+          {
+            type: "tool-grep",
+            toolCallId: "c2",
+            state: "output-available",
+            output: "x",
+            input: { pattern: "foo" },
+          },
+          {
+            type: "tool-read_file",
+            toolCallId: "c3",
+            state: "output-available",
+            output: "1\tcode",
+            input: { path: "chat.ts" },
+          },
+        ],
+      },
+    ]);
+    void explore;
+    expect(events).toHaveLength(1);
+    const grouped = events[0] as {
+      kind: string;
+      tools: { name: string; input?: unknown }[];
+    };
+    expect(grouped.kind).toBe("explored");
+    expect(grouped.tools.map((t) => t.name)).toEqual([
+      "list_dir",
+      "grep",
+      "read_file",
+    ]);
+    expect(grouped.tools[2]?.input).toEqual({ path: "chat.ts" }); // input captured for the summary
+  });
 
   it("leaves a LONE read-only tool as a normal card (only ≥2 collapse)", () => {
     const events = messagesToAgentEvents([
-      { id: "m1", role: "assistant", parts: [
-        { type: "tool-read_file", toolCallId: "c1", state: "output-available", output: "x", input: { path: "x.ts" } },
-      ] },
-    ])
-    expect(events).toHaveLength(1)
-    expect(events[0]?.kind).toBe("tool")
-  })
+      {
+        id: "m1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-read_file",
+            toolCallId: "c1",
+            state: "output-available",
+            output: "x",
+            input: { path: "x.ts" },
+          },
+        ],
+      },
+    ]);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.kind).toBe("tool");
+  });
 
   it("a message between reads breaks the run (no group)", () => {
     const events = messagesToAgentEvents([
-      { id: "m1", role: "assistant", parts: [
-        { type: "tool-read_file", toolCallId: "c1", state: "output-available", output: "a", input: { path: "a" } },
-        { type: "text", text: "now the second" },
-        { type: "tool-read_file", toolCallId: "c2", state: "output-available", output: "b", input: { path: "b" } },
-      ] },
-    ])
-    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0)
-    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2)
-  })
+      {
+        id: "m1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-read_file",
+            toolCallId: "c1",
+            state: "output-available",
+            output: "a",
+            input: { path: "a" },
+          },
+          { type: "text", text: "now the second" },
+          {
+            type: "tool-read_file",
+            toolCallId: "c2",
+            state: "output-available",
+            output: "b",
+            input: { path: "b" },
+          },
+        ],
+      },
+    ]);
+    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0);
+    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2);
+  });
 
   it("does not group non-explore tools (run_shell stays discrete cards)", () => {
     const events = messagesToAgentEvents([
-      { id: "m1", role: "assistant", parts: [
-        { type: "tool-run_shell", toolCallId: "c1", state: "output-available", output: "1" },
-        { type: "tool-run_shell", toolCallId: "c2", state: "output-available", output: "2" },
-      ] },
-    ])
-    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0)
-    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2)
-  })
+      {
+        id: "m1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-run_shell",
+            toolCallId: "c1",
+            state: "output-available",
+            output: "1",
+          },
+          {
+            type: "tool-run_shell",
+            toolCallId: "c2",
+            state: "output-available",
+            output: "2",
+          },
+        ],
+      },
+    ]);
+    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0);
+    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2);
+  });
 
   it("exploreTools: [] disables grouping (back-compat opt-out)", () => {
     const parts = [
-      { type: "tool-read_file", toolCallId: "c1", state: "output-available", output: "a", input: { path: "a" } },
-      { type: "tool-read_file", toolCallId: "c2", state: "output-available", output: "b", input: { path: "b" } },
-    ]
-    const events = messagesToAgentEvents([{ id: "m1", role: "assistant", parts }], { exploreTools: [] })
-    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0)
-    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2)
-  })
+      {
+        type: "tool-read_file",
+        toolCallId: "c1",
+        state: "output-available",
+        output: "a",
+        input: { path: "a" },
+      },
+      {
+        type: "tool-read_file",
+        toolCallId: "c2",
+        state: "output-available",
+        output: "b",
+        input: { path: "b" },
+      },
+    ];
+    const events = messagesToAgentEvents(
+      [{ id: "m1", role: "assistant", parts }],
+      { exploreTools: [] },
+    );
+    expect(events.filter((e) => e.kind === "explored")).toHaveLength(0);
+    expect(events.filter((e) => e.kind === "tool")).toHaveLength(2);
+  });
 
   it("surfaces an output-error as output text", () => {
     const ev = messagesToAgentEvents([
@@ -302,5 +405,58 @@ describe("messagesToAgentEvents tool-result routing", () => {
       },
     ]).find((e) => e.kind === "tool");
     expect(ev).toMatchObject({ output: "command failed", status: "failed" });
+  });
+});
+
+describe("messagesToAgentEvents — formatToolResult (result-body seam)", () => {
+  const jsonMsg = (name: string, output: unknown): UIMessageLike => ({
+    id: "m1",
+    role: "assistant",
+    parts: [
+      {
+        type: `tool-${name}`,
+        toolCallId: "c1",
+        state: "output-available",
+        output,
+      },
+    ],
+  });
+
+  it("maps a raw JSON result to a clean output body (overrides the default raw-JSON dump)", () => {
+    const raw = JSON.stringify({
+      ok: true,
+      output: "print(6*7)\r\n42\r\n>>> ",
+      alive: true,
+    });
+    const [ev] = messagesToAgentEvents([jsonMsg("write_stdin", raw)], {
+      formatToolResult: (_e, r) => {
+        const p =
+          typeof r === "string" ? JSON.parse(r) : (r as { output?: unknown });
+        return typeof p?.output === "string" ? { output: p.output } : undefined;
+      },
+    });
+    expect(ev).toMatchObject({
+      kind: "tool",
+      output: "print(6*7)\r\n42\r\n>>> ",
+    });
+    expect((ev as { output?: string }).output).not.toContain('"ok":true');
+  });
+
+  it("undefined keeps the default routing (unmapped tools unchanged)", () => {
+    const raw = JSON.stringify({ ok: true, replacements: 1 });
+    const [ev] = messagesToAgentEvents([jsonMsg("edit_file", raw)], {
+      formatToolResult: () => undefined,
+    });
+    expect((ev as { output?: string }).output).toContain("replacements");
+  });
+
+  it("clears the exclusive output/shell/diff before applying the override (display-only)", () => {
+    const [ev] = messagesToAgentEvents(
+      [jsonMsg("interactive_shell", "plain\nlines")],
+      {
+        formatToolResult: () => ({ output: "OVERRIDDEN" }),
+      },
+    );
+    expect((ev as { output?: string }).output).toBe("OVERRIDDEN");
   });
 });
