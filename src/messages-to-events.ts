@@ -209,8 +209,9 @@ function toToolEvent(
   tool: ToolPartView,
   messageId: string,
   index: number,
+  format?: ToolHeaderFormatter,
 ): AgentToolEvent {
-  return {
+  const event: AgentToolEvent = {
     id:
       tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
@@ -218,6 +219,15 @@ function toToolEvent(
     status: TOOL_STATUS[tool.state] ?? "pending",
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
     ...toolResultContent(tool),
+  };
+  // App header override (Codex parity): swap the raw tool name for a human verb+target and drop the
+  // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
+  const header = format?.(event);
+  if (header === undefined) return event;
+  return {
+    ...event,
+    ...(header.name !== undefined ? { name: header.name } : {}),
+    ...(header.summary !== undefined ? { summary: header.summary } : {}),
   };
 }
 
@@ -302,10 +312,23 @@ export function messagesToChatThread(
   return out;
 }
 
+/**
+ * App-supplied hook to turn a raw tool call into a HUMAN header (Codex parity): `run_shell` → "Ran
+ * node --test", `apply_patch` → "Edited tax.mjs (+1 -1)", etc. Return `{ name, summary }` to override
+ * the header; return `undefined` to leave the raw tool name untouched (so tools the app does not map —
+ * incl. the read-only ones that collapse into an `explored` block — are unaffected). The generic TUI
+ * stays tool-agnostic; the app owns the verb+target vocabulary of its own tools.
+ */
+export type ToolHeaderFormatter = (
+  event: AgentToolEvent,
+) => { name?: string; summary?: string } | undefined;
+
 export interface MessagesToEventsOptions {
   /** Tool names whose consecutive runs collapse into an `explored` block.
    * Defaults to {@link DEFAULT_EXPLORE_TOOLS}. Pass `[]` to disable grouping. */
   exploreTools?: Iterable<string>;
+  /** Map a tool call to a Codex-style human header (see {@link ToolHeaderFormatter}). */
+  formatToolHeader?: ToolHeaderFormatter;
 }
 
 /**
@@ -344,7 +367,8 @@ export function messagesToAgentEvents(
         return;
       }
       const tool = toolView(part);
-      if (tool !== null) events.push(toToolEvent(tool, message.id, index));
+      if (tool !== null)
+        events.push(toToolEvent(tool, message.id, index, opts?.formatToolHeader));
     });
   }
   const explore = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
