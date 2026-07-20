@@ -214,3 +214,24 @@ describe("ChatMessage (T2.1)", () => {
     expect(frame).toMatchSnapshot("chat-message-empty");
   });
 });
+
+describe("M19 — assistant text word-wraps to the terminal (no mid-word hard-wrap)", () => {
+  it("chat_message_long_paragraph_wraps_at_word_boundaries", async () => {
+    // A paragraph longer than the test terminal width MUST wrap onto multiple lines; the wrap must fall
+    // on word boundaries. A mid-word hard-wrap (the bug: "exited" → "exite" + "d") would, once the frame's
+    // whitespace is collapsed, read "exite d" and break this assertion.
+    const para =
+      "The verification step ran the compiled module and the check exited zero and printed the expected " +
+      "value forty two successfully across every single deterministic run without any flakiness whatsoever.";
+    const frame = await renderFrame(
+      <TheoTUIProvider>
+        <ChatMessage role="assistant" markdown>
+          {para}
+        </ChatMessage>
+      </TheoTUIProvider>,
+    );
+    expect(frame).toContain("\n"); // it actually wrapped onto multiple lines
+    const collapsed = frame.replace(/\s+/g, " ").trim();
+    expect(collapsed).toContain("the check exited zero and printed");
+  });
+});

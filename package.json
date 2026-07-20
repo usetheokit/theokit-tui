@@ -1,6 +1,6 @@
 {
   "name": "@theokit/tui",
-  "version": "0.43.0",
+  "version": "0.44.0",
   "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {

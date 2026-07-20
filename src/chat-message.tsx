@@ -1,4 +1,4 @@
-import { Box, Text } from "ink";
+import { Box, Text, useStdout } from "ink";
 import type { ReactNode } from "react";
 
 import type { LayoutMarginProps } from "./layout-props.js";
@@ -50,6 +50,12 @@ export function ChatMessage({
     );
   }
   const tokens = useTheoTheme().role[role];
+  // Constrain the row to the terminal width so `MarkdownText`/raw text word-wraps WITHIN it. Without this,
+  // the row (rendered inside AgentTimeline's `<Static>`) sizes to content, so `wrap="wrap"` has content-
+  // width room and never engages — a long paragraph overflows and the terminal hard-wraps it MID-WORD.
+  // Fallback 80 for a non-TTY / piped stdout (Ink re-renders on resize, so this follows the terminal).
+  const { stdout } = useStdout();
+  const rowWidth = stdout?.columns ?? 80;
   // `text` may be undefined (= terminal default color). Ink's `color` prop
   // forbids an explicit `undefined` under exactOptionalPropertyTypes — omit
   // the prop entirely instead (SEPA iteration-4 finding 1).
@@ -63,7 +69,7 @@ export function ChatMessage({
     // Markdown is multi-block: the content slot becomes a column next to
     // the glyph. The default (raw) path below is BYTE-IDENTICAL to pre-M13.
     return (
-      <Box {...margin}>
+      <Box {...margin} width={rowWidth}>
         <Text color={tokens.prefix}>{tokens.glyph}</Text>
         <Box flexDirection="column" flexGrow={1}>
           <MarkdownText text={children as string} />
@@ -72,9 +78,9 @@ export function ChatMessage({
     );
   }
   return (
-    <Box {...margin}>
+    <Box {...margin} width={rowWidth}>
       <Text color={tokens.prefix}>{tokens.glyph}</Text>
-      <Text {...textColor} {...dim}>
+      <Text {...textColor} {...dim} wrap="wrap">
         {children}
       </Text>
     </Box>
