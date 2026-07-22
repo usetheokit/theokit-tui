@@ -40,6 +40,12 @@ export interface ChatComposerProps extends LayoutMarginProps {
    * to re-seed. Omitted ⇒ empty buffer (unchanged for existing consumers).
    */
   initialValue?: string;
+  /**
+   * M54 (agent-builder backtrack): called with the current buffer text on every change, so the host
+   * can enforce a composer-empty precondition (Codex `is_normal_backtrack_mode`). Fires after mount
+   * with the initial text and on each edit. Omitted ⇒ no callback (unchanged for existing consumers).
+   */
+  onChange?: (text: string) => void;
   /** M15: slash-command menu. Typing `/` at the START of line 1 opens a
    * prefix-filtered menu (CASE-SENSITIVE, codex parity — r2-F9); ↑↓
    * select, Tab/Enter complete to `/name `, Esc dismisses until the
@@ -424,6 +430,7 @@ export function ChatComposer({
   onShellCommand,
   onHelpToggle,
   initialValue,
+  onChange,
   ...margin
 }: ChatComposerProps) {
   const [editor, dispatchEditor] = useReducer(
@@ -432,6 +439,10 @@ export function ChatComposer({
     seedEditorState,
   );
   const buffer = editor.buffer;
+  // M54 — surface buffer text to the host (composer-empty precondition for backtrack).
+  useEffect(() => {
+    onChange?.(buffer.text);
+  }, [buffer.text, onChange]);
   const focusId = useId();
   const { isFocused } = useFocus({ autoFocus, id: focusId });
   const { focus } = useFocusManager();
