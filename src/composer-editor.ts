@@ -317,3 +317,16 @@ export function editorReducer(
       return applySubmit(state, action.entry);
   }
 }
+
+/**
+ * M54 (agent-builder backtrack) — seed the editor with pre-filled text and the cursor at the end.
+ * Powers `ChatComposer`'s `initialValue` (Codex `restore_user_message_to_composer`,
+ * app_backtrack.rs). Empty/undefined text yields the pristine `initialEditorState`.
+ */
+export function seedEditorState(text: string | undefined): EditorState {
+  if (!text) return initialEditorState;
+  return {
+    ...initialEditorState,
+    buffer: { text, cursorOffset: [...text].length },
+  };
+}

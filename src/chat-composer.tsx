@@ -11,7 +11,7 @@ import type { TextBufferAction } from "./text-buffer.js";
 import {
   editorActionForChord,
   editorReducer,
-  initialEditorState,
+  seedEditorState,
 } from "./composer-editor.js";
 import type { Key } from "./renderer/input/key.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
@@ -34,6 +34,12 @@ export interface ChatComposerProps extends LayoutMarginProps {
    */
   multiLine?: boolean;
   autoFocus?: boolean;
+  /**
+   * M54 (agent-builder backtrack): seed the buffer with pre-filled text on MOUNT, cursor at end
+   * (Codex `restore_user_message_to_composer`). Only read at mount — remount with a changing `key`
+   * to re-seed. Omitted ⇒ empty buffer (unchanged for existing consumers).
+   */
+  initialValue?: string;
   /** M15: slash-command menu. Typing `/` at the START of line 1 opens a
    * prefix-filtered menu (CASE-SENSITIVE, codex parity — r2-F9); ↑↓
    * select, Tab/Enter complete to `/name `, Esc dismisses until the
@@ -417,11 +423,13 @@ export function ChatComposer({
   fileSearch = defaultFileSearch,
   onShellCommand,
   onHelpToggle,
+  initialValue,
   ...margin
 }: ChatComposerProps) {
   const [editor, dispatchEditor] = useReducer(
     editorReducer,
-    initialEditorState,
+    initialValue,
+    seedEditorState,
   );
   const buffer = editor.buffer;
   const focusId = useId();
