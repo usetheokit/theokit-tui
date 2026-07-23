@@ -7,7 +7,7 @@
 **Code-quality gate:** PASS, 0 findings (standalone run, 2026-07-23)
 **Quality gates:** format ✓ · lint 0 warnings ✓ · typecheck ✓ · 1270 tests ✓ · build + publint ✓
 **Findings:** 30 raw → 19 unique (BLOCKER: 0, HIGH: 3, MEDIUM: 7, LOW: 9) + 11 INFO/no-issues
-**Verdict:** NEEDS_FIXES (3 unique HIGH > the ≤2-HIGH gate of `cycle-review.md`)
+**Verdict:** ~~NEEDS_FIXES~~ → **READY_TO_MERGE** (re-verdict 2026-07-23 after the fix batch — see § Re-verdict)
 
 ## HIGH findings (must fix before READY_TO_MERGE)
 
@@ -70,6 +70,20 @@
 ## Handoff decision
 
 **NEEDS_FIXES** → fix batch H1+H2+H3+M1+M2+M3 (all mechanical: 1-line fix + tests + exports + changelog), then re-verify the batch once (house pattern: batch-fix, single re-run). M4–M7 and LOWs become follow-up issues / PR caveats. After the batch lands green: verdict flips to READY_TO_MERGE and `/release` 0.47.0 proceeds.
+
+## Re-verdict (2026-07-23, post fix-batch)
+
+Fix batch landed as 4 atomic commits (`4f31309`, `c03d789`, `49b7cc1`, `0dd67c0`):
+
+- **H1 FIXED** — `seedEditorState` now seeds `cursorOffset: text.length` (code units); RED-first regression tests (astral tail seed + insert stays intact) + component-level initialValue/onChange tests (M3) + bare-ESC refocus regression (M2) + poll-based waits (F-tests-8).
+- **H2 FIXED** — `formatToolHeader` describe block (5 tests) incl. the pinned F-tui-6 grouping contract + doc note.
+- **H3 FIXED** — CHANGELOG reconciled: 6 shipped-but-unlogged entries added, reconciliation head-note, H1/M1 entries, PT entry translated (F-xval-7).
+- **M1 FIXED** — `DEFAULT_EXPLORE_TOOLS` + `AgentExploredEvent` exported and pinned.
+- **M4–M7 + remaining LOWs** — filed as issues **#56** (ChatMessage margin overflow), **#57** (diff maxLines cap), **#58** (explored boundary validation), **#59** (LOW batch). Accepted as caveats for 0.47.0.
+
+Gates after batch: format ✓ · lint 0 ✓ · typecheck ✓ · **1279 tests** (9 new) ✓ · build + publint ✓. Determinism of the new component test verified 3/3 runs.
+
+**Verdict: READY_TO_MERGE** — 0 BLOCKER, 0 HIGH open, MEDIUMs tracked in issues (documented mitigation per `cycle-review.md`).
 
 ## Spawned agents (audit trail)
 
