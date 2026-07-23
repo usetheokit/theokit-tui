@@ -1,4 +1,7 @@
 import { Box, Text } from "ink";
+import { useEffect, useState, type ReactNode } from "react";
+
+import { ensureHighlighter, highlightLine } from "./code-block.js";
 import { foldDiffLines, parseUnifiedDiff } from "./diff-model.js";
 import type { DiffFile, DiffLine, DiffRow } from "./diff-model.js";
 import { pairIntraLines, type WordSegment } from "./diff-word.js";
@@ -40,6 +43,62 @@ export interface DiffViewerProps extends LayoutMarginProps {
    * feature — Rule 9 don't-reinvent — so it is in the bundle but inert when off).
    */
   intraLineHighlight?: boolean;
+  /**
+   * Claude-Code-style render (opt-in; default false is byte-identical to the
+   * classic look): full-width row backgrounds (theme `diff.addedBg/removedBg`)
+   * replace the whole-line fg coloring, the per-file header becomes a prose
+   * "Added N lines, removed M lines" summary (path prefixed only on multi-file
+   * patches — a tool card already names the file), and line text picks up
+   * syntax highlight automatically when the optional `lowlight` peer is
+   * installed (language inferred from the file extension; CodeBlock precedent).
+   * Monochrome themes have empty bg tokens, so the row background disappears
+   * and the +/- signs remain the color-independent mechanism. 16-color
+   * terminals render the tints at reduced fidelity.
+   */
+  background?: boolean;
+}
+
+/** Highlighter instance shape (loaded lazily from the optional lowlight peer). */
+type LoadedHighlighter = Awaited<ReturnType<typeof ensureHighlighter>>;
+
+/** Per-render context for the background (Claude-Code-style) variant. */
+interface BgContext {
+  multiFile: boolean;
+  highlighter: LoadedHighlighter;
+  /** lowlight language id for the row at this index (per-file). */
+  langAt: (index: number) => string | undefined;
+}
+
+/** File extension → lowlight language id (background-variant highlight). */
+const EXT_TO_LANG: Record<string, string> = {
+  ts: "typescript",
+  tsx: "typescript",
+  mts: "typescript",
+  cts: "typescript",
+  js: "javascript",
+  jsx: "javascript",
+  mjs: "javascript",
+  cjs: "javascript",
+  py: "python",
+  go: "go",
+  rs: "rust",
+  json: "json",
+  css: "css",
+  html: "xml",
+  xml: "xml",
+  md: "markdown",
+  sh: "bash",
+  bash: "bash",
+  zsh: "bash",
+  yml: "yaml",
+  yaml: "yaml",
+};
+
+function languageForFile(file: DiffFile): string | undefined {
+  const name = file.newName ?? file.oldName;
+  const ext =
+    name === undefined ? undefined : /\.([a-z0-9]+)$/i.exec(name)?.[1];
+  return ext === undefined ? undefined : EXT_TO_LANG[ext.toLowerCase()];
 }
 
 const expandTabs = (value: string): string =>
@@ -139,6 +198,25 @@ function headerRow(file: DiffFile, theme: TheoTheme, key: string) {
   );
 }
 
+const plural = (n: number): string => (n === 1 ? "" : "s");
+
+/** Background-variant per-file header: the Claude Code card idiom — prose
+ * stats; the path only when the patch carries several files (a tool card
+ * header already names the single file). */
+function backgroundHeaderRow(file: DiffFile, multiFile: boolean, key: string) {
+  const name = file.newName ?? file.oldName ?? "(unnamed)";
+  const stats = `Added ${file.additions} line${plural(
+    file.additions,
+  )}, removed ${file.deletions} line${plural(file.deletions)}`;
+  return (
+    <Box key={key}>
+      <Text dimColor wrap="truncate-end">
+        {multiFile ? `${name} — ${stats}` : stats}
+      </Text>
+    </Box>
+  );
+}
+
 /** The line body: word-segmented `inverse` spans when intra-line highlight has
  * segments for this line, else the current single tab-expanded text (byte-
  * identical for the default path). */
@@ -161,6 +239,29 @@ function lineBody(
   ));
 }
 
+/** Classic whole-line fg color for a diff line; empty in the background
+ * variant — the row TINT carries the add/del semantics there. */
+function lineColor(
+  line: DiffLine,
+  theme: TheoTheme,
+  background: boolean,
+): { color?: string } {
+  if (background) {
+    return {};
+  }
+  if (line.kind === "add") {
+    return { color: theme.status.success };
+  }
+  return line.kind === "del" ? { color: theme.status.error } : {};
+}
+
+/** Row background prop (background variant only; empty token → none). */
+function rowBackground(bgBody: { bgColor: string } | undefined) {
+  return bgBody !== undefined && bgBody.bgColor !== ""
+    ? { backgroundColor: bgBody.bgColor }
+    : {};
+}
+
 function lineRow(
   line: DiffLine,
   theme: TheoTheme,
@@ -168,17 +269,14 @@ function lineRow(
   width: number,
   key: string,
   segments?: WordSegment[],
+  bgBody?: { bgColor: string; body: ReactNode } | undefined,
 ) {
   const sign = line.kind === "add" ? "+" : line.kind === "del" ? "-" : " ";
-  const color =
-    line.kind === "add"
-      ? { color: theme.status.success }
-      : line.kind === "del"
-        ? { color: theme.status.error }
-        : {};
+  const color = lineColor(line, theme, bgBody !== undefined);
   const number = lineNumberFor(line);
+  const hasSegments = segments !== undefined && segments.length > 0;
   return (
-    <Box key={key}>
+    <Box key={key} {...rowBackground(bgBody)}>
       <Box flexShrink={0}>
         {showLineNumbers && (
           <Text dimColor>{String(number ?? "").padStart(width)} </Text>
@@ -186,7 +284,9 @@ function lineRow(
         <Text {...color}>{sign} </Text>
       </Box>
       <Text {...color} wrap="wrap">
-        {lineBody(line, color, segments)}
+        {bgBody !== undefined && !hasSegments
+          ? bgBody.body
+          : lineBody(line, color, segments)}
       </Text>
     </Box>
   );
@@ -199,11 +299,14 @@ function viewRowElement(
   showLineNumbers: boolean,
   width: number,
   intraMap: Map<DiffLine, WordSegment[]> | undefined,
+  bgCtx: BgContext | undefined,
 ) {
   const key = `r${index}`;
   switch (row.kind) {
     case "header":
-      return headerRow(row.file, theme, key);
+      return bgCtx !== undefined
+        ? backgroundHeaderRow(row.file, bgCtx.multiFile, key)
+        : headerRow(row.file, theme, key);
     case "degenerate":
       return (
         <Text key={key} dimColor>
@@ -231,8 +334,34 @@ function viewRowElement(
         width,
         key,
         intraMap?.get(row),
+        bgCtx === undefined ? undefined : bgLineProps(row, index, theme, bgCtx),
       );
   }
+}
+
+/** Background-variant per-row props: the kind→tint mapping + the (possibly
+ * syntax-highlighted) body. */
+function bgLineProps(
+  line: DiffLine,
+  index: number,
+  theme: TheoTheme,
+  bgCtx: BgContext,
+): { bgColor: string; body: ReactNode } {
+  const bgColor =
+    line.kind === "add"
+      ? theme.diff.addedBg
+      : line.kind === "del"
+        ? theme.diff.removedBg
+        : "";
+  const text = line.text === "" ? " " : expandTabs(line.text);
+  const body = highlightLine(
+    text,
+    bgCtx.langAt(index),
+    bgCtx.highlighter,
+    `r${index}`,
+    theme.code,
+  );
+  return { bgColor, body };
 }
 
 function assertValidBounds(
@@ -259,6 +388,50 @@ function assertValidBounds(
  * absence in every terminal analog). Signs are rendered UNCONDITIONALLY —
  * the color-independent NO_COLOR mechanism. Code lines WRAP, never truncate.
  */
+/** Cap AFTER folding (EC-3), GLOBAL across files incl. headers (EC-4),
+ * HEAD retention (EC-5 — documents rule). The trailer counts SOURCE lines
+ * (fold rows expand to their hidden count; headers/gaps count 0) — a row
+ * count misleads when a dropped "row" hides a whole fold (dom-frontend-2). */
+function capRows(
+  rows: ViewRow[],
+  maxLines: number | undefined,
+): { visible: ViewRow[]; capped: boolean; hiddenSourceLines: number } {
+  const capped = maxLines !== undefined && rows.length > maxLines;
+  if (!capped) {
+    return { visible: rows, capped, hiddenSourceLines: 0 };
+  }
+  const hiddenSourceLines = rows
+    .slice(maxLines as number)
+    .reduce((total, row) => {
+      if (row.kind === "fold") {
+        return total + row.hidden;
+      }
+      return row.kind === "add" || row.kind === "del" || row.kind === "context"
+        ? total + 1
+        : total;
+    }, 0);
+  return { visible: rows.slice(0, maxLines), capped, hiddenSourceLines };
+}
+
+/** Flatten files into view rows + a parallel per-row language track (the
+ * background variant highlights per file; classic render ignores it). */
+function buildViewRows(
+  files: DiffFile[],
+  contextLines: number | undefined,
+): { rows: ViewRow[]; rowLang: (string | undefined)[] } {
+  const rows: ViewRow[] = [];
+  const rowLang: (string | undefined)[] = [];
+  for (const file of files) {
+    const fr = fileRows(file, contextLines);
+    const lang = languageForFile(file);
+    rows.push(...fr);
+    for (let i = 0; i < fr.length; i += 1) {
+      rowLang.push(lang);
+    }
+  }
+  return { rows, rowLang };
+}
+
 /** Build the reference-keyed intra-line segment map across all files (opt-in). */
 function buildIntraMap(files: DiffFile[]): Map<DiffLine, WordSegment[]> {
   const map = new Map<DiffLine, WordSegment[]>();
@@ -270,12 +443,35 @@ function buildIntraMap(files: DiffFile[]): Map<DiffLine, WordSegment[]> {
   return map;
 }
 
+/** Background variant: lazy-load the optional lowlight highlighter (the
+ * CodeBlock idiom — plain render first, highlighted once loaded; absent
+ * peer stays plain forever). No-op while `background` is off. */
+function useDiffHighlighter(background: boolean): LoadedHighlighter {
+  const [highlighter, setHighlighter] = useState<LoadedHighlighter>(undefined);
+  useEffect(() => {
+    if (!background) {
+      return undefined;
+    }
+    let mounted = true;
+    void ensureHighlighter().then((loaded) => {
+      if (mounted && loaded !== undefined) {
+        setHighlighter(loaded);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [background]);
+  return highlighter;
+}
+
 export function DiffViewer({
   patch,
   showLineNumbers = true,
   maxLines,
   contextLines,
   intraLineHighlight = false,
+  background = false,
   ...marginProps
 }: DiffViewerProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
@@ -287,12 +483,17 @@ export function DiffViewer({
   // is accepted and measured by the bench; memoize only when profiling
   // demands it.
   const files = parseUnifiedDiff(patch);
-  const rows: ViewRow[] = [];
-  for (const file of files) {
-    rows.push(...fileRows(file, contextLines));
-  }
+  const { rows, rowLang } = buildViewRows(files, contextLines);
   const intraMap = intraLineHighlight ? buildIntraMap(files) : undefined;
   const theme = useTheoTheme();
+  const highlighter = useDiffHighlighter(background);
+  const bgCtx: BgContext | undefined = background
+    ? {
+        multiFile: files.length > 1,
+        highlighter,
+        langAt: (index) => rowLang[index],
+      }
+    : undefined;
 
   if (files.length === 0) {
     return (
@@ -301,30 +502,21 @@ export function DiffViewer({
       </Box>
     );
   }
-  // Cap AFTER folding (EC-3), GLOBAL across files incl. headers (EC-4),
-  // HEAD retention (EC-5 — documents rule). The trailer counts SOURCE lines
-  // (fold rows expand to their hidden count; headers/gaps count 0) — a row
-  // count misleads when a dropped "row" hides a whole fold (dom-frontend-2).
-  const capped = maxLines !== undefined && rows.length > maxLines;
-  const visible = capped ? rows.slice(0, maxLines) : rows;
-  const hiddenSourceLines = capped
-    ? rows.slice(maxLines as number).reduce((total, row) => {
-        if (row.kind === "fold") {
-          return total + row.hidden;
-        }
-        return row.kind === "add" ||
-          row.kind === "del" ||
-          row.kind === "context"
-          ? total + 1
-          : total;
-      }, 0)
-    : 0;
+  const { visible, capped, hiddenSourceLines } = capRows(rows, maxLines);
   const width = gutterWidth(files);
 
   return (
     <Box flexDirection="column" {...m}>
       {visible.map((row, index) =>
-        viewRowElement(row, index, theme, showLineNumbers, width, intraMap),
+        viewRowElement(
+          row,
+          index,
+          theme,
+          showLineNumbers,
+          width,
+          intraMap,
+          bgCtx,
+        ),
       )}
       {capped && <Text dimColor>… (+{hiddenSourceLines} more lines)</Text>}
     </Box>

@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`DiffViewer` `background` variant — the Claude Code diff look** (opt-in; default render
+  byte-identical): full-width dark-red/dark-green row backgrounds (new theme tokens
+  `diff.addedBg`/`diff.removedBg`, empty in the monochrome theme so the +/- signs stay the
+  color-independent degrade), a prose per-file header ("Added N lines, removed M lines" — path
+  prefixed only on multi-file patches, since a tool card already names the file), and automatic
+  syntax highlight of line text when the optional `lowlight` peer is installed (language inferred
+  from the file extension; CodeBlock precedent). `AgentTimeline` now renders unified-diff tool
+  results with this variant by default (M26 best-default precedent). (owner request 2026-07-23)
+
 ### Changed
 
 ### Deprecated

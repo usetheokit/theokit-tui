@@ -61,6 +61,12 @@ export interface TheoTheme {
   /** Neutral metrics accent (gauge/chart fill below the warning threshold). */
   accent: string;
   code: CodeTokens;
+  /** Full-width row backgrounds for `DiffViewer background` (Claude-Code-style
+   * diff). Empty string disables the background (monochrome degrade). */
+  diff: {
+    addedBg: string;
+    removedBg: string;
+  };
   /**
    * Note (M6): `pending.color` is a literal — it no longer aliases
    * `role.system.prefix`; theming the system role does NOT recolor the
@@ -85,6 +91,7 @@ export interface TheoThemeOverride {
   status?: Partial<TheoTheme["status"]>;
   accent?: string;
   code?: Partial<CodeTokens>;
+  diff?: Partial<TheoTheme["diff"]>;
   toolStatus?: {
     pending?: Partial<GlyphToken>;
     running?: Partial<{ color: string }>;
@@ -117,6 +124,9 @@ export const defaultTheme: TheoTheme = Object.freeze({
     comment: "gray",
     variable: "magenta",
   }),
+  // Claude-Code-style diff row tints (truecolor; 256-color nearest is fine —
+  // the +/- signs remain the color-independent mechanism).
+  diff: Object.freeze({ addedBg: "#1e3a1e", removedBg: "#4b1a1a" }),
   toolStatus: Object.freeze({
     pending: Object.freeze({ glyph: "⏺", color: "gray" }),
     running: Object.freeze({ color: "yellow" }),
@@ -158,6 +168,8 @@ const lightTheme: TheoTheme = Object.freeze({
     comment: "gray",
     variable: "blue",
   }),
+  // GitHub-web-style light tints (same degrade story as dark).
+  diff: Object.freeze({ addedBg: "#dafbe1", removedBg: "#ffebe9" }),
   toolStatus: Object.freeze({
     pending: Object.freeze({ glyph: "⏺", color: "gray" }),
     running: Object.freeze({ color: "yellow" }),
@@ -186,6 +198,8 @@ const noColorTheme: TheoTheme = Object.freeze({
     comment: "",
     variable: "",
   }),
+  // Monochrome: no backgrounds — the +/- signs carry the semantics.
+  diff: Object.freeze({ addedBg: "", removedBg: "" }),
   toolStatus: Object.freeze({
     pending: Object.freeze({ glyph: "⏺", color: "" }),
     running: Object.freeze({ color: "" }),
@@ -238,6 +252,7 @@ function mergeTheme(
     status: { ...base.status, ...override.status },
     accent: override.accent ?? base.accent,
     code: { ...base.code, ...override.code },
+    diff: { ...base.diff, ...override.diff },
     toolStatus: mergeToolStatus(base.toolStatus, override.toolStatus),
   };
 }
