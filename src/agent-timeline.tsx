@@ -144,42 +144,61 @@ function ThinkingRow({ text }: { text: string }) {
   );
 }
 
-function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
-  // SEPA F2: pass `output` as ToolResult CHILDREN (not pre-split lines) so
-  // it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
-  // (EC-7). Empty output collapses to the bare row.
+// SEPA F2: pass `output` as ToolResult CHILDREN (not pre-split lines) so
+// it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
+// (EC-7). Empty output collapses to the bare row (`null` and `false` are
+// equally non-renderable to ToolCallCard's hasRenderableBody).
+function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
+  const maxLines =
+    event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
+  // A unified-diff result (e.g. apply_patch) renders as a colored inline
+  // diff; everything else goes through ToolResult (output / shell modes).
+  if (event.diff !== undefined && event.diff !== "") {
+    return <DiffViewer patch={event.diff} {...maxLines} />;
+  }
   const hasBody =
     (event.output !== undefined && event.output !== "") ||
-    event.shell !== undefined ||
-    (event.diff !== undefined && event.diff !== "");
+    event.shell !== undefined;
+  if (!hasBody) return null;
+  return (
+    <ToolResult
+      {...(event.output !== undefined ? { children: event.output } : {})}
+      {...(event.shell !== undefined ? { shell: event.shell } : {})}
+      {...maxLines}
+    />
+  );
+}
+
+function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
   return (
     <ToolCallCard
       name={event.name}
       status={event.status}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
-      {hasBody &&
-        // A unified-diff result (e.g. apply_patch) renders as a colored inline
-        // diff; everything else goes through ToolResult (output / shell modes).
-        (event.diff !== undefined && event.diff !== "" ? (
-          <DiffViewer
-            patch={event.diff}
-            {...(event.maxLines !== undefined
-              ? { maxLines: event.maxLines }
-              : {})}
-          />
-        ) : (
-          <ToolResult
-            {...(event.output !== undefined ? { children: event.output } : {})}
-            {...(event.shell !== undefined ? { shell: event.shell } : {})}
-            {...(event.maxLines !== undefined
-              ? { maxLines: event.maxLines }
-              : {})}
-          />
-        ))}
+      {toolBody(event)}
     </ToolCallCard>
   );
 }
+
+interface ExploreArgs {
+  path: string | undefined;
+  pattern: string | undefined;
+}
+
+const searchLabel = ({ pattern }: ExploreArgs): string =>
+  pattern !== undefined ? `Search "${pattern}"` : "Search";
+
+/** Per-tool label formatters for the Explored block (extracted from a switch
+ * to keep exploreSummary within the complexity gate). */
+const EXPLORE_LABELS: Record<string, (args: ExploreArgs) => string> = {
+  read_file: ({ path }) => (path !== undefined ? `Read ${path}` : "Read"),
+  list_dir: ({ path }) => `List ${path ?? "."}`,
+  grep: searchLabel,
+  search_text: searchLabel,
+  git_diff: () => "Diff",
+  glob: ({ pattern }) => (pattern !== undefined ? `Glob ${pattern}` : "Glob"),
+};
 
 /** A Codex-style verb+target label for one explored tool ("Read config.mjs",
  * "List agents/tools", 'Search "pattern"'), derived from its input. */
@@ -187,23 +206,13 @@ function exploreSummary(tool: AgentToolEvent): string {
   const input = (tool.input ?? {}) as Record<string, unknown>;
   const str = (key: string): string | undefined =>
     typeof input[key] === "string" ? (input[key] as string) : undefined;
-  const path = str("path") ?? str("file") ?? str("dir");
-  const pattern = str("pattern") ?? str("query") ?? str("regex");
-  switch (tool.name) {
-    case "read_file":
-      return path !== undefined ? `Read ${path}` : "Read";
-    case "list_dir":
-      return `List ${path ?? "."}`;
-    case "grep":
-    case "search_text":
-      return pattern !== undefined ? `Search "${pattern}"` : "Search";
-    case "git_diff":
-      return "Diff";
-    case "glob":
-      return pattern !== undefined ? `Glob ${pattern}` : "Glob";
-    default:
-      return path ?? pattern ?? tool.name;
-  }
+  const args: ExploreArgs = {
+    path: str("path") ?? str("file") ?? str("dir"),
+    pattern: str("pattern") ?? str("query") ?? str("regex"),
+  };
+  const label = EXPLORE_LABELS[tool.name];
+  if (label !== undefined) return label(args);
+  return args.path ?? args.pattern ?? tool.name;
 }
 
 /** A run of read-only exploration collapsed into one "Explored" block (Codex

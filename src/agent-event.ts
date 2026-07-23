@@ -76,10 +76,7 @@ export interface AgentExploredEvent {
  * M2 EC-16 parity). Extra properties are tolerated (M7 adapters may enrich).
  */
 export type AgentEvent =
-  | AgentMessageEvent
-  | AgentThinkingEvent
-  | AgentToolEvent
-  | AgentExploredEvent;
+  AgentMessageEvent | AgentThinkingEvent | AgentToolEvent | AgentExploredEvent;
 
 export function isAgentEventKind(value: unknown): value is AgentEventKind {
   return (AGENT_EVENT_KINDS as readonly unknown[]).includes(value);

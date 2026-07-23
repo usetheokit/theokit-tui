@@ -9,9 +9,9 @@ import type { AgentStreamEvent } from "./agent-stream-event.js";
 
 describe("looksLikeUnifiedDiff", () => {
   it("detects a git-style unified diff (hunk + file header)", () => {
-    expect(
-      looksLikeUnifiedDiff("--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y\n"),
-    ).toBe(true);
+    expect(looksLikeUnifiedDiff("--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y\n")).toBe(
+      true,
+    );
     expect(
       looksLikeUnifiedDiff("diff --git a/x b/x\n@@ -1 +1 @@\n-x\n+y"),
     ).toBe(true);

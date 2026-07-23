@@ -205,6 +205,25 @@ function toolResultContent(
   return routeToolResult(output) ?? { output: JSON.stringify(output, null, 2) };
 }
 
+// App RESULT-body override (Codex parity): map a tool's raw result (the SDK serializes it to a JSON
+// string) to a clean output/shell/diff, replacing the default `JSON.stringify` fallback — e.g. a
+// `{ ok, output }` shell result renders the terminal output, not raw JSON. Display-only: the model
+// already consumed the raw result. `undefined` keeps the default routing, so unmapped tools are
+// unchanged. output/shell/diff are EXCLUSIVE, so the override replaces all three.
+function applyResultOverride(
+  event: AgentToolEvent,
+  rawOutput: unknown,
+  formatResult: ToolResultFormatter,
+): AgentToolEvent {
+  const body = formatResult(event, rawOutput);
+  if (body === undefined) return event;
+  const rest = { ...event };
+  delete rest.output;
+  delete rest.shell;
+  delete rest.diff;
+  return { ...rest, ...body };
+}
+
 function toToolEvent(
   tool: ToolPartView,
   messageId: string,
@@ -221,17 +240,8 @@ function toToolEvent(
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
     ...toolResultContent(tool),
   };
-  // App RESULT-body override (Codex parity): map a tool's raw result (the SDK serializes it to a JSON
-  // string) to a clean output/shell/diff, replacing the default `JSON.stringify` fallback — e.g. a
-  // `{ ok, output }` shell result renders the terminal output, not raw JSON. Display-only: the model
-  // already consumed the raw result. `undefined` keeps the default routing, so unmapped tools are
-  // unchanged. output/shell/diff are EXCLUSIVE, so the override replaces all three.
   if (formatResult !== undefined && tool.output !== undefined) {
-    const body = formatResult(event, tool.output);
-    if (body !== undefined) {
-      const { output: _o, shell: _s, diff: _d, ...rest } = event;
-      event = { ...rest, ...body };
-    }
+    event = applyResultOverride(event, tool.output, formatResult);
   }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.

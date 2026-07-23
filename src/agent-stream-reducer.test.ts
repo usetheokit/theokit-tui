@@ -274,7 +274,9 @@ describe("agentStreamReducer", () => {
       toolCompleted("c1", '{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'),
     );
     const tool = find(s, "tool-c1");
-    expect(tool).toMatchObject({ shell: { stdout: "MCP_SUM=111", exitCode: 0 } });
+    expect(tool).toMatchObject({
+      shell: { stdout: "MCP_SUM=111", exitCode: 0 },
+    });
     expect(tool).not.toHaveProperty("output");
   });
 
@@ -283,7 +285,10 @@ describe("agentStreamReducer", () => {
     // envelope JSON string. A clean diff routes to `diff` (colored inline diff).
     const diff = "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
     const s = fold(
-      toolCompleted("c1", JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 })),
+      toolCompleted(
+        "c1",
+        JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 }),
+      ),
     );
     const tool = find(s, "tool-c1");
     expect((tool as { diff?: string }).diff).toContain("@@");
