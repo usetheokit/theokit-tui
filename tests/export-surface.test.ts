@@ -161,6 +161,14 @@ describe("public entry surface (T0.2)", () => {
       "tool",
       "explored",
     ]);
+    // Review M1: the explored-grouping default is part of the public contract
+    // (the CHANGELOG names it — consumers extend it via [...DEFAULT_EXPLORE_TOOLS, ...]).
+    expect(mod.DEFAULT_EXPLORE_TOOLS).toContain("read_file");
+    expect(
+      Object.isFrozen(mod.DEFAULT_EXPLORE_TOOLS) ||
+        Array.isArray(mod.DEFAULT_EXPLORE_TOOLS),
+    ).toBe(true);
+    // AgentExploredEvent is type-only — presence pinned by typecheck.
     // Runtime union arrays exported for D8 boundary validation (M3):
     expect(mod.CHAT_ROLES).toEqual(["user", "assistant", "system"]);
     expect(mod.TOOL_CALL_STATUSES).toEqual([

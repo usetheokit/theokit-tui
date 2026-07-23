@@ -70,6 +70,7 @@ export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {
   AgentEvent,
   AgentEventKind,
+  AgentExploredEvent,
   AgentMessageEvent,
   AgentThinkingEvent,
   AgentToolEvent,
@@ -245,6 +246,7 @@ export type { FigletLike, FigletLoader } from "./figlet-art.js";
 // `UIMessage` is structurally assignable to `UIMessageLike`, so `useAgent().thread` passes straight through
 // without importing `ai`.
 export {
+  DEFAULT_EXPLORE_TOOLS,
   findPendingApproval,
   messagesToAgentEvents,
   messagesToChatThread,
