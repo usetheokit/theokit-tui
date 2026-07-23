@@ -7,15 +7,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
-
-- **Tool names render in PascalCase** (Claude Code display standard): raw identifier names
-  (`git_diff`, `read_file`, `web-search`, `readFile`) display as `GitDiff` / `ReadFile` /
-  `WebSearch` in the `ToolCall` header and in the Explored-block raw-name fallback.
-  Display-only: explored grouping and the `formatToolHeader` seam keep matching on the RAW
-  name, and app-supplied human headers containing whitespace ("Ran node --test") pass through
-  untouched. (owner request 2026-07-23)
-
 ### Added
 
 ### Changed
@@ -40,6 +31,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   syntax highlight of line text when the optional `lowlight` peer is installed (language inferred
   from the file extension; CodeBlock precedent). `AgentTimeline` now renders unified-diff tool
   results with this variant by default (M26 best-default precedent). (owner request 2026-07-23)
+
+### Changed
+
+- **Tool names render in PascalCase** (Claude Code display standard): raw identifier names
+  (`git_diff`, `read_file`, `web-search`, `readFile`) display as `GitDiff` / `ReadFile` /
+  `WebSearch` in the `ToolCall` header and in the Explored-block raw-name fallback.
+  Display-only: explored grouping and the `formatToolHeader` seam keep matching on the RAW
+  name, and app-supplied human headers containing whitespace ("Ran node --test") pass through
+  untouched. (owner request 2026-07-23)
 
 ## [0.47.0] - 2026-07-23
 
