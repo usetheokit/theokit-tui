@@ -327,6 +327,9 @@ export function seedEditorState(text: string | undefined): EditorState {
   if (!text) return initialEditorState;
   return {
     ...initialEditorState,
-    buffer: { text, cursorOffset: [...text].length },
+    // cursorOffset is a UTF-16 CODE-UNIT offset (text-buffer.ts contract) —
+    // text.length, matching loadText. A code-POINT count ([...text].length)
+    // seeds the cursor mid-surrogate for astral tails (review H1).
+    buffer: { text, cursorOffset: text.length },
   };
 }
