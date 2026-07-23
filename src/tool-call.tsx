@@ -68,6 +68,25 @@ export function formatArgs(summary: string | undefined): string {
   return summary === undefined || summary === "" ? "" : `(${summary})`;
 }
 
+/**
+ * PascalCase display standard for tool names (Claude Code parity): raw
+ * snake_case/kebab-case/camelCase identifiers render as `GitDiff`, `ReadFile`,
+ * `WebSearch`. Display-only — matching (explored grouping, formatToolHeader)
+ * stays on the RAW name. Names containing whitespace are app-supplied human
+ * headers ("Ran node --test") and pass through untouched. Exported for unit
+ * tests.
+ */
+export function formatToolName(name: string): string {
+  if (name === "" || /\s/.test(name)) {
+    return name;
+  }
+  return name
+    .split(/[_-]+/)
+    .filter((part) => part !== "")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
 function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
   if (status === "running") {
     // Each mounted running indicator owns one interval timer (ink-spinner);
@@ -115,7 +134,7 @@ export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
         {statusIndicator(status, theme)}
       </Box>
       <Text bold wrap="truncate-end">
-        {singleLine(name)}
+        {formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">

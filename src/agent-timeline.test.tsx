@@ -87,7 +87,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         ]}
       />,
     );
-    expect(stripAnsi(frame)).toMatch(/^⏺\s+grep/m); // line-anchored (tests-6)
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+Grep/m); // line-anchored (tests-6)
     expect(frame).toContain("3 matches");
   });
 
@@ -105,7 +105,8 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         ]}
       />,
     );
-    expect(stripAnsi(frame)).toMatch(/^⏺\s+apply_patch/m);
+    // PascalCase display standard: the raw `apply_patch` renders as ApplyPatch.
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+ApplyPatch/m);
     // The DiffViewer renders the changed lines (colored +/- in a real terminal).
     expect(frame).toContain("old line");
     expect(frame).toContain("new line");
@@ -417,7 +418,7 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
     await tick();
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    expect(stripAnsi(frame)).toMatch(/^⏺\s+vitest/m);
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+Vitest/m);
     expect(rowRenders.count).toBe(0); // message rows untouched by memo
   });
 
@@ -598,7 +599,8 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
     instance.unmount();
     const iBanner = frame.indexOf("BANNER");
     expect(iBanner).toBeGreaterThanOrEqual(0);
-    expect(iBanner).toBeLessThan(frame.indexOf("build"));
+    // PascalCase display standard: the raw `build` renders as Build.
+    expect(iBanner).toBeLessThan(frame.indexOf("Build"));
     const count = frame.split("BANNER").length - 1;
     expect(count).toBe(1);
   });

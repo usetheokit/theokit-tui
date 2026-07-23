@@ -6,7 +6,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
 import { preloadHighlighter } from "./code-block.js";
-import { ToolCall, ToolCallCard, formatArgs } from "./tool-call.js";
+import {
+  ToolCall,
+  ToolCallCard,
+  formatArgs,
+  formatToolName,
+} from "./tool-call.js";
 import { TheoTUIProvider } from "./theme.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
@@ -26,6 +31,41 @@ describe("formatArgs (M26 name(args) header)", () => {
   });
 });
 
+describe("formatToolName (PascalCase display standard)", () => {
+  it("pascalizes_snake_case_identifiers", () => {
+    expect(formatToolName("git_diff")).toBe("GitDiff");
+    expect(formatToolName("read_file")).toBe("ReadFile");
+    expect(formatToolName("apply_patch")).toBe("ApplyPatch");
+  });
+  it("capitalizes_single_word_and_camel_case", () => {
+    expect(formatToolName("bash")).toBe("Bash");
+    expect(formatToolName("readFile")).toBe("ReadFile");
+  });
+  it("splits_hyphenated_identifiers", () => {
+    expect(formatToolName("web-search")).toBe("WebSearch");
+  });
+  it("leaves_already_pascal_names_untouched", () => {
+    expect(formatToolName("Bash")).toBe("Bash");
+    expect(formatToolName("Update")).toBe("Update");
+  });
+  it("leaves_names_with_whitespace_untouched", () => {
+    // App-supplied human headers ("Ran node --test") are NOT identifiers —
+    // never mangled.
+    expect(formatToolName("Ran node --test")).toBe("Ran node --test");
+  });
+  it("empty_string_stays_empty", () => {
+    expect(formatToolName("")).toBe("");
+  });
+
+  it("header_renders_the_pascalized_name", async () => {
+    const frame = await renderFrame(
+      <ToolCall name="git_diff" status="success" summary="src/**" />,
+    );
+    expect(stripAnsi(frame)).toContain("GitDiff(src/**)");
+    expect(stripAnsi(frame)).not.toContain("git_diff");
+  });
+});
+
 describe("ToolCall — status lifecycle (T1.1)", () => {
   it("renders_pending_with_status_bullet", async () => {
     const frame = await renderFrame(
@@ -33,7 +73,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     );
     // M26: the status bullet `⏺` is the INDICATOR (positional oracle, SEPA F3).
     expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
-    expect(frame).toContain("search");
+    expect(frame).toContain("Search");
   });
 
   it("renders_success_with_status_bullet", async () => {
@@ -81,7 +121,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
     const frame = await renderFrame(
       <ToolCall name="grep" status="success" summary="in 3 files" />,
     );
-    expect(stripAnsi(frame)).toContain("grep(in 3 files)");
+    expect(stripAnsi(frame)).toContain("Grep(in 3 files)");
   });
 
   it("empty_name_renders_indicator_only", async () => {
@@ -93,7 +133,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
 
   it("header_without_summary_shows_the_bare_name_no_parens", async () => {
     const frame = await renderFrame(<ToolCall name="grep" status="success" />);
-    expect(stripAnsi(frame)).toContain("grep");
+    expect(stripAnsi(frame)).toContain("Grep");
     expect(stripAnsi(frame)).not.toContain("()");
   });
 

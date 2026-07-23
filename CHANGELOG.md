@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Tool names render in PascalCase** (Claude Code display standard): raw identifier names
+  (`git_diff`, `read_file`, `web-search`, `readFile`) display as `GitDiff` / `ReadFile` /
+  `WebSearch` in the `ToolCall` header and in the Explored-block raw-name fallback.
+  Display-only: explored grouping and the `formatToolHeader` seam keep matching on the RAW
+  name, and app-supplied human headers containing whitespace ("Ran node --test") pass through
+  untouched. (owner request 2026-07-23)
+
 ### Added
 
 ### Changed

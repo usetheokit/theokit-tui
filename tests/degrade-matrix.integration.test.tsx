@@ -40,10 +40,10 @@ function assertDegradedScene(out: string): void {
   expect(out).toContain("degraded but readable");
   // M2: tool statuses + shell envelope — the stderr LABEL is the mechanism.
   expect(out).toContain("⏺");
-  expect(out).toContain("ok-tool");
-  expect(out).toMatch(/^⏺\s+queued-tool/m);
-  expect(out).toMatch(/^⏺\s+broken-tool/m);
-  expect(out).toMatch(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s+running-tool/mu);
+  expect(out).toContain("OkTool");
+  expect(out).toMatch(/^⏺\s+QueuedTool/m);
+  expect(out).toMatch(/^⏺\s+BrokenTool/m);
+  expect(out).toMatch(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\s+RunningTool/mu);
   expect(out).toContain("stderr:");
   expect(out).toContain("exited 2");
   // M3: thinking + streaming readable without color.

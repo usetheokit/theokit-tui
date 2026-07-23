@@ -11,6 +11,7 @@ import {
   STATUS_INDICATOR_WIDTH,
   TOOL_CALL_STATUSES,
   ToolCallCard,
+  formatToolName,
 } from "./tool-call.js";
 import { ToolResult } from "./tool-result.js";
 import { useTheoTheme } from "./theme.js";
@@ -214,7 +215,9 @@ function exploreSummary(tool: AgentToolEvent): string {
   };
   const label = EXPLORE_LABELS[tool.name];
   if (label !== undefined) return label(args);
-  return args.path ?? args.pattern ?? tool.name;
+  // PascalCase display standard for the raw-name fallback (same rule as the
+  // ToolCall header — an unmapped explore tool never shows snake_case).
+  return args.path ?? args.pattern ?? formatToolName(tool.name);
 }
 
 /** A run of read-only exploration collapsed into one "Explored" block (Codex
