@@ -7,10 +7,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-> **Reconciliation note (2026-07-23, review F-xval-1):** npm versions 0.42.0–0.46.0 were
-> published directly from `develop` without CHANGELOG sections or git tags. This section
-> therefore covers **everything shipped since 0.41.1** — including entries that reached npm
-> in those interim cuts — and the next release absorbs them all under one version.
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.47.0] - 2026-07-23
 
 ### Added
 
@@ -30,10 +39,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the explore set. (review M1)
 - Consecutive read-only exploration tools (read/list/grep) now collapse into a Codex-style **"Explored" block** — a header + one dim verb+target line per tool ("Read chat.ts", 'Search "foo"', "List agents") instead of one full output card each, so exploration no longer dominates the transcript. Grouping happens in the `messagesToAgentEvents` projection (a new `explored` `AgentEvent` kind), so the `<Static>` windowing is untouched (1 event = 1 row). Tool events now carry their `input` (when non-empty). Configurable via `messagesToAgentEvents(messages, { exploreTools })` — default `DEFAULT_EXPLORE_TOOLS`; pass `[]` to disable. Apps whose tools are named differently are unaffected.
 - Timeline tool results now render a **colored inline diff** (via `DiffViewer`) when the result is a git-style unified diff — the Codex-style edit render for tools like `apply_patch`. `AgentToolEvent` gains an exclusive `diff` field (`output | shell | diff` — one only, validated at the boundary); a clean unified-diff result (no stderr, exit 0) routes to it automatically in both timeline projections. Shared routing lives in `routeToolResult` / `looksLikeUnifiedDiff` (`agent-stream-event.ts`).
-
-### Changed
-
-### Deprecated
 
 ### Removed
 
@@ -58,8 +63,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.claude/settings.json` (file-permission checks only match `Edit(path)` rules, which already
   cover all edit tools; the equivalent `Edit(...)` rules remain). (internal tooling; no issue)
 - Tool results that arrive as a JSON-string-encoded shell envelope (`{"stdout":…,"stderr":…,"exitCode":…}` — how the in-process SDK serializes a tool's result) now render through `ToolResult`'s shell mode (clean stdout lines, labeled `stderr:`, non-zero exit badge) instead of dumping the raw JSON into the timeline. Fixed in BOTH projections: the message projection (`messagesToAgentEvents`) and the stream reducer (`agentStreamReducer`). Plain text results (file contents, `path:line:` grep, directory listings) and non-envelope JSON are unchanged. Shell-envelope helpers (`toShell`/`parseShellEnvelope`) are now shared from `agent-stream-event.ts`.
-
-### Security
 
 ## [0.41.1] - 2026-07-16
 
