@@ -2,7 +2,9 @@ import { Box } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
+import { ensureHighlighter } from "./code-block.js";
 import { DiffViewer } from "./diff-viewer.js";
+import { TheoTUIProvider } from "./theme.js";
 
 /** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
 // eslint-disable-next-line no-control-regex
@@ -350,5 +352,108 @@ describe("DiffViewer intra-line highlight (M25 T2.1)", () => {
     // "value" is unchanged; only the (stripped) leading whitespace differs, which
     // is not marked — so no inverse span wraps the word.
     expect(stripAnsi(frame)).toContain("value");
+  });
+});
+
+describe("DiffViewer background variant (Claude Code look)", () => {
+  // A .ts patch so the syntax-highlight case can assert real token colors.
+  const TS_PATCH = [
+    "--- a/session-gc.ts",
+    "+++ b/session-gc.ts",
+    "@@ -1,4 +1,3 @@",
+    " function realReadPointer(cwd: string) {",
+    "-  const id = readFileSyncSafe(p)",
+    "-  return ''",
+    "+  return undefined",
+    " }",
+    "",
+  ].join("\n");
+
+  it("background_renders_prose_summary_without_path_for_single_file", async () => {
+    const frame = await renderFrame(<DiffViewer patch={TS_PATCH} background />);
+    const plain = stripAnsi(frame);
+    // The Claude Code card idiom: the path lives in the tool-card header, the
+    // body opens with the prose stats line.
+    expect(plain).toContain("Added 1 line, removed 2 lines");
+    expect(plain).not.toContain("session-gc.ts");
+  });
+
+  it("background_keeps_per_file_path_prefix_on_multi_file_patches", async () => {
+    const twoFiles = [
+      "--- a/a.ts",
+      "+++ b/a.ts",
+      "@@ -1,1 +1,1 @@",
+      "-one",
+      "+uno",
+      "--- a/b.ts",
+      "+++ b/b.ts",
+      "@@ -1,1 +1,1 @@",
+      "-two",
+      "+dos",
+      "",
+    ].join("\n");
+    const plain = stripAnsi(
+      await renderFrame(<DiffViewer patch={twoFiles} background />),
+    );
+    expect(plain).toContain("a.ts — Added 1 line, removed 1 line");
+    expect(plain).toContain("b.ts — Added 1 line, removed 1 line");
+  });
+
+  it("background_rows_carry_bg_sgr_and_drop_fg_line_colors", async () => {
+    const frame = await renderFrame(<DiffViewer patch={TS_PATCH} background />);
+    const rows = frame.split("\n");
+    const oldRow = rows.find((l) => stripAnsi(l).includes("return ''"));
+    const newRow = rows.find((l) => stripAnsi(l).includes("return undefined"));
+    // Background SGR present (encoding depends on the color level: 16-color
+    // basic bg or 256/truecolor 48;… form).
+    expect(oldRow).toMatch(/\[4\d(?:;\d+)*m|\[48;/);
+    expect(newRow).toMatch(/\[4\d(?:;\d+)*m|\[48;/);
+    // The classic whole-line fg red/green is replaced by the row background.
+    expect(oldRow).not.toMatch(/\[31m/);
+    expect(newRow).not.toMatch(/\[32m/);
+  });
+
+  it("background_keeps_line_numbers_and_signs", async () => {
+    const plain = stripAnsi(
+      await renderFrame(<DiffViewer patch={TS_PATCH} background />),
+    );
+    // Same gutter shape as the classic render — signs stay the
+    // color-independent mechanism. Background rows are PADDED to the full
+    // container width (that's how the tint spans the row), so the content
+    // may carry trailing spaces.
+    expect(plain).toMatch(/^\s*\d+ - {3}return '' *$/m);
+    expect(plain).toMatch(/^\s*\d+ \+ {3}return undefined *$/m);
+    expect(plain).toMatch(/^\s*\d+ {3}function realReadPointer/m);
+  });
+
+  it("background_off_is_byte_identical_to_default", async () => {
+    const def = await renderFrame(<DiffViewer patch={TS_PATCH} />);
+    const off = await renderFrame(
+      <DiffViewer patch={TS_PATCH} background={false} />,
+    );
+    expect(off).toBe(def);
+  });
+
+  it("no_color_theme_renders_no_bg_codes_and_keeps_signs", async () => {
+    const frame = await renderFrame(
+      <TheoTUIProvider theme="no-color">
+        <DiffViewer patch={TS_PATCH} background />
+      </TheoTUIProvider>,
+    );
+    expect(frame).not.toMatch(/\[4\d(?:;\d+)*m|\[48;/);
+    expect(stripAnsi(frame)).toMatch(/^\s*\d+ - {3}return ''$/m);
+  });
+
+  it("background_syntax_highlights_lines_when_lowlight_present", async () => {
+    // lowlight is a devDependency — the highlighter loads for real.
+    await ensureHighlighter();
+    const frame = await renderFrame(<DiffViewer patch={TS_PATCH} background />);
+    const fnRow = frame
+      .split("\n")
+      .find((l) => stripAnsi(l).includes("function realReadPointer"));
+    // The `function` keyword picks up the theme code color (keyword: blue →
+    // [34m at 16-color; 38;… at higher levels) — proof the line went through
+    // the highlighter, not the plain-text path.
+    expect(fnRow).toMatch(/\[34m|\[38;/);
   });
 });

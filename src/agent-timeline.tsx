@@ -151,10 +151,12 @@ function ThinkingRow({ text }: { text: string }) {
 function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
   const maxLines =
     event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
-  // A unified-diff result (e.g. apply_patch) renders as a colored inline
-  // diff; everything else goes through ToolResult (output / shell modes).
+  // A unified-diff result (e.g. apply_patch) renders as a Claude-Code-style
+  // inline diff (row backgrounds + prose stats + syntax highlight — the card
+  // header already names the tool/file); everything else goes through
+  // ToolResult (output / shell modes).
   if (event.diff !== undefined && event.diff !== "") {
-    return <DiffViewer patch={event.diff} {...maxLines} />;
+    return <DiffViewer patch={event.diff} background {...maxLines} />;
   }
   const hasBody =
     (event.output !== undefined && event.output !== "") ||
