@@ -4,8 +4,6 @@
  * the `ai` SDK. The input is a STRUCTURAL {@link UIMessageLike} (id + role + parts), which the ai SDK's
  * `UIMessage` satisfies 1:1 — so a consumer of TheoKit's unified agent client passes `useAgent().thread`
  * straight through without importing `ai`. Pure functions, no React, no Ink.
- *
- * (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases for back-compat.)
  */
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import { routeToolResult } from "./agent-stream-event.js";

@@ -18,6 +18,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- **BREAKING:** the `@theokit/tui/ai-sdk` subpath (deprecated back-compat shim) and the optional
+  `ai` peer dependency. The ai-free projections on the main entry replace it 1:1 — import
+  `messagesToChatThread` / `messagesToAgentEvents` from `@theokit/tui` instead of
+  `uiMessagesToChatThread` / `uiMessagesToAgentEvents` from `@theokit/tui/ai-sdk`; the ai SDK's
+  `UIMessage[]` is structurally assignable to `UIMessageLike`, so call sites only rename the
+  function. (no issue — owner request 2026-07-23)
+
 ### Fixed
 
 - Tool results that arrive as a JSON-string-encoded shell envelope (`{"stdout":…,"stderr":…,"exitCode":…}` — how the in-process SDK serializes a tool's result) now render through `ToolResult`'s shell mode (clean stdout lines, labeled `stderr:`, non-zero exit badge) instead of dumping the raw JSON into the timeline. Fixed in BOTH projections: the message projection (`messagesToAgentEvents`) and the stream reducer (`agentStreamReducer`). Plain text results (file contents, `path:line:` grep, directory listings) and non-envelope JSON are unchanged. Shell-envelope helpers (`toShell`/`parseShellEnvelope`) are now shared from `agent-stream-event.ts`.

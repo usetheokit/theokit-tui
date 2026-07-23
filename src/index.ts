@@ -243,7 +243,7 @@ export type { FigletLike, FigletLoader } from "./figlet-art.js";
 
 // ai-free projection of a client message snapshot (id + role + parts) onto the render shapes. The ai SDK's
 // `UIMessage` is structurally assignable to `UIMessageLike`, so `useAgent().thread` passes straight through
-// without importing `ai`. (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases.)
+// without importing `ai`.
 export {
   findPendingApproval,
   messagesToAgentEvents,

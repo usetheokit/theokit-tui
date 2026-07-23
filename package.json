@@ -16,10 +16,6 @@
     "./renderer": {
       "types": "./dist/renderer/index.d.ts",
       "default": "./dist/renderer/index.js"
-    },
-    "./ai-sdk": {
-      "types": "./dist/ai-sdk/index.d.ts",
-      "default": "./dist/ai-sdk/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -51,7 +47,6 @@
     "example:themes": "tsx examples/themes.tsx",
     "example:stream": "tsx examples/stream.tsx",
     "example:banner": "tsx examples/banner.tsx",
-    "example:ai-sdk": "tsx examples/ai-sdk.tsx",
     "example:margin": "tsx examples/margin.tsx",
     "example:live": "tsx examples/live-agent-tui.tsx",
     "example:showcase": "tsx examples/showcase.tsx",
@@ -62,7 +57,6 @@
     "example:claude-code": "tsx examples/claude-code-scene.tsx"
   },
   "peerDependencies": {
-    "ai": "^7.0.0",
     "figlet": "^1.7.0",
     "lowlight": "^3.0.0",
     "react": "^19.2.0"
@@ -86,7 +80,6 @@
   "devDependencies": {
     "@eslint/js": "^9",
     "@theokit/sdk": "^2.19.0",
-    "ai": "^7.0.0",
     "@types/diff": "^7.0.2",
     "@types/node": "^22.20.0",
     "@types/react": "^19.2.17",
@@ -117,9 +110,6 @@
     }
   },
   "peerDependenciesMeta": {
-    "ai": {
-      "optional": true
-    },
     "figlet": {
       "optional": true
     },
