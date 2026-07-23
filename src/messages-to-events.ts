@@ -4,10 +4,9 @@
  * the `ai` SDK. The input is a STRUCTURAL {@link UIMessageLike} (id + role + parts), which the ai SDK's
  * `UIMessage` satisfies 1:1 — so a consumer of TheoKit's unified agent client passes `useAgent().thread`
  * straight through without importing `ai`. Pure functions, no React, no Ink.
- *
- * (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases for back-compat.)
  */
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import { routeToolResult } from "./agent-stream-event.js";
 import type { ChatThreadMessage } from "./chat-thread.js";
 import type { ToolCallStatus } from "./tool-call.js";
 
@@ -159,6 +158,7 @@ interface ToolPartView {
   state: string;
   output?: unknown;
   errorText?: string;
+  input?: unknown;
 }
 
 /** Read the tool view from a part, or `null` when the part is not a tool invocation. */
@@ -179,33 +179,138 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
     output: p.output,
   };
   if (typeof p.errorText === "string") view.errorText = p.errorText;
+  if (p.input !== undefined) view.input = p.input;
   return view;
 }
 
-/** The plain-text output the timeline shows for a tool: `errorText` on failure, else the stringified output. */
-function toolOutput(tool: ToolPartView): string | undefined {
-  if (tool.state === "output-error") return tool.errorText;
-  if (tool.output === undefined) return undefined;
-  return typeof tool.output === "string"
-    ? tool.output
-    : JSON.stringify(tool.output, null, 2);
+/**
+ * What the timeline shows for a tool result: an inline `diff` (unified-diff
+ * result — e.g. `apply_patch`), a `shell` envelope (labeled stderr, non-zero
+ * exit badge), or plain `output`. `errorText` wins on failure. The SDK
+ * serializes results to a JSON string, so a string that parses to a shell
+ * envelope routes to `shell` (and to `diff` when its stdout is a clean unified
+ * diff); a plain string (file/grep/dir listings) stays `output`. Routing logic
+ * is shared with the stream reducer — see `routeToolResult`.
+ */
+function toolResultContent(
+  tool: ToolPartView,
+): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
+  if (tool.state === "output-error") {
+    return tool.errorText !== undefined ? { output: tool.errorText } : {};
+  }
+  const { output } = tool;
+  if (output === undefined) return {};
+  return routeToolResult(output) ?? { output: JSON.stringify(output, null, 2) };
+}
+
+// App RESULT-body override (Codex parity): map a tool's raw result (the SDK serializes it to a JSON
+// string) to a clean output/shell/diff, replacing the default `JSON.stringify` fallback — e.g. a
+// `{ ok, output }` shell result renders the terminal output, not raw JSON. Display-only: the model
+// already consumed the raw result. `undefined` keeps the default routing, so unmapped tools are
+// unchanged. output/shell/diff are EXCLUSIVE, so the override replaces all three.
+function applyResultOverride(
+  event: AgentToolEvent,
+  rawOutput: unknown,
+  formatResult: ToolResultFormatter,
+): AgentToolEvent {
+  const body = formatResult(event, rawOutput);
+  if (body === undefined) return event;
+  const rest = { ...event };
+  delete rest.output;
+  delete rest.shell;
+  delete rest.diff;
+  return { ...rest, ...body };
 }
 
 function toToolEvent(
   tool: ToolPartView,
   messageId: string,
   index: number,
+  formatHeader?: ToolHeaderFormatter,
+  formatResult?: ToolResultFormatter,
 ): AgentToolEvent {
-  const event: AgentToolEvent = {
+  let event: AgentToolEvent = {
     id:
       tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
     name: tool.toolName,
     status: TOOL_STATUS[tool.state] ?? "pending",
+    ...(hasKeys(tool.input) ? { input: tool.input } : {}),
+    ...toolResultContent(tool),
   };
-  const output = toolOutput(tool);
-  if (output !== undefined) event.output = output;
-  return event;
+  if (formatResult !== undefined && tool.output !== undefined) {
+    event = applyResultOverride(event, tool.output, formatResult);
+  }
+  // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
+  // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
+  const header = formatHeader?.(event);
+  if (header === undefined) return event;
+  return {
+    ...event,
+    ...(header.name !== undefined ? { name: header.name } : {}),
+    ...(header.summary !== undefined ? { summary: header.summary } : {}),
+  };
+}
+
+/** A non-empty object input worth keeping for the explore summary (an empty
+ * `{}` adds only noise, so it is dropped). */
+function hasKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0
+  );
+}
+
+/** Read-only exploration tools whose consecutive runs collapse into a Codex-style
+ * "Explored" block. An app whose tools are named differently sees NO change (its
+ * events never match → never grouped) — the default is back-compatible. */
+export const DEFAULT_EXPLORE_TOOLS: readonly string[] = [
+  "read_file",
+  "list_dir",
+  "grep",
+  "search_text",
+  "git_diff",
+  "glob",
+];
+
+/** A run of ≥ this many adjacent explore-tool events collapses into one block.
+ * A lone read stays a normal card (Codex only collapses when it reduces noise). */
+const EXPLORE_GROUP_MIN = 2;
+
+/** Collapse consecutive successful/running read-only tool events into
+ * `explored` groups. A failed explore stays a normal card so its error stays
+ * visible; a non-tool event (message/thinking) breaks the run. */
+function groupExploration(
+  events: readonly AgentEvent[],
+  explore: ReadonlySet<string>,
+): AgentEvent[] {
+  const out: AgentEvent[] = [];
+  let run: AgentToolEvent[] = [];
+  const flush = (): void => {
+    if (run.length >= EXPLORE_GROUP_MIN) {
+      const first = run[0] as AgentToolEvent;
+      out.push({ id: `explored-${first.id}`, kind: "explored", tools: run });
+    } else {
+      out.push(...run);
+    }
+    run = [];
+  };
+  for (const ev of events) {
+    const explorable =
+      ev.kind === "tool" &&
+      explore.has(ev.name) &&
+      (ev.status === "success" || ev.status === "running");
+    if (explorable) {
+      run.push(ev);
+    } else {
+      flush();
+      out.push(ev);
+    }
+  }
+  flush();
+  return out;
 }
 
 /**
@@ -229,12 +334,52 @@ export function messagesToChatThread(
 }
 
 /**
+ * App-supplied hook to turn a raw tool call into a HUMAN header (Codex parity): `run_shell` → "Ran
+ * node --test", `apply_patch` → "Edited tax.mjs (+1 -1)", etc. Return `{ name, summary }` to override
+ * the header; return `undefined` to leave the raw tool name untouched (so tools the app does not map —
+ * incl. the read-only ones that collapse into an `explored` block — are unaffected). The generic TUI
+ * stays tool-agnostic; the app owns the verb+target vocabulary of its own tools.
+ *
+ * NOTE: explored grouping matches on the (possibly overridden) `name` — returning a `name` for a tool
+ * listed in `exploreTools` opts that call OUT of the explored collapse (it renders as a normal card).
+ */
+export type ToolHeaderFormatter = (
+  event: AgentToolEvent,
+) => { name?: string; summary?: string } | undefined;
+
+/**
+ * Map a tool's RAW result to a Codex-style result body — the sibling of {@link ToolHeaderFormatter}.
+ * The app owns how ITS OWN tools' results render: a structured result (the SDK serializes tool results
+ * to a JSON string, so `rawResult` is usually that string) becomes a clean `output` (terminal text),
+ * `shell` envelope, or inline `diff`, instead of the default raw-JSON dump. Return `undefined` to keep
+ * the default routing, so unmapped tools are unchanged. **Display-only** — the model already consumed
+ * the raw result during the turn; this changes only how the past result renders in the timeline.
+ */
+export type ToolResultFormatter = (
+  event: AgentToolEvent,
+  rawResult: unknown,
+) => Pick<AgentToolEvent, "output" | "shell" | "diff"> | undefined;
+
+export interface MessagesToEventsOptions {
+  /** Tool names whose consecutive runs collapse into an `explored` block.
+   * Defaults to {@link DEFAULT_EXPLORE_TOOLS}. Pass `[]` to disable grouping. */
+  exploreTools?: Iterable<string>;
+  /** Map a tool call to a Codex-style human header (see {@link ToolHeaderFormatter}). */
+  formatToolHeader?: ToolHeaderFormatter;
+  /** Map a tool's raw result to a Codex-style result body (see {@link ToolResultFormatter}). */
+  formatToolResult?: ToolResultFormatter;
+}
+
+/**
  * Flatten messages into an ordered `AgentEvent[]` for `<AgentTimeline>`: each text part → a `message` event,
  * each reasoning part → a `thinking` event, each tool invocation → a `tool` event (status mapped from the
  * part `state`). Every id is unique. Non-renderable parts (file, source, step-start, data, custom) are skipped.
+ * Consecutive read-only exploration tools (see {@link DEFAULT_EXPLORE_TOOLS}) collapse into a Codex-style
+ * `explored` block — apps with differently-named tools are unaffected.
  */
 export function messagesToAgentEvents(
   messages: readonly UIMessageLike[],
+  opts?: MessagesToEventsOptions,
 ): AgentEvent[] {
   const events: AgentEvent[] = [];
   for (const message of messages) {
@@ -261,8 +406,18 @@ export function messagesToAgentEvents(
         return;
       }
       const tool = toolView(part);
-      if (tool !== null) events.push(toToolEvent(tool, message.id, index));
+      if (tool !== null)
+        events.push(
+          toToolEvent(
+            tool,
+            message.id,
+            index,
+            opts?.formatToolHeader,
+            opts?.formatToolResult,
+          ),
+        );
     });
   }
-  return events;
+  const explore = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
+  return explore.size === 0 ? events : groupExploration(events, explore);
 }

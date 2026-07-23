@@ -1,0 +1,160 @@
+agent: wiring
+findings:
+  - id: F-wire-1
+    severity: HIGH
+    file: src/composer-editor.ts
+    line: 329
+    summary: seedEditorState seeds cursorOffset in code points while text-buffer uses UTF-16 code units, so an initialValue containing any astral char (emoji) leaves the cursor mid-surrogate and the next keystroke corrupts the text (reproduced).
+    evidence: |
+      src/composer-editor.ts:329:    buffer: { text, cursorOffset: [...text].length },
+      src/text-buffer.ts (offset semantics are UTF-16 code units):
+        86:    text: text.slice(0, cursorOffset) + insertion + text.slice(cursorOffset),
+      Repro (tsx, against src/composer-editor.js):
+        seedEditorState("a\u{1F600}") -> cursorOffset: 2, text.length: 3
+        editorReducer(seeded, { type: "buffer", action: { type: "insert", text: "!" } })
+        -> buffer.text === "a\ud83d!\ude00"   (lone surrogates)
+        -> text.isWellFormed() === false
+      The unit test asserts the same wrong unit (tautology):
+        src/composer-editor.seed.test.ts:9: expect(s.buffer.cursorOffset).toBe([..."olá mund"].length)
+      ("olá mund" is BMP-only, so the mismatch never fires in the test.)
+    recommended_action: 'Seed with cursorOffset: text.length (UTF-16 code units — end-of-text in text-buffer''s own unit). Add a regression test seeding an emoji-bearing initialValue, dispatching an insert, and asserting the result is well-formed with the char appended at the end.'
+  - id: F-wire-2
+    severity: HIGH
+    file: src/messages-to-events.ts
+    line: 365
+    summary: formatToolHeader / ToolHeaderFormatter (shipped as 0.42.0, commit e92f775) is exported and wired but has ZERO test coverage anywhere — the sibling formatToolResult seam has a dedicated describe block; the header seam has none.
+    evidence: |
+      git show e92f775 --stat:
+        src/messages-to-events.ts | 28 ++++++++++++++++++++++++++--
+        1 file changed  (no test files in the commit)
+      grep -rn "formatToolHeader" src tests (excluding the impl file): NO matches.
+      src/messages-to-events.test.ts has only the result seam:
+        411:describe("messagesToAgentEvents — formatToolResult (result-body seam)", ...)
+      Wiring itself is present (caller ok):
+        src/messages-to-events.ts:412: opts?.formatToolHeader passed into toToolEvent
+        src/index.ts:256: ToolHeaderFormatter exported
+    recommended_action: Add tests mirroring the formatToolResult describe block — header override applied (name+summary), partial override (name only), undefined leaves the event untouched, and interaction with explored grouping (formatted non-explore tool adjacent to an explore run).
+  - id: F-wire-3
+    severity: MEDIUM
+    file: src/index.ts
+    line: 253
+    summary: DEFAULT_EXPLORE_TOOLS is documented in CHANGELOG [Unreleased] as the public default of messagesToAgentEvents({ exploreTools }) but is NOT re-exported from src/index.ts, so package consumers cannot import it (e.g. to extend it with their own tool names).
+    evidence: |
+      src/messages-to-events.ts:269: export const DEFAULT_EXPLORE_TOOLS: readonly string[] = [...]
+      CHANGELOG.md:12: "...Configurable via `messagesToAgentEvents(messages, { exploreTools })` — default `DEFAULT_EXPLORE_TOOLS`; pass `[]` to disable."
+      src/index.ts messages-to-events block exports only:
+        findPendingApproval, messagesToAgentEvents, messagesToChatThread, readTurnUsage
+        + types MessagesToEventsOptions, PendingApproval, ToolHeaderFormatter,
+          ToolResultFormatter, TurnUsage, UIMessageLike, UIMessagePartLike
+      grep "DEFAULT_EXPLORE_TOOLS" src/index.ts tests/ examples/: no hits.
+    recommended_action: Re-export DEFAULT_EXPLORE_TOOLS from src/index.ts (value export) and pin it in tests/export-surface.test.ts; or, if intentionally internal, remove the name from the CHANGELOG entry and the JSDoc so the public docs stop advertising an unreachable symbol.
+  - id: F-wire-4
+    severity: MEDIUM
+    file: src/index.ts
+    line: 70
+    summary: AgentExploredEvent (the new explored event interface) is not exported from the package root while every sibling event interface (AgentMessageEvent, AgentThinkingEvent, AgentToolEvent) is — consumers cannot name the explored member of the AgentEvent union.
+    evidence: |
+      src/agent-event.ts:64: export interface AgentExploredEvent { ... }
+      src/index.ts:70-76:
+        export type {
+          AgentEvent,
+          AgentEventKind,
+          AgentMessageEvent,
+          AgentThinkingEvent,
+          AgentToolEvent,
+        } from "./agent-event.js";
+      grep "AgentExploredEvent" src/index.ts tests/: no hits.
+    recommended_action: Add AgentExploredEvent to the agent-event type export block in src/index.ts (and to the export-surface expectations), matching the sibling event interfaces.
+  - id: F-wire-5
+    severity: MEDIUM
+    file: src/chat-composer.tsx
+    line: 636
+    summary: The ESC re-focus bug fix (commit 78d4316, "composer stays usable after interrupt") shipped with no regression test — the commit touched only src/chat-composer.tsx, violating the bug-fix-starts-with-a-failing-test rule (testing.md § 3).
+    evidence: |
+      git show 78d4316 --stat:
+        src/chat-composer.tsx | 6 ++++++
+        1 file changed, 6 insertions(+)   (no test files)
+      New production branch with no test exercising it:
+        src/chat-composer.tsx:
+          if (key.escape) {
+            focus(focusId);
+          }
+      Existing ESC tests only cover menu dismissal (chat-composer.test.tsx:456
+      escape_dismisses_and_typing_reopens), not the interrupt/re-focus path.
+    recommended_action: Add a regression test that sends ESC with no menu open and asserts the composer still accepts subsequent typed input (buffer receives the characters after the ESC).
+  - id: F-wire-6
+    severity: LOW
+    file: src/chat-composer.tsx
+    line: 435
+    summary: ChatComposer initialValue has no component-level test — only the seedEditorState unit test exists; nothing renders <ChatComposer initialValue="..."> and asserts the seeded text appears / is editable.
+    evidence: |
+      grep -rn "initialValue" across tests -> only src/composer-editor.seed.test.ts
+      (unit test on seedEditorState). src/chat-composer.onchange.test.tsx tests
+      onChange only, mounting the composer WITHOUT initialValue.
+      Wiring itself is correct: useReducer(editorReducer, initialValue, seedEditorState).
+    recommended_action: Extend chat-composer.onchange.test.tsx (or a new seed test) to mount ChatComposer with initialValue, assert the frame shows the seeded text and that onChange fires with it after mount — this also becomes the natural home for the F-wire-1 emoji regression at component level.
+  - id: F-wire-7
+    severity: LOW
+    file: src/agent-stream-event.ts
+    line: 89
+    summary: toShell, parseShellEnvelope and NormalizedShell are exported at module scope but have no consumer outside agent-stream-event.ts (only routeToolResult calls them internally) and no direct tests — unnecessary module surface.
+    evidence: |
+      exports: NormalizedShell (80), toShell (89), parseShellEnvelope (109)
+      External consumers (grep, excluding the module itself):
+        routeToolResult -> agent-stream-reducer.ts, messages-to-events.ts  (OK)
+        looksLikeUnifiedDiff -> tested directly in agent-stream-event.test.ts  (OK)
+        toShell / parseShellEnvelope / NormalizedShell -> zero hits in src (other
+        modules), tests, or index.ts.
+    recommended_action: Drop the export keyword on toShell/parseShellEnvelope (keep them module-private helpers of routeToolResult), or add direct unit tests if they are intended as internal shared API for a coming consumer.
+  - id: F-wire-8
+    severity: INFO
+    file: src/index.ts
+    line: 1
+    summary: 'Removal-completeness sweep is CLEAN and per-symbol wiring verdicts for the remaining new surface are all OK — details below.'
+    evidence: |
+      REMOVAL COMPLETENESS (v0.41.1..HEAD, commit 8af0580):
+        - src/ai-sdk/ deleted (index.ts + index.test.ts); dir absent on disk.
+        - uiMessagesToChatThread / uiMessagesToAgentEvents: zero references in
+          src/tests/examples/docs/README (only historical "was REMOVED" comments
+          in tests/package-manifest.test.ts + tests/export-surface.test.ts).
+        - `from "ai"` imports: zero hits in src/tests/examples/benchmarks.
+        - package.json: no "ai" in peerDependencies/peerDependenciesMeta/devDeps
+          ("ai" remains only as an npm keyword — not a dependency).
+        - package.json exports == [".", "./renderer"]; asserted by
+          tests/package-manifest.test.ts. tsup.config.ts entry has exactly 2 entries.
+        - examples/ai-sdk.tsx + tests/example-ai-sdk.integration.test.ts deleted;
+          no `example:ai-sdk` script in package.json scripts.
+        - .npmrc present with auto-install-peers=false; pnpm-lock.yaml has zero
+          hits for `ai` or `figlet` packages.
+        - VERSION in src/index.ts ("0.46.0") === package.json version ("0.46.0").
+      PER-SYMBOL VERDICTS (new since v0.41.1):
+        - MessagesToEventsOptions (type): exported OK / consumed OK / tested OK
+          (exploreTools opt-out + formatToolResult tests).
+        - ToolResultFormatter (type) + formatToolResult seam: exported OK /
+          wired OK / tested OK (dedicated describe, incl. exclusive-body clear).
+        - ToolHeaderFormatter (type) + formatToolHeader seam: exported OK /
+          wired OK / NOT TESTED -> F-wire-2.
+        - DEFAULT_EXPLORE_TOOLS: wired OK (internal caller line 418) / NOT on
+          package surface -> F-wire-3.
+        - "explored" kind + AGENT_EVENT_KINDS widening: exported OK / rendered by
+          ExploredBlock OK / tested OK (agent-timeline.test.tsx:116 grouped block;
+          messages-to-events.test.ts:231/342/367; contract tests updated in
+          export-surface + public-api.integration).
+        - AgentExploredEvent (type): NOT exported -> F-wire-4.
+        - AgentToolEvent.diff: exported OK / rendered via DiffViewer in toolBody
+          OK / exclusivity validated (output|shell|diff) OK / tested OK
+          (tool_event_with_diff_renders_inline_diff + routing tests).
+        - AgentToolEvent.input: exported OK / consumed by exploreSummary OK /
+          tested via explored-group tests OK.
+        - routeToolResult: shared by agent-stream-reducer + messages-to-events
+          (DRY) OK / tested via diff/shell routing tests OK.
+        - looksLikeUnifiedDiff: directly tested OK.
+        - toShell / parseShellEnvelope / NormalizedShell -> F-wire-7.
+        - ChatComposer.onChange: wired OK / tested OK (chat-composer.onchange.test.tsx).
+        - ChatComposer.initialValue + seedEditorState: wired OK / unit-tested only
+          -> F-wire-6; correctness bug -> F-wire-1.
+        - ChatMessage word-wrap (useStdout width): wired OK / tested OK
+          (chat_message_long_paragraph_wraps_at_word_boundaries).
+      Targeted test run: npx vitest run on messages-to-events, composer-editor.seed,
+      chat-composer.onchange, agent-timeline -> 60/60 passed.
+    recommended_action: none — informational sweep record.

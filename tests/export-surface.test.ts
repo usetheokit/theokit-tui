@@ -132,7 +132,6 @@ describe("public entry surface (T0.2)", () => {
       peerDependenciesMeta: Record<string, { optional?: boolean }>;
     };
     expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
-      "ai",
       "figlet",
       "lowlight",
       "react",
@@ -140,8 +139,9 @@ describe("public entry surface (T0.2)", () => {
     expect(pkg.peerDependenciesMeta["lowlight"]?.optional).toBe(true);
     // M27: figlet is also an OPTIONAL peer (renderFigletArt degrades to null).
     expect(pkg.peerDependenciesMeta["figlet"]?.optional).toBe(true);
-    // UI-track Step A: `ai` is an OPTIONAL peer (the `./ai-sdk` UIMessage adapter's types).
-    expect(pkg.peerDependenciesMeta["ai"]?.optional).toBe(true);
+    // The `ai` optional peer left with the `./ai-sdk` shim removal — the
+    // root-entry projections are structural (`UIMessageLike`), no `ai` types.
+    expect(pkg.peerDependencies).not.toHaveProperty("ai");
   });
 
   it("public_entry_exposes_banner_surface", async () => {
@@ -155,7 +155,20 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_agent_surface", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.AgentTimeline).toBe("function");
-    expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool"]);
+    expect(mod.AGENT_EVENT_KINDS).toEqual([
+      "message",
+      "thinking",
+      "tool",
+      "explored",
+    ]);
+    // Review M1: the explored-grouping default is part of the public contract
+    // (the CHANGELOG names it — consumers extend it via [...DEFAULT_EXPLORE_TOOLS, ...]).
+    expect(mod.DEFAULT_EXPLORE_TOOLS).toContain("read_file");
+    expect(
+      Object.isFrozen(mod.DEFAULT_EXPLORE_TOOLS) ||
+        Array.isArray(mod.DEFAULT_EXPLORE_TOOLS),
+    ).toBe(true);
+    // AgentExploredEvent is type-only — presence pinned by typecheck.
     // Runtime union arrays exported for D8 boundary validation (M3):
     expect(mod.CHAT_ROLES).toEqual(["user", "assistant", "system"]);
     expect(mod.TOOL_CALL_STATUSES).toEqual([

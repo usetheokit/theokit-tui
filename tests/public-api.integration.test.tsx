@@ -192,7 +192,12 @@ describe("public API integration (M3 T3.1 — agent scene)", () => {
   });
 
   it("agent_events_export_kinds_array", () => {
-    expect(AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool"]);
+    expect(AGENT_EVENT_KINDS).toEqual([
+      "message",
+      "thinking",
+      "tool",
+      "explored",
+    ]);
   });
 });
 

@@ -19,6 +19,57 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+## [0.47.0] - 2026-07-23
+
+### Added
+
+- `formatToolHeader` hook on `messagesToAgentEvents` — the app maps a tool call to a
+  Codex-style human header (`run_shell` → "Ran node --test"), replacing the raw tool name;
+  `undefined` leaves unmapped tools untouched. NOTE: overriding the `name` of an
+  `exploreTools` member opts that call out of the Explored collapse. (#53; shipped in npm 0.42.0)
+- `formatToolResult` seam on `messagesToAgentEvents` — the app maps a tool's raw JSON result
+  to a clean `output`/`shell`/`diff` body, replacing the default raw-JSON dump; display-only,
+  `undefined` keeps the default routing. Sibling of `formatToolHeader`. (M14; shipped in npm 0.43.0)
+- `ChatComposer` `initialValue` prop — seeds the draft (cursor at end) for the Codex
+  `restore_user_message_to_composer` backtrack flow. (M54; shipped in npm 0.45.0)
+- `ChatComposer` `onChange` prop — fires after mount with the initial text and on each edit,
+  so the host can enforce a composer-empty precondition. (M54; shipped in npm 0.46.0)
+- `DEFAULT_EXPLORE_TOOLS` and the `AgentExploredEvent` type are now exported from the package
+  entry — the CHANGELOG/Docs named the constant but consumers could not import it to extend
+  the explore set. (review M1)
+- Consecutive read-only exploration tools (read/list/grep) now collapse into a Codex-style **"Explored" block** — a header + one dim verb+target line per tool ("Read chat.ts", 'Search "foo"', "List agents") instead of one full output card each, so exploration no longer dominates the transcript. Grouping happens in the `messagesToAgentEvents` projection (a new `explored` `AgentEvent` kind), so the `<Static>` windowing is untouched (1 event = 1 row). Tool events now carry their `input` (when non-empty). Configurable via `messagesToAgentEvents(messages, { exploreTools })` — default `DEFAULT_EXPLORE_TOOLS`; pass `[]` to disable. Apps whose tools are named differently are unaffected.
+- Timeline tool results now render a **colored inline diff** (via `DiffViewer`) when the result is a git-style unified diff — the Codex-style edit render for tools like `apply_patch`. `AgentToolEvent` gains an exclusive `diff` field (`output | shell | diff` — one only, validated at the boundary); a clean unified-diff result (no stderr, exit 0) routes to it automatically in both timeline projections. Shared routing lives in `routeToolResult` / `looksLikeUnifiedDiff` (`agent-stream-event.ts`).
+
+### Removed
+
+- **BREAKING:** the `@theokit/tui/ai-sdk` subpath (deprecated back-compat shim) and the optional
+  `ai` peer dependency. The ai-free projections on the main entry replace it 1:1 — import
+  `messagesToChatThread` / `messagesToAgentEvents` from `@theokit/tui` instead of
+  `uiMessagesToChatThread` / `uiMessagesToAgentEvents` from `@theokit/tui/ai-sdk`; the ai SDK's
+  `UIMessage[]` is structurally assignable to `UIMessageLike`, so call sites only rename the
+  function. (no issue — owner request 2026-07-23)
+
+### Fixed
+
+- `ChatComposer` `initialValue` containing astral characters (emoji) no longer corrupts the
+  draft: the seeded cursor was computed in code POINTS while the text buffer uses UTF-16 code
+  UNITS, so the first keystroke after seeding an emoji-tailed draft spliced into a surrogate
+  pair (mojibake). Affected npm 0.45.0–0.46.0. (review H1)
+- Assistant message text now word-wraps to the terminal width instead of hard-wrapping
+  mid-word — both the Markdown and the raw-text render paths. (shipped in npm 0.44.0)
+- `ChatComposer` re-takes focus on a bare ESC (no menu open), so the composer stays usable
+  after an interrupt — ink's App handler blurs the focused input on ESC. (shipped in npm 0.42.0)
+- Internal repo config: removed two no-op `Write(...)` permission-deny entries from
+  `.claude/settings.json` (file-permission checks only match `Edit(path)` rules, which already
+  cover all edit tools; the equivalent `Edit(...)` rules remain). (internal tooling; no issue)
+- Tool results that arrive as a JSON-string-encoded shell envelope (`{"stdout":…,"stderr":…,"exitCode":…}` — how the in-process SDK serializes a tool's result) now render through `ToolResult`'s shell mode (clean stdout lines, labeled `stderr:`, non-zero exit badge) instead of dumping the raw JSON into the timeline. Fixed in BOTH projections: the message projection (`messagesToAgentEvents`) and the stream reducer (`agentStreamReducer`). Plain text results (file contents, `path:line:` grep, directory listings) and non-envelope JSON are unchanged. Shell-envelope helpers (`toShell`/`parseShellEnvelope`) are now shared from `agent-stream-event.ts`.
+
+## [0.41.1] - 2026-07-16
+
+### Changed
+
+- `SelectList` multi-select checkbox now uses the smaller `○` / `●` circle instead of the bulky `◯` / `◉` LARGE CIRCLE, so dense option lists read lighter and less cramped.
+
 ## [0.41.0] - 2026-07-16
 
 ### Added

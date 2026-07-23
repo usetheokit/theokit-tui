@@ -471,6 +471,20 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     instance.unmount();
   });
 
+  it("bare_escape_without_menu_keeps_composer_focused_and_typing_lands", async () => {
+    // Regression (78d4316 / review M2): ink's App handler BLURS the focused
+    // input on a lone ESC — the interrupt scenario (no menu/shell open) left
+    // the composer inert. The fix re-takes focus; typed chars must still land.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["h", "i", ESC]);
+    // ESC meta-prefix window: poll until the frame still shows the draft,
+    // then keep typing — without the refocus these keystrokes are dropped.
+    await waitForFrame(instance, "hi", true);
+    await type(instance, ["!", "?"]);
+    expect(plain(instance.lastFrame())).toContain("hi!?");
+    instance.unmount();
+  });
+
   it("newline_chord_with_open_menu_closes_it_and_enter_submits", async () => {
     // r2-F3 composer-level: a multiline draft leaves command mode.
     const submitted: string[] = [];

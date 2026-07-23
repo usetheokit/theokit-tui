@@ -1,6 +1,6 @@
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
-import { extractAssistantText, isShellEnvelope } from "./agent-stream-event.js";
+import { extractAssistantText, routeToolResult } from "./agent-stream-event.js";
 import type { ToolCallStatus } from "./tool-call.js";
 
 // Pure mapping fold (plan m7-stream-adapter ADR D2): AgentStreamEvent →
@@ -156,26 +156,18 @@ const TOOL_STATUS_MAP: Record<string, ToolCallStatus> = {
   error: "failed",
 };
 
-/** Result mapping ladder: shell passthrough XOR output — NEVER both. */
+/** Result mapping ladder: diff XOR shell XOR output — NEVER combined. The
+ * routing (`routeToolResult`) is shared with the message projection — see
+ * `agent-stream-event.ts`. */
 function toolContent(
   result: unknown,
-): Pick<AgentToolEvent, "output" | "shell"> {
+): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
   if (result === undefined) {
     return {};
   }
-  if (isShellEnvelope(result)) {
-    return {
-      shell: {
-        stdout: result.stdout ?? "",
-        stderr: result.stderr ?? "",
-        ...(typeof result.exitCode === "number"
-          ? { exitCode: result.exitCode }
-          : {}),
-      },
-    };
-  }
-  if (typeof result === "string") {
-    return { output: result };
+  const routed = routeToolResult(result);
+  if (routed !== undefined) {
+    return routed;
   }
   const text = (result as { text?: unknown }).text;
   if (typeof text === "string") {
@@ -189,13 +181,14 @@ function toolContent(
 function resolveToolContent(
   result: unknown,
   existing: AgentToolEvent | undefined,
-): Pick<AgentToolEvent, "output" | "shell"> {
+): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
   if (result !== undefined) {
     return toolContent(result);
   }
   return {
     ...(existing?.output === undefined ? {} : { output: existing.output }),
     ...(existing?.shell === undefined ? {} : { shell: existing.shell }),
+    ...(existing?.diff === undefined ? {} : { diff: existing.diff }),
   };
 }
 

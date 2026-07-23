@@ -317,3 +317,19 @@ export function editorReducer(
       return applySubmit(state, action.entry);
   }
 }
+
+/**
+ * M54 (agent-builder backtrack) — seed the editor with pre-filled text and the cursor at the end.
+ * Powers `ChatComposer`'s `initialValue` (Codex `restore_user_message_to_composer`,
+ * app_backtrack.rs). Empty/undefined text yields the pristine `initialEditorState`.
+ */
+export function seedEditorState(text: string | undefined): EditorState {
+  if (!text) return initialEditorState;
+  return {
+    ...initialEditorState,
+    // cursorOffset is a UTF-16 CODE-UNIT offset (text-buffer.ts contract) —
+    // text.length, matching loadText. A code-POINT count ([...text].length)
+    // seeds the cursor mid-surrogate for astral tails (review H1).
+    buffer: { text, cursorOffset: text.length },
+  };
+}

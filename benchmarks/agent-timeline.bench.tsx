@@ -115,7 +115,10 @@ function replaceTail(last: AgentEvent, step: number): AgentEvent {
   if (last.kind === "tool") {
     return { ...last, status: step % 2 === 0 ? "success" : "failed" };
   }
-  return { ...last, text: last.text + "." };
+  if (last.kind === "thinking") {
+    return { ...last, text: last.text + "." };
+  }
+  return last; // explored — no streaming mutation in the bench
 }
 
 async function runOnce(mode: Mode): Promise<RunMetrics> {

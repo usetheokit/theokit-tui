@@ -66,6 +66,22 @@ describe("SelectList component (M22 T1.1)", () => {
     app.unmount();
   });
 
+  it("multi_select_renders_the_small_circle_checkbox_glyph", async () => {
+    // The multi-select checkbox is the small ○ (empty) / ● (selected) circle —
+    // NOT the bulky ◯ / ◉ LARGE CIRCLE, which reads as cramped in a dense list.
+    const app = render(
+      createElement(SelectList, { items, multi: true, onSubmit: () => {} }),
+    );
+    await app.flush();
+    expect(app.lastFrame()).toContain("○ apple"); // unselected → small empty circle
+    expect(app.lastFrame()).not.toContain("◯"); // never the LARGE CIRCLE
+    app.stdin.write(" "); // select apple
+    await app.flush();
+    expect(app.lastFrame()).toContain("● apple"); // selected → small filled circle
+    expect(app.lastFrame()).not.toContain("◉"); // never the LARGE FISHEYE
+    app.unmount();
+  });
+
   it("typing_filters_the_list", async () => {
     const app = render(
       createElement(SelectList, { items, onSubmit: () => {} }),

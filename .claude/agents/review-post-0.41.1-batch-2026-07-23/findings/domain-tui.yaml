@@ -1,0 +1,169 @@
+agent: domain-tui
+findings:
+  - id: F-tui-1
+    severity: HIGH
+    file: src/composer-editor.ts
+    line: 330
+    summary: seedEditorState seeds the cursor with the CODE-POINT count while TextBufferState.cursorOffset is documented and consumed as a CODE-UNIT offset, so an initialValue containing any astral character (emoji) seeds the cursor short of the end — and for a trailing astral char it lands MID-SURROGATE, so the first keystroke splits the pair into lone surrogates (mojibake) and cursorSlices renders a lone surrogate as the cursor cell.
+    evidence: |
+      // src/composer-editor.ts:326-332
+      export function seedEditorState(text: string | undefined): EditorState {
+        if (!text) return initialEditorState;
+        return {
+          ...initialEditorState,
+          buffer: { text, cursorOffset: [...text].length },   // code POINTS
+        };
+      }
+      // src/text-buffer.ts:13-14 — the unit contract this violates:
+      //   /** Cursor position as a code-unit offset into `text`. */
+      //   cursorOffset: number;
+      // The sibling path uses the correct unit — src/composer-editor.ts:218 (loadText):
+      //   buffer: { text, cursorOffset: text.length },
+      //
+      // Verified with node (insert semantics = textBufferReducer insert, text-buffer.ts:84-87):
+      //   text "fix bug 🐛 please": units 17, [...] 16 → typing X yields "fix bug 🐛 pleasXe"
+      //   text "ok 👋": units 5, [...] 4 → before "ok \ud83d", after "\udc4b";
+      //   typing X yields "ok \ud83dX\udc4b" (surrogate pair split)
+      // The regression test (src/composer-editor.seed.test.ts:9) asserts
+      // `[..."olá mund"].length`, which equals text.length for BMP-only input,
+      // so it cannot catch this.
+    recommended_action: 'Change seedEditorState to `cursorOffset: text.length` (code units, matching loadText and the TextBufferState doc), and extend composer-editor.seed.test.ts with an astral-tail regression case (e.g. seed "ok 👋", assert cursorOffset === 5 and that a subsequent insert appends after the emoji).'
+  - id: F-tui-2
+    severity: MEDIUM
+    file: src/chat-message.tsx
+    line: 81
+    summary: The word-wrap fix pins the row Box to the FULL terminal width (`width={rowWidth}`) while also spreading the public margin props onto the same Box, so any horizontal margin (marginLeft/marginX/margin) makes the row wider than the terminal and re-introduces the exact mid-word hard-wrap the fix was shipped to remove.
+    evidence: |
+      // src/chat-message.tsx:57-58, 72, 81
+      const { stdout } = useStdout();
+      const rowWidth = stdout?.columns ?? 80;
+      ...
+      return (
+        <Box {...margin} width={rowWidth}>   // margin + full-width => overflow
+      // Reproduced against dist (ink render, PassThrough stdout, columns=40,
+      // <ChatMessage role="assistant" marginLeft={4}>…):
+      //   terminal columns: 40, marginLeft: 4
+      //   max rendered line width: 43        <- 3 columns past the terminal
+      // On a real TTY those 43-col lines hard-wrap mid-word — inside <Static>
+      // the corrupted rows are frozen into scrollback.
+      // (Container case verified SAFE: a ChatMessage inside <Box width={40}>
+      // wraps at 40 — yoga constrains the fixed width to the parent.)
+    recommended_action: Subtract the horizontal margins from the pinned width (e.g. `width={rowWidth - leftMargin - rightMargin}` computed from margin/marginX/marginLeft/marginRight) or drop the explicit width in favor of a width-constrained wrapper that accounts for the margin box; add a regression render test with marginLeft at a narrow columns value asserting no line exceeds `columns`.
+  - id: F-tui-3
+    severity: MEDIUM
+    file: src/agent-timeline.tsx
+    line: 156
+    summary: The new inline-diff branch of toolBody renders DiffViewer with NO default line budget — DiffViewer's `maxLines` is optional with no internal default — so a large unified-diff tool result (e.g. a big apply_patch) renders unbounded in the timeline, while the sibling output/shell branch is capped at ToolResult's default 10 lines; an oversized live-tail row also risks Ink live-region repaint artifacts when it exceeds terminal height.
+    evidence: |
+      // src/agent-timeline.tsx:151-158
+      const maxLines =
+        event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
+      if (event.diff !== undefined && event.diff !== "") {
+        return <DiffViewer patch={event.diff} {...maxLines} />;   // no cap when event.maxLines undefined
+      }
+      ...
+      return (
+        <ToolResult ... {...maxLines} />   // ToolResult internally defaults maxLines = 10 (tool-result.tsx:281)
+      );
+      // DiffViewer (src/diff-viewer.tsx:273-309): `maxLines` undefined => `capped` false => all rows render.
+    recommended_action: Give the diff branch a default budget consistent with the output path (e.g. `maxLines: event.maxLines ?? 20` on DiffViewer, or reuse ToolResult's 10) so an unmapped giant diff cannot flood the transcript; keep `event.maxLines` as the explicit override.
+  - id: F-tui-4
+    severity: LOW
+    file: src/agent-timeline.tsx
+    line: 234
+    summary: ExploredBlock renders each `  └ <summary>` row as a single flat Text, so a long path/pattern wraps its continuation lines at column 0 — the `└` gutter alignment is lost (verified at 40 columns; no overflow past the terminal, purely cosmetic).
+    evidence: |
+      // src/agent-timeline.tsx:233-237
+      {tools.map((tool) => (
+        <Text key={tool.id} dimColor>
+          {`  └ ${exploreSummary(tool)}`}
+        </Text>
+      ))}
+      // Repro against dist (columns=40, 120-char path):
+      //   ⏺  Explored (2)
+      //     └ Read packages/very/long/nested/direc
+      //   tory/structure/deep/inside/the/monorepo/   <- continuation at col 0
+      //   some-extremely-long-file-name.integratio
+      // Same shape when the block has graduated into <Static> (no width overflow
+      // in either region — max line width stayed 40).
+    recommended_action: 'Render each row as `<Box><Text dimColor>{"  └ "}</Text><Text dimColor wrap="wrap">{exploreSummary(tool)}</Text></Box>` (gutter in a flexShrink:0 cell) so wrapped continuations stay indented under the summary column — mirrors the DiffViewer lineRow gutter pattern (diff-viewer.tsx:181-192).'
+  - id: F-tui-5
+    severity: LOW
+    file: src/agent-timeline.tsx
+    line: 117
+    summary: assertValidEvents never descends into `explored` events — the grouped tools' ids are not added to the duplicate-id set and their status/output⊕shell⊕diff/maxLines invariants are not checked, so a direct AgentTimeline consumer (not going through messagesToAgentEvents) can pass duplicate tool ids (React duplicate-key warning in tools.map key={tool.id}) or an empty tools array (renders a bare "Explored (0)" header) without the documented boundary throw.
+    evidence: |
+      // src/agent-timeline.tsx:100-124 — the loop validates only kind membership,
+      // top-level id uniqueness, message role and tool invariants:
+      if (event.kind === "message") { validateMessageEvent(event); }
+      if (event.kind === "tool")    { validateToolEvent(event); }
+      // No branch for event.kind === "explored" → event.tools unvalidated.
+      // Rendered at src/agent-timeline.tsx:244-245 / 233-237 with key={tool.id}.
+      // Props doc (line 26-28) promises "unique ids (duplicates throw)".
+    recommended_action: In assertValidEvents, when kind === "explored", require tools.length >= 1 and run the id-uniqueness check (against the same `seen` set) plus validateToolEvent over each grouped tool, keeping the fail-fast boundary contract uniform.
+  - id: F-tui-6
+    severity: LOW
+    file: src/messages-to-events.ts
+    line: 418
+    summary: The formatToolHeader override is applied BEFORE groupExploration matches on `ev.name`, so an app that maps a read-only tool (e.g. renames `read_file` to "Read config.mjs") silently disables Explored grouping for it — the docstring only implies apps "do not map" explore tools, but nothing enforces or warns.
+    evidence: |
+      // src/messages-to-events.ts:246-252 — toToolEvent replaces event.name with header.name
+      const header = formatHeader?.(event);
+      ...
+      return { ...event, ...(header.name !== undefined ? { name: header.name } : {}), ... };
+      // src/messages-to-events.ts:300-304 — grouping then matches the OVERRIDDEN name:
+      const explorable =
+        ev.kind === "tool" && explore.has(ev.name) && ...
+    recommended_action: Match grouping on the ORIGINAL tool name (e.g. carry the raw name through toToolEvent, or run groupExploration before the header override is applied) — or document explicitly on ToolHeaderFormatter that returning `name` for a tool listed in exploreTools opts it out of grouping.
+  - id: F-tui-7
+    severity: LOW
+    file: src/chat-composer.tsx
+    line: 636
+    summary: The ESC handler unconditionally re-takes focus on every ESC that is not a menu/shell dismissal, with no opt-out — an app that maps ESC to an intentional focus handoff (e.g. leave composer, focus an overlay/menu without autoFocus-on-mount) now fights the composer, and the winner depends on useInput subscriber registration order.
+    evidence: |
+      // src/chat-composer.tsx:633-638
+      // Ink's App handler BLURS the focused input on ESC (before subscribers). ...
+      if (key.escape) {
+        focus(focusId);
+      }
+      // Guarded only by { isActive: isFocused } (line 647) — so it fires whenever the
+      // composer WAS focused at the keypress, exactly the moment an app-level
+      // ESC-to-navigate handler would want the blur to stick.
+    recommended_action: Keep the refocus (it fixes the real inert-composer bug) but expose an escape hatch — e.g. a `refocusOnEscape?: boolean` prop (default true) or skip the refocus when another component has requested focus in the same tick — and document the interaction in the prop docs.
+  - id: F-tui-8
+    severity: INFO
+    file: src/messages-to-events.ts
+    line: 285
+    summary: "No issues found on the brief's core Static-windowing question: an `explored` group cannot mutate after graduating with any windowSize+windowOverscan >= 1 — the group only grows while it is the TRAILING run of the grouped array (any later event breaks the run and freezes membership), and the trailing element is always inside the live tail (index len-1 >= tailStart); the group id `explored-${first.id}` is stable across growth, and prefix items are deterministic for fixed inputs. The only mutation-after-graduation window is windowSize=0 AND windowOverscan=0, where EVERY streaming event (not just groups) freezes instantly — the pre-existing documented immutability contract (agent-timeline.tsx:26-38), not a regression of this diff."
+    evidence: |
+      // src/messages-to-events.ts:300-313 — a non-explorable event flushes the run:
+      if (explorable) { run.push(ev); } else { flush(); out.push(ev); }
+      // src/agent-timeline.tsx:306-315 — tailStart = len - windowSize - overscan;
+      // the growing group is always the last grouped element => always in `tail`.
+      // Transient regroup churn (pending explore breaks a run, reforms on running;
+      // running -> failed dissolves a group) all happens at the tail, where rows
+      // re-render by identity — no frozen-row divergence.
+    recommended_action: None required. Optionally add one projection test streaming an explore run past the graduation boundary asserting prefix items stay reference/content-stable.
+  - id: F-tui-9
+    severity: INFO
+    file: src/tool-result.tsx
+    line: 336
+    summary: "No issues found in the shell-envelope degrade ladder exercised by the new routing: the exit badge renders only for numeric non-zero exitCode, the stderr block carries a color-independent dim `stderr:` label that is PINNED outside the truncation budget when tail-retention would drop it, and DiffViewer's +/- signs render unconditionally — all NO_COLOR/monochrome-safe markers; ExploredBlock's glyph + `└` connector likewise survive color loss (dim/bold degrade to plain text under chalk level 0)."
+    evidence: |
+      // src/tool-result.tsx:221-222 (exit badge gate), 229-230 + 333 (pinned stderr label),
+      // src/tool-result.tsx:120-123 ("stderr: (capped)" when the combined budget ate stderr).
+      // src/diff-viewer.tsx:258-260 ("Signs are rendered UNCONDITIONALLY — the
+      // color-independent NO_COLOR mechanism"), code lines wrap (188).
+      // src/agent-timeline.tsx:227-231 — Explored header glyph from theme.toolStatus.success
+      // token; glyph is the color-independent marker.
+    recommended_action: None.
+  - id: F-tui-10
+    severity: INFO
+    file: src/chat-composer.tsx
+    line: 443
+    summary: "onChange verified firing on every edit path (typing/paste arrive as reducer inserts; kill-ring, yank, undo, history recall, slash/mention completion and submit-clear all flow through the single editorReducer, and the effect keys on buffer.text) — one caveat: the effect also re-fires with UNCHANGED text whenever the host passes an unstable inline callback (identity in the dep array), so hosts should memoize onChange or tolerate duplicate same-text calls; word-wrap CJK/grapheme handling in ChatMessage rides Ink's string-width-aware wrap (no local slicing), and routeToolResult's diff heuristic is strict (@@ hunk AND ---/diff --git header) so plain listings are not misrouted — a read_file of an actual .patch file now renders as a colored diff, which is display-only and acceptable."
+    evidence: |
+      // src/chat-composer.tsx:443-445
+      useEffect(() => { onChange?.(buffer.text); }, [buffer.text, onChange]);
+      // src/agent-stream-event.ts:123-128 — looksLikeUnifiedDiff requires both markers.
+    recommended_action: Optionally note in the onChange prop doc that the callback should be identity-stable (or that duplicate same-text invocations are possible), matching common React controlled-input guidance.

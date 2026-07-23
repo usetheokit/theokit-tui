@@ -91,6 +91,70 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(frame).toContain("3 matches");
   });
 
+  it("tool_event_with_diff_renders_inline_diff", async () => {
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "x1",
+            kind: "tool",
+            name: "apply_patch",
+            status: "success",
+            diff: "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old line\n+new line\n",
+          },
+        ]}
+      />,
+    );
+    expect(stripAnsi(frame)).toMatch(/^⏺\s+apply_patch/m);
+    // The DiffViewer renders the changed lines (colored +/- in a real terminal).
+    expect(frame).toContain("old line");
+    expect(frame).toContain("new line");
+    // NOT the raw unified-diff plumbing dumped as text.
+    expect(frame).not.toContain("@@ -1 +1 @@");
+  });
+
+  it("explored_event_renders_grouped_codex_block", async () => {
+    const frame = await renderFrame(
+      <AgentTimeline
+        events={[
+          {
+            id: "e1",
+            kind: "explored",
+            tools: [
+              {
+                id: "c1",
+                kind: "tool",
+                name: "read_file",
+                status: "success",
+                input: { path: "chat.ts" },
+              },
+              {
+                id: "c2",
+                kind: "tool",
+                name: "grep",
+                status: "success",
+                input: { pattern: "foo" },
+              },
+              {
+                id: "c3",
+                kind: "tool",
+                name: "list_dir",
+                status: "success",
+                input: { path: "agents" },
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+    const plain = stripAnsi(frame);
+    expect(plain).toContain("Explored");
+    expect(plain).toContain("(3)"); // count
+    expect(plain).toContain("Read chat.ts"); // verb + target from input
+    expect(plain).toContain('Search "foo"');
+    expect(plain).toContain("List agents");
+  });
+
   it("tool_event_without_output_renders_bare_row", async () => {
     const frame = await renderFrame(
       <AgentTimeline

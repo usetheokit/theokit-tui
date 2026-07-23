@@ -1,4 +1,4 @@
-export const VERSION = "0.41.0";
+export const VERSION = "0.47.0";
 
 export {
   TheoTUIProvider,
@@ -70,6 +70,7 @@ export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {
   AgentEvent,
   AgentEventKind,
+  AgentExploredEvent,
   AgentMessageEvent,
   AgentThinkingEvent,
   AgentToolEvent,
@@ -243,15 +244,19 @@ export type { FigletLike, FigletLoader } from "./figlet-art.js";
 
 // ai-free projection of a client message snapshot (id + role + parts) onto the render shapes. The ai SDK's
 // `UIMessage` is structurally assignable to `UIMessageLike`, so `useAgent().thread` passes straight through
-// without importing `ai`. (The `@theokit/tui/ai-sdk` subpath re-exports these under `ai`-typed aliases.)
+// without importing `ai`.
 export {
+  DEFAULT_EXPLORE_TOOLS,
   findPendingApproval,
   messagesToAgentEvents,
   messagesToChatThread,
   readTurnUsage,
 } from "./messages-to-events.js";
 export type {
+  MessagesToEventsOptions,
   PendingApproval,
+  ToolHeaderFormatter,
+  ToolResultFormatter,
   TurnUsage,
   UIMessageLike,
   UIMessagePartLike,

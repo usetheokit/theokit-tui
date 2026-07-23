@@ -3,9 +3,10 @@ import { memo, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
-import type { AgentEvent } from "./agent-event.js";
+import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import { CHAT_ROLES, ChatMessage } from "./chat-message.js";
 import { HEADER_SENTINEL_KEY } from "./chat-thread.js";
+import { DiffViewer } from "./diff-viewer.js";
 import {
   STATUS_INDICATOR_WIDTH,
   TOOL_CALL_STATUSES,
@@ -75,9 +76,13 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
       `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
     );
   }
-  if (event.output !== undefined && event.shell !== undefined) {
+  const bodyCount =
+    (event.output !== undefined ? 1 : 0) +
+    (event.shell !== undefined ? 1 : 0) +
+    (event.diff !== undefined ? 1 : 0);
+  if (bodyCount > 1) {
     throw new TypeError(
-      `AgentTimeline: tool event "${event.id}" — provide only one of output | shell`,
+      `AgentTimeline: tool event "${event.id}" — provide only one of output | shell | diff`,
     );
   }
   // SEPA F1: ToolResult's own maxLines guard would fire mid-render
@@ -139,34 +144,105 @@ function ThinkingRow({ text }: { text: string }) {
   );
 }
 
-function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
-  // SEPA F2: pass `output` as ToolResult CHILDREN (not pre-split lines) so
-  // it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
-  // (EC-7). Empty output collapses to the bare row.
+// SEPA F2: pass `output` as ToolResult CHILDREN (not pre-split lines) so
+// it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
+// (EC-7). Empty output collapses to the bare row (`null` and `false` are
+// equally non-renderable to ToolCallCard's hasRenderableBody).
+function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
+  const maxLines =
+    event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
+  // A unified-diff result (e.g. apply_patch) renders as a colored inline
+  // diff; everything else goes through ToolResult (output / shell modes).
+  if (event.diff !== undefined && event.diff !== "") {
+    return <DiffViewer patch={event.diff} {...maxLines} />;
+  }
   const hasBody =
     (event.output !== undefined && event.output !== "") ||
     event.shell !== undefined;
+  if (!hasBody) return null;
+  return (
+    <ToolResult
+      {...(event.output !== undefined ? { children: event.output } : {})}
+      {...(event.shell !== undefined ? { shell: event.shell } : {})}
+      {...maxLines}
+    />
+  );
+}
+
+function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
   return (
     <ToolCallCard
       name={event.name}
       status={event.status}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
-      {hasBody && (
-        <ToolResult
-          {...(event.output !== undefined ? { children: event.output } : {})}
-          {...(event.shell !== undefined ? { shell: event.shell } : {})}
-          {...(event.maxLines !== undefined
-            ? { maxLines: event.maxLines }
-            : {})}
-        />
-      )}
+      {toolBody(event)}
     </ToolCallCard>
+  );
+}
+
+interface ExploreArgs {
+  path: string | undefined;
+  pattern: string | undefined;
+}
+
+const searchLabel = ({ pattern }: ExploreArgs): string =>
+  pattern !== undefined ? `Search "${pattern}"` : "Search";
+
+/** Per-tool label formatters for the Explored block (extracted from a switch
+ * to keep exploreSummary within the complexity gate). */
+const EXPLORE_LABELS: Record<string, (args: ExploreArgs) => string> = {
+  read_file: ({ path }) => (path !== undefined ? `Read ${path}` : "Read"),
+  list_dir: ({ path }) => `List ${path ?? "."}`,
+  grep: searchLabel,
+  search_text: searchLabel,
+  git_diff: () => "Diff",
+  glob: ({ pattern }) => (pattern !== undefined ? `Glob ${pattern}` : "Glob"),
+};
+
+/** A Codex-style verb+target label for one explored tool ("Read config.mjs",
+ * "List agents/tools", 'Search "pattern"'), derived from its input. */
+function exploreSummary(tool: AgentToolEvent): string {
+  const input = (tool.input ?? {}) as Record<string, unknown>;
+  const str = (key: string): string | undefined =>
+    typeof input[key] === "string" ? (input[key] as string) : undefined;
+  const args: ExploreArgs = {
+    path: str("path") ?? str("file") ?? str("dir"),
+    pattern: str("pattern") ?? str("query") ?? str("regex"),
+  };
+  const label = EXPLORE_LABELS[tool.name];
+  if (label !== undefined) return label(args);
+  return args.path ?? args.pattern ?? tool.name;
+}
+
+/** A run of read-only exploration collapsed into one "Explored" block (Codex
+ * parity): a header + one dim verb+target line per tool, outputs summarized
+ * away so exploration does not dominate the transcript. */
+function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
+  const theme = useTheoTheme();
+  const token = theme.toolStatus.success;
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text color={token.color}>
+          {token.glyph.padEnd(STATUS_INDICATOR_WIDTH)}
+        </Text>
+        <Text bold>Explored</Text>
+        <Text dimColor>{` (${tools.length})`}</Text>
+      </Box>
+      {tools.map((tool) => (
+        <Text key={tool.id} dimColor>
+          {`  └ ${exploreSummary(tool)}`}
+        </Text>
+      ))}
+    </Box>
   );
 }
 
 function eventRow(event: AgentEvent) {
   switch (event.kind) {
+    case "explored":
+      return <ExploredBlock tools={event.tools} />;
     case "message":
       // Claude Code parity: an assistant turn is Markdown (headings, lists, fenced code → CodeBlock with
       // syntax highlight), so render it through MarkdownText. The user echo stays raw (dim) — a user's typed
