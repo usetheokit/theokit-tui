@@ -460,3 +460,73 @@ describe("messagesToAgentEvents — formatToolResult (result-body seam)", () => 
     expect((ev as { output?: string }).output).toBe("OVERRIDDEN");
   });
 });
+
+describe("messagesToAgentEvents — formatToolHeader (header seam)", () => {
+  const toolMsg = (name: string, toolCallId: string): UIMessageLike => ({
+    id: "m1",
+    role: "assistant",
+    parts: [
+      {
+        type: `tool-${name}`,
+        toolCallId,
+        state: "output-available",
+        output: "ok",
+      },
+    ],
+  });
+
+  it("overrides name and summary with the app-supplied header", () => {
+    const [ev] = messagesToAgentEvents([toolMsg("run_shell", "c1")], {
+      formatToolHeader: () => ({ name: "Ran", summary: "node --test" }),
+    });
+    expect(ev).toMatchObject({
+      kind: "tool",
+      name: "Ran",
+      summary: "node --test",
+    });
+  });
+
+  it("partial override (name only) leaves summary absent", () => {
+    const [ev] = messagesToAgentEvents([toolMsg("run_shell", "c1")], {
+      formatToolHeader: () => ({ name: "Ran" }),
+    });
+    expect(ev).toMatchObject({ kind: "tool", name: "Ran" });
+    expect(ev).not.toHaveProperty("summary");
+  });
+
+  it("undefined leaves the raw tool name untouched", () => {
+    const [ev] = messagesToAgentEvents([toolMsg("run_shell", "c1")], {
+      formatToolHeader: () => undefined,
+    });
+    expect(ev).toMatchObject({ kind: "tool", name: "run_shell" });
+  });
+
+  it("the formatted header receives the fully-routed event (id, status, body)", () => {
+    const seen: string[] = [];
+    messagesToAgentEvents([toolMsg("run_shell", "c9")], {
+      formatToolHeader: (event) => {
+        seen.push(`${event.id}:${event.status}`);
+        return undefined;
+      },
+    });
+    expect(seen).toEqual(["c9:success"]);
+  });
+
+  // Documented contract (review F-tui-6): grouping matches the (possibly
+  // overridden) event name — renaming an explore tool opts it OUT of the
+  // explored collapse; unmapped explore tools still group.
+  it("renaming an explore tool via the header opts it out of explored grouping", () => {
+    const msgs = [toolMsg("read_file", "c1"), toolMsg("read_file", "c2")];
+    // Unmapped: two consecutive reads collapse into one explored group.
+    const grouped = messagesToAgentEvents([
+      { id: "m1", role: "assistant", parts: msgs.flatMap((m) => m.parts) },
+    ]);
+    expect(grouped.map((e) => e.kind)).toEqual(["explored"]);
+    // Mapped (renamed): the overridden name no longer matches exploreTools.
+    const renamed = messagesToAgentEvents(
+      [{ id: "m1", role: "assistant", parts: msgs.flatMap((m) => m.parts) }],
+      { formatToolHeader: () => ({ name: "Read config" }) },
+    );
+    expect(renamed.map((e) => e.kind)).toEqual(["tool", "tool"]);
+  });
+});

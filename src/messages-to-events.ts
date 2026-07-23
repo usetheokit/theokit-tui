@@ -339,6 +339,9 @@ export function messagesToChatThread(
  * the header; return `undefined` to leave the raw tool name untouched (so tools the app does not map —
  * incl. the read-only ones that collapse into an `explored` block — are unaffected). The generic TUI
  * stays tool-agnostic; the app owns the verb+target vocabulary of its own tools.
+ *
+ * NOTE: explored grouping matches on the (possibly overridden) `name` — returning a `name` for a tool
+ * listed in `exploreTools` opts that call OUT of the explored collapse (it renders as a normal card).
  */
 export type ToolHeaderFormatter = (
   event: AgentToolEvent,
