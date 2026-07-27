@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.49.0] - 2026-07-27
+
+### Changed
+
+- **`assertValidEvents` para de revarrer o histórico a cada render (M92).** A função validava o array inteiro por render — incluindo as linhas já congeladas em `<Static>`, que por construção não mudam; numa sessão longa isso é trabalho O(N) por token sobre dado imutável. Agora valida só a **cauda** quando o array novo é extensão de prefixo do anterior (identidade posicional), com **fallback** de varredura completa quando não é. O fallback é o que garante que nenhum caso deixa de ser validado — uma validação que ficou rápida deixando de validar seria pior que a lentidão.
+
+### Added
+
+- **`assertValidEvents` e `reiniciarValidacaoIncremental` exportados (M92).** Não por vontade de ampliar superfície: o `throw` acontece dentro do render e o **ink não o propaga** — medido, `renderFrame` de um evento inválido *resolve* em vez de rejeitar. Sem a costura, a única prova de que a otimização não deixou de validar seria leitura de código.
+
 All notable changes to `@theokit/tui` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project

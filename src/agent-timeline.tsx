@@ -98,9 +98,52 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
   }
 }
 
-function assertValidEvents(events: AgentEvent[]): void {
-  const seen = new Set<string>();
-  for (const event of events) {
+/**
+ * M92 — valida só a CAUDA quando o array novo é extensão de prefixo do anterior.
+ *
+ * `assertValidEvents` varria o histórico inteiro a **cada render** — incluindo as linhas já congeladas
+ * em `<Static>`, que por construção não mudam. Numa sessão longa isso é trabalho O(N) por token sobre
+ * dado que a própria estrutura garante imutável.
+ *
+ * "Extensão de prefixo" = `novo[i] === velho[i]` por identidade para todo `i < velho.length`. Quando é,
+ * os ids já vistos são reaproveitados e só o resto é validado. Quando **não** é (reordenação, edição,
+ * reset), cai no fallback de varredura completa — e é o fallback que garante que nenhum caso deixa de
+ * ser validado, que é a razão de esta variante ter sido preferida a esconder a checagem atrás de
+ * `NODE_ENV !== 'production'`: aquela desliga a validação exatamente onde o dado é real.
+ */
+const ultimaValidacao: { events: AgentEvent[]; ids: Set<string> } = { events: [], ids: new Set() };
+
+/**
+ * Exportado para teste porque a alternativa era pior.
+ *
+ * O throw de `assertValidEvents` acontece durante o render e o ink não o propaga para o chamador —
+ * medido: `renderFrame` de um evento inválido **resolve**, não rejeita. Sem esta costura, a única
+ * prova de que a otimização não deixou de validar seria leitura de código, que é exatamente o tipo de
+ * evidência que esta base de código recusa.
+ *
+ * `reiniciarValidacaoIncremental` existe pelo mesmo motivo: o estado é de módulo, e um teste que não
+ * consegue zerá-lo depende da ordem dos outros.
+ */
+export function reiniciarValidacaoIncremental(): void {
+  ultimaValidacao.events = [];
+  ultimaValidacao.ids = new Set();
+}
+
+export function assertValidEvents(events: AgentEvent[]): void {
+  const anterior = ultimaValidacao.events;
+  let inicio = 0;
+  let seen: Set<string>;
+  const ehExtensao =
+    anterior.length > 0 &&
+    events.length >= anterior.length &&
+    anterior.every((e, i) => events[i] === e);
+  if (ehExtensao) {
+    inicio = anterior.length;
+    seen = new Set(ultimaValidacao.ids);
+  } else {
+    seen = new Set<string>();
+  }
+  for (const event of events.slice(inicio)) {
     if (event.id === HEADER_SENTINEL_KEY) {
       throw new TypeError(
         `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
@@ -122,6 +165,10 @@ function assertValidEvents(events: AgentEvent[]): void {
       validateToolEvent(event);
     }
   }
+  // Só grava DEPOIS de validar tudo: um array que lançou não pode virar prefixo confiável, senão o
+  // próximo render pularia a checagem que acabou de falhar.
+  ultimaValidacao.events = events;
+  ultimaValidacao.ids = seen;
 }
 
 // Column note (SEPA F6, accepted heritage): message rows use ChatMessage's
