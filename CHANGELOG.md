@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.49.1] - 2026-07-27
+
+### Added
+
+- **`messagesToAgentEvents` cacheia por mensagem (M92, item 4 do DoD).** A revisão adversarial mediu que este item **nunca foi implementado** no `0.49.0` — e sem ele a validação incremental do item 5 era um no-op: sem identidade estável de evento, o prefixo nunca casa e o caminho rápido dispara **0 de 5 renders**. Os dois itens são um só mecanismo visto de dois lados. O cache é `WeakMap` chaveado pela mensagem, invalidado pela identidade das partes; reter mensagem descartada seria vazamento numa sessão longa.
+
+### Fixed
+
+- **O teste do item 4 comparava `id`, não identidade (M92).** Os ids são derivados de `(message.id, índice da parte)` e **passam sem cache nenhum** — dois objetos recém-alocados carregam o mesmo id. Trocado por `toBe`, com o caso que distingue: mesma mensagem por referência com o array de partes trocado, que é o que um store faz ao acumular deltas.
+
 ## [0.49.0] - 2026-07-27
 
 ### Changed
