@@ -111,7 +111,10 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
  * ser validado, que é a razão de esta variante ter sido preferida a esconder a checagem atrás de
  * `NODE_ENV !== 'production'`: aquela desliga a validação exatamente onde o dado é real.
  */
-const ultimaValidacao: { events: AgentEvent[]; ids: Set<string> } = { events: [], ids: new Set() };
+const ultimaValidacao: { events: AgentEvent[]; ids: Set<string> } = {
+  events: [],
+  ids: new Set(),
+};
 
 /**
  * Exportado para teste porque a alternativa era pior.

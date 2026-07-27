@@ -8,7 +8,7 @@
 
 ### Added
 
-- **`assertValidEvents` e `reiniciarValidacaoIncremental` exportados (M92).** Não por vontade de ampliar superfície: o `throw` acontece dentro do render e o **ink não o propaga** — medido, `renderFrame` de um evento inválido *resolve* em vez de rejeitar. Sem a costura, a única prova de que a otimização não deixou de validar seria leitura de código.
+- **`assertValidEvents` e `reiniciarValidacaoIncremental` exportados (M92).** Não por vontade de ampliar superfície: o `throw` acontece dentro do render e o **ink não o propaga** — medido, `renderFrame` de um evento inválido _resolve_ em vez de rejeitar. Sem a costura, a única prova de que a otimização não deixou de validar seria leitura de código.
 
 All notable changes to `@theokit/tui` are documented here.
 
