@@ -70,11 +70,6 @@ The default convention assumed by stop-validation.sh:
 
 If your project uses a different convention (e.g., separate `tests/` mirror tree), document it here so the hook knows where to look.
 
-**@theokit/tui project conventions (M0):** unit tests co-located as `src/<name>.test.tsx`;
-package-level contract tests under `tests/*.test.ts`; integration tests as
-`tests/*.integration.test.tsx` (NOT a `tests/integration/` directory — review F-wire-1);
-subprocess fixtures under `tests/fixtures/`.
-
 ## § 6 — Anti-patterns
 
 - Tests depending on execution order or shared state.
