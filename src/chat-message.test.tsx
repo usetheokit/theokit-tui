@@ -279,10 +279,18 @@ describe("issue #56 — a horizontal margin must not push the row past the termi
     expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
   });
 
-  // NOT covered here: the `markdown` path still exceeds the budget by ONE cell
-  // under a horizontal margin. That residue is MarkdownText sizing its own
-  // paragraph column instead of taking the row's — a different root cause,
-  // tracked separately; the margin arithmetic itself is fixed on both paths.
+  it("chat_message_markdown_path_respects_the_margin_budget_too", async () => {
+    // Issue #64: a coluna do markdown e um item flex com `flex-basis: auto`, ou
+    // seja, dimensionado pelo CONTEUDO (o paragrafo sem quebra, larguissimo).
+    // Com a linha estreitada pela margem a conta de shrink do yoga sobra uma
+    // celula e o filho transborda o proprio pai.
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" markdown marginLeft={8}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
 
   it("chat_message_vertical_margin_does_not_shrink_the_row", async () => {
     // Only the HORIZONTAL box model steals columns — `marginY` must leave the

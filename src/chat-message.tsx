@@ -79,7 +79,12 @@ export function ChatMessage({
     return (
       <Box {...margin} width={rowWidth}>
         <Text color={tokens.prefix}>{tokens.glyph}</Text>
-        <Box flexDirection="column" flexGrow={1}>
+        {/* `flexBasis={0}` (issue #64): sem ele o basis é `auto`, isto é, a
+            LARGURA DO CONTEÚDO — o parágrafo inteiro sem quebra. O yoga então
+            distribui espaço negativo por shrink, a conta sobra uma célula e a
+            coluna transborda a própria linha. Com basis 0 o `flexGrow` reparte
+            exatamente o espaço que restou do glifo. */}
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <MarkdownText text={children as string} />
         </Box>
       </Box>
