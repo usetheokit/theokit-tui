@@ -23,7 +23,9 @@ const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 export interface AgentTimelineProps extends LayoutMarginProps {
   /**
    * Ordered agent events. ORDERING CONTRACT (plan ADR D2): caller-ordered
-   * array; unique ids (duplicates throw); graduated events are IMMUTABLE —
+   * array; unique ids (duplicates throw) — the tools grouped inside an
+   * `explored` block share that SAME id namespace, and such a block must
+   * carry at least one tool; graduated events are IMMUTABLE —
    * replace the TAIL event with a new object to stream (rows are memoized by
    * object identity). Always pass a NEW array on update (in-place mutation of
    * the same reference has pinned-but-unsupported hybrid behavior — EC-8).
@@ -99,6 +101,71 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
 }
 
 /**
+ * Issue #58 — o bloco `explored` é membro PÚBLICO da união, então um consumidor que monta os eventos
+ * à mão (sem passar por `messagesToAgentEvents`) chega aqui. Sem esta descida, os aninhados ficavam
+ * fora de TODA checagem: ids duplicados só apareciam como aviso de `key` duplicada do React em pleno
+ * render — exatamente onde o error boundary do ink engole o throw e cita o componente errado (F10),
+ * que é a razão de a validação viver nesta fronteira.
+ *
+ * `seen` é o conjunto COMPARTILHADO com o nível de topo: aninhado e topo dividem o mesmo espaço de
+ * nomes, e a mutação também alimenta o cache incremental do M92 (os ids de um bloco já congelado
+ * seguem reservados nos renders seguintes).
+ */
+function validateExploredEvent(
+  event: Extract<AgentEvent, { kind: "explored" }>,
+  seen: Set<string>,
+): void {
+  // O `Array.isArray` foge do escopo "tipo de campo é trabalho do TypeScript" pelo mesmo motivo do
+  // guard de `maxLines` (SEPA F1): sem ele, um `tools` ausente vindo de JS estoura com
+  // "Cannot read properties of undefined" em vez da mensagem do contrato.
+  if (!Array.isArray(event.tools) || event.tools.length === 0) {
+    throw new TypeError(
+      `AgentTimeline: explored event "${event.id}" — tools must be a non-empty array (at least one grouped tool)`,
+    );
+  }
+  for (const tool of event.tools) {
+    if (seen.has(tool.id)) {
+      throw new TypeError(`AgentTimeline: duplicate event id "${tool.id}"`);
+    }
+    seen.add(tool.id);
+    validateToolEvent(tool);
+  }
+}
+
+/**
+ * Um evento do topo: chave reservada, kind conhecido, id inédito e as invariantes do seu kind.
+ *
+ * Separado de `assertValidEvents` para que aquela função cuide só da mecânica do cache incremental
+ * (qual fatia validar) e esta cuide só do CONTRATO de um evento — a descida no `explored` empurrava a
+ * complexidade ciclomática da função única acima do teto do lint.
+ */
+function validateEvent(event: AgentEvent, seen: Set<string>): void {
+  if (event.id === HEADER_SENTINEL_KEY) {
+    throw new TypeError(
+      `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+    );
+  }
+  if (!isAgentEventKind(event.kind)) {
+    throw new TypeError(
+      `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
+    );
+  }
+  if (seen.has(event.id)) {
+    throw new TypeError(`AgentTimeline: duplicate event id "${event.id}"`);
+  }
+  seen.add(event.id);
+  if (event.kind === "message") {
+    validateMessageEvent(event);
+  }
+  if (event.kind === "tool") {
+    validateToolEvent(event);
+  }
+  if (event.kind === "explored") {
+    validateExploredEvent(event, seen);
+  }
+}
+
+/**
  * M92 — valida só a CAUDA quando o array novo é extensão de prefixo do anterior.
  *
  * `assertValidEvents` varria o histórico inteiro a **cada render** — incluindo as linhas já congeladas
@@ -147,26 +214,7 @@ export function assertValidEvents(events: AgentEvent[]): void {
     seen = new Set<string>();
   }
   for (const event of events.slice(inicio)) {
-    if (event.id === HEADER_SENTINEL_KEY) {
-      throw new TypeError(
-        `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
-      );
-    }
-    if (!isAgentEventKind(event.kind)) {
-      throw new TypeError(
-        `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
-      );
-    }
-    if (seen.has(event.id)) {
-      throw new TypeError(`AgentTimeline: duplicate event id "${event.id}"`);
-    }
-    seen.add(event.id);
-    if (event.kind === "message") {
-      validateMessageEvent(event);
-    }
-    if (event.kind === "tool") {
-      validateToolEvent(event);
-    }
+    validateEvent(event, seen);
   }
   // Só grava DEPOIS de validar tudo: um array que lançou não pode virar prefixo confiável, senão o
   // próximo render pularia a checagem que acabou de falhar.

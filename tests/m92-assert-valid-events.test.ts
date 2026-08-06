@@ -89,3 +89,89 @@ describe("M92 — assertValidEvents nos dois caminhos", () => {
     expect(() => assertValidEvents([ruim("h1")])).toThrow(/unknown event kind/);
   });
 });
+
+/**
+ * Issue #58 — `explored` é membro PÚBLICO da união (e exportado), então um consumidor direto de
+ * `AgentTimeline` (sem passar por `messagesToAgentEvents`) alcança este caminho. Antes, o evento caía
+ * fora de toda checagem: ids aninhados não entravam no conjunto de duplicados (React reclamava de
+ * `key` duplicada em pleno render, onde o error boundary do ink engole o throw), `tools: []`
+ * renderizava um cabeçalho "Explored (0)" pelado, e status/exclusividade/maxLines dos aninhados
+ * passavam livres — contrariando o contrato documentado nas props ("unique ids (duplicates throw)").
+ */
+const ferramenta = (id: string, extra: Record<string, unknown> = {}) =>
+  ({
+    id,
+    kind: "tool",
+    name: "read_file",
+    status: "success",
+    ...extra,
+  }) as never;
+const explorado = (id: string, tools: unknown[]) =>
+  ({ id, kind: "explored", tools }) as never;
+
+describe("issue #58 — assertValidEvents desce nos eventos 'explored'", () => {
+  beforeEach(() => {
+    reiniciarValidacaoIncremental();
+  });
+
+  it("id aninhado duplicado dentro do MESMO bloco lanca", () => {
+    expect(() =>
+      assertValidEvents([
+        explorado("e1", [ferramenta("t1"), ferramenta("t1")]),
+      ]),
+    ).toThrow(/duplicate event id "t1"/);
+  });
+
+  it("id aninhado que colide com um id de TOPO lanca", () => {
+    // O conjunto de ids e compartilhado: aninhado e topo vivem no mesmo espaco de nomes.
+    expect(() =>
+      assertValidEvents([ev("t1", "um"), explorado("e1", [ferramenta("t1")])]),
+    ).toThrow(/duplicate event id "t1"/);
+  });
+
+  it("bloco 'explored' vazio lanca em vez de renderizar 'Explored (0)'", () => {
+    expect(() => assertValidEvents([explorado("e1", [])])).toThrow(
+      /at least one/,
+    );
+  });
+
+  it("status invalido num aninhado lanca", () => {
+    expect(() =>
+      assertValidEvents([
+        explorado("e1", [ferramenta("t1", { status: "pendente" })]),
+      ]),
+    ).toThrow(/invalid status/);
+  });
+
+  it("exclusividade output/shell/diff vale para os aninhados", () => {
+    expect(() =>
+      assertValidEvents([
+        explorado("e1", [ferramenta("t1", { output: "x", diff: "y" })]),
+      ]),
+    ).toThrow(/only one of/);
+  });
+
+  it("maxLines invalido num aninhado lanca", () => {
+    expect(() =>
+      assertValidEvents([explorado("e1", [ferramenta("t1", { maxLines: 0 })])]),
+    ).toThrow(/maxLines must be an integer/);
+  });
+
+  it("bloco 'explored' valido NAO e rejeitado", () => {
+    expect(() =>
+      assertValidEvents([
+        explorado("e1", [ferramenta("t1"), ferramenta("t2")]),
+      ]),
+    ).not.toThrow();
+  });
+
+  it("EXTENSAO — os ids aninhados do prefixo continuam reservados na cauda", () => {
+    // A otimizacao do M92 reaproveita o conjunto de ids do render anterior. Se os aninhados nao
+    // entrassem nele, um id ja usado dentro de um bloco congelado voltaria a ser aceito no topo.
+    const bloco = explorado("e1", [ferramenta("t1")]);
+    assertValidEvents([bloco]);
+    expect(() => assertValidEvents([bloco, ev("t1", "colide")])).toThrow(
+      /duplicate event id "t1"/,
+    );
+  });
+});
