@@ -91,3 +91,82 @@ describe("M92 — a derivação é incremental (item 4 do DoD)", () => {
     expect(messagesToAgentEvents([])).toEqual([]);
   });
 });
+
+const leitura = (id: string, path: string) => ({
+  type: "tool-read_file" as const,
+  toolCallId: id,
+  state: "output-available" as const,
+  output: "x",
+  input: { path },
+});
+
+/**
+ * Issue #59 item 11 (F-tui-8) — um run de exploração atravessando a fronteira do `<Static>`.
+ *
+ * O que a graduação exige é que o PREFIXO já congelado não mude: ids e ordem estáveis conforme o
+ * turno cresce. Estes testes fixam o que foi MEDIDO, não o que se supõe — e uma das medições virou
+ * issue à parte: o objeto `explored` é reconstruído a cada projeção, então ele NÃO participa do
+ * caminho rápido do M92 (`events[i] === anterior[i]`). Ver #66.
+ */
+describe("M92 + explored — estabilidade de prefixo através da graduação", () => {
+  it("as ferramentas ANINHADAS sao estaveis por identidade entre projecoes", () => {
+    // É o que sustenta a memoização por mensagem: o conteúdo do bloco não é
+    // realocado, mesmo que o invólucro seja.
+    const m1 = {
+      id: "m1",
+      role: "assistant" as const,
+      parts: [leitura("c1", "a.ts"), leitura("c2", "b.ts")],
+    };
+    const a = messagesToAgentEvents([m1]);
+    const b = messagesToAgentEvents([m1]);
+    const at = (a[0] as unknown as { tools: unknown[] }).tools;
+    const bt = (b[0] as unknown as { tools: unknown[] }).tools;
+    expect(bt[0]).toBe(at[0]);
+    expect(bt[1]).toBe(at[1]);
+  });
+
+  it("o run ABERTO cresce sob o MESMO id — o bloco nao se parte em dois", () => {
+    const m1 = {
+      id: "m1",
+      role: "assistant" as const,
+      parts: [leitura("c1", "a.ts"), leitura("c2", "b.ts")],
+    };
+    const m2 = {
+      id: "m2",
+      role: "assistant" as const,
+      parts: [leitura("c3", "c.ts")],
+    };
+    const p1 = messagesToAgentEvents([m1]);
+    const p2 = messagesToAgentEvents([m1, m2]);
+    expect(p1.map((e) => e.id)).toEqual(["explored-c1"]);
+    expect(p2.map((e) => e.id)).toEqual(["explored-c1"]);
+    expect((p2[0] as unknown as { tools: unknown[] }).tools).toHaveLength(3);
+  });
+
+  it("fechado o run, o PREFIXO de ids e ordem nao muda mais", () => {
+    const m1 = {
+      id: "m1",
+      role: "assistant" as const,
+      parts: [leitura("c1", "a.ts"), leitura("c2", "b.ts")],
+    };
+    const m2 = {
+      id: "m2",
+      role: "assistant" as const,
+      parts: [leitura("c3", "c.ts")],
+    };
+    // MESMA referência nas duas projeções — a memoização por mensagem chaveia em
+    // identidade, então dois literais iguais não são o mesmo caso (foi o que a
+    // primeira versão deste teste errou, e a falha mostrou).
+    const m3 = msg("m3", "pronto");
+    const fechado = messagesToAgentEvents([m1, m2, m3]);
+    const maisTarde = messagesToAgentEvents([m1, m2, m3, msg("m4", "e mais")]);
+    expect(fechado.map((e) => e.id)).toEqual(["explored-c1", "m3::m0"]);
+    expect(maisTarde.map((e) => e.id).slice(0, 2)).toEqual([
+      "explored-c1",
+      "m3::m0",
+    ]);
+    // O evento NÃO-explored do prefixo é estável por identidade — é o contraste
+    // que localiza o gap do #66 no invólucro do bloco, e não na memoização.
+    expect(maisTarde[1]).toBe(fechado[1]);
+  });
+});
