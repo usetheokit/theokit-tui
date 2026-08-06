@@ -104,6 +104,40 @@ pipes — proven by a subprocess degrade matrix in CI.
 - **Evidence-driven:** 450+ tests, per-component render benchmarks with
   committed baselines, snapshot budget discipline.
 
+### Scrollback vs the live region
+
+Ink re-prints the live region on every render. Anything you want printed to the
+terminal **once** — a banner, a session header — must reach scrollback through
+`<Static>`, or it re-prints and visibly duplicates as the user scrolls.
+
+`ChatThread` and `AgentTimeline` already do this for their own history:
+messages/events past the window graduate into `<Static>` and freeze.
+
+For your own one-shot content, the supported slot is their **`header` prop**,
+folded in as the first `<Static>` item:
+
+```tsx
+<Box flexDirection="column" width={72}>
+  <AgentTimeline
+    header={<WelcomeBanner name="Theo" version={VERSION} />}
+    events={events}
+  />
+</Box>
+```
+
+Two constraints come with it:
+
+- **Mount-frozen.** The header is captured on the first render — later changes
+  to its content, identity or presence are ignored. It is a banner, not state.
+- **Size it explicitly.** `<Static>`'s box is content-sized, so percentage
+  widths may collapse. Give the header — or the box around the timeline, as
+  above — concrete cell counts.
+
+Rendering that same banner as a plain child of your app (outside the timeline)
+puts it in the live region, where it duplicates on scroll. There is no general
+`insertHistory` primitive yet — see
+[#55](https://github.com/usetheodev/theokit-tui/issues/55).
+
 ## Status
 
 Designed for coding-agent CLIs and chat surfaces; the API follows semver and
