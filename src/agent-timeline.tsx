@@ -199,6 +199,17 @@ function ThinkingRow({ text }: { text: string }) {
 // it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
 // (EC-7). Empty output collapses to the bare row (`null` and `false` are
 // equally non-renderable to ToolCallCard's hasRenderableBody).
+/**
+ * Line budget the inline diff falls back to when the event carries no
+ * `maxLines` (issue #57).
+ *
+ * `DiffViewer` has no default of its own — it only VALIDATES the prop — so an
+ * uncapped branch renders every row of a big `apply_patch` result, while the
+ * SAME payload sent as `output` stops at ToolResult's 10. Higher than 10
+ * because this budget is global and counts the per-file header/stat rows.
+ */
+const DEFAULT_DIFF_MAX_LINES = 20;
+
 function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
   const maxLines =
     event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
@@ -207,7 +218,13 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
   // header already names the tool/file); everything else goes through
   // ToolResult (output / shell modes).
   if (event.diff !== undefined && event.diff !== "") {
-    return <DiffViewer patch={event.diff} background {...maxLines} />;
+    return (
+      <DiffViewer
+        patch={event.diff}
+        background
+        maxLines={event.maxLines ?? DEFAULT_DIFF_MAX_LINES}
+      />
+    );
   }
   const hasBody =
     (event.output !== undefined && event.output !== "") ||
