@@ -279,6 +279,46 @@ export const DEFAULT_EXPLORE_TOOLS: readonly string[] = [
  * A lone read stays a normal card (Codex only collapses when it reduces noise). */
 const EXPLORE_GROUP_MIN = 2;
 
+/**
+ * Cache do INVÓLUCRO de um bloco `explored`, chaveado pela primeira ferramenta do run (#66).
+ *
+ * Os eventos de ferramenta já têm identidade estável (`cacheDeEventos`), mas o bloco era um literal
+ * novo a cada projeção — e a projeção roda por delta de token. Como a detecção de extensão de prefixo
+ * do `assertValidEvents` é por identidade, o primeiro `explored` do array nunca casava e **todo render
+ * caía na varredura completa**, que é o custo que o M92 existe para remover.
+ *
+ * A chave é o objeto da primeira ferramenta (não o id): `WeakMap`, mesmo motivo do `cacheDeEventos` —
+ * reter um evento descartado seria vazamento numa sessão longa.
+ *
+ * O reuso é por CONTEÚDO, nunca por id: enquanto o run está aberto ele cresce sob o mesmo id, e
+ * devolver o bloco antigo congelaria a leitura nova fora da tela.
+ */
+const cacheDeBlocos = new WeakMap<
+  object,
+  { tools: readonly AgentToolEvent[]; evento: AgentEvent }
+>();
+
+function blocoExplorado(
+  first: AgentToolEvent,
+  tools: AgentToolEvent[],
+): AgentEvent {
+  const anterior = cacheDeBlocos.get(first);
+  if (
+    anterior !== undefined &&
+    anterior.tools.length === tools.length &&
+    anterior.tools.every((t, i) => t === tools[i])
+  ) {
+    return anterior.evento;
+  }
+  const evento: AgentEvent = {
+    id: `explored-${first.id}`,
+    kind: "explored",
+    tools,
+  };
+  cacheDeBlocos.set(first, { tools, evento });
+  return evento;
+}
+
 /** Collapse consecutive successful/running read-only tool events into
  * `explored` groups. A failed explore stays a normal card so its error stays
  * visible; a non-tool event (message/thinking) breaks the run. */
@@ -291,7 +331,7 @@ function groupExploration(
   const flush = (): void => {
     if (run.length >= EXPLORE_GROUP_MIN) {
       const first = run[0] as AgentToolEvent;
-      out.push({ id: `explored-${first.id}`, kind: "explored", tools: run });
+      out.push(blocoExplorado(first, run));
     } else {
       out.push(...run);
     }

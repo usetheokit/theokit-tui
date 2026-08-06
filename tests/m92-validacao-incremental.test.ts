@@ -143,6 +143,49 @@ describe("M92 + explored — estabilidade de prefixo através da graduação", (
     expect((p2[0] as unknown as { tools: unknown[] }).tools).toHaveLength(3);
   });
 
+  it("o bloco explored e ESTAVEL por identidade quando o conteudo nao mudou", () => {
+    // Issue #66: o invólucro era um literal novo a cada projeção, então a
+    // checagem de extensão de prefixo do M92 (`events[i] === anterior[i]`)
+    // falhava no primeiro `explored` e TODO render caía na varredura completa —
+    // o custo que o M92 existe para remover.
+    const m1 = {
+      id: "m1",
+      role: "assistant" as const,
+      parts: [leitura("c1", "a.ts"), leitura("c2", "b.ts")],
+    };
+    const a = messagesToAgentEvents([m1]);
+    const b = messagesToAgentEvents([m1]);
+    expect(a[0]!.kind).toBe("explored");
+    expect(b[0]).toBe(a[0]);
+    // O array `tools` também: realocá-lo já basta para quebrar quem compara por
+    // identidade linha a linha.
+    expect((b[0] as unknown as { tools: unknown[] }).tools).toBe(
+      (a[0] as unknown as { tools: unknown[] }).tools,
+    );
+  });
+
+  it("o bloco NAO e reusado quando o run cresce — reuso e por CONTEUDO, nao por id", () => {
+    // O run aberto muda de conteúdo de propósito sob o mesmo id. Reusar por id
+    // congelaria a leitura nova fora da tela.
+    const m1 = {
+      id: "m1",
+      role: "assistant" as const,
+      parts: [leitura("c1", "a.ts"), leitura("c2", "b.ts")],
+    };
+    const m2 = {
+      id: "m2",
+      role: "assistant" as const,
+      parts: [leitura("c3", "c.ts")],
+    };
+    const antes = messagesToAgentEvents([m1]);
+    const depois = messagesToAgentEvents([m1, m2]);
+    expect(depois[0]!.id).toBe(antes[0]!.id);
+    expect(depois[0]).not.toBe(antes[0]);
+    expect((depois[0] as unknown as { tools: unknown[] }).tools).toHaveLength(
+      3,
+    );
+  });
+
   it("fechado o run, o PREFIXO de ids e ordem nao muda mais", () => {
     const m1 = {
       id: "m1",
