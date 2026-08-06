@@ -350,10 +350,19 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
         <Text bold>Explored</Text>
         <Text dimColor>{` (${tools.length})`}</Text>
       </Box>
+      {/* Calha + corpo em colunas separadas (o padrão `lineRow` do DiffViewer):
+          com prefixo e resumo no MESMO <Text>, um alvo longo quebrava na coluna
+          0 e a continuação se alinhava com o `⏺` do bloco em vez do galho
+          (#59 item 5). `flexShrink={0}` mantém a calha inteira quando aperta. */}
       {tools.map((tool) => (
-        <Text key={tool.id} dimColor>
-          {`  └ ${exploreSummary(tool)}`}
-        </Text>
+        <Box key={tool.id}>
+          <Box flexShrink={0}>
+            <Text dimColor>{"  └ "}</Text>
+          </Box>
+          <Text dimColor wrap="wrap">
+            {exploreSummary(tool)}
+          </Text>
+        </Box>
       ))}
     </Box>
   );

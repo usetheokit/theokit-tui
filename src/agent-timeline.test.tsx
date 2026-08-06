@@ -757,3 +757,60 @@ describe("issue #57 — the inline-diff branch needs a default line budget", () 
     expect(plain).not.toMatch(/more lines/);
   });
 });
+
+describe("issue #59 item 5 — as linhas do Explored mantem a indentacao ao quebrar", () => {
+  // A linha e `  └ <resumo>`. Como o prefixo e o resumo viviam no MESMO <Text>,
+  // um alvo longo quebrava na COLUNA 0 e a continuacao se alinhava com o `⏺` do
+  // bloco, nao com o galho — o padrao `lineRow` do DiffViewer (calha
+  // flexShrink=0 + corpo wrap="wrap") existe justamente para isso.
+  const longPath =
+    "packages/agent-runtime/src/adapters/streaming/very-long-directory-name/deep-module.ts";
+
+  const frameEstreito = async (): Promise<string> =>
+    renderFrame(
+      <Box width={40}>
+        <AgentTimeline
+          events={[
+            {
+              id: "e1",
+              kind: "explored",
+              tools: [
+                {
+                  id: "c1",
+                  kind: "tool",
+                  name: "read_file",
+                  status: "success",
+                  input: { path: longPath },
+                },
+                {
+                  id: "c2",
+                  kind: "tool",
+                  name: "list_dir",
+                  status: "success",
+                  input: { path: "src" },
+                },
+              ],
+            },
+          ]}
+        />
+      </Box>,
+    );
+
+  it("a continuacao de um alvo longo NAO comeca na coluna 0", async () => {
+    const linhas = stripAnsi(await frameEstreito())
+      .split("\n")
+      .filter((l) => l.trim() !== "");
+    const iGalho = linhas.findIndex((l) => l.includes("└"));
+    expect(iGalho).toBeGreaterThanOrEqual(0);
+    // A linha seguinte e continuacao (o proximo galho so vem depois dela).
+    const continuacao = linhas[iGalho + 1] ?? "";
+    expect(continuacao.includes("└")).toBe(false); // de fato quebrou
+    expect(continuacao).toMatch(/^\s{4}/); // indentada sob o galho
+  });
+
+  it("um alvo curto continua renderizando `  └ ` colado no resumo", async () => {
+    // Nao-regressao de bytes: o caminho comum nao pode mudar.
+    const frame = stripAnsi(await frameEstreito());
+    expect(frame).toContain("  └ List src");
+  });
+});
