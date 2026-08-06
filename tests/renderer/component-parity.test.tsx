@@ -19,6 +19,7 @@ import {
   ToolCall,
   ToolCallCard,
   ToolResult,
+  TheoTUIProvider,
   WelcomeBanner,
   type ChatThreadMessage,
 } from "../../src/index.js";
@@ -190,6 +191,19 @@ const scenes: Scene[] = [
   {
     name: "ToolResult",
     element: <ToolResult lines={["line one", "line two"]} />,
+  },
+  {
+    // #40: `⏺` (U+23FA) e o ORACULO de largura entre os dois renderers — uma
+    // glifo de apresentacao-emoji que o string-width 7.x contava como 2 e o 8.x
+    // conta como 1. O tema PADRAO ja usa `⏺` hoje, entao a cobertura existe por
+    // acidente; esta cena a fixa via override para que o oraculo sobreviva a uma
+    // futura troca do glifo padrao.
+    name: "RecordGlyphWidth",
+    element: (
+      <TheoTUIProvider theme={{ role: { assistant: { glyph: "⏺  " } } }}>
+        <ChatMessage role="assistant">Hello there</ChatMessage>
+      </TheoTUIProvider>
+    ),
   },
 ];
 
