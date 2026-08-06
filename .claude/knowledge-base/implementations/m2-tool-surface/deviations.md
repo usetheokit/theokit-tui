@@ -1,9 +1,0 @@
-# Logged deviations — m2-tool-surface
-
-| # | Task | Deviation | Why | Mitigation |
-|---|---|---|---|---|
-| DV-1 | T2.2 | Shell-envelope branch landed during T2.1 GREEN (EC-2 source-exclusivity forced `resolveContent` to understand `shell`, and the envelope came with it) — T2.2's 10 tests passed first-run (protection suite, not RED-first) | Parsimony miss at T2.1: implemented one task ahead | All 10 T2.2 oracles assert concrete strings/absences (not vacuous); EC-3/EC-7/EC-12 verified against implementation reading; flagged for /review cross-validation |
-| DV-2 | T1.2/T2.1 | Two commits carried a follow-up (prettier pass / SEPA batch) instead of one atomic commit per task (SEPA F10) | gates run caught format after commit | Process fixed from T2.2 on: prettier BEFORE commit, commit only on gates=0 |
-| DV-3 | T2.2 | ~~Truncation into the stderr block drops the `stderr:` label~~ **RESOLVED in the review batch** (dom-frontend-1): label now re-renders PINNED outside the budget (like the exit badge); fully-capped stderr renders `stderr: (capped)` (arch-4) | EC-13 color-independence must survive truncation | Tests: `truncation_past_stderr_label_keeps_pinned_label`, `stderr_fully_capped_renders_capped_label` |
-| DV-4 | T3.2 | EC-15 bench guard is an END-OF-RUN check (total stdout frames > mount-time count), weaker than the plan's "strictly increases across the 150 transition steps" | Ink throttles stdout — individual steps legitimately batch into one flush; a per-step assertion would flake by construction | Review xval-2/dom-testing-1: original guard was dead code, replaced with a real stdout-frames check; per-step strictness rejected as flaky |
-| DV-5 | T3.1 | Plan named 2 standalone no_color tests; implemented as assertions inside the existing subprocess probe test (one spawn instead of three) | Subprocess spawns cost ~2s each; semantics fully preserved | Review xval-3: line-anchored o/x/spinner asserts added in the review batch |
