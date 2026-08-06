@@ -35,7 +35,7 @@ describe("benchmark baseline M12 (T2.2)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m12-welcome-banner-baseline.json",
+          "../benchmarks/baselines/m12-welcome-banner-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -77,7 +77,7 @@ describe("benchmark baseline M13 (T3.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m0-chat-message-baseline.json",
+          "../benchmarks/baselines/m0-chat-message-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -113,7 +113,7 @@ describe("benchmark baseline M14 (T2.2)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m14-status-bar-baseline.json",
+          "../benchmarks/baselines/m14-status-bar-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -149,7 +149,7 @@ describe("benchmark baseline M15 (T3.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m15-composer-baseline.json",
+          "../benchmarks/baselines/m15-composer-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -186,7 +186,7 @@ describe("benchmark baseline M17 (T3.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m17-renderer-skeleton-baseline.json",
+          "../benchmarks/baselines/m17-renderer-skeleton-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -229,7 +229,7 @@ describe("benchmark baseline M18 (T3.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m18-renderer-layout-baseline.json",
+          "../benchmarks/baselines/m18-renderer-layout-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -261,7 +261,7 @@ describe("benchmark baseline M20 (T3.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m20-comparative-baseline.json",
+          "../benchmarks/baselines/m20-comparative-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -305,7 +305,10 @@ describe("benchmark baseline M21 editor (T3.1)", () => {
   it("m21_editor_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL("../docs/benchmarks/m21-editor-baseline.json", import.meta.url),
+        new URL(
+          "../benchmarks/baselines/m21-editor-baseline.json",
+          import.meta.url,
+        ),
         "utf8",
       ),
     ) as {

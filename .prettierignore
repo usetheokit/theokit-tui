@@ -1,7 +1,7 @@
 dist/
 coverage/
 pnpm-lock.yaml
-docs/benchmarks/*.json
+benchmarks/baselines/*.json
 .claude/
 LICENSE
 NOTICE

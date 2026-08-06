@@ -166,12 +166,7 @@ async function main(): Promise<void> {
     methodology:
       "Same 30-message ChatThread, 40 streaming-update frames, on both engines. Axes: ms/frame AND bytes_written (mean ± std_dev over 5 runs, FORCE_COLOR=1). v4 = our layout+differential CSI-2026 engine (byte-counting Terminal); ink = Ink's real render into a byte-counting stdout (log-update). bytes_written is the differential engine's headline advantage.",
   };
-  const outDir = join(
-    dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "docs",
-    "benchmarks",
-  );
+  const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "m20-comparative-baseline.json");
   writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");

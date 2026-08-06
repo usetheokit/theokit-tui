@@ -7,7 +7,8 @@ banner — one coherent primitive set for coding-agent CLIs, built on
 
 Your first agent turn in the terminal (TTFATT) is the north-star: `npm i` →
 mount a provider + thread + stream adapter → a streamed agent turn renders.
-Target: under 10 minutes. Measured record: [`docs/ttfatt.md`](docs/ttfatt.md).
+Target: under 10 minutes. Measured record:
+[`wiki/benchmarks/ttfatt.md`](wiki/benchmarks/ttfatt.md).
 
 ```
 ╭──────────────────────────────────────────────────────────╮

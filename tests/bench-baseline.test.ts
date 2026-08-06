@@ -29,7 +29,7 @@ describe("benchmark baseline (T3.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m0-chat-message-baseline.json",
+          "../benchmarks/baselines/m0-chat-message-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -112,7 +112,7 @@ describe("benchmark baseline M1 (T4.1)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m1-chat-thread-baseline.json",
+          "../benchmarks/baselines/m1-chat-thread-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -188,7 +188,7 @@ describe("benchmark baseline M2 (T3.2)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m2-tool-cards-baseline.json",
+          "../benchmarks/baselines/m2-tool-cards-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -259,7 +259,7 @@ describe("benchmark baseline M3 (T3.2)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m3-agent-timeline-baseline.json",
+          "../benchmarks/baselines/m3-agent-timeline-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -348,7 +348,7 @@ describe("benchmark baseline M4 (T3.2)", () => {
     const baseline = JSON.parse(
       readFileSync(
         new URL(
-          "../docs/benchmarks/m4-diff-viewer-baseline.json",
+          "../benchmarks/baselines/m4-diff-viewer-baseline.json",
           import.meta.url,
         ),
         "utf8",
@@ -424,7 +424,10 @@ describe("benchmark baseline M5 (T3.2)", () => {
   it("m5_metrics_baseline_exists_with_mode_matrix", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL("../docs/benchmarks/m5-metrics-baseline.json", import.meta.url),
+        new URL(
+          "../benchmarks/baselines/m5-metrics-baseline.json",
+          import.meta.url,
+        ),
         "utf8",
       ),
     ) as M5Baseline;

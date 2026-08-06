@@ -32,7 +32,7 @@ import { VirtualTerminal } from "./virtual-terminal.js";
 // extends the M18 parity-corpus (primitives + 9 components) to the full suite,
 // incl. the Static-driven ChatThread/AgentTimeline (scrollback on the new
 // engine). DoD: ≥ 90% byte-identical (target 100%); every divergence is
-// documented in docs/renderer/m20-parity-report.md with a scoped cause.
+// documented in wiki/renderer/m20-component-parity.md with a scoped cause.
 
 const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*m", "g");
 
