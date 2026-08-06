@@ -69,3 +69,31 @@ describe("ChatComposer onChange", () => {
     inst.unmount();
   });
 });
+
+describe("issue #59 item 3 — identidade instavel do onChange nao redispara", () => {
+  it("re-render com callback INLINE novo e texto igual nao chama de novo", async () => {
+    // F-arch-7 / F-tui-10: o efeito dependia de `[buffer.text, onChange]`, entao
+    // um `onChange={(t) => algo(t)}` — a forma que todo consumidor escreve —
+    // redisparava a cada render do host com o texto INALTERADO. O contrato
+    // documentado e "apos o mount com o texto inicial e a cada edicao"; disparar
+    // por troca de identidade nao e nenhum dos dois.
+    const spy = vi.fn();
+    // O spy e estavel, mas a funcao PASSADA e nova a cada render — o caso real.
+    const tree = () => (
+      <TheoTUIProvider>
+        <ChatComposer onSubmit={() => {}} onChange={(t) => spy(t)} />
+      </TheoTUIProvider>
+    );
+    const inst = render(tree());
+    await waitFor(() => spy.mock.calls.length > 0);
+    await tick();
+    const antes = spy.mock.calls.length;
+
+    inst.rerender(tree());
+    await tick();
+    await tick();
+
+    expect(spy.mock.calls.length).toBe(antes);
+    inst.unmount();
+  });
+});
