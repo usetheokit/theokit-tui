@@ -229,24 +229,6 @@ describe("messagesToAgentEvents tool-result routing", () => {
   });
 
   it("collapses consecutive read-only tools into one explored group", () => {
-    const explore = (
-      name: string,
-      id: string,
-      input: unknown,
-    ): UIMessageLike => ({
-      id: `msg-${id}`,
-      role: "assistant",
-      parts: [
-        {
-          type: `tool-${name}`,
-          toolCallId: id,
-          state: "output-available",
-          output: "ok",
-          input,
-        },
-      ],
-    });
-    // Flatten three explores across messages into one thread turn.
     const events = messagesToAgentEvents([
       {
         id: "m1",
@@ -276,7 +258,6 @@ describe("messagesToAgentEvents tool-result routing", () => {
         ],
       },
     ]);
-    void explore;
     expect(events).toHaveLength(1);
     const grouped = events[0] as {
       kind: string;
@@ -309,6 +290,85 @@ describe("messagesToAgentEvents tool-result routing", () => {
     ]);
     expect(events).toHaveLength(1);
     expect(events[0]?.kind).toBe("tool");
+  });
+
+  // Issue #59 item 8 (F-tests-7): o predicado `explorable` exige status
+  // `success` OU `running`. Os dois ramos estavam sem teste — so o caminho
+  // `success` era exercitado, entao trocar o predicado por `status === "success"`
+  // (ou dropar a leitura em voo do grupo) passava batido.
+  it("a FAILED read-only tool stays a discrete card and breaks the run", () => {
+    const events = messagesToAgentEvents([
+      {
+        id: "m1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-list_dir",
+            toolCallId: "c1",
+            state: "output-available",
+            output: "a",
+            input: { path: "src" },
+          },
+          {
+            type: "tool-read_file",
+            toolCallId: "c2",
+            state: "output-available",
+            output: "x",
+            input: { path: "a.ts" },
+          },
+          {
+            type: "tool-read_file",
+            toolCallId: "c3",
+            state: "output-error",
+            errorText: "ENOENT",
+            input: { path: "sumiu.ts" },
+          },
+        ],
+      },
+    ]);
+    // Os dois primeiros agrupam; o que falhou NAO entra — uma leitura que deu
+    // errado e informacao que o usuario precisa ver, nao uma linha resumida.
+    expect(events).toHaveLength(2);
+    const grouped = events[0] as { kind: string; tools: { id: string }[] };
+    expect(grouped.kind).toBe("explored");
+    expect(grouped.tools.map((t) => t.id)).toEqual(["c1", "c2"]);
+    expect(events[1]).toMatchObject({
+      kind: "tool",
+      id: "c3",
+      status: "failed",
+    });
+  });
+
+  it("a RUNNING read-only tool joins the group", () => {
+    const events = messagesToAgentEvents([
+      {
+        id: "m1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-list_dir",
+            toolCallId: "c1",
+            state: "output-available",
+            output: "a",
+            input: { path: "src" },
+          },
+          {
+            type: "tool-read_file",
+            toolCallId: "c2",
+            state: "input-available",
+            input: { path: "em-voo.ts" },
+          },
+        ],
+      },
+    ]);
+    expect(events).toHaveLength(1);
+    const grouped = events[0] as {
+      kind: string;
+      tools: { id: string; status: string }[];
+    };
+    expect(grouped.kind).toBe("explored");
+    expect(grouped.tools.map((t) => t.id)).toEqual(["c1", "c2"]);
+    expect(grouped.tools[1]?.status).toBe("running");
   });
 
   it("a message between reads breaks the run (no group)", () => {

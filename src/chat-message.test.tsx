@@ -235,6 +235,15 @@ describe("M19 — assistant text word-wraps to the terminal (no mid-word hard-wr
     const collapsed = frame.replace(/\s+/g, " ").trim();
     expect(collapsed).toContain("the check exited zero and printed");
   });
+
+  // Issue #59 item 9 (F-tests-5) — NAO coberto aqui, e a razao esta medida.
+  // O pedido era travar o ramo RAW (`<Text wrap="wrap">` com a largura fixada)
+  // como este teste trava o ramo markdown. Escrevi e testei por mutacao:
+  // removendo `width={rowWidth}` do ramo raw a suite inteira continua VERDE,
+  // dentro e fora de `<Static>`. Sob o ink-testing-library a caixa raiz do ink
+  // ja e a largura do terminal, entao o texto quebra de qualquer jeito e a
+  // ausencia do pin e inobservavel. Um teste que passa nos dois estados nao
+  // trava nada — travar isso de verdade exige TTY real (tests/renderer/*pty*).
 });
 
 // The widest rendered line in terminal CELLS — `string-width` strips the SGR
