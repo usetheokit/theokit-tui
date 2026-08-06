@@ -58,6 +58,22 @@ export function pickMargin(props: LayoutMarginProps): LayoutMarginProps {
 }
 
 /**
+ * How many COLUMNS the horizontal margin box takes from the row.
+ *
+ * A component that pins its root `<Box>` to the terminal width must subtract
+ * this, otherwise the margin is ADDED to that width and the row overflows the
+ * terminal (issue #56). Yoga's precedence is the CSS one — the specific side
+ * wins over the axis shorthand, which wins over `margin` — so it is resolved
+ * here once instead of at each call site.
+ *
+ * `marginY` is deliberately ignored: vertical margin costs rows, not columns.
+ */
+export function horizontalMargin(props: LayoutMarginProps): number {
+  const axis = props.marginX ?? props.margin ?? 0;
+  return (props.marginLeft ?? axis) + (props.marginRight ?? axis);
+}
+
+/**
  * The mirror of {@link pickMargin}: return a props object with the margin keys
  * REMOVED. A component that owns its root `<Box>` (carrying the margin) but
  * forwards the remaining props to a child component uses this to avoid applying

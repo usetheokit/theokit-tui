@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+import stringWidth from "string-width";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
@@ -233,5 +234,67 @@ describe("M19 — assistant text word-wraps to the terminal (no mid-word hard-wr
     expect(frame).toContain("\n"); // it actually wrapped onto multiple lines
     const collapsed = frame.replace(/\s+/g, " ").trim();
     expect(collapsed).toContain("the check exited zero and printed");
+  });
+});
+
+// The widest rendered line in terminal CELLS — `string-width` strips the SGR
+// escapes itself and is EAW/grapheme aware, so it measures what the terminal
+// actually paints rather than the string length.
+const widestLine = (frame: string): number =>
+  Math.max(...frame.split("\n").map((line) => stringWidth(line)));
+
+describe("issue #56 — a horizontal margin must not push the row past the terminal", () => {
+  // The M19 word-wrap fix pins the row to `stdout.columns` so `wrap="wrap"` has a
+  // bound. Spreading a horizontal margin onto that SAME Box makes the row
+  // `columns + margin` wide, so the terminal hard-wraps it MID-WORD again — the
+  // exact defect M19 removed, frozen into scrollback inside `<Static>`.
+  // ink-testing-library pins `stdout.columns` to 100, which is the budget here.
+  const TERMINAL_COLUMNS = 100;
+  const paragraph = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
+
+  it("chat_message_with_margin_left_stays_within_the_terminal_width", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" marginLeft={4}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  it("chat_message_margin_x_shorthand_is_subtracted_from_both_sides", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" marginX={6}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  it("chat_message_margin_shorthand_is_subtracted_from_both_sides", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" margin={5}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  // NOT covered here: the `markdown` path still exceeds the budget by ONE cell
+  // under a horizontal margin. That residue is MarkdownText sizing its own
+  // paragraph column instead of taking the row's — a different root cause,
+  // tracked separately; the margin arithmetic itself is fixed on both paths.
+
+  it("chat_message_vertical_margin_does_not_shrink_the_row", async () => {
+    // Only the HORIZONTAL box model steals columns — `marginY` must leave the
+    // width budget byte-identical to the no-margin render.
+    const plain = await renderFrame(
+      <ChatMessage role="assistant">{paragraph}</ChatMessage>,
+    );
+    const withMarginY = await renderFrame(
+      <ChatMessage role="assistant" marginY={2}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(withMarginY.trim()).toBe(plain.trim());
   });
 });

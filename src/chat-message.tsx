@@ -2,6 +2,7 @@ import { Box, Text, useStdout } from "ink";
 import type { ReactNode } from "react";
 
 import type { LayoutMarginProps } from "./layout-props.js";
+import { horizontalMargin } from "./layout-props.js";
 import { MarkdownText } from "./markdown-text.js";
 import { useTheoTheme } from "./theme.js";
 import { unionMessage } from "./union-message.js";
@@ -55,7 +56,14 @@ export function ChatMessage({
   // width room and never engages — a long paragraph overflows and the terminal hard-wraps it MID-WORD.
   // Fallback 80 for a non-TTY / piped stdout (Ink re-renders on resize, so this follows the terminal).
   const { stdout } = useStdout();
-  const rowWidth = stdout?.columns ?? 80;
+  // The margin box is spread onto this SAME Box, so it is ADDED to the pinned
+  // width — subtract it or a `marginLeft` row renders `columns + margin` wide
+  // and the terminal hard-wraps it mid-word again (issue #56). Floor at 1: a
+  // margin wider than the terminal must still leave a renderable column.
+  const rowWidth = Math.max(
+    1,
+    (stdout?.columns ?? 80) - horizontalMargin(margin),
+  );
   // `text` may be undefined (= terminal default color). Ink's `color` prop
   // forbids an explicit `undefined` under exactOptionalPropertyTypes — omit
   // the prop entirely instead (SEPA iteration-4 finding 1).
