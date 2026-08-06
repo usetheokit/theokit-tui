@@ -138,6 +138,27 @@ puts it in the live region, where it duplicates on scroll. There is no general
 `insertHistory` primitive yet — see
 [#55](https://github.com/usetheodev/theokit-tui/issues/55).
 
+## Development
+
+Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).
+
+```bash
+pnpm install --frozen-lockfile
+pnpm gates   # format:check + lint + typecheck + test + build — what CI runs
+```
+
+**`auto-install-peers=false` in `.npmrc` is deliberate — do not flip it.** `figlet` and
+`lowlight` are _optional_ peers. `figlet` is deliberately **not** installed, and
+`figlet-art.test.ts → returns_null_when_figlet_is_absent` proves the real import
+failure degrades to `null` instead of throwing — auto-installing peers would put
+`figlet` in the tree and that test would stop testing anything. Peers a test
+genuinely needs are explicit devDependencies instead (`react`, and `lowlight` so
+the syntax-highlight path can run; `code-block-absent.test.tsx` covers _its_
+absent case by mocking the module, not by emptying the tree).
+
+So a missing-peer warning for `figlet` during install is expected — not something
+to fix by changing that flag.
+
 ## Status
 
 Designed for coding-agent CLIs and chat surfaces; the API follows semver and
