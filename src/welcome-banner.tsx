@@ -5,6 +5,7 @@ import type { LayoutMarginProps } from "./layout-props.js";
 import { pickMargin } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
+import { ArtBlock } from "./banner.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
 // gemini-cli-style startup banner as a LEAF primitive. Color exclusively via
@@ -24,6 +25,17 @@ export interface WelcomeBannerProps extends LayoutMarginProps {
   /** One dim line per entry; entries are single-line (the array IS the
    * multi-line mechanism — embedded newlines throw). */
   hints?: readonly string[];
+  /**
+   * U-7 — a multi-line ASCII-art string rendered in place of the bold `name`, accent-themed and
+   * verbatim. Absent → the bold `name` degrade, exactly as in `Banner`, so the two components share
+   * one vocabulary.
+   *
+   * `Banner` had `art` and no `aside`; this component had `aside` and no `art`. The layout that
+   * actually ships in a coding agent — art on the left, a hints panel on the right — was therefore
+   * reachable from neither, and a consumer had to rebuild the whole box by hand to get both.
+   * Generate the string with `renderFigletArt` (optional peer).
+   */
+  art?: string;
   /** Single free-composition slot inside the box (D1 — no layout props). */
   children?: ReactNode;
   /**
@@ -137,17 +149,21 @@ function staticBannerTree(
   accent: string,
   boxProps: ComponentProps<typeof Box>,
 ) {
-  const { name, tagline, hints, children, aside } = props;
+  const { name, tagline, hints, children, aside, art } = props;
   const taglineLines =
     tagline === undefined
       ? []
       : tagline.split("\n").filter((line) => line.trim() !== "");
   const mainContent = (
     <>
-      <Text wrap="truncate-end" color={accent} bold>
-        {name}
-        {version === undefined ? "" : <Text dimColor> v{version}</Text>}
-      </Text>
+      {art === undefined ? (
+        <Text wrap="truncate-end" color={accent} bold>
+          {name}
+          {version === undefined ? "" : <Text dimColor> v{version}</Text>}
+        </Text>
+      ) : (
+        <ArtBlock art={art} accent={accent} />
+      )}
       {taglineLines.map((line, index) => (
         <Text key={`tagline-${index}`} wrap="truncate-end">
           {line}

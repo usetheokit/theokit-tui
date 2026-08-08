@@ -328,3 +328,54 @@ describe("WelcomeBanner", () => {
     expect(lines.at(-1)).toContain("thread below");
   });
 });
+
+/**
+ * U-7 — ASCII art alongside the right-hand aside.
+ *
+ * `Banner` renders art and has no `aside`; `WelcomeBanner` has the `aside` column and can only
+ * render its `name` as bold text. So the one layout Claude Code actually uses — art on the left,
+ * "Tips for getting started" on the right — was reachable from neither component.
+ *
+ * Measured from a consumer (TheoCode) that rebuilt the whole two-column welcome by hand, including
+ * the responsive gating this component already does, because it needed both halves at once. The
+ * docstring of `aside` even names the two headings that consumer wrote out.
+ *
+ * `art` degrades to the bold `name` exactly as it does in `Banner`, so the vocabulary is one.
+ */
+describe("U-7 — art composes with the aside", () => {
+  const ART = " _____\n|_   _|\n  |_|";
+
+  it("test_art_renders_in_place_of_the_bold_name", () => {
+    const frame = stripAnsi(renderBanner({ name: "TheoCode", art: ART }));
+
+    expect(frame).toContain("|_   _|");
+  });
+
+  it("test_art_and_aside_render_together", () => {
+    const frame = stripAnsi(
+      renderBanner({
+        name: "TheoCode",
+        art: ART,
+        aside: <Text>Tips for getting started</Text>,
+      }),
+    );
+
+    expect(frame).toContain("|_   _|");
+    expect(frame).toContain("Tips for getting started");
+  });
+
+  it("test_absent_art_still_degrades_to_the_bold_name", () => {
+    // Anti-vacuity floor: the existing single-column behaviour must be untouched.
+    const frame = stripAnsi(renderBanner({ name: "TheoCode" }));
+
+    expect(frame).toContain("TheoCode");
+  });
+
+  it("test_the_version_still_shows_on_the_degrade_path", () => {
+    const frame = stripAnsi(
+      renderBanner({ name: "TheoCode", version: "0.1.0" }),
+    );
+
+    expect(frame).toContain("v0.1.0");
+  });
+});
