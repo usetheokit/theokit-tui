@@ -245,7 +245,15 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
     );
   }
 
-  const width = Math.min(columns, MAX_WIDTH);
+  // U-7c — MAX_WIDTH was sized for the SINGLE-column banner: art or name, tagline, hints. A layout
+  // with an aside has to hold art + gutter + aside, which routinely exceeds 60 cells, and capping it
+  // there did not shrink the content — it just let the content run past the border.
+  //
+  // So the cap applies to the one-column layout, where it protects line length, and the two-column
+  // layout takes the terminal it was given (still bounded by `columns`, so it never exceeds the
+  // real screen). This is what the consumer that reported it was doing by hand with `width={cols-2}`.
+  const width =
+    props.aside === undefined ? Math.min(columns, MAX_WIDTH) : columns;
   // One box definition shared by the reveal frame and the static tree. The
   // consumer margin is spread LAST so it wins over any box default.
   const boxProps = {

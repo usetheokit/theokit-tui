@@ -454,3 +454,61 @@ describe("U-7b — art is not compressed by the aside", () => {
     ).toBe(3);
   });
 });
+
+/**
+ * U-7c — the frame contains its own content.
+ *
+ * U-7 added `art` and U-7b stopped the aside compressing it, and adoption still failed: the box caps
+ * itself at MAX_WIDTH (60 cells), which was sized for the single-column banner. A two-column layout
+ * needs art + gutter + aside, so with a real aside the content simply ran past the right border.
+ *
+ * This asserts CONTAINMENT, not presence — and that distinction is the finding. The consumer's own
+ * suite passed on the overflowing version, because every string it looked for was there; the text
+ * was just outside the frame. A presence test cannot see a layout defect.
+ */
+describe("U-7c — content stays inside the border", () => {
+  const ART = ["█".repeat(34), "█".repeat(34), "█".repeat(34)].join("\n");
+  const ASIDE = (
+    <>
+      <Text>Tips for getting started</Text>
+      <Text>/help · @ mention a file · esc interrupts</Text>
+    </>
+  );
+
+  /** Widest rendered row, in cells. */
+  const widestRow = (frame: string): number =>
+    Math.max(
+      ...stripAnsi(frame)
+        .split("\n")
+        .map((line) => line.length),
+    );
+
+  it("test_no_row_runs_past_the_border_when_an_aside_is_present", () => {
+    const frame = renderAtColumns(120, {
+      name: "TheoCode",
+      art: ART,
+      tagline: "welcome-line",
+      aside: ASIDE,
+    });
+    const rows = stripAnsi(frame)
+      .split("\n")
+      .filter((l) => l.trim().length > 0);
+    const border = rows.find((l) => l.includes("╭")) ?? "";
+
+    expect(
+      widestRow(frame),
+      "content ran past the frame: the box capped itself at MAX_WIDTH, which was sized for the " +
+        "single-column banner and cannot hold art + gutter + aside",
+    ).toBeLessThanOrEqual(border.length);
+  });
+
+  it("test_the_single_column_banner_still_respects_the_max_width", () => {
+    // Anti-vacuity floor: the cap exists for the one-column layout and must survive.
+    const frame = renderAtColumns(200, {
+      name: "TheoCode",
+      tagline: "welcome-line",
+    });
+
+    expect(widestRow(frame)).toBeLessThanOrEqual(60);
+  });
+});
