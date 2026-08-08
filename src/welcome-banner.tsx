@@ -6,6 +6,7 @@ import { pickMargin } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
 import { ArtBlock } from "./banner.js";
+import { bannerArtWidth } from "./figlet-art.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
 // gemini-cli-style startup banner as a LEAF primitive. Color exclusively via
@@ -187,9 +188,23 @@ function staticBannerTree(
   }
   // Two columns: main content grows on the left; the aside is a fixed right
   // column separated by a two-cell gutter (the Claude Code welcome layout).
+  //
+  // U-7b — when there is art, the main column is SIZED to it and does not shrink. Growing it with
+  // `flexGrow` alone let Ink compress the column whenever art + gutter + aside exceeded the
+  // terminal, which breaks every art row across lines and pushes the tagline and hints out of the
+  // frame. Found by a consumer that adopted U-7 and had to revert: a 34-cell wordmark beside a
+  // 45-cell hints panel rendered shattered.
+  //
+  // `flexShrink={0}` is what actually fixes it; the explicit width keeps the aside from claiming
+  // space the art needs. Without art the previous behaviour is kept exactly — a text header has no
+  // intrinsic width to protect and should still absorb the leftover space.
+  const artColumn =
+    art === undefined
+      ? { flexGrow: 1 }
+      : { width: bannerArtWidth(art), flexShrink: 0 as const };
   return (
     <Box {...boxProps} flexDirection="row">
-      <Box flexDirection="column" flexGrow={1}>
+      <Box flexDirection="column" {...artColumn}>
         {mainContent}
       </Box>
       <Box flexDirection="column" flexShrink={0} marginLeft={2}>

@@ -379,3 +379,78 @@ describe("U-7 — art composes with the aside", () => {
     expect(frame).toContain("v0.1.0");
   });
 });
+
+/**
+ * U-7b — art keeps its width when an aside is present.
+ *
+ * U-7 let `art` and `aside` coexist, but the two-column branch grows the main content with
+ * `flexGrow={1}` and reserves nothing for the art. Ink then compresses the art column, so a wordmark
+ * wider than whatever the aside leaves over gets broken across lines and the tagline and hints are
+ * pushed out of the frame.
+ *
+ * Found by consuming it: TheoCode adopted `WelcomeBanner` on the strength of U-7 and had to revert,
+ * because its ~38-column wordmark rendered shattered. Shipping the prop without this is shipping the
+ * feature for single-column layouts only, which is the one case that already worked.
+ *
+ * `bannerArtWidth` already exists for exactly this measurement — it counts display cells, so CJK and
+ * wide glyphs are handled.
+ */
+describe("U-7b — art is not compressed by the aside", () => {
+  // The real shape that broke: a 34-cell wordmark beside a 45-cell hints panel. Together with the
+  // border, padding and gutter they exceed a common terminal, which is where the compression starts.
+  const WIDE_ART = ["█".repeat(34), "█".repeat(34), "█".repeat(34)].join("\n");
+  const REAL_ASIDE = (
+    <>
+      <Text>Tips for getting started</Text>
+      <Text>/help · @ mention a file · esc interrupts</Text>
+    </>
+  );
+
+  it("test_every_art_line_survives_intact_beside_an_aside", () => {
+    const frame = stripAnsi(
+      renderAtColumns(60, {
+        name: "X",
+        art: WIDE_ART,
+        tagline: "welcome-line",
+        aside: REAL_ASIDE,
+      }),
+    );
+
+    // Each art row must appear at its full width; a compressed column breaks them into fragments.
+    const fullRows = frame
+      .split("\n")
+      .filter((line) => line.includes("█".repeat(34)));
+    expect(
+      fullRows.length,
+      "the art column was compressed by the aside — rows came back shorter than the art itself",
+    ).toBe(3);
+  });
+
+  it("test_the_tagline_survives_beside_the_art_and_aside", () => {
+    const frame = stripAnsi(
+      renderAtColumns(60, {
+        name: "X",
+        art: WIDE_ART,
+        tagline: "welcome-line",
+        aside: REAL_ASIDE,
+      }),
+    );
+
+    expect(
+      frame,
+      "the tagline was pushed out of the frame when art and aside shared the box",
+    ).toContain("welcome-line");
+  });
+
+  it("test_a_single_column_art_banner_is_unchanged", () => {
+    // Anti-vacuity floor: the layout that already worked must not regress.
+    const frame = stripAnsi(
+      renderBanner({ name: "X", art: WIDE_ART, tagline: "welcome-line" }),
+    );
+
+    expect(frame).toContain("welcome-line");
+    expect(
+      frame.split("\n").filter((l) => l.includes("█".repeat(34))).length,
+    ).toBe(3);
+  });
+});
