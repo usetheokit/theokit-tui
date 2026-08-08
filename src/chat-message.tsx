@@ -2,6 +2,7 @@ import { Box, Text, useStdout } from "ink";
 import type { ReactNode } from "react";
 
 import type { LayoutMarginProps } from "./layout-props.js";
+import { horizontalMargin } from "./layout-props.js";
 import { MarkdownText } from "./markdown-text.js";
 import { useTheoTheme } from "./theme.js";
 import { unionMessage } from "./union-message.js";
@@ -55,7 +56,14 @@ export function ChatMessage({
   // width room and never engages — a long paragraph overflows and the terminal hard-wraps it MID-WORD.
   // Fallback 80 for a non-TTY / piped stdout (Ink re-renders on resize, so this follows the terminal).
   const { stdout } = useStdout();
-  const rowWidth = stdout?.columns ?? 80;
+  // The margin box is spread onto this SAME Box, so it is ADDED to the pinned
+  // width — subtract it or a `marginLeft` row renders `columns + margin` wide
+  // and the terminal hard-wraps it mid-word again (issue #56). Floor at 1: a
+  // margin wider than the terminal must still leave a renderable column.
+  const rowWidth = Math.max(
+    1,
+    (stdout?.columns ?? 80) - horizontalMargin(margin),
+  );
   // `text` may be undefined (= terminal default color). Ink's `color` prop
   // forbids an explicit `undefined` under exactOptionalPropertyTypes — omit
   // the prop entirely instead (SEPA iteration-4 finding 1).
@@ -71,7 +79,12 @@ export function ChatMessage({
     return (
       <Box {...margin} width={rowWidth}>
         <Text color={tokens.prefix}>{tokens.glyph}</Text>
-        <Box flexDirection="column" flexGrow={1}>
+        {/* `flexBasis={0}` (issue #64): sem ele o basis é `auto`, isto é, a
+            LARGURA DO CONTEÚDO — o parágrafo inteiro sem quebra. O yoga então
+            distribui espaço negativo por shrink, a conta sobra uma célula e a
+            coluna transborda a própria linha. Com basis 0 o `flexGrow` reparte
+            exatamente o espaço que restou do glifo. */}
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <MarkdownText text={children as string} />
         </Box>
       </Box>

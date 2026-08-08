@@ -1,1 +1,0 @@
-All verification complete. Writing the findings file.

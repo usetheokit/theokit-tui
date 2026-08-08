@@ -5,6 +5,8 @@ import type { LayoutMarginProps } from "./layout-props.js";
 import { pickMargin } from "./layout-props.js";
 import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "./theme.js";
+import { ArtBlock } from "./banner.js";
+import { bannerArtWidth } from "./figlet-art.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
 // gemini-cli-style startup banner as a LEAF primitive. Color exclusively via
@@ -24,6 +26,17 @@ export interface WelcomeBannerProps extends LayoutMarginProps {
   /** One dim line per entry; entries are single-line (the array IS the
    * multi-line mechanism — embedded newlines throw). */
   hints?: readonly string[];
+  /**
+   * U-7 — a multi-line ASCII-art string rendered in place of the bold `name`, accent-themed and
+   * verbatim. Absent → the bold `name` degrade, exactly as in `Banner`, so the two components share
+   * one vocabulary.
+   *
+   * `Banner` had `art` and no `aside`; this component had `aside` and no `art`. The layout that
+   * actually ships in a coding agent — art on the left, a hints panel on the right — was therefore
+   * reachable from neither, and a consumer had to rebuild the whole box by hand to get both.
+   * Generate the string with `renderFigletArt` (optional peer).
+   */
+  art?: string;
   /** Single free-composition slot inside the box (D1 — no layout props). */
   children?: ReactNode;
   /**
@@ -137,17 +150,21 @@ function staticBannerTree(
   accent: string,
   boxProps: ComponentProps<typeof Box>,
 ) {
-  const { name, tagline, hints, children, aside } = props;
+  const { name, tagline, hints, children, aside, art } = props;
   const taglineLines =
     tagline === undefined
       ? []
       : tagline.split("\n").filter((line) => line.trim() !== "");
   const mainContent = (
     <>
-      <Text wrap="truncate-end" color={accent} bold>
-        {name}
-        {version === undefined ? "" : <Text dimColor> v{version}</Text>}
-      </Text>
+      {art === undefined ? (
+        <Text wrap="truncate-end" color={accent} bold>
+          {name}
+          {version === undefined ? "" : <Text dimColor> v{version}</Text>}
+        </Text>
+      ) : (
+        <ArtBlock art={art} accent={accent} />
+      )}
       {taglineLines.map((line, index) => (
         <Text key={`tagline-${index}`} wrap="truncate-end">
           {line}
@@ -171,9 +188,23 @@ function staticBannerTree(
   }
   // Two columns: main content grows on the left; the aside is a fixed right
   // column separated by a two-cell gutter (the Claude Code welcome layout).
+  //
+  // U-7b — when there is art, the main column is SIZED to it and does not shrink. Growing it with
+  // `flexGrow` alone let Ink compress the column whenever art + gutter + aside exceeded the
+  // terminal, which breaks every art row across lines and pushes the tagline and hints out of the
+  // frame. Found by a consumer that adopted U-7 and had to revert: a 34-cell wordmark beside a
+  // 45-cell hints panel rendered shattered.
+  //
+  // `flexShrink={0}` is what actually fixes it; the explicit width keeps the aside from claiming
+  // space the art needs. Without art the previous behaviour is kept exactly — a text header has no
+  // intrinsic width to protect and should still absorb the leftover space.
+  const artColumn =
+    art === undefined
+      ? { flexGrow: 1 }
+      : { width: bannerArtWidth(art), flexShrink: 0 as const };
   return (
     <Box {...boxProps} flexDirection="row">
-      <Box flexDirection="column" flexGrow={1}>
+      <Box flexDirection="column" {...artColumn}>
         {mainContent}
       </Box>
       <Box flexDirection="column" flexShrink={0} marginLeft={2}>
@@ -214,7 +245,15 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
     );
   }
 
-  const width = Math.min(columns, MAX_WIDTH);
+  // U-7c — MAX_WIDTH was sized for the SINGLE-column banner: art or name, tagline, hints. A layout
+  // with an aside has to hold art + gutter + aside, which routinely exceeds 60 cells, and capping it
+  // there did not shrink the content — it just let the content run past the border.
+  //
+  // So the cap applies to the one-column layout, where it protects line length, and the two-column
+  // layout takes the terminal it was given (still bounded by `columns`, so it never exceeds the
+  // real screen). This is what the consumer that reported it was doing by hand with `width={cols-2}`.
+  const width =
+    props.aside === undefined ? Math.min(columns, MAX_WIDTH) : columns;
   // One box definition shared by the reveal frame and the static tree. The
   // consumer margin is spread LAST so it wins over any box default.
   const boxProps = {

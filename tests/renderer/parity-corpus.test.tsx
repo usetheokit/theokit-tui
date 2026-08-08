@@ -26,8 +26,9 @@ import { VirtualTerminal } from "./virtual-terminal.js";
 // rendered through Ink (the baseline) AND our renderer, and the PLAIN-TEXT
 // layouts are compared (SGR stripped — a NO_COLOR pass isolates layout from
 // color; SGR byte-parity is tracked separately). DoD: ≥ 90% of scenes match
-// byte-identical; every divergence is documented in docs/renderer/
-// m18-parity-report.md. This is the M18 exit gate against the existing corpus.
+// byte-identical; every divergence is documented in
+// wiki/renderer/m18-layout-parity.md. This is the M18 exit gate against the
+// existing corpus.
 
 const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*m", "g");
 

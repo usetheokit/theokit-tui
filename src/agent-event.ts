@@ -50,7 +50,9 @@ export interface AgentToolEvent {
   /** The tool input the model proposed — used to render a Codex-style
    * verb+target summary ("Read config.mjs") inside an `explored` group. */
   input?: unknown;
-  /** ToolResult line budget (default 10). */
+  /** Rendered line budget for the body. Default 10 on the `output`/`shell`
+   * path (ToolResult) and 20 on the `diff` path (DiffViewer counts the file
+   * headers in the same budget, so it needs the extra room). */
   maxLines?: number;
 }
 

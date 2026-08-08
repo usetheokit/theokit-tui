@@ -21,6 +21,10 @@ export interface SelectListItem {
 export interface WindowView {
   clampedIndex: number;
   windowStart: number;
+  /** U-10 — how many rows sit above the window. `overflowUp` is `hiddenBefore > 0`. */
+  hiddenBefore: number;
+  /** U-10 — how many rows sit below the window. `overflowDown` is `hiddenAfter > 0`. */
+  hiddenAfter: number;
   overflowUp: boolean;
   overflowDown: boolean;
 }
@@ -39,6 +43,8 @@ export function windowFor(
     return {
       clampedIndex: 0,
       windowStart: 0,
+      hiddenBefore: 0,
+      hiddenAfter: 0,
       overflowUp: false,
       overflowDown: false,
     };
@@ -48,11 +54,18 @@ export function windowFor(
     Math.max(clampedIndex - (window - 1), 0),
     Math.max(count - window, 0),
   );
+  // U-10 — the counts are what this function already computed; the booleans are derived from them
+  // rather than the other way round. Reporting only the booleans threw away information the caller
+  // then had to recompute, by reimplementing this same arithmetic.
+  const hiddenBefore = windowStart;
+  const hiddenAfter = Math.max(count - (windowStart + window), 0);
   return {
     clampedIndex,
     windowStart,
-    overflowUp: windowStart > 0,
-    overflowDown: windowStart + window < count,
+    hiddenBefore,
+    hiddenAfter,
+    overflowUp: hiddenBefore > 0,
+    overflowDown: hiddenAfter > 0,
   };
 }
 

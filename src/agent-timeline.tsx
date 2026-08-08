@@ -23,7 +23,9 @@ const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 export interface AgentTimelineProps extends LayoutMarginProps {
   /**
    * Ordered agent events. ORDERING CONTRACT (plan ADR D2): caller-ordered
-   * array; unique ids (duplicates throw); graduated events are IMMUTABLE —
+   * array; unique ids (duplicates throw) — the tools grouped inside an
+   * `explored` block share that SAME id namespace, and such a block must
+   * carry at least one tool; graduated events are IMMUTABLE —
    * replace the TAIL event with a new object to stream (rows are memoized by
    * object identity). Always pass a NEW array on update (in-place mutation of
    * the same reference has pinned-but-unsupported hybrid behavior — EC-8).
@@ -98,30 +100,126 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
   }
 }
 
-function assertValidEvents(events: AgentEvent[]): void {
-  const seen = new Set<string>();
-  for (const event of events) {
-    if (event.id === HEADER_SENTINEL_KEY) {
-      throw new TypeError(
-        `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
-      );
-    }
-    if (!isAgentEventKind(event.kind)) {
-      throw new TypeError(
-        `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
-      );
-    }
-    if (seen.has(event.id)) {
-      throw new TypeError(`AgentTimeline: duplicate event id "${event.id}"`);
-    }
-    seen.add(event.id);
-    if (event.kind === "message") {
-      validateMessageEvent(event);
-    }
-    if (event.kind === "tool") {
-      validateToolEvent(event);
-    }
+/**
+ * Issue #58 — o bloco `explored` é membro PÚBLICO da união, então um consumidor que monta os eventos
+ * à mão (sem passar por `messagesToAgentEvents`) chega aqui. Sem esta descida, os aninhados ficavam
+ * fora de TODA checagem: ids duplicados só apareciam como aviso de `key` duplicada do React em pleno
+ * render — exatamente onde o error boundary do ink engole o throw e cita o componente errado (F10),
+ * que é a razão de a validação viver nesta fronteira.
+ *
+ * `seen` é o conjunto COMPARTILHADO com o nível de topo: aninhado e topo dividem o mesmo espaço de
+ * nomes, e a mutação também alimenta o cache incremental do M92 (os ids de um bloco já congelado
+ * seguem reservados nos renders seguintes).
+ */
+function validateExploredEvent(
+  event: Extract<AgentEvent, { kind: "explored" }>,
+  seen: Set<string>,
+): void {
+  // O `Array.isArray` foge do escopo "tipo de campo é trabalho do TypeScript" pelo mesmo motivo do
+  // guard de `maxLines` (SEPA F1): sem ele, um `tools` ausente vindo de JS estoura com
+  // "Cannot read properties of undefined" em vez da mensagem do contrato.
+  if (!Array.isArray(event.tools) || event.tools.length === 0) {
+    throw new TypeError(
+      `AgentTimeline: explored event "${event.id}" — tools must be a non-empty array (at least one grouped tool)`,
+    );
   }
+  for (const tool of event.tools) {
+    if (seen.has(tool.id)) {
+      throw new TypeError(`AgentTimeline: duplicate event id "${tool.id}"`);
+    }
+    seen.add(tool.id);
+    validateToolEvent(tool);
+  }
+}
+
+/**
+ * Um evento do topo: chave reservada, kind conhecido, id inédito e as invariantes do seu kind.
+ *
+ * Separado de `assertValidEvents` para que aquela função cuide só da mecânica do cache incremental
+ * (qual fatia validar) e esta cuide só do CONTRATO de um evento — a descida no `explored` empurrava a
+ * complexidade ciclomática da função única acima do teto do lint.
+ */
+function validateEvent(event: AgentEvent, seen: Set<string>): void {
+  if (event.id === HEADER_SENTINEL_KEY) {
+    throw new TypeError(
+      `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+    );
+  }
+  if (!isAgentEventKind(event.kind)) {
+    throw new TypeError(
+      `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
+    );
+  }
+  if (seen.has(event.id)) {
+    throw new TypeError(`AgentTimeline: duplicate event id "${event.id}"`);
+  }
+  seen.add(event.id);
+  if (event.kind === "message") {
+    validateMessageEvent(event);
+  }
+  if (event.kind === "tool") {
+    validateToolEvent(event);
+  }
+  if (event.kind === "explored") {
+    validateExploredEvent(event, seen);
+  }
+}
+
+/**
+ * M92 — valida só a CAUDA quando o array novo é extensão de prefixo do anterior.
+ *
+ * `assertValidEvents` varria o histórico inteiro a **cada render** — incluindo as linhas já congeladas
+ * em `<Static>`, que por construção não mudam. Numa sessão longa isso é trabalho O(N) por token sobre
+ * dado que a própria estrutura garante imutável.
+ *
+ * "Extensão de prefixo" = `novo[i] === velho[i]` por identidade para todo `i < velho.length`. Quando é,
+ * os ids já vistos são reaproveitados e só o resto é validado. Quando **não** é (reordenação, edição,
+ * reset), cai no fallback de varredura completa — e é o fallback que garante que nenhum caso deixa de
+ * ser validado, que é a razão de esta variante ter sido preferida a esconder a checagem atrás de
+ * `NODE_ENV !== 'production'`: aquela desliga a validação exatamente onde o dado é real.
+ */
+const ultimaValidacao: { events: AgentEvent[]; ids: Set<string> } = {
+  events: [],
+  ids: new Set(),
+};
+
+/**
+ * Exportado para teste porque a alternativa era pior.
+ *
+ * O throw de `assertValidEvents` acontece durante o render e o ink não o propaga para o chamador —
+ * medido: `renderFrame` de um evento inválido **resolve**, não rejeita. Sem esta costura, a única
+ * prova de que a otimização não deixou de validar seria leitura de código, que é exatamente o tipo de
+ * evidência que esta base de código recusa.
+ *
+ * `reiniciarValidacaoIncremental` existe pelo mesmo motivo: o estado é de módulo, e um teste que não
+ * consegue zerá-lo depende da ordem dos outros.
+ */
+export function reiniciarValidacaoIncremental(): void {
+  ultimaValidacao.events = [];
+  ultimaValidacao.ids = new Set();
+}
+
+export function assertValidEvents(events: AgentEvent[]): void {
+  const anterior = ultimaValidacao.events;
+  let inicio = 0;
+  let seen: Set<string>;
+  const ehExtensao =
+    anterior.length > 0 &&
+    events.length >= anterior.length &&
+    anterior.every((e, i) => events[i] === e);
+  if (ehExtensao) {
+    inicio = anterior.length;
+    seen = new Set(ultimaValidacao.ids);
+  } else {
+    seen = new Set<string>();
+  }
+  for (const event of events.slice(inicio)) {
+    validateEvent(event, seen);
+  }
+  // Só grava DEPOIS de validar tudo: um array que lançou não pode virar prefixo confiável, senão o
+  // próximo render pularia a checagem que acabou de falhar.
+  ultimaValidacao.events = events;
+  ultimaValidacao.ids = seen;
 }
 
 // Column note (SEPA F6, accepted heritage): message rows use ChatMessage's
@@ -149,6 +247,17 @@ function ThinkingRow({ text }: { text: string }) {
 // it inherits M2's normalization — CRLF strip (EC-6), trailing-blank pop
 // (EC-7). Empty output collapses to the bare row (`null` and `false` are
 // equally non-renderable to ToolCallCard's hasRenderableBody).
+/**
+ * Line budget the inline diff falls back to when the event carries no
+ * `maxLines` (issue #57).
+ *
+ * `DiffViewer` has no default of its own — it only VALIDATES the prop — so an
+ * uncapped branch renders every row of a big `apply_patch` result, while the
+ * SAME payload sent as `output` stops at ToolResult's 10. Higher than 10
+ * because this budget is global and counts the per-file header/stat rows.
+ */
+const DEFAULT_DIFF_MAX_LINES = 20;
+
 function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
   const maxLines =
     event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
@@ -157,7 +266,13 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
   // header already names the tool/file); everything else goes through
   // ToolResult (output / shell modes).
   if (event.diff !== undefined && event.diff !== "") {
-    return <DiffViewer patch={event.diff} background {...maxLines} />;
+    return (
+      <DiffViewer
+        patch={event.diff}
+        background
+        maxLines={event.maxLines ?? DEFAULT_DIFF_MAX_LINES}
+      />
+    );
   }
   const hasBody =
     (event.output !== undefined && event.output !== "") ||
@@ -235,10 +350,19 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
         <Text bold>Explored</Text>
         <Text dimColor>{` (${tools.length})`}</Text>
       </Box>
+      {/* Calha + corpo em colunas separadas (o padrão `lineRow` do DiffViewer):
+          com prefixo e resumo no MESMO <Text>, um alvo longo quebrava na coluna
+          0 e a continuação se alinhava com o `⏺` do bloco em vez do galho
+          (#59 item 5). `flexShrink={0}` mantém a calha inteira quando aperta. */}
       {tools.map((tool) => (
-        <Text key={tool.id} dimColor>
-          {`  └ ${exploreSummary(tool)}`}
-        </Text>
+        <Box key={tool.id}>
+          <Box flexShrink={0}>
+            <Text dimColor>{"  └ "}</Text>
+          </Box>
+          <Text dimColor wrap="wrap">
+            {exploreSummary(tool)}
+          </Text>
+        </Box>
       ))}
     </Box>
   );

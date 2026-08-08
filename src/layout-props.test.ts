@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { LAYOUT_MARGIN_KEYS, omitMargin, pickMargin } from "./layout-props.js";
+import {
+  LAYOUT_MARGIN_KEYS,
+  horizontalMargin,
+  omitMargin,
+  pickMargin,
+} from "./layout-props.js";
 import type { LayoutMarginProps } from "./layout-props.js";
 
 describe("pickMargin (universal margin)", () => {
@@ -50,6 +55,36 @@ describe("pickMargin (universal margin)", () => {
   it("omitMargin_is_a_no_op_when_no_margin_present", () => {
     const input = { name: "read", status: "ok" };
     expect(omitMargin(input)).toEqual({ name: "read", status: "ok" });
+  });
+
+  it("horizontal_margin_is_zero_when_none_passed", () => {
+    expect(horizontalMargin({})).toBe(0);
+  });
+
+  it("horizontal_margin_sums_both_sides", () => {
+    expect(horizontalMargin({ marginLeft: 4, marginRight: 2 })).toBe(6);
+  });
+
+  it("horizontal_margin_counts_the_margin_x_shorthand_twice", () => {
+    expect(horizontalMargin({ marginX: 3 })).toBe(6);
+  });
+
+  it("horizontal_margin_counts_the_margin_shorthand_twice", () => {
+    expect(horizontalMargin({ margin: 5 })).toBe(10);
+  });
+
+  it("horizontal_margin_lets_the_specific_side_win_over_the_shorthands", () => {
+    // CSS/Yoga precedence: marginLeft > marginX > margin. The unset side falls
+    // back to the nearest shorthand — here `marginX`, not `margin`.
+    expect(horizontalMargin({ margin: 1, marginX: 2, marginLeft: 9 })).toBe(11);
+    expect(horizontalMargin({ margin: 1, marginRight: 9 })).toBe(10);
+  });
+
+  it("horizontal_margin_ignores_the_vertical_family", () => {
+    // Vertical margin costs ROWS, never columns — it must not shrink a width.
+    expect(
+      horizontalMargin({ marginY: 4, marginTop: 3, marginBottom: 2 }),
+    ).toBe(0);
   });
 
   it("exposes_the_seven_margin_keys_in_stable_order", () => {

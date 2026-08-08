@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+import stringWidth from "string-width";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../tests/helpers.js";
@@ -233,5 +234,84 @@ describe("M19 — assistant text word-wraps to the terminal (no mid-word hard-wr
     expect(frame).toContain("\n"); // it actually wrapped onto multiple lines
     const collapsed = frame.replace(/\s+/g, " ").trim();
     expect(collapsed).toContain("the check exited zero and printed");
+  });
+
+  // Issue #59 item 9 (F-tests-5) — NAO coberto aqui, e a razao esta medida.
+  // O pedido era travar o ramo RAW (`<Text wrap="wrap">` com a largura fixada)
+  // como este teste trava o ramo markdown. Escrevi e testei por mutacao:
+  // removendo `width={rowWidth}` do ramo raw a suite inteira continua VERDE,
+  // dentro e fora de `<Static>`. Sob o ink-testing-library a caixa raiz do ink
+  // ja e a largura do terminal, entao o texto quebra de qualquer jeito e a
+  // ausencia do pin e inobservavel. Um teste que passa nos dois estados nao
+  // trava nada — travar isso de verdade exige TTY real (tests/renderer/*pty*).
+});
+
+// The widest rendered line in terminal CELLS — `string-width` strips the SGR
+// escapes itself and is EAW/grapheme aware, so it measures what the terminal
+// actually paints rather than the string length.
+const widestLine = (frame: string): number =>
+  Math.max(...frame.split("\n").map((line) => stringWidth(line)));
+
+describe("issue #56 — a horizontal margin must not push the row past the terminal", () => {
+  // The M19 word-wrap fix pins the row to `stdout.columns` so `wrap="wrap"` has a
+  // bound. Spreading a horizontal margin onto that SAME Box makes the row
+  // `columns + margin` wide, so the terminal hard-wraps it MID-WORD again — the
+  // exact defect M19 removed, frozen into scrollback inside `<Static>`.
+  // ink-testing-library pins `stdout.columns` to 100, which is the budget here.
+  const TERMINAL_COLUMNS = 100;
+  const paragraph = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
+
+  it("chat_message_with_margin_left_stays_within_the_terminal_width", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" marginLeft={4}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  it("chat_message_margin_x_shorthand_is_subtracted_from_both_sides", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" marginX={6}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  it("chat_message_margin_shorthand_is_subtracted_from_both_sides", async () => {
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" margin={5}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  it("chat_message_markdown_path_respects_the_margin_budget_too", async () => {
+    // Issue #64: a coluna do markdown e um item flex com `flex-basis: auto`, ou
+    // seja, dimensionado pelo CONTEUDO (o paragrafo sem quebra, larguissimo).
+    // Com a linha estreitada pela margem a conta de shrink do yoga sobra uma
+    // celula e o filho transborda o proprio pai.
+    const frame = await renderFrame(
+      <ChatMessage role="assistant" markdown marginLeft={8}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(widestLine(frame)).toBeLessThanOrEqual(TERMINAL_COLUMNS);
+  });
+
+  it("chat_message_vertical_margin_does_not_shrink_the_row", async () => {
+    // Only the HORIZONTAL box model steals columns — `marginY` must leave the
+    // width budget byte-identical to the no-margin render.
+    const plain = await renderFrame(
+      <ChatMessage role="assistant">{paragraph}</ChatMessage>,
+    );
+    const withMarginY = await renderFrame(
+      <ChatMessage role="assistant" marginY={2}>
+        {paragraph}
+      </ChatMessage>,
+    );
+    expect(withMarginY.trim()).toBe(plain.trim());
   });
 });

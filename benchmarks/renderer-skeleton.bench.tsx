@@ -148,12 +148,7 @@ async function main(): Promise<void> {
       "ink bytes = sum of committed frame byte-lengths (full-frame log-update model); own bytes = real differential Terminal writes. Same 200-line + 60-update script. FORCE_COLOR pinned. Order-of-magnitude bytes gap is the diff-engine win (EC-5).",
   };
 
-  const outDir = join(
-    dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "docs",
-    "benchmarks",
-  );
+  const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "m17-renderer-skeleton-baseline.json");
   writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");

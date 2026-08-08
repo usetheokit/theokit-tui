@@ -328,3 +328,187 @@ describe("WelcomeBanner", () => {
     expect(lines.at(-1)).toContain("thread below");
   });
 });
+
+/**
+ * U-7 — ASCII art alongside the right-hand aside.
+ *
+ * `Banner` renders art and has no `aside`; `WelcomeBanner` has the `aside` column and can only
+ * render its `name` as bold text. So the one layout Claude Code actually uses — art on the left,
+ * "Tips for getting started" on the right — was reachable from neither component.
+ *
+ * Measured from a consumer (TheoCode) that rebuilt the whole two-column welcome by hand, including
+ * the responsive gating this component already does, because it needed both halves at once. The
+ * docstring of `aside` even names the two headings that consumer wrote out.
+ *
+ * `art` degrades to the bold `name` exactly as it does in `Banner`, so the vocabulary is one.
+ */
+describe("U-7 — art composes with the aside", () => {
+  const ART = " _____\n|_   _|\n  |_|";
+
+  it("test_art_renders_in_place_of_the_bold_name", () => {
+    const frame = stripAnsi(renderBanner({ name: "TheoCode", art: ART }));
+
+    expect(frame).toContain("|_   _|");
+  });
+
+  it("test_art_and_aside_render_together", () => {
+    const frame = stripAnsi(
+      renderBanner({
+        name: "TheoCode",
+        art: ART,
+        aside: <Text>Tips for getting started</Text>,
+      }),
+    );
+
+    expect(frame).toContain("|_   _|");
+    expect(frame).toContain("Tips for getting started");
+  });
+
+  it("test_absent_art_still_degrades_to_the_bold_name", () => {
+    // Anti-vacuity floor: the existing single-column behaviour must be untouched.
+    const frame = stripAnsi(renderBanner({ name: "TheoCode" }));
+
+    expect(frame).toContain("TheoCode");
+  });
+
+  it("test_the_version_still_shows_on_the_degrade_path", () => {
+    const frame = stripAnsi(
+      renderBanner({ name: "TheoCode", version: "0.1.0" }),
+    );
+
+    expect(frame).toContain("v0.1.0");
+  });
+});
+
+/**
+ * U-7b — art keeps its width when an aside is present.
+ *
+ * U-7 let `art` and `aside` coexist, but the two-column branch grows the main content with
+ * `flexGrow={1}` and reserves nothing for the art. Ink then compresses the art column, so a wordmark
+ * wider than whatever the aside leaves over gets broken across lines and the tagline and hints are
+ * pushed out of the frame.
+ *
+ * Found by consuming it: TheoCode adopted `WelcomeBanner` on the strength of U-7 and had to revert,
+ * because its ~38-column wordmark rendered shattered. Shipping the prop without this is shipping the
+ * feature for single-column layouts only, which is the one case that already worked.
+ *
+ * `bannerArtWidth` already exists for exactly this measurement — it counts display cells, so CJK and
+ * wide glyphs are handled.
+ */
+describe("U-7b — art is not compressed by the aside", () => {
+  // The real shape that broke: a 34-cell wordmark beside a 45-cell hints panel. Together with the
+  // border, padding and gutter they exceed a common terminal, which is where the compression starts.
+  const WIDE_ART = ["█".repeat(34), "█".repeat(34), "█".repeat(34)].join("\n");
+  const REAL_ASIDE = (
+    <>
+      <Text>Tips for getting started</Text>
+      <Text>/help · @ mention a file · esc interrupts</Text>
+    </>
+  );
+
+  it("test_every_art_line_survives_intact_beside_an_aside", () => {
+    const frame = stripAnsi(
+      renderAtColumns(60, {
+        name: "X",
+        art: WIDE_ART,
+        tagline: "welcome-line",
+        aside: REAL_ASIDE,
+      }),
+    );
+
+    // Each art row must appear at its full width; a compressed column breaks them into fragments.
+    const fullRows = frame
+      .split("\n")
+      .filter((line) => line.includes("█".repeat(34)));
+    expect(
+      fullRows.length,
+      "the art column was compressed by the aside — rows came back shorter than the art itself",
+    ).toBe(3);
+  });
+
+  it("test_the_tagline_survives_beside_the_art_and_aside", () => {
+    const frame = stripAnsi(
+      renderAtColumns(60, {
+        name: "X",
+        art: WIDE_ART,
+        tagline: "welcome-line",
+        aside: REAL_ASIDE,
+      }),
+    );
+
+    expect(
+      frame,
+      "the tagline was pushed out of the frame when art and aside shared the box",
+    ).toContain("welcome-line");
+  });
+
+  it("test_a_single_column_art_banner_is_unchanged", () => {
+    // Anti-vacuity floor: the layout that already worked must not regress.
+    const frame = stripAnsi(
+      renderBanner({ name: "X", art: WIDE_ART, tagline: "welcome-line" }),
+    );
+
+    expect(frame).toContain("welcome-line");
+    expect(
+      frame.split("\n").filter((l) => l.includes("█".repeat(34))).length,
+    ).toBe(3);
+  });
+});
+
+/**
+ * U-7c — the frame contains its own content.
+ *
+ * U-7 added `art` and U-7b stopped the aside compressing it, and adoption still failed: the box caps
+ * itself at MAX_WIDTH (60 cells), which was sized for the single-column banner. A two-column layout
+ * needs art + gutter + aside, so with a real aside the content simply ran past the right border.
+ *
+ * This asserts CONTAINMENT, not presence — and that distinction is the finding. The consumer's own
+ * suite passed on the overflowing version, because every string it looked for was there; the text
+ * was just outside the frame. A presence test cannot see a layout defect.
+ */
+describe("U-7c — content stays inside the border", () => {
+  const ART = ["█".repeat(34), "█".repeat(34), "█".repeat(34)].join("\n");
+  const ASIDE = (
+    <>
+      <Text>Tips for getting started</Text>
+      <Text>/help · @ mention a file · esc interrupts</Text>
+    </>
+  );
+
+  /** Widest rendered row, in cells. */
+  const widestRow = (frame: string): number =>
+    Math.max(
+      ...stripAnsi(frame)
+        .split("\n")
+        .map((line) => line.length),
+    );
+
+  it("test_no_row_runs_past_the_border_when_an_aside_is_present", () => {
+    const frame = renderAtColumns(120, {
+      name: "TheoCode",
+      art: ART,
+      tagline: "welcome-line",
+      aside: ASIDE,
+    });
+    const rows = stripAnsi(frame)
+      .split("\n")
+      .filter((l) => l.trim().length > 0);
+    const border = rows.find((l) => l.includes("╭")) ?? "";
+
+    expect(
+      widestRow(frame),
+      "content ran past the frame: the box capped itself at MAX_WIDTH, which was sized for the " +
+        "single-column banner and cannot hold art + gutter + aside",
+    ).toBeLessThanOrEqual(border.length);
+  });
+
+  it("test_the_single_column_banner_still_respects_the_max_width", () => {
+    // Anti-vacuity floor: the cap exists for the one-column layout and must survive.
+    const frame = renderAtColumns(200, {
+      name: "TheoCode",
+      tagline: "welcome-line",
+    });
+
+    expect(widestRow(frame)).toBeLessThanOrEqual(60);
+  });
+});

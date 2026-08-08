@@ -24,26 +24,49 @@ const MODE_LABEL: Record<Exclude<PermissionMode, "default">, string> = {
 };
 
 export interface ModeIndicatorProps extends LayoutMarginProps {
-  /** The active permission mode. `default` renders nothing. */
-  mode: PermissionMode;
+  /** The active permission mode. `default` renders nothing. Omit when passing `label`. */
+  mode?: PermissionMode;
+  /**
+   * U-8 — the row's text, for a product whose permission vocabulary is not this one.
+   *
+   * `PermissionMode` is the Claude Code idiom (`default | auto-accept | plan`). A Codex-style agent
+   * has a different one (`suggest | auto-edit | full-auto`), so the boundary check refused its modes
+   * — correct for a typo, wrong for a different vocabulary, and there was no way to tell the two
+   * apart. The consumer's options were to map its modes onto labels that mean something else, or to
+   * rebuild the row.
+   *
+   * The union stays closed for `mode`, so a typo is still caught: a caller has to SAY it is outside
+   * the vocabulary rather than slip out of it. Styling and the cycle hint belong to the row, not to
+   * the vocabulary, so both are kept.
+   */
+  label?: string;
 }
 
-export function ModeIndicator({ mode, ...margin }: ModeIndicatorProps) {
+export function ModeIndicator({ mode, label, ...margin }: ModeIndicatorProps) {
   // Boundary validation FIRST (F10 idiom) — before any hook, so JS callers get
-  // the typed contract, not a crash.
-  if (!PERMISSION_MODES.includes(mode)) {
+  // the typed contract, not a crash. `label` opts out of the vocabulary, not out of the check:
+  // a `mode` that is present must still be one of the union.
+  if (mode !== undefined && !PERMISSION_MODES.includes(mode)) {
     throw new TypeError(
       `ModeIndicator: invalid mode "${String(mode)}" — expected ${MODE_UNION_MESSAGE}`,
     );
   }
+  if (mode === undefined && label === undefined) {
+    throw new TypeError("ModeIndicator: pass either `mode` or `label`");
+  }
   const theme = useTheoTheme();
   const mono = isMonochrome(theme);
-  if (mode === "default") {
+  const text =
+    label ??
+    (mode === "default"
+      ? undefined
+      : MODE_LABEL[mode as "auto-accept" | "plan"]);
+  if (text === undefined) {
     return null;
   }
   return (
     <Box {...pickMargin(margin)}>
-      <Text {...(mono ? {} : { color: theme.accent })}>{MODE_LABEL[mode]}</Text>
+      <Text {...(mono ? {} : { color: theme.accent })}>{text}</Text>
       <Text dimColor> (shift+tab to cycle)</Text>
     </Box>
   );
