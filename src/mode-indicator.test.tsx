@@ -57,3 +57,43 @@ describe("ModeIndicator (#2 — permission-mode footer)", () => {
     expect([...PERMISSION_MODES]).toEqual(["default", "auto-accept", "plan"]);
   });
 });
+
+/**
+ * U-8 — a product with its own permission vocabulary can still use this indicator.
+ *
+ * `PermissionMode` is a closed union of the Claude Code idiom: `default | auto-accept | plan`. A
+ * Codex-style agent has a different one — `suggest | auto-edit | full-auto` — so the component
+ * refuses its modes at the boundary, by design.
+ *
+ * That refusal is right for a typo and wrong for a different vocabulary, and there was no way to
+ * tell the two apart. So a consumer either maps its modes onto labels that mean something else, or
+ * rebuilds the row. Measured from TheoCode, which has exactly that vocabulary (finding F-tui-12).
+ *
+ * `label` is the explicit escape: pass your own text and the component renders it with the same
+ * styling and the same cycle hint. The union stays closed for `mode`, so a typo is still caught —
+ * a consumer has to SAY it is outside the vocabulary rather than slip out of it.
+ */
+describe("U-8 — a custom label carries a foreign vocabulary", () => {
+  it("custom_label_renders_with_the_house_styling", async () => {
+    const frame = await renderFrame(<ModeIndicator label="⏵⏵ full-auto on" />);
+    expect(frame).toContain("⏵⏵ full-auto on");
+    expect(
+      frame,
+      "the cycle hint belongs to the row, not to the vocabulary",
+    ).toContain("(shift+tab to cycle)");
+  });
+
+  it("builtin_modes_are_unchanged", async () => {
+    // Anti-vacuity floor: the escape hatch must not alter the documented path.
+    const frame = await renderFrame(<ModeIndicator mode="auto-accept" />);
+    expect(frame).toContain("⏵⏵ auto-accept edits on");
+  });
+
+  it("an_invalid_mode_is_still_refused", () => {
+    // The union stays closed: a typo must not become a silent custom label.
+    expect(() =>
+      // @ts-expect-error — deliberately invalid mode (negative case)
+      ModeIndicator({ mode: "auto-acept" }),
+    ).toThrow(TypeError);
+  });
+});

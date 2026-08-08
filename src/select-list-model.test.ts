@@ -21,6 +21,9 @@ describe("windowFor (M22 T1.1) — the M15 trailing window", () => {
     expect(w).toEqual({
       clampedIndex: 7,
       windowStart: 3,
+      // U-10 — these two used to live in the comment above, because the shape could not carry them.
+      hiddenBefore: 3,
+      hiddenAfter: 2,
       overflowUp: true,
       overflowDown: true,
     });
@@ -30,6 +33,8 @@ describe("windowFor (M22 T1.1) — the M15 trailing window", () => {
     expect(windowFor(3, 99, 5)).toEqual({
       clampedIndex: 2,
       windowStart: 0, // 3 items < 5-window → no scroll
+      hiddenBefore: 0,
+      hiddenAfter: 0,
       overflowUp: false,
       overflowDown: false,
     });
@@ -39,6 +44,8 @@ describe("windowFor (M22 T1.1) — the M15 trailing window", () => {
     expect(windowFor(0, 0, 5)).toEqual({
       clampedIndex: 0,
       windowStart: 0,
+      hiddenBefore: 0,
+      hiddenAfter: 0,
       overflowUp: false,
       overflowDown: false,
     });
@@ -95,5 +102,63 @@ describe("deriveSelectList (M22 T1.1)", () => {
     expect(view.selected.has("banana")).toBe(true);
     // The selection is a VALUE set, independent of the (re-ordered) match index.
     expect(view.matches.some((m) => m.value === "banana")).toBe(true);
+  });
+});
+
+/**
+ * U-10 — how many are hidden, not merely that some are.
+ *
+ * `windowFor` computes `windowStart` and is given `count` and `window`, so it already knows both
+ * counts: `windowStart` IS the number hidden above, and `count - (windowStart + window)` the number
+ * below. It reduced them to booleans and dropped the rest.
+ *
+ * A boolean cannot be recovered into a count, so any consumer rendering "N more above" has to
+ * recompute the window arithmetic it just asked for — which is a second implementation of the same
+ * formula, free to drift. TheoCode's backtrack overlay does exactly that (finding F-tui-14).
+ *
+ * The booleans stay, now derived from the counts, so nothing that reads them changes.
+ */
+describe("U-10 — WindowView reports the hidden counts", () => {
+  it("reports_how_many_are_hidden_above_and_below", () => {
+    const view = windowFor(20, 10, 5);
+
+    expect(view.hiddenBefore).toBe(view.windowStart);
+    expect(view.hiddenAfter).toBe(20 - (view.windowStart + 5));
+  });
+
+  it("counts_are_zero_at_the_head", () => {
+    const view = windowFor(20, 0, 5);
+
+    expect(view.hiddenBefore).toBe(0);
+    expect(view.hiddenAfter).toBe(15);
+  });
+
+  it("counts_are_zero_at_the_tail", () => {
+    const view = windowFor(20, 19, 5);
+
+    expect(view.hiddenAfter).toBe(0);
+    expect(view.hiddenBefore).toBe(15);
+  });
+
+  it("a_list_that_fits_hides_nothing", () => {
+    const view = windowFor(3, 1, 5);
+
+    expect(view.hiddenBefore).toBe(0);
+    expect(view.hiddenAfter).toBe(0);
+  });
+
+  it("an_empty_list_hides_nothing", () => {
+    const view = windowFor(0, 0, 5);
+
+    expect(view.hiddenBefore).toBe(0);
+    expect(view.hiddenAfter).toBe(0);
+  });
+
+  it("the_booleans_still_agree_with_the_counts", () => {
+    // Anti-vacuity floor: the existing contract must survive being derived from the new fields.
+    const view = windowFor(20, 10, 5);
+
+    expect(view.overflowUp).toBe(view.hiddenBefore > 0);
+    expect(view.overflowDown).toBe(view.hiddenAfter > 0);
   });
 });
