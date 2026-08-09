@@ -101,23 +101,23 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
 }
 
 /**
- * Issue #58 — o bloco `explored` é membro PÚBLICO da união, então um consumidor que monta os eventos
- * à mão (sem passar por `messagesToAgentEvents`) chega aqui. Sem esta descida, os aninhados ficavam
- * fora de TODA checagem: ids duplicados só apareciam como aviso de `key` duplicada do React em pleno
- * render — exatamente onde o error boundary do ink engole o throw e cita o componente errado (F10),
- * que é a razão de a validação viver nesta fronteira.
+ * Issue #58 — the `explored` block is a PUBLIC member of the union, so a consumer assembling events
+ * by hand (without going through `messagesToAgentEvents`) reaches here. Without this descent, nested
+ * entries fell outside EVERY check: duplicate ids showed up only as React's duplicate-`key` warning
+ * mid-render — exactly where ink's error boundary swallows the throw and names the wrong component
+ * (F10), which is why validation lives at this boundary.
  *
- * `seen` é o conjunto COMPARTILHADO com o nível de topo: aninhado e topo dividem o mesmo espaço de
- * nomes, e a mutação também alimenta o cache incremental do M92 (os ids de um bloco já congelado
- * seguem reservados nos renders seguintes).
+ * `seen` is the set SHARED with the top level: nested and top level share one namespace, and the
+ * mutation also feeds M92's incremental cache (the ids of an already-frozen block stay reserved on
+ * the following renders).
  */
 function validateExploredEvent(
   event: Extract<AgentEvent, { kind: "explored" }>,
   seen: Set<string>,
 ): void {
-  // O `Array.isArray` foge do escopo "tipo de campo é trabalho do TypeScript" pelo mesmo motivo do
-  // guard de `maxLines` (SEPA F1): sem ele, um `tools` ausente vindo de JS estoura com
-  // "Cannot read properties of undefined" em vez da mensagem do contrato.
+  // The `Array.isArray` steps outside "field types are TypeScript's job" for the same reason as the
+  // `maxLines` guard (SEPA F1): without it, a missing `tools` arriving from JS blows up with
+  // "Cannot read properties of undefined" instead of the contract's message.
   if (!Array.isArray(event.tools) || event.tools.length === 0) {
     throw new TypeError(
       `AgentTimeline: explored event "${event.id}" — tools must be a non-empty array (at least one grouped tool)`,
@@ -133,11 +133,11 @@ function validateExploredEvent(
 }
 
 /**
- * Um evento do topo: chave reservada, kind conhecido, id inédito e as invariantes do seu kind.
+ * One top-level event: reserved key, known kind, unseen id, and the invariants of its own kind.
  *
- * Separado de `assertValidEvents` para que aquela função cuide só da mecânica do cache incremental
- * (qual fatia validar) e esta cuide só do CONTRATO de um evento — a descida no `explored` empurrava a
- * complexidade ciclomática da função única acima do teto do lint.
+ * Split from `assertValidEvents` so that function handles only the incremental cache's mechanics
+ * (which slice to validate) and this one handles only an event's CONTRACT — the descent into
+ * `explored` pushed the single function's cyclomatic complexity above the lint ceiling.
  */
 function validateEvent(event: AgentEvent, seen: Set<string>): void {
   if (event.id === HEADER_SENTINEL_KEY) {
@@ -200,24 +200,24 @@ export function resetIncrementalValidation(): void {
 }
 
 export function assertValidEvents(events: AgentEvent[]): void {
-  const anterior = lastValidation.events;
-  let inicio = 0;
+  const previous = lastValidation.events;
+  let start = 0;
   let seen: Set<string>;
-  const ehExtensao =
-    anterior.length > 0 &&
-    events.length >= anterior.length &&
-    anterior.every((e, i) => events[i] === e);
-  if (ehExtensao) {
-    inicio = anterior.length;
+  const isExtension =
+    previous.length > 0 &&
+    events.length >= previous.length &&
+    previous.every((e, i) => events[i] === e);
+  if (isExtension) {
+    start = previous.length;
     seen = new Set(lastValidation.ids);
   } else {
     seen = new Set<string>();
   }
-  for (const event of events.slice(inicio)) {
+  for (const event of events.slice(start)) {
     validateEvent(event, seen);
   }
-  // Só grava DEPOIS de validar tudo: um array que lançou não pode virar prefixo confiável, senão o
-  // próximo render pularia a checagem que acabou de falhar.
+  // Record only AFTER validating everything: an array that threw must not become a trusted prefix,
+  // or the next render would skip the check that just failed.
   lastValidation.events = events;
   lastValidation.ids = seen;
 }
@@ -350,10 +350,11 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
         <Text bold>Explored</Text>
         <Text dimColor>{` (${tools.length})`}</Text>
       </Box>
-      {/* Calha + corpo em colunas separadas (o padrão `lineRow` do DiffViewer):
-          com prefixo e resumo no MESMO <Text>, um alvo longo quebrava na coluna
-          0 e a continuação se alinhava com o `⏺` do bloco em vez do galho
-          (#59 item 5). `flexShrink={0}` mantém a calha inteira quando aperta. */}
+      {/* Gutter and body in separate columns (DiffViewer's `lineRow` pattern):
+          with prefix and summary in the SAME <Text>, a long target wrapped at
+          column 0 and the continuation lined up with the block's `⏺` instead of
+          the branch (#59 item 5). `flexShrink={0}` keeps the gutter whole under
+          pressure. */}
       {tools.map((tool) => (
         <Box key={tool.id}>
           <Box flexShrink={0}>
