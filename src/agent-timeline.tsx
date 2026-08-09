@@ -166,41 +166,41 @@ function validateEvent(event: AgentEvent, seen: Set<string>): void {
 }
 
 /**
- * M92 — valida só a CAUDA quando o array novo é extensão de prefixo do anterior.
+ * M92 — validate only the TAIL when the new array is a prefix extension of the previous one.
  *
- * `assertValidEvents` varria o histórico inteiro a **cada render** — incluindo as linhas já congeladas
- * em `<Static>`, que por construção não mudam. Numa sessão longa isso é trabalho O(N) por token sobre
- * dado que a própria estrutura garante imutável.
+ * `assertValidEvents` swept the whole history on **every render** — including the lines already
+ * frozen in `<Static>`, which by construction do not change. In a long session that is O(N) work per
+ * token over data the structure itself guarantees immutable.
  *
- * "Extensão de prefixo" = `novo[i] === velho[i]` por identidade para todo `i < velho.length`. Quando é,
- * os ids já vistos são reaproveitados e só o resto é validado. Quando **não** é (reordenação, edição,
- * reset), cai no fallback de varredura completa — e é o fallback que garante que nenhum caso deixa de
- * ser validado, que é a razão de esta variante ter sido preferida a esconder a checagem atrás de
- * `NODE_ENV !== 'production'`: aquela desliga a validação exatamente onde o dado é real.
+ * "Prefix extension" = `next[i] === previous[i]` by identity for every `i < previous.length`. When it
+ * is, the already-seen ids are reused and only the remainder is validated. When it is **not**
+ * (reordering, edit, reset), it falls back to the full sweep — and the fallback is what guarantees no
+ * case goes unvalidated. That is why this variant was preferred over hiding the check behind
+ * `NODE_ENV !== 'production'`: that one disables validation exactly where the data is real.
  */
-const ultimaValidacao: { events: AgentEvent[]; ids: Set<string> } = {
+const lastValidation: { events: AgentEvent[]; ids: Set<string> } = {
   events: [],
   ids: new Set(),
 };
 
 /**
- * Exportado para teste porque a alternativa era pior.
+ * Exported for tests because the alternative was worse.
  *
- * O throw de `assertValidEvents` acontece durante o render e o ink não o propaga para o chamador —
- * medido: `renderFrame` de um evento inválido **resolve**, não rejeita. Sem esta costura, a única
- * prova de que a otimização não deixou de validar seria leitura de código, que é exatamente o tipo de
- * evidência que esta base de código recusa.
+ * `assertValidEvents` throws during render and ink does not propagate it to the caller — measured:
+ * `renderFrame` of an invalid event **resolves**, it does not reject. Without this seam, the only
+ * proof that the optimisation did not stop validating would be reading the code, which is exactly the
+ * kind of evidence this codebase refuses.
  *
- * `reiniciarValidacaoIncremental` existe pelo mesmo motivo: o estado é de módulo, e um teste que não
- * consegue zerá-lo depende da ordem dos outros.
+ * `resetIncrementalValidation` exists for the same reason: the state is module-level, and a test that
+ * cannot zero it depends on the order of the others.
  */
-export function reiniciarValidacaoIncremental(): void {
-  ultimaValidacao.events = [];
-  ultimaValidacao.ids = new Set();
+export function resetIncrementalValidation(): void {
+  lastValidation.events = [];
+  lastValidation.ids = new Set();
 }
 
 export function assertValidEvents(events: AgentEvent[]): void {
-  const anterior = ultimaValidacao.events;
+  const anterior = lastValidation.events;
   let inicio = 0;
   let seen: Set<string>;
   const ehExtensao =
@@ -209,7 +209,7 @@ export function assertValidEvents(events: AgentEvent[]): void {
     anterior.every((e, i) => events[i] === e);
   if (ehExtensao) {
     inicio = anterior.length;
-    seen = new Set(ultimaValidacao.ids);
+    seen = new Set(lastValidation.ids);
   } else {
     seen = new Set<string>();
   }
@@ -218,8 +218,8 @@ export function assertValidEvents(events: AgentEvent[]): void {
   }
   // Só grava DEPOIS de validar tudo: um array que lançou não pode virar prefixo confiável, senão o
   // próximo render pularia a checagem que acabou de falhar.
-  ultimaValidacao.events = events;
-  ultimaValidacao.ids = seen;
+  lastValidation.events = events;
+  lastValidation.ids = seen;
 }
 
 // Column note (SEPA F6, accepted heritage): message rows use ChatMessage's
