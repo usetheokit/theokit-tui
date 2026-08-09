@@ -451,15 +451,15 @@ export function ChatComposer({
   const buffer = editor.buffer;
   // M54 — surface buffer text to the host (composer-empty precondition for backtrack).
   //
-  // O callback vai por REF, não na lista de dependências (#59 item 3): o consumidor escreve
-  // `onChange={(t) => algo(t)}`, uma função nova a cada render dele, e depender da identidade
-  // redisparava o efeito com o texto INALTERADO. O contrato documentado é "após o mount com o texto
-  // inicial e a cada edição" — disparar por troca de identidade não é nenhum dos dois. A ref é
-  // atualizada a cada render, então a chamada seguinte sempre usa o callback mais recente.
+  // The callback travels by REF, not in the dependency list (#59 item 3): the consumer writes
+  // `onChange={(t) => something(t)}`, a new function on each of its renders, and depending on that
+  // identity re-fired the effect with the text UNCHANGED. The documented contract is "after mount
+  // with the initial text, and on every edit" — firing on an identity change is neither. The ref is
+  // updated on every render, so the next call always uses the most recent callback.
   //
-  // A ref é atualizada num EFEITO, não durante o render: escrever em ref no corpo do componente é
-  // efeito colateral de render e o repo tem canário de strict effects. Efeitos rodam na ordem de
-  // declaração, então este já gravou o callback mais recente quando o de baixo dispara.
+  // The ref is updated in an EFFECT, not during render: writing to a ref in the component body is a
+  // render side effect and this repo has a strict-effects canary. Effects run in declaration order,
+  // so this one has already stored the latest callback by the time the one below fires.
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;

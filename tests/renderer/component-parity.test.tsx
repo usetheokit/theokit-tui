@@ -193,11 +193,11 @@ const scenes: Scene[] = [
     element: <ToolResult lines={["line one", "line two"]} />,
   },
   {
-    // #40: `⏺` (U+23FA) e o ORACULO de largura entre os dois renderers — uma
-    // glifo de apresentacao-emoji que o string-width 7.x contava como 2 e o 8.x
-    // conta como 1. O tema PADRAO ja usa `⏺` hoje, entao a cobertura existe por
-    // acidente; esta cena a fixa via override para que o oraculo sobreviva a uma
-    // futura troca do glifo padrao.
+    // #40: `⏺` (U+23FA) is the width ORACLE between the two renderers — an
+    // emoji-presentation glyph that string-width 7.x counted as 2 and 8.x counts
+    // as 1. The DEFAULT theme already uses `⏺` today, so the coverage exists by
+    // accident; this scene pins it via an override so the oracle survives a
+    // future change of the default glyph.
     name: "RecordGlyphWidth",
     element: (
       <TheoTUIProvider theme={{ role: { assistant: { glyph: "⏺  " } } }}>
