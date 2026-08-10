@@ -24,6 +24,8 @@ const namedChords: Partial<Record<keyof Key, Chord>> = {
   tab: "tab",
   escape: "escape",
   return: "return",
+  home: "home",
+  end: "end",
 };
 
 /**
@@ -70,4 +72,8 @@ export const defaultKeymap: Keymap = new Map<Chord, Action>([
   ["left", "move-left"],
   ["right", "move-right"],
   ["backspace", "delete-backward"],
+  // The named keys for the motions ctrl+a/ctrl+e already reach. Bound here rather than branched
+  // in the composer so a user remapping them goes through the same keymap as everything else.
+  ["home", "move-line-start"],
+  ["end", "move-line-end"],
 ]);

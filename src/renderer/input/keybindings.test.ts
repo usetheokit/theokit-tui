@@ -50,3 +50,27 @@ function tuple(
   const { input, key } = projectKey(sequence);
   return [input, key];
 }
+
+/**
+ * Home/End are chords in their own right, like the arrows. They resolve to the SAME actions
+ * ctrl+a/ctrl+e already resolve to — no new action, no new reducer case: the capability was built
+ * and only the keys were missing (TheoCode B-068).
+ */
+describe("Home and End are named chords", () => {
+  it("home_and_end_build_their_own_chords", () => {
+    expect(chordOf("", projectKey("\x1b[H").key)).toBe("home");
+    expect(chordOf("", projectKey("\x1b[F").key)).toBe("end");
+  });
+
+  it("home_and_end_are_bound_to_the_line_motions", () => {
+    expect(resolveAction(defaultKeymap, "home")).toBe("move-line-start");
+    expect(resolveAction(defaultKeymap, "end")).toBe("move-line-end");
+  });
+
+  it("the_emacs_equivalents_keep_working", () => {
+    // The floor: binding the named keys must not displace ctrl+a/ctrl+e, which are the only way
+    // to reach these motions on a terminal that sends no Home/End at all.
+    expect(resolveAction(defaultKeymap, "ctrl+a")).toBe("move-line-start");
+    expect(resolveAction(defaultKeymap, "ctrl+e")).toBe("move-line-end");
+  });
+})
