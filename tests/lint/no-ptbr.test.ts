@@ -59,11 +59,18 @@ const SCAN_ROOTS = ["."];
  * Loanwords English legitimately borrows with their diacritics. `façade` is a
  * locked term in `CLAUDE.md` ("Agent façade"), so it is not a violation.
  */
-const WORD_ALLOWLIST = new Set(["façade", "façades", "naïve", "café", "résumé"]);
+const WORD_ALLOWLIST = new Set([
+  "façade",
+  "façades",
+  "naïve",
+  "café",
+  "résumé",
+]);
 
 /** Files exempt from the scan, relative to the repository root. */
 /** B-065 — every CHANGELOG, root or per package. Released entries are immutable (Rule 6). */
-const isChangelog = (rel: string): boolean => rel === "CHANGELOG.md" || rel.endsWith("/CHANGELOG.md");
+const isChangelog = (rel: string): boolean =>
+  rel === "CHANGELOG.md" || rel.endsWith("/CHANGELOG.md");
 
 const FILE_ALLOWLIST = new Set<string>([
   // This file names Portuguese words in order to ban them.
@@ -296,7 +303,8 @@ const SCANNED_EXT = /\.(?:ts|mts|cts|js|mjs|cjs|md)$/;
  */
 const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", "docs-json"]);
 
-const isSkippedDir = (name: string): boolean => name.startsWith(".") || SKIP_DIRS.has(name);
+const isSkippedDir = (name: string): boolean =>
+  name.startsWith(".") || SKIP_DIRS.has(name);
 
 /**
  * `withFileTypes` matters here, not as a micro-optimization: the first version called `stat` once
@@ -329,7 +337,9 @@ async function walk(dir: string, out: string[] = []): Promise<string[]> {
 
 /** Split an identifier into its camelCase / PascalCase / snake_case parts. */
 function identifierParts(word: string): string[] {
-  return word.split(/[_$]/).flatMap((p) => p.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? []);
+  return word
+    .split(/[_$]/)
+    .flatMap((p) => p.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? []);
 }
 
 function stripDiacritics(word: string): string {
@@ -338,21 +348,29 @@ function stripDiacritics(word: string): string {
 
 /** Every word-part of a line, with allowlisted loanwords already dropped. */
 function candidateParts(line: string): string[] {
-  return (line.replace(INLINE_CODE, " ").replace(NOT_PROSE, " ").match(WORD) ?? [])
+  return (
+    line.replace(INLINE_CODE, " ").replace(NOT_PROSE, " ").match(WORD) ?? []
+  )
     .filter((token) => !WORD_ALLOWLIST.has(token.toLowerCase()))
     .flatMap(identifierParts)
     .filter((part) => !WORD_ALLOWLIST.has(part.toLowerCase()));
 }
 
 /** Tier 1 wins over tier 2 so each line reports its strongest signal once. */
-function classifyLine(line: string): Pick<Offender, "tier" | "words"> | undefined {
+function classifyLine(
+  line: string,
+): Pick<Offender, "tier" | "words"> | undefined {
   const parts = candidateParts(line);
 
   const diacritic = parts.filter((p) => DIACRITIC.test(p));
-  if (diacritic.length > 0) return { tier: "diacritic", words: [...new Set(diacritic)] };
+  if (diacritic.length > 0)
+    return { tier: "diacritic", words: [...new Set(diacritic)] };
 
-  const lexical = parts.filter((p) => !DIACRITIC.test(p) && PT_LEXICON.has(stripDiacritics(p)));
-  if (lexical.length > 0) return { tier: "lexicon", words: [...new Set(lexical)] };
+  const lexical = parts.filter(
+    (p) => !DIACRITIC.test(p) && PT_LEXICON.has(stripDiacritics(p)),
+  );
+  if (lexical.length > 0)
+    return { tier: "lexicon", words: [...new Set(lexical)] };
 
   return undefined;
 }
@@ -363,7 +381,12 @@ function scanText(rel: string, text: string): Offender[] {
   text.split("\n").forEach((line, index) => {
     const hit = classifyLine(line);
     if (hit === undefined) return;
-    offenders.push({ file: rel, line: index + 1, ...hit, text: line.trim().slice(0, 120) });
+    offenders.push({
+      file: rel,
+      line: index + 1,
+      ...hit,
+      text: line.trim().slice(0, 120),
+    });
   });
 
   return offenders;
@@ -372,11 +395,17 @@ function scanText(rel: string, text: string): Offender[] {
 /** Filenames themselves must be English — a test file name is documentation. */
 function scanFilename(rel: string): Offender | undefined {
   const base = rel.split(sep).pop() ?? rel;
-  const hits = identifierParts(base.replace(/\.[^.]+$/, "").replace(/[.-]/g, "_")).filter(
-    (p) => PT_LEXICON.has(stripDiacritics(p)) || DIACRITIC.test(p),
-  );
+  const hits = identifierParts(
+    base.replace(/\.[^.]+$/, "").replace(/[.-]/g, "_"),
+  ).filter((p) => PT_LEXICON.has(stripDiacritics(p)) || DIACRITIC.test(p));
   if (hits.length === 0) return undefined;
-  return { file: rel, line: 0, tier: "lexicon", words: [...new Set(hits)], text: base };
+  return {
+    file: rel,
+    line: 0,
+    tier: "lexicon",
+    words: [...new Set(hits)],
+    text: base,
+  };
 }
 
 async function scanFile(file: string): Promise<Offender[]> {
@@ -390,7 +419,8 @@ async function scanFile(file: string): Promise<Offender[]> {
 
 async function collectOffenders(): Promise<Offender[]> {
   const files: string[] = [];
-  for (const root of SCAN_ROOTS) files.push(...(await walk(join(REPO_ROOT, root))));
+  for (const root of SCAN_ROOTS)
+    files.push(...(await walk(join(REPO_ROOT, root))));
   const perFile = await Promise.all(files.map(scanFile));
   return perFile.flat();
 }

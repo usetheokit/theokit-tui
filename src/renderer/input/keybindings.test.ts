@@ -73,4 +73,4 @@ describe("Home and End are named chords", () => {
     expect(resolveAction(defaultKeymap, "ctrl+a")).toBe("move-line-start");
     expect(resolveAction(defaultKeymap, "ctrl+e")).toBe("move-line-end");
   });
-})
+});

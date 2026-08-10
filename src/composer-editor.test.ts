@@ -254,4 +254,4 @@ describe("Home and End move the cursor end-to-end", () => {
     const typed = run([type("hello")]);
     expect(apply(apply(typed, "\x1b[H"), "\x1b[F").buffer.text).toBe("hello");
   });
-})
+});

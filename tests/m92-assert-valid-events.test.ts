@@ -126,7 +126,9 @@ describe("issue #58 — assertValidEvents descends into 'explored' events", () =
   });
 
   it("an empty 'explored' block throws instead of rendering 'Explored (0)'", () => {
-    expect(() => assertValidEvents([explored("e1", [])])).toThrow(/at least one/);
+    expect(() => assertValidEvents([explored("e1", [])])).toThrow(
+      /at least one/,
+    );
   });
 
   it("an invalid status on a nested entry throws", () => {
