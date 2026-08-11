@@ -39,7 +39,12 @@ describe("package manifest contract (T0.1)", () => {
     // B-104 slice 2: `./keys` ships the modal keypress router — the ORDERING RULE only, with the
     // states, keys and actions as type parameters. Separate from `./terminal` because it is pure:
     // routing a key in a test should not pull in file handles to do it.
-    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./terminal", "./keys"]);
+    expect(Object.keys(pkg.exports)).toEqual([
+      ".",
+      "./renderer",
+      "./terminal",
+      "./keys",
+    ]);
     const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);

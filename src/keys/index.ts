@@ -17,4 +17,8 @@
  * React. A consumer routing keys in a test should not pull in file handles to do it.
  */
 
-export { routeThroughLayers, type KeyLayer, type RoutedKey } from "./layer-router.js";
+export {
+  routeThroughLayers,
+  type KeyLayer,
+  type RoutedKey,
+} from "./layer-router.js";

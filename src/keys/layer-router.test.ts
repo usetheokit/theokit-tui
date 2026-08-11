@@ -50,7 +50,11 @@ describe("routeThroughLayers — the first claiming layer wins", () => {
   it("test_an_earlier_layer_outranks_a_later_one_that_also_matches", () => {
     // The reason order is declared rather than incidental: both `help` and `turn` match here, and
     // which one answers is a product decision that must not depend on how the code was typed.
-    const out = routeThroughLayers(LAYERS, "esc", { ...IDLE, helpOpen: true, streaming: true });
+    const out = routeThroughLayers(LAYERS, "esc", {
+      ...IDLE,
+      helpOpen: true,
+      streaming: true,
+    });
 
     expect(out.layer).toBe("help");
     expect(out.actions).toEqual(["close-help"]);
@@ -60,7 +64,11 @@ describe("routeThroughLayers — the first claiming layer wins", () => {
     // Anti-vacuity for the case above, and the property that makes precedence OBSERVABLE: if order
     // did not matter, both cases would pass while the contract was unenforced.
     const reordered = [LAYERS[2]!, LAYERS[1]!, LAYERS[3]!];
-    const out = routeThroughLayers(reordered, "esc", { ...IDLE, helpOpen: true, streaming: true });
+    const out = routeThroughLayers(reordered, "esc", {
+      ...IDLE,
+      helpOpen: true,
+      streaming: true,
+    });
 
     expect(out.layer).toBe("turn");
     expect(out.actions).toEqual(["interrupt"]);
@@ -78,9 +86,16 @@ describe("routeThroughLayers — claiming and producing nothing are different", 
   it("test_a_layer_that_claims_and_returns_no_action_still_consumes_the_key", () => {
     // The swallow case, and the one an if-chain gets wrong. A confirmation gate or a login flow must
     // absorb Ctrl-C rather than let the composer see it — and "absorbed" is not "unhandled".
-    const out = routeThroughLayers(LAYERS, "c", { ...IDLE, locked: true, helpOpen: true });
+    const out = routeThroughLayers(LAYERS, "c", {
+      ...IDLE,
+      locked: true,
+      helpOpen: true,
+    });
 
-    expect(out.layer, "the key fell through a layer that was supposed to swallow it").toBe("locked");
+    expect(
+      out.layer,
+      "the key fell through a layer that was supposed to swallow it",
+    ).toBe("locked");
     expect(out.actions).toEqual([]);
   });
 
@@ -97,10 +112,16 @@ describe("routeThroughLayers — claiming and producing nothing are different", 
 describe("routeThroughLayers — what the layers are given", () => {
   it("test_a_layer_routes_using_both_the_key_and_the_state", () => {
     const layers: readonly KeyLayer<State, string, Action>[] = [
-      { name: "composer", when: () => true, route: (k, s) => (k === "c" && s.streaming ? ["interrupt"] : ["type"]) },
+      {
+        name: "composer",
+        when: () => true,
+        route: (k, s) => (k === "c" && s.streaming ? ["interrupt"] : ["type"]),
+      },
     ];
 
-    expect(routeThroughLayers(layers, "c", { ...IDLE, streaming: true }).actions).toEqual(["interrupt"]);
+    expect(
+      routeThroughLayers(layers, "c", { ...IDLE, streaming: true }).actions,
+    ).toEqual(["interrupt"]);
     expect(routeThroughLayers(layers, "c", IDLE).actions).toEqual(["type"]);
   });
 
@@ -109,7 +130,14 @@ describe("routeThroughLayers — what the layers are given", () => {
     // whose `when` said no would run code in a state it never expects.
     let routed = 0;
     const layers: readonly KeyLayer<State, string, Action>[] = [
-      { name: "never", when: () => false, route: () => { routed += 1; return []; } },
+      {
+        name: "never",
+        when: () => false,
+        route: () => {
+          routed += 1;
+          return [];
+        },
+      },
       { name: "composer", when: () => true, route: () => ["type"] },
     ];
 
@@ -121,7 +149,14 @@ describe("routeThroughLayers — what the layers are given", () => {
     let consulted = 0;
     const layers: readonly KeyLayer<State, string, Action>[] = [
       { name: "first", when: () => true, route: () => ["type"] },
-      { name: "second", when: () => { consulted += 1; return true; }, route: () => [] },
+      {
+        name: "second",
+        when: () => {
+          consulted += 1;
+          return true;
+        },
+        route: () => [],
+      },
     ];
 
     routeThroughLayers(layers, "a", IDLE);
@@ -131,7 +166,10 @@ describe("routeThroughLayers — what the layers are given", () => {
 
 describe("routeThroughLayers — degenerate input", () => {
   it("test_no_layers_at_all_is_unclaimed_rather_than_a_throw", () => {
-    expect(routeThroughLayers([], "a", IDLE)).toEqual({ layer: null, actions: [] });
+    expect(routeThroughLayers([], "a", IDLE)).toEqual({
+      layer: null,
+      actions: [],
+    });
   });
 
   it("test_the_returned_actions_are_a_snapshot_of_what_the_layer_produced", () => {
