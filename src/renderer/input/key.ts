@@ -22,6 +22,13 @@ export interface Key {
   /** M22: the parser already frames these — surfaced for the Pager (review H1). */
   pageUp: boolean;
   pageDown: boolean;
+  /**
+   * The parser already framed these too, and nothing carried them: `nonAlphanumericKeys` blanked
+   * the input and no field replaced it, so Home/End reached the composer as no event at all.
+   * Surfaced for the same reason pageUp/pageDown were (TheoCode B-068).
+   */
+  home: boolean;
+  end: boolean;
 }
 
 /** Project a raw framed sequence into `(input, key)` — the useInput handler args. */
@@ -42,6 +49,8 @@ export function projectKey(sequence: string): { input: string; key: Key } {
     meta: keypress.meta,
     pageUp: keypress.name === "pageup",
     pageDown: keypress.name === "pagedown",
+    home: keypress.name === "home",
+    end: keypress.name === "end",
   };
 
   let input = keypress.ctrl ? keypress.name : keypress.sequence;

@@ -292,10 +292,10 @@ describe("messagesToAgentEvents tool-result routing", () => {
     expect(events[0]?.kind).toBe("tool");
   });
 
-  // Issue #59 item 8 (F-tests-7): o predicado `explorable` exige status
-  // `success` OU `running`. Os dois ramos estavam sem teste — so o caminho
-  // `success` era exercitado, entao trocar o predicado por `status === "success"`
-  // (ou dropar a leitura em voo do grupo) passava batido.
+  // Issue #59 item 8 (F-tests-7): the `explorable` predicate requires status
+  // `success` OR `running`. Both branches were untested — only the `success` path was
+  // exercised, so replacing the predicate with `status === "success"` (or dropping the
+  // in-flight read from the group) went unnoticed.
   it("a FAILED read-only tool stays a discrete card and breaks the run", () => {
     const events = messagesToAgentEvents([
       {
@@ -321,13 +321,13 @@ describe("messagesToAgentEvents tool-result routing", () => {
             toolCallId: "c3",
             state: "output-error",
             errorText: "ENOENT",
-            input: { path: "sumiu.ts" },
+            input: { path: "missing.ts" },
           },
         ],
       },
     ]);
-    // Os dois primeiros agrupam; o que falhou NAO entra — uma leitura que deu
-    // errado e informacao que o usuario precisa ver, nao uma linha resumida.
+    // The first two group; the one that failed does NOT — a read that went wrong is
+    // information the user needs to see, not a summarised row.
     expect(events).toHaveLength(2);
     const grouped = events[0] as { kind: string; tools: { id: string }[] };
     expect(grouped.kind).toBe("explored");
@@ -356,7 +356,7 @@ describe("messagesToAgentEvents tool-result routing", () => {
             type: "tool-read_file",
             toolCallId: "c2",
             state: "input-available",
-            input: { path: "em-voo.ts" },
+            input: { path: "in-flight.ts" },
           },
         ],
       },

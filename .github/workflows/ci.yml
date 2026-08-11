@@ -41,14 +41,20 @@ jobs:
       - name: typecheck
         run: pnpm typecheck
 
+      # B-122 — build BEFORE test. `dist/` is gitignored, and `publint --strict`
+      # (via tests/package-contract.test.ts) resolves every `exports` entry against
+      # the built artifact. With the old order it reported EVERY entry as missing,
+      # including `.` and `./renderer`, so this job had been red on `develop` for at
+      # least 8 consecutive runs — long enough that a real regression would have
+      # arrived looking exactly like the standing noise.
+      - name: build
+        run: pnpm build
+
       - name: test
         run: pnpm test
 
       - name: coverage
         run: pnpm test:coverage
-
-      - name: build
-        run: pnpm build
 
       - name: bench smoke
         run: pnpm bench --smoke

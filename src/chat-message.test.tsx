@@ -236,14 +236,14 @@ describe("M19 — assistant text word-wraps to the terminal (no mid-word hard-wr
     expect(collapsed).toContain("the check exited zero and printed");
   });
 
-  // Issue #59 item 9 (F-tests-5) — NAO coberto aqui, e a razao esta medida.
-  // O pedido era travar o ramo RAW (`<Text wrap="wrap">` com a largura fixada)
-  // como este teste trava o ramo markdown. Escrevi e testei por mutacao:
-  // removendo `width={rowWidth}` do ramo raw a suite inteira continua VERDE,
-  // dentro e fora de `<Static>`. Sob o ink-testing-library a caixa raiz do ink
-  // ja e a largura do terminal, entao o texto quebra de qualquer jeito e a
-  // ausencia do pin e inobservavel. Um teste que passa nos dois estados nao
-  // trava nada — travar isso de verdade exige TTY real (tests/renderer/*pty*).
+  // Issue #59 item 9 (F-tests-5) — NOT covered here, and the reason was measured.
+  // The ask was to pin the RAW branch (`<Text wrap="wrap">` with the width fixed)
+  // the way this test pins the markdown branch. It was written and mutation-tested:
+  // removing `width={rowWidth}` from the raw branch leaves the whole suite GREEN,
+  // inside and outside `<Static>`. Under ink-testing-library ink's root box is
+  // already the terminal width, so the text wraps regardless and the missing pin
+  // is unobservable. A test that passes in both states pins nothing — pinning this
+  // for real needs a true TTY (tests/renderer/*pty*).
 });
 
 // The widest rendered line in terminal CELLS — `string-width` strips the SGR
@@ -289,10 +289,10 @@ describe("issue #56 — a horizontal margin must not push the row past the termi
   });
 
   it("chat_message_markdown_path_respects_the_margin_budget_too", async () => {
-    // Issue #64: a coluna do markdown e um item flex com `flex-basis: auto`, ou
-    // seja, dimensionado pelo CONTEUDO (o paragrafo sem quebra, larguissimo).
-    // Com a linha estreitada pela margem a conta de shrink do yoga sobra uma
-    // celula e o filho transborda o proprio pai.
+    // Issue #64: the markdown column is a flex item with `flex-basis: auto`, i.e.
+    // sized by its CONTENT (the unbroken, very wide paragraph). With the row
+    // narrowed by the margin, yoga's shrink arithmetic leaves one cell over and
+    // the child overflows its own parent.
     const frame = await renderFrame(
       <ChatMessage role="assistant" markdown marginLeft={8}>
         {paragraph}

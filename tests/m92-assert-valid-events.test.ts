@@ -2,103 +2,101 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   assertValidEvents,
-  reiniciarValidacaoIncremental,
+  resetIncrementalValidation,
 } from "../src/agent-timeline.js";
 
 const ev = (id: string, text: string) =>
   ({ id, kind: "message", role: "assistant", text }) as never;
-const ruim = (id: string) =>
-  ({ id, kind: "nao-existe", role: "assistant", text: "x" }) as never;
+const bad = (id: string) =>
+  ({ id, kind: "does-not-exist", role: "assistant", text: "x" }) as never;
 
 /**
- * M92 T5.1 — a validação incremental **não pode** deixar de pegar entrada inválida.
+ * M92 T5.1 — incremental validation **must not** stop catching invalid input.
  *
- * `assertValidEvents` passou a validar só a cauda quando o array novo é extensão de prefixo do
- * anterior — o histórico congelado em `<Static>` não muda, e revarrê-lo por render é O(N) por token
- * sobre dado que a estrutura garante imutável.
+ * `assertValidEvents` now validates only the tail when the new array is a prefix extension of the
+ * previous one — the history frozen in `<Static>` does not change, and re-sweeping it per render is
+ * O(N) per token over data the structure guarantees immutable.
  *
- * O risco da otimização é este arquivo: uma validação que ficou rápida **deixando de validar** é pior
- * que a lentidão. Por isso o fallback (array que não é extensão → varredura completa), e por isso cada
- * caminho é exercitado com entrada inválida.
+ * The risk of the optimisation is this file: a validation that got fast by **no longer validating**
+ * is worse than the slowness. Hence the fallback (an array that is not an extension → full sweep),
+ * and hence every path being exercised with invalid input.
  *
- * Testar por render não funciona, e isso foi medido: o throw acontece dentro do render e o ink não o
- * propaga — `renderFrame` de um evento inválido **resolve**. A função é exportada para que a prova
- * exista.
+ * Testing through a render does not work, and that was measured: the throw happens inside the render
+ * and ink does not propagate it — `renderFrame` of an invalid event **resolves**. The function is
+ * exported so the proof can exist.
  */
-describe("M92 — assertValidEvents nos dois caminhos", () => {
+describe("M92 — assertValidEvents on both paths", () => {
   beforeEach(() => {
-    reiniciarValidacaoIncremental();
+    resetIncrementalValidation();
   });
 
-  it("EXTENSAO — id duplicado na cauda continua sendo pego", () => {
-    assertValidEvents([ev("a", "um")]);
-    expect(() => assertValidEvents([ev("a", "um"), ev("a", "dois")])).toThrow(
+  it("EXTENSION — a duplicate id in the tail is still caught", () => {
+    assertValidEvents([ev("a", "one")]);
+    expect(() => assertValidEvents([ev("a", "one"), ev("a", "two")])).toThrow(
       /duplicate event id/,
     );
   });
 
-  it("EXTENSAO — kind desconhecido na cauda continua sendo pego", () => {
-    assertValidEvents([ev("b1", "um")]);
-    expect(() => assertValidEvents([ev("b1", "um"), ruim("b2")])).toThrow(
+  it("EXTENSION — an unknown kind in the tail is still caught", () => {
+    assertValidEvents([ev("b1", "one")]);
+    expect(() => assertValidEvents([ev("b1", "one"), bad("b2")])).toThrow(
       /unknown event kind/,
     );
   });
 
-  it("NAO-EXTENSAO — invalido no MEIO cai no fallback e continua sendo pego", () => {
-    assertValidEvents([ev("c1", "um"), ev("c2", "dois")]);
-    // Array totalmente diferente: não é extensão, logo a varredura completa tem de rodar.
-    expect(() => assertValidEvents([ruim("d1"), ev("d2", "tres")])).toThrow(
+  it("NON-EXTENSION — an invalid event in the MIDDLE falls back and is still caught", () => {
+    assertValidEvents([ev("c1", "one"), ev("c2", "two")]);
+    // A completely different array: not an extension, so the full sweep has to run.
+    expect(() => assertValidEvents([bad("d1"), ev("d2", "three")])).toThrow(
       /unknown event kind/,
     );
   });
 
-  it("NAO-EXTENSAO — duplicado no meio de um array novo continua sendo pego", () => {
-    assertValidEvents([ev("e1", "um")]);
+  it("NON-EXTENSION — a duplicate in the middle of a new array is still caught", () => {
+    assertValidEvents([ev("e1", "one")]);
     expect(() => assertValidEvents([ev("x", "a"), ev("x", "b")])).toThrow(
       /duplicate event id/,
     );
   });
 
-  it("EXTENSAO valida NAO e rejeitada — a otimizacao nao quebra o legitimo", () => {
-    assertValidEvents([ev("f1", "um")]);
+  it("a valid EXTENSION is NOT rejected — the optimisation does not break the legitimate case", () => {
+    assertValidEvents([ev("f1", "one")]);
     expect(() =>
-      assertValidEvents([ev("f1", "um"), ev("f2", "dois")]),
+      assertValidEvents([ev("f1", "one"), ev("f2", "two")]),
     ).not.toThrow();
   });
 
-  it("depois de uma REJEICAO, o array invalido NAO vira prefixo confiavel", () => {
-    // A MESMA referência de array nas duas chamadas — é o que o React faz num re-render sem mudança.
+  it("after a REJECTION, the invalid array does NOT become a trusted prefix", () => {
+    // The SAME array reference in both calls — which is what React does on a re-render with no change.
     //
-    // A primeira versão deste teste criava dois literais distintos, e por isso NÃO conseguia falhar:
-    // identidades diferentes nunca são extensão de prefixo, então o fallback rodava e o inválido era
-    // pego pelo caminho errado. O mutante "grava o prefixo antes de validar" sobreviveu, e só a
-    // mutação mostrou.
-    const bom = ev("g1", "um");
-    const arrayInvalido = [bom, ruim("g2")];
-    assertValidEvents([bom]);
-    expect(() => assertValidEvents(arrayInvalido)).toThrow();
-    // Se o array que lançou tivesse virado prefixo, esta chamada pularia a checagem que acabou de
-    // falhar — a cauda seria vazia e nada seria validado.
-    expect(() => assertValidEvents(arrayInvalido)).toThrow(
-      /unknown event kind/,
-    );
+    // The first version of this test created two distinct literals, and for that reason COULD NOT
+    // fail: different identities are never a prefix extension, so the fallback ran and the invalid
+    // event was caught by the wrong path. The mutant "record the prefix before validating" survived,
+    // and only the mutation showed it.
+    const good = ev("g1", "one");
+    const invalidArray = [good, bad("g2")];
+    assertValidEvents([good]);
+    expect(() => assertValidEvents(invalidArray)).toThrow();
+    // If the array that threw had become the prefix, this call would skip the check that just
+    // failed — the tail would be empty and nothing would be validated.
+    expect(() => assertValidEvents(invalidArray)).toThrow(/unknown event kind/);
   });
 
-  it("ENCOLHER o array nao e extensao — cai no fallback", () => {
-    assertValidEvents([ev("h1", "um"), ev("h2", "dois")]);
-    expect(() => assertValidEvents([ruim("h1")])).toThrow(/unknown event kind/);
+  it("SHRINKING the array is not an extension — it falls back", () => {
+    assertValidEvents([ev("h1", "one"), ev("h2", "two")]);
+    expect(() => assertValidEvents([bad("h1")])).toThrow(/unknown event kind/);
   });
 });
 
 /**
- * Issue #58 — `explored` é membro PÚBLICO da união (e exportado), então um consumidor direto de
- * `AgentTimeline` (sem passar por `messagesToAgentEvents`) alcança este caminho. Antes, o evento caía
- * fora de toda checagem: ids aninhados não entravam no conjunto de duplicados (React reclamava de
- * `key` duplicada em pleno render, onde o error boundary do ink engole o throw), `tools: []`
- * renderizava um cabeçalho "Explored (0)" pelado, e status/exclusividade/maxLines dos aninhados
- * passavam livres — contrariando o contrato documentado nas props ("unique ids (duplicates throw)").
+ * Issue #58 — `explored` is a PUBLIC member of the union (and exported), so a direct consumer of
+ * `AgentTimeline` (without going through `messagesToAgentEvents`) reaches this path. Before, the
+ * event fell outside every check: nested ids did not enter the duplicate set (React complained about
+ * a duplicate `key` mid-render, where ink's error boundary swallows the throw), `tools: []` rendered
+ * a bare "Explored (0)" header, and status/exclusivity/maxLines of the nested entries passed freely —
+ * contradicting the contract documented on the props ("unique ids (duplicates throw)").
  */
-const ferramenta = (id: string, extra: Record<string, unknown> = {}) =>
+const tool = (id: string, extra: Record<string, unknown> = {}) =>
   ({
     id,
     kind: "tool",
@@ -106,71 +104,71 @@ const ferramenta = (id: string, extra: Record<string, unknown> = {}) =>
     status: "success",
     ...extra,
   }) as never;
-const explorado = (id: string, tools: unknown[]) =>
+const explored = (id: string, tools: unknown[]) =>
   ({ id, kind: "explored", tools }) as never;
 
-describe("issue #58 — assertValidEvents desce nos eventos 'explored'", () => {
+describe("issue #58 — assertValidEvents descends into 'explored' events", () => {
   beforeEach(() => {
-    reiniciarValidacaoIncremental();
+    resetIncrementalValidation();
   });
 
-  it("id aninhado duplicado dentro do MESMO bloco lanca", () => {
+  it("a duplicate nested id inside the SAME block throws", () => {
     expect(() =>
-      assertValidEvents([
-        explorado("e1", [ferramenta("t1"), ferramenta("t1")]),
-      ]),
+      assertValidEvents([explored("e1", [tool("t1"), tool("t1")])]),
     ).toThrow(/duplicate event id "t1"/);
   });
 
-  it("id aninhado que colide com um id de TOPO lanca", () => {
-    // O conjunto de ids e compartilhado: aninhado e topo vivem no mesmo espaco de nomes.
+  it("a nested id colliding with a TOP-LEVEL id throws", () => {
+    // The id set is shared: nested and top level live in the same namespace.
     expect(() =>
-      assertValidEvents([ev("t1", "um"), explorado("e1", [ferramenta("t1")])]),
+      assertValidEvents([ev("t1", "one"), explored("e1", [tool("t1")])]),
     ).toThrow(/duplicate event id "t1"/);
   });
 
-  it("bloco 'explored' vazio lanca em vez de renderizar 'Explored (0)'", () => {
-    expect(() => assertValidEvents([explorado("e1", [])])).toThrow(
+  it("an empty 'explored' block throws instead of rendering 'Explored (0)'", () => {
+    expect(() => assertValidEvents([explored("e1", [])])).toThrow(
       /at least one/,
     );
   });
 
-  it("status invalido num aninhado lanca", () => {
+  it("an invalid status on a nested entry throws", () => {
+    // `not-a-status` must stay OUTSIDE `TOOL_CALL_STATUSES` (pending/running/success/failed).
+    // The Portuguese original used "pendente", and translating it to "pending" made the fixture
+    // VALID — the test then asserted a throw that could never happen. Whoever edits this line next:
+    // the value has to be one the union rejects, or this test stops testing anything.
     expect(() =>
       assertValidEvents([
-        explorado("e1", [ferramenta("t1", { status: "pendente" })]),
+        explored("e1", [tool("t1", { status: "not-a-status" })]),
       ]),
     ).toThrow(/invalid status/);
   });
 
-  it("exclusividade output/shell/diff vale para os aninhados", () => {
+  it("output/shell/diff exclusivity applies to nested entries", () => {
     expect(() =>
       assertValidEvents([
-        explorado("e1", [ferramenta("t1", { output: "x", diff: "y" })]),
+        explored("e1", [tool("t1", { output: "x", diff: "y" })]),
       ]),
     ).toThrow(/only one of/);
   });
 
-  it("maxLines invalido num aninhado lanca", () => {
+  it("an invalid maxLines on a nested entry throws", () => {
     expect(() =>
-      assertValidEvents([explorado("e1", [ferramenta("t1", { maxLines: 0 })])]),
+      assertValidEvents([explored("e1", [tool("t1", { maxLines: 0 })])]),
     ).toThrow(/maxLines must be an integer/);
   });
 
-  it("bloco 'explored' valido NAO e rejeitado", () => {
+  it("a valid 'explored' block is NOT rejected", () => {
     expect(() =>
-      assertValidEvents([
-        explorado("e1", [ferramenta("t1"), ferramenta("t2")]),
-      ]),
+      assertValidEvents([explored("e1", [tool("t1"), tool("t2")])]),
     ).not.toThrow();
   });
 
-  it("EXTENSAO — os ids aninhados do prefixo continuam reservados na cauda", () => {
-    // A otimizacao do M92 reaproveita o conjunto de ids do render anterior. Se os aninhados nao
-    // entrassem nele, um id ja usado dentro de um bloco congelado voltaria a ser aceito no topo.
-    const bloco = explorado("e1", [ferramenta("t1")]);
-    assertValidEvents([bloco]);
-    expect(() => assertValidEvents([bloco, ev("t1", "colide")])).toThrow(
+  it("EXTENSION — nested ids from the prefix stay reserved in the tail", () => {
+    // M92's optimisation reuses the id set from the previous render. If nested ids did not enter it,
+    // an id already used inside a frozen block would become acceptable again at the top level.
+    const block = explored("e1", [tool("t1")]);
+    assertValidEvents([block]);
+    expect(() => assertValidEvents([block, ev("t1", "collides")])).toThrow(
       /duplicate event id "t1"/,
     );
   });

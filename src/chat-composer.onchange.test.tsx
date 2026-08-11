@@ -70,15 +70,15 @@ describe("ChatComposer onChange", () => {
   });
 });
 
-describe("issue #59 item 3 — identidade instavel do onChange nao redispara", () => {
-  it("re-render com callback INLINE novo e texto igual nao chama de novo", async () => {
-    // F-arch-7 / F-tui-10: o efeito dependia de `[buffer.text, onChange]`, entao
-    // um `onChange={(t) => algo(t)}` — a forma que todo consumidor escreve —
-    // redisparava a cada render do host com o texto INALTERADO. O contrato
-    // documentado e "apos o mount com o texto inicial e a cada edicao"; disparar
-    // por troca de identidade nao e nenhum dos dois.
+describe("issue #59 item 3 — an unstable onChange identity does not re-fire", () => {
+  it("a re-render with a new INLINE callback and unchanged text does not call again", async () => {
+    // F-arch-7 / F-tui-10: the effect depended on `[buffer.text, onChange]`, so an
+    // `onChange={(t) => something(t)}` — the form every consumer writes — re-fired on
+    // each host render with the text UNCHANGED. The documented contract is "after mount
+    // with the initial text, and on every edit"; firing on an identity change is
+    // neither of those.
     const spy = vi.fn();
-    // O spy e estavel, mas a funcao PASSADA e nova a cada render — o caso real.
+    // The spy is stable, but the function PASSED IN is new on every render — the real case.
     const tree = () => (
       <TheoTUIProvider>
         <ChatComposer onSubmit={() => {}} onChange={(t) => spy(t)} />

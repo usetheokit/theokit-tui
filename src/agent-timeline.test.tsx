@@ -696,10 +696,10 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
 });
 
 describe("issue #57 — the inline-diff branch needs a default line budget", () => {
-  // Um resultado de diff grande (apply_patch) renderiza TODAS as linhas quando
-  // `maxLines` nao vem no evento: `DiffViewer` nao tem default proprio, so
-  // valida. O mesmo resultado como `output` passa pelo `ToolResult`, que capa em
-  // 10 — entao o transcript inunda por qual CAMPO o evento usou, nao pelo tamanho.
+  // A large diff result (apply_patch) renders EVERY line when `maxLines` is absent
+  // from the event: `DiffViewer` has no default of its own, it only validates. The
+  // same result carried as `output` goes through `ToolResult`, which caps at 10 — so
+  // the transcript floods based on which FIELD the event used, not on its size.
   const bigDiff = [
     "--- a.ts",
     "+++ a.ts",
@@ -720,13 +720,13 @@ describe("issue #57 — the inline-diff branch needs a default line budget", () 
   it("diff_without_max_lines_is_capped_and_shows_the_truncation_trailer", async () => {
     const frame = await renderFrame(<AgentTimeline events={[diffEvent()]} />);
     const plain = stripAnsi(frame);
-    // O trailer do DiffViewer prova que o corte aconteceu (nao que o patch era curto).
+    // The DiffViewer trailer proves the cut happened (not that the patch was short).
     expect(plain).toMatch(/\(\+\d+ more lines\)/);
-    // O orcamento e global (headers inclusos) — a moldura do card adiciona poucas
-    // linhas, entao um teto folgado ainda mata o caso "renderiza as 120".
+    // The budget is global (headers included) — the card frame adds few rows, so a
+    // generous ceiling still kills the "renders all 120" case.
     expect(plain.split("\n").length).toBeLessThan(40);
-    expect(plain).toContain("old line 0"); // retencao de CABECA: o inicio sobrevive
-    expect(plain).not.toContain("new line 59"); // ...e a cauda nao
+    expect(plain).toContain("old line 0"); // HEAD retention: the start survives
+    expect(plain).not.toContain("new line 59"); // ...and the tail does not
   });
 
   it("explicit_max_lines_still_overrides_the_default", async () => {
@@ -737,7 +737,7 @@ describe("issue #57 — the inline-diff branch needs a default line budget", () 
   });
 
   it("a_short_diff_renders_whole_with_no_trailer", async () => {
-    // Nao-regressao: o default nao pode cortar um diff que ja cabe.
+    // Non-regression: the default must not cut a diff that already fits.
     const frame = await renderFrame(
       <AgentTimeline
         events={[
@@ -758,15 +758,15 @@ describe("issue #57 — the inline-diff branch needs a default line budget", () 
   });
 });
 
-describe("issue #59 item 5 — as linhas do Explored mantem a indentacao ao quebrar", () => {
-  // A linha e `  └ <resumo>`. Como o prefixo e o resumo viviam no MESMO <Text>,
-  // um alvo longo quebrava na COLUNA 0 e a continuacao se alinhava com o `⏺` do
-  // bloco, nao com o galho — o padrao `lineRow` do DiffViewer (calha
-  // flexShrink=0 + corpo wrap="wrap") existe justamente para isso.
+describe("issue #59 item 5 — Explored rows keep their indentation when wrapping", () => {
+  // The row is `  └ <summary>`. Because prefix and summary lived in the SAME <Text>,
+  // a long target wrapped at COLUMN 0 and the continuation lined up with the block's
+  // `⏺` rather than with the branch — DiffViewer's `lineRow` pattern (gutter with
+  // flexShrink=0 + body with wrap="wrap") exists for exactly this.
   const longPath =
     "packages/agent-runtime/src/adapters/streaming/very-long-directory-name/deep-module.ts";
 
-  const frameEstreito = async (): Promise<string> =>
+  const narrowFrame = async (): Promise<string> =>
     renderFrame(
       <Box width={40}>
         <AgentTimeline
@@ -796,21 +796,21 @@ describe("issue #59 item 5 — as linhas do Explored mantem a indentacao ao queb
       </Box>,
     );
 
-  it("a continuacao de um alvo longo NAO comeca na coluna 0", async () => {
-    const linhas = stripAnsi(await frameEstreito())
+  it("the continuation of a long target does NOT start at column 0", async () => {
+    const rows = stripAnsi(await narrowFrame())
       .split("\n")
       .filter((l) => l.trim() !== "");
-    const iGalho = linhas.findIndex((l) => l.includes("└"));
-    expect(iGalho).toBeGreaterThanOrEqual(0);
-    // A linha seguinte e continuacao (o proximo galho so vem depois dela).
-    const continuacao = linhas[iGalho + 1] ?? "";
-    expect(continuacao.includes("└")).toBe(false); // de fato quebrou
-    expect(continuacao).toMatch(/^\s{4}/); // indentada sob o galho
+    const branchIndex = rows.findIndex((l) => l.includes("└"));
+    expect(branchIndex).toBeGreaterThanOrEqual(0);
+    // The next row is the continuation (the following branch comes only after it).
+    const continuation = rows[branchIndex + 1] ?? "";
+    expect(continuation.includes("└")).toBe(false); // it did wrap
+    expect(continuation).toMatch(/^\s{4}/); // indented under the branch
   });
 
-  it("um alvo curto continua renderizando `  └ ` colado no resumo", async () => {
-    // Nao-regressao de bytes: o caminho comum nao pode mudar.
-    const frame = stripAnsi(await frameEstreito());
+  it("a short target still renders `  └ ` flush against the summary", async () => {
+    // Byte-level non-regression: the common path must not change.
+    const frame = stripAnsi(await narrowFrame());
     expect(frame).toContain("  └ List src");
   });
 });

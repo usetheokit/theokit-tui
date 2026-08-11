@@ -24,9 +24,9 @@ describe("KeyboardHelp", () => {
     const def = strip(await renderFrame(<KeyboardHelp shortcuts={[]} />));
     expect(def).toContain("Keyboard shortcuts");
     const custom = strip(
-      await renderFrame(<KeyboardHelp shortcuts={[]} title="Atalhos" />),
+      await renderFrame(<KeyboardHelp shortcuts={[]} title="Shortcuts" />),
     );
-    expect(custom).toContain("Atalhos");
+    expect(custom).toContain("Shortcuts");
   });
 
   it("default_composer_shortcuts_cover_the_headline_chords", async () => {

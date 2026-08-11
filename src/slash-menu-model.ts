@@ -70,9 +70,17 @@ export function deriveSlashMenu(
   }
   // codex token contract: first whitespace-delimited token after the
   // slash (leading spaces trimmed) — `/clear something` filters "clear".
-  const filter = firstLine.slice(1).trimStart().split(/\s+/, 1)[0] ?? "";
+  const afterSlash = firstLine.slice(1).trimStart();
+  const filter = afterSlash.split(/\s+/, 1)[0] ?? "";
   const matches = commands.filter((command) => command.name.startsWith(filter));
-  if (dismissed || multiline || matches.length === 0) {
+  // An ARGUMENT has begun: the user typed a space after the command name, which is them leaving
+  // selection and starting to write the argument. There is nothing left to choose, and leaving the
+  // menu open means Enter completes instead of submitting — REPLACING the line with the bare
+  // command and discarding what was typed. Measured in a consumer across `/export <path>`,
+  // `/delete <id>` and `/sandbox <mode>`; the last failed silently, which is the worst shape for a
+  // setting about what an agent may do to a disk (TheoCode B-089).
+  const argumentStarted = afterSlash.length > filter.length;
+  if (dismissed || multiline || argumentStarted || matches.length === 0) {
     return { ...CLOSED, filter };
   }
   // Window/clamp/overflow via the shared M15 trailing-window (M22 DRY collapse).

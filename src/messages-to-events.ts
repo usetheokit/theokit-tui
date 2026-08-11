@@ -280,43 +280,43 @@ export const DEFAULT_EXPLORE_TOOLS: readonly string[] = [
 const EXPLORE_GROUP_MIN = 2;
 
 /**
- * Cache do INVÓLUCRO de um bloco `explored`, chaveado pela primeira ferramenta do run (#66).
+ * Cache of the WRAPPER of an `explored` block, keyed by the run's first tool (#66).
  *
- * Os eventos de ferramenta já têm identidade estável (`cacheDeEventos`), mas o bloco era um literal
- * novo a cada projeção — e a projeção roda por delta de token. Como a detecção de extensão de prefixo
- * do `assertValidEvents` é por identidade, o primeiro `explored` do array nunca casava e **todo render
- * caía na varredura completa**, que é o custo que o M92 existe para remover.
+ * Tool events already have stable identity (`eventCache`), but the block was a fresh literal on
+ * every projection — and the projection runs per token delta. Because `assertValidEvents` detects a
+ * prefix extension by identity, the array's first `explored` never matched and **every render fell
+ * back to the full sweep**, which is the cost M92 exists to remove.
  *
- * A chave é o objeto da primeira ferramenta (não o id): `WeakMap`, mesmo motivo do `cacheDeEventos` —
- * reter um evento descartado seria vazamento numa sessão longa.
+ * The key is the first tool's OBJECT (not its id): a `WeakMap`, same reason as `eventCache` —
+ * holding on to a discarded event would leak across a long session.
  *
- * O reuso é por CONTEÚDO, nunca por id: enquanto o run está aberto ele cresce sob o mesmo id, e
- * devolver o bloco antigo congelaria a leitura nova fora da tela.
+ * Reuse is by CONTENT, never by id: while the run is open it grows under the same id, and returning
+ * the old block would freeze the new read off-screen.
  */
-const cacheDeBlocos = new WeakMap<
+const blockCache = new WeakMap<
   object,
-  { tools: readonly AgentToolEvent[]; evento: AgentEvent }
+  { tools: readonly AgentToolEvent[]; event: AgentEvent }
 >();
 
-function blocoExplorado(
+function exploredBlock(
   first: AgentToolEvent,
   tools: AgentToolEvent[],
 ): AgentEvent {
-  const anterior = cacheDeBlocos.get(first);
+  const previous = blockCache.get(first);
   if (
-    anterior !== undefined &&
-    anterior.tools.length === tools.length &&
-    anterior.tools.every((t, i) => t === tools[i])
+    previous !== undefined &&
+    previous.tools.length === tools.length &&
+    previous.tools.every((t, i) => t === tools[i])
   ) {
-    return anterior.evento;
+    return previous.event;
   }
-  const evento: AgentEvent = {
+  const event: AgentEvent = {
     id: `explored-${first.id}`,
     kind: "explored",
     tools,
   };
-  cacheDeBlocos.set(first, { tools, evento });
-  return evento;
+  blockCache.set(first, { tools, event });
+  return event;
 }
 
 /** Collapse consecutive successful/running read-only tool events into
@@ -331,7 +331,7 @@ function groupExploration(
   const flush = (): void => {
     if (run.length >= EXPLORE_GROUP_MIN) {
       const first = run[0] as AgentToolEvent;
-      out.push(blocoExplorado(first, run));
+      out.push(exploredBlock(first, run));
     } else {
       out.push(...run);
     }
@@ -418,51 +418,52 @@ export interface MessagesToEventsOptions {
  * `explored` block — apps with differently-named tools are unaffected.
  */
 /**
- * Cache dos eventos derivados de UMA mensagem, chaveado pela identidade da própria mensagem.
+ * Cache of the events derived from ONE message, keyed by the message's own identity.
  *
- * M92 — a derivação rodava inteira a cada chamada, e a chamada acontece por delta de token. O M86
- * mediu o custo: **3,274 ms @400 mensagens**, dominado por tool calls (texto puro é plano, ~0,025 ms).
- * O consumidor memoizou a chamada (`useMemo`); aqui a função para de recomputar o que não mudou.
+ * M92 — the derivation ran in full on every call, and the call happens per token delta. M86 measured
+ * the cost: **3.274 ms @400 messages**, dominated by tool calls (plain text is flat, ~0.025 ms). The
+ * consumer memoised the call (`useMemo`); here the function stops recomputing what did not change.
  *
- * `WeakMap` e não `Map`: a chave é a mensagem, e reter uma mensagem descartada seria vazamento numa
- * sessão longa — exatamente a classe de defeito que este milestone existe para fechar do outro lado.
+ * A `WeakMap` and not a `Map`: the key is the message, and holding on to a discarded message would
+ * leak across a long session — exactly the class of defect this milestone exists to close from the
+ * other side.
  *
- * O ganho real não é só CPU: os eventos passam a ter **identidade estável por construção**. É isso que
- * torna a validação incremental de `assertValidEvents` não-vacua — sem este cache, cada render produz
- * objetos novos, o prefixo nunca casa e o caminho rápido nunca dispara. A revisão do M92 mediu: 0 de 5
- * renders. Os dois itens são um só mecanismo visto de dois lados.
+ * The real gain is not only CPU: the events acquire **stable identity by construction**. That is what
+ * makes `assertValidEvents`'s incremental validation non-vacuous — without this cache every render
+ * produces new objects, the prefix never matches and the fast path never fires. The M92 review
+ * measured 0 of 5 renders. The two items are one mechanism seen from two sides.
  */
-const cacheDeEventos = new WeakMap<
+const eventCache = new WeakMap<
   object,
-  { partes: readonly unknown[]; eventos: AgentEvent[] }
+  { parts: readonly unknown[]; events: AgentEvent[] }
 >();
 
-/** Os eventos de uma mensagem, do cache quando as partes são as MESMAS por identidade. */
-function eventosDaMensagem(
+/** The events of a message, from cache when the parts are the SAME by identity. */
+function eventsOfMessage(
   message: UIMessageLike,
   opts: MessagesToEventsOptions | undefined,
-  derivar: () => AgentEvent[],
+  derive: () => AgentEvent[],
 ): AgentEvent[] {
-  // Só cacheia quando não há formatadores: eles são funções do chamador e podem mudar entre renders
-  // sem que a mensagem mude. Cachear por identidade de função acrescentaria uma dimensão de chave para
-  // um caso que o consumidor não exercita (os formatadores dele são estáveis por módulo).
+  // Only cache when there are no formatters: they are caller-supplied functions and can change
+  // between renders without the message changing. Keying on function identity would add a key
+  // dimension for a case the consumer does not exercise (its formatters are module-stable).
   if (
     opts?.formatToolHeader !== undefined ||
     opts?.formatToolResult !== undefined
   )
-    return derivar();
-  const chave = message as unknown as object;
-  const anterior = cacheDeEventos.get(chave);
+    return derive();
+  const key = message as unknown as object;
+  const previous = eventCache.get(key);
   if (
-    anterior !== undefined &&
-    anterior.partes.length === message.parts.length &&
-    anterior.partes.every((p, i) => p === message.parts[i])
+    previous !== undefined &&
+    previous.parts.length === message.parts.length &&
+    previous.parts.every((p, i) => p === message.parts[i])
   ) {
-    return anterior.eventos;
+    return previous.events;
   }
-  const eventos = derivar();
-  cacheDeEventos.set(chave, { partes: [...message.parts], eventos });
-  return eventos;
+  const events = derive();
+  eventCache.set(key, { parts: [...message.parts], events });
+  return events;
 }
 
 export function messagesToAgentEvents(
@@ -471,17 +472,17 @@ export function messagesToAgentEvents(
 ): AgentEvent[] {
   const events: AgentEvent[] = [];
   for (const message of messages) {
-    const doCache = eventosDaMensagem(message, opts, () =>
-      derivarUmaMensagem(message, opts),
+    const cached = eventsOfMessage(message, opts, () =>
+      deriveOneMessage(message, opts),
     );
-    events.push(...doCache);
+    events.push(...cached);
   }
   const explore0 = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
   return explore0.size === 0 ? events : groupExploration(events, explore0);
 }
 
-/** A derivação de UMA mensagem — extraída para que o cache tenha o que memoizar. */
-function derivarUmaMensagem(
+/** The derivation of ONE message — extracted so the cache has something to memoise. */
+function deriveOneMessage(
   message: UIMessageLike,
   opts: MessagesToEventsOptions | undefined,
 ): AgentEvent[] {
