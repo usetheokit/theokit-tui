@@ -11,12 +11,11 @@
  * React components. Putting them in `.` would drag Node built-ins into every bundle that imports a
  * button.
  *
- * **What is deliberately NOT here:** the keypress router. Its mechanism generalises — a pure
- * function from state and keypress to an ordered list of actions — but its contract is the
- * consumer's vocabulary (which overlays are open, whether a turn is streaming, what "escape" means
- * at each layer). Publishing one shaped by a single application would give the second consumer an
- * interface to route around rather than to use, and a public API cannot be taken back. It stays a
- * design question until there is more than one example to design against.
+ * **The keypress router lives next door, at `@theokit/tui/keys`.** It was deliberately absent here
+ * while its contract was the consumer's vocabulary — which overlays are open, whether a turn is
+ * streaming, what "escape" means at each layer. Publishing that would have given the second consumer
+ * an interface to route around. What ships instead is the ORDERING RULE alone, with the states, keys
+ * and actions as type parameters, so the objection is answered rather than waived.
  *
  * @public
  */

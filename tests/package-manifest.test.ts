@@ -36,7 +36,10 @@ describe("package manifest contract (T0.1)", () => {
     // serialisation and log rotation. A SEPARATE subpath because they reach `node:fs` and
     // `process`, and the root entry is React components: putting them in `.` would drag Node
     // built-ins into every bundle that imports a button.
-    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./terminal"]);
+    // B-104 slice 2: `./keys` ships the modal keypress router — the ORDERING RULE only, with the
+    // states, keys and actions as type parameters. Separate from `./terminal` because it is pure:
+    // routing a key in a test should not pull in file handles to do it.
+    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./terminal", "./keys"]);
     const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);
@@ -50,6 +53,10 @@ describe("package manifest contract (T0.1)", () => {
     expect(Object.keys(terminal)).toEqual(["types", "default"]);
     expect(terminal["types"]).toBe("./dist/terminal/index.d.ts");
     expect(terminal["default"]).toBe("./dist/terminal/index.js");
+    const keys = pkg.exports["./keys"] ?? {};
+    expect(Object.keys(keys)).toEqual(["types", "default"]);
+    expect(keys["types"]).toBe("./dist/keys/index.d.ts");
+    expect(keys["default"]).toBe("./dist/keys/index.js");
     expect(pkg.files).toEqual(["dist"]);
     // Legacy resolution fields must point at the same ESM artifacts
     // (review F-arch-3 — a stale "main" passes exports-only assertions).
