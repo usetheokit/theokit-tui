@@ -3,7 +3,29 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [0.52.0] - 2026-08-11
+
+### Added
+
+- **`@theokit/tui/keys` — modal keypress routing (B-104 slice 2).** Layers are tried in declared
+  order, the first whose `when` holds claims the key exclusively, and the result names WHICH layer
+  claimed it. That last part is why it is worth extracting: precedence that cannot be observed cannot
+  be tested. `./terminal` deferred this with a real objection — an interface shaped by one product's
+  key states would give the second consumer something to route around — and the objection is answered
+  rather than waived: what ships is the ordering rule, with states, keys and actions as type
+  parameters. Nothing in the module names an overlay, a mode or a keystroke.
+
 ## [Unreleased]
+
+### Added
+
+- **`@theokit/tui/keys` — modal keypress routing (B-104 slice 2).** Layers are tried in declared
+  order, the first whose `when` holds claims the key exclusively, and the result names WHICH layer
+  claimed it. That last part is why it is worth extracting: precedence that cannot be observed cannot
+  be tested. `./terminal` deferred this with a real objection — an interface shaped by one product's
+  key states would give the second consumer something to route around — and the objection is answered
+  rather than waived: what ships is the ordering rule, with states, keys and actions as type
+  parameters. Nothing here names an overlay, a mode or a keystroke.
 
 ## [0.51.0] - 2026-08-11
 
