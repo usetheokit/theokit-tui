@@ -43,7 +43,10 @@ export interface StderrGuardOptions {
  *   one line saying how many and why — to the REAL stderr, once the frame no longer matters.
  * @public
  */
-export function installStderrGuard(logPath: string, options: StderrGuardOptions = {}): () => void {
+export function installStderrGuard(
+  logPath: string,
+  options: StderrGuardOptions = {},
+): () => void {
   const label = options.label ?? "tui";
   const capBytes = options.capBytes ?? DEFAULT_CAP_BYTES;
   const keep = options.keep ?? DEFAULT_KEEP;

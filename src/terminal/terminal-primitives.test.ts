@@ -9,7 +9,14 @@
  * deleting the log.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -51,7 +58,10 @@ describe("createWriteQueue", () => {
       order.push(tag);
     };
 
-    await Promise.all([queue.enqueue("x", () => slow("x", 20)), queue.enqueue("y", () => slow("y", 1))]);
+    await Promise.all([
+      queue.enqueue("x", () => slow("x", 20)),
+      queue.enqueue("y", () => slow("y", 1)),
+    ]);
 
     expect(order).toEqual(["y", "x"]);
   });
@@ -60,12 +70,14 @@ describe("createWriteQueue", () => {
     // The contract that costs the most to rediscover: one bad write must not take the file down.
     const queue = createWriteQueue();
 
-    const failing = queue.enqueue("f", () => Promise.reject(new Error("disk full")));
+    const failing = queue.enqueue("f", () =>
+      Promise.reject(new Error("disk full")),
+    );
     await expect(failing).rejects.toThrow("disk full");
 
-    await expect(queue.enqueue("f", () => Promise.resolve("still works"))).resolves.toBe(
-      "still works",
-    );
+    await expect(
+      queue.enqueue("f", () => Promise.resolve("still works")),
+    ).resolves.toBe("still works");
   });
 
   it("test_drain_waits_for_the_key_and_drainAll_for_every_key", async () => {
@@ -97,13 +109,18 @@ describe("createWriteQueue", () => {
       order.push(tag);
     };
 
-    await Promise.all([first.enqueue("k", () => slow("first", 20)), second.enqueue("k", () => slow("second", 1))]);
+    await Promise.all([
+      first.enqueue("k", () => slow("first", 20)),
+      second.enqueue("k", () => slow("second", 1)),
+    ]);
 
     expect(order).toEqual(["second", "first"]);
   });
 
   it("test_draining_an_unknown_key_resolves", async () => {
-    await expect(createWriteQueue().drain("never-used")).resolves.toBeUndefined();
+    await expect(
+      createWriteQueue().drain("never-used"),
+    ).resolves.toBeUndefined();
   });
 });
 

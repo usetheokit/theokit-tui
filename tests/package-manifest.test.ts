@@ -32,7 +32,11 @@ describe("package manifest contract (T0.1)", () => {
     // the root entry stays first. The `./ai-sdk` back-compat shim was REMOVED —
     // the ai-free projections (`messagesTo*`) on the root entry replace it.
     // All entries are types-first ESM.
-    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer"]);
+    // B-104: `./terminal` ships the loop primitives — a stderr guard, per-key write
+    // serialisation and log rotation. A SEPARATE subpath because they reach `node:fs` and
+    // `process`, and the root entry is React components: putting them in `.` would drag Node
+    // built-ins into every bundle that imports a button.
+    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./terminal"]);
     const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);
@@ -42,6 +46,10 @@ describe("package manifest contract (T0.1)", () => {
     expect(Object.keys(renderer)).toEqual(["types", "default"]);
     expect(renderer["types"]).toBe("./dist/renderer/index.d.ts");
     expect(renderer["default"]).toBe("./dist/renderer/index.js");
+    const terminal = pkg.exports["./terminal"] ?? {};
+    expect(Object.keys(terminal)).toEqual(["types", "default"]);
+    expect(terminal["types"]).toBe("./dist/terminal/index.d.ts");
+    expect(terminal["default"]).toBe("./dist/terminal/index.js");
     expect(pkg.files).toEqual(["dist"]);
     // Legacy resolution fields must point at the same ESM artifacts
     // (review F-arch-3 — a stale "main" passes exports-only assertions).
