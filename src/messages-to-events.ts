@@ -279,6 +279,46 @@ export const DEFAULT_EXPLORE_TOOLS: readonly string[] = [
  * A lone read stays a normal card (Codex only collapses when it reduces noise). */
 const EXPLORE_GROUP_MIN = 2;
 
+/**
+ * Cache of the WRAPPER of an `explored` block, keyed by the run's first tool (#66).
+ *
+ * Tool events already have stable identity (`eventCache`), but the block was a fresh literal on
+ * every projection — and the projection runs per token delta. Because `assertValidEvents` detects a
+ * prefix extension by identity, the array's first `explored` never matched and **every render fell
+ * back to the full sweep**, which is the cost M92 exists to remove.
+ *
+ * The key is the first tool's OBJECT (not its id): a `WeakMap`, same reason as `eventCache` —
+ * holding on to a discarded event would leak across a long session.
+ *
+ * Reuse is by CONTENT, never by id: while the run is open it grows under the same id, and returning
+ * the old block would freeze the new read off-screen.
+ */
+const blockCache = new WeakMap<
+  object,
+  { tools: readonly AgentToolEvent[]; event: AgentEvent }
+>();
+
+function exploredBlock(
+  first: AgentToolEvent,
+  tools: AgentToolEvent[],
+): AgentEvent {
+  const previous = blockCache.get(first);
+  if (
+    previous !== undefined &&
+    previous.tools.length === tools.length &&
+    previous.tools.every((t, i) => t === tools[i])
+  ) {
+    return previous.event;
+  }
+  const event: AgentEvent = {
+    id: `explored-${first.id}`,
+    kind: "explored",
+    tools,
+  };
+  blockCache.set(first, { tools, event });
+  return event;
+}
+
 /** Collapse consecutive successful/running read-only tool events into
  * `explored` groups. A failed explore stays a normal card so its error stays
  * visible; a non-tool event (message/thinking) breaks the run. */
@@ -291,7 +331,7 @@ function groupExploration(
   const flush = (): void => {
     if (run.length >= EXPLORE_GROUP_MIN) {
       const first = run[0] as AgentToolEvent;
-      out.push({ id: `explored-${first.id}`, kind: "explored", tools: run });
+      out.push(exploredBlock(first, run));
     } else {
       out.push(...run);
     }
@@ -377,12 +417,77 @@ export interface MessagesToEventsOptions {
  * Consecutive read-only exploration tools (see {@link DEFAULT_EXPLORE_TOOLS}) collapse into a Codex-style
  * `explored` block — apps with differently-named tools are unaffected.
  */
+/**
+ * Cache of the events derived from ONE message, keyed by the message's own identity.
+ *
+ * M92 — the derivation ran in full on every call, and the call happens per token delta. M86 measured
+ * the cost: **3.274 ms @400 messages**, dominated by tool calls (plain text is flat, ~0.025 ms). The
+ * consumer memoised the call (`useMemo`); here the function stops recomputing what did not change.
+ *
+ * A `WeakMap` and not a `Map`: the key is the message, and holding on to a discarded message would
+ * leak across a long session — exactly the class of defect this milestone exists to close from the
+ * other side.
+ *
+ * The real gain is not only CPU: the events acquire **stable identity by construction**. That is what
+ * makes `assertValidEvents`'s incremental validation non-vacuous — without this cache every render
+ * produces new objects, the prefix never matches and the fast path never fires. The M92 review
+ * measured 0 of 5 renders. The two items are one mechanism seen from two sides.
+ */
+const eventCache = new WeakMap<
+  object,
+  { parts: readonly unknown[]; events: AgentEvent[] }
+>();
+
+/** The events of a message, from cache when the parts are the SAME by identity. */
+function eventsOfMessage(
+  message: UIMessageLike,
+  opts: MessagesToEventsOptions | undefined,
+  derive: () => AgentEvent[],
+): AgentEvent[] {
+  // Only cache when there are no formatters: they are caller-supplied functions and can change
+  // between renders without the message changing. Keying on function identity would add a key
+  // dimension for a case the consumer does not exercise (its formatters are module-stable).
+  if (
+    opts?.formatToolHeader !== undefined ||
+    opts?.formatToolResult !== undefined
+  )
+    return derive();
+  const key = message as unknown as object;
+  const previous = eventCache.get(key);
+  if (
+    previous !== undefined &&
+    previous.parts.length === message.parts.length &&
+    previous.parts.every((p, i) => p === message.parts[i])
+  ) {
+    return previous.events;
+  }
+  const events = derive();
+  eventCache.set(key, { parts: [...message.parts], events });
+  return events;
+}
+
 export function messagesToAgentEvents(
   messages: readonly UIMessageLike[],
   opts?: MessagesToEventsOptions,
 ): AgentEvent[] {
   const events: AgentEvent[] = [];
   for (const message of messages) {
+    const cached = eventsOfMessage(message, opts, () =>
+      deriveOneMessage(message, opts),
+    );
+    events.push(...cached);
+  }
+  const explore0 = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
+  return explore0.size === 0 ? events : groupExploration(events, explore0);
+}
+
+/** The derivation of ONE message — extracted so the cache has something to memoise. */
+function deriveOneMessage(
+  message: UIMessageLike,
+  opts: MessagesToEventsOptions | undefined,
+): AgentEvent[] {
+  const events: AgentEvent[] = [];
+  {
     message.parts.forEach((part, index) => {
       if (part.type === "text") {
         if (typeof part.text === "string" && part.text.length > 0) {
@@ -418,6 +523,5 @@ export function messagesToAgentEvents(
         );
     });
   }
-  const explore = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
-  return explore.size === 0 ? events : groupExploration(events, explore);
+  return events;
 }

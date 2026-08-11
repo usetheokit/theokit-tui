@@ -208,14 +208,12 @@ if (!smoke) {
   };
   const outPath = join(
     dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "docs",
-    "benchmarks",
+    "baselines",
     "m12-welcome-banner-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
   console.log(
-    "baseline written: docs/benchmarks/m12-welcome-banner-baseline.json",
+    "baseline written: benchmarks/baselines/m12-welcome-banner-baseline.json",
   );
 }

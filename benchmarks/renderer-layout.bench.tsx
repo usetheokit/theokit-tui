@@ -115,12 +115,7 @@ async function main(): Promise<void> {
     methodology:
       "Full layout+render pipeline (yoga calculateLayout → renderNodeToOutput → cell grid → OutputEngine) vs Ink rerender on a 30-message thread, 40 update frames. ms/frame mean ± std_dev over 5 runs, FORCE_COLOR=1.",
   };
-  const outDir = join(
-    dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "docs",
-    "benchmarks",
-  );
+  const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "m18-renderer-layout-baseline.json");
   writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");

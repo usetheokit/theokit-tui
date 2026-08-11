@@ -19,6 +19,7 @@ import {
   ToolCall,
   ToolCallCard,
   ToolResult,
+  TheoTUIProvider,
   WelcomeBanner,
   type ChatThreadMessage,
 } from "../../src/index.js";
@@ -31,7 +32,7 @@ import { VirtualTerminal } from "./virtual-terminal.js";
 // extends the M18 parity-corpus (primitives + 9 components) to the full suite,
 // incl. the Static-driven ChatThread/AgentTimeline (scrollback on the new
 // engine). DoD: ≥ 90% byte-identical (target 100%); every divergence is
-// documented in docs/renderer/m20-parity-report.md with a scoped cause.
+// documented in wiki/renderer/m20-component-parity.md with a scoped cause.
 
 const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*m", "g");
 
@@ -190,6 +191,19 @@ const scenes: Scene[] = [
   {
     name: "ToolResult",
     element: <ToolResult lines={["line one", "line two"]} />,
+  },
+  {
+    // #40: `⏺` (U+23FA) is the width ORACLE between the two renderers — an
+    // emoji-presentation glyph that string-width 7.x counted as 2 and 8.x counts
+    // as 1. The DEFAULT theme already uses `⏺` today, so the coverage exists by
+    // accident; this scene pins it via an override so the oracle survives a
+    // future change of the default glyph.
+    name: "RecordGlyphWidth",
+    element: (
+      <TheoTUIProvider theme={{ role: { assistant: { glyph: "⏺  " } } }}>
+        <ChatMessage role="assistant">Hello there</ChatMessage>
+      </TheoTUIProvider>
+    ),
   },
 ];
 

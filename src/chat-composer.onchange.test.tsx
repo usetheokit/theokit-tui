@@ -69,3 +69,31 @@ describe("ChatComposer onChange", () => {
     inst.unmount();
   });
 });
+
+describe("issue #59 item 3 — an unstable onChange identity does not re-fire", () => {
+  it("a re-render with a new INLINE callback and unchanged text does not call again", async () => {
+    // F-arch-7 / F-tui-10: the effect depended on `[buffer.text, onChange]`, so an
+    // `onChange={(t) => something(t)}` — the form every consumer writes — re-fired on
+    // each host render with the text UNCHANGED. The documented contract is "after mount
+    // with the initial text, and on every edit"; firing on an identity change is
+    // neither of those.
+    const spy = vi.fn();
+    // The spy is stable, but the function PASSED IN is new on every render — the real case.
+    const tree = () => (
+      <TheoTUIProvider>
+        <ChatComposer onSubmit={() => {}} onChange={(t) => spy(t)} />
+      </TheoTUIProvider>
+    );
+    const inst = render(tree());
+    await waitFor(() => spy.mock.calls.length > 0);
+    await tick();
+    const antes = spy.mock.calls.length;
+
+    inst.rerender(tree());
+    await tick();
+    await tick();
+
+    expect(spy.mock.calls.length).toBe(antes);
+    inst.unmount();
+  });
+});

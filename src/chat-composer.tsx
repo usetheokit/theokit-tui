@@ -1,5 +1,12 @@
 import { Box, Text, useFocus, useFocusManager, useInput } from "ink";
-import { useEffect, useId, useReducer, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { deriveMentionMenu, findMentionToken } from "./mention-menu-model.js";
 import { searchFiles } from "./file-search.js";
@@ -43,7 +50,10 @@ export interface ChatComposerProps extends LayoutMarginProps {
   /**
    * M54 (agent-builder backtrack): called with the current buffer text on every change, so the host
    * can enforce a composer-empty precondition (Codex `is_normal_backtrack_mode`). Fires after mount
-   * with the initial text and on each edit. Omitted ⇒ no callback (unchanged for existing consumers).
+   * with the initial text and on each edit — and ONLY then: the callback is read through a ref, so
+   * passing a fresh inline arrow on every host render does NOT re-fire it with unchanged text
+   * (#59 item 3). No `useCallback` needed on the consumer side. Omitted ⇒ no callback (unchanged
+   * for existing consumers).
    */
   onChange?: (text: string) => void;
   /** M15: slash-command menu. Typing `/` at the START of line 1 opens a
@@ -440,9 +450,23 @@ export function ChatComposer({
   );
   const buffer = editor.buffer;
   // M54 — surface buffer text to the host (composer-empty precondition for backtrack).
+  //
+  // The callback travels by REF, not in the dependency list (#59 item 3): the consumer writes
+  // `onChange={(t) => something(t)}`, a new function on each of its renders, and depending on that
+  // identity re-fired the effect with the text UNCHANGED. The documented contract is "after mount
+  // with the initial text, and on every edit" — firing on an identity change is neither. The ref is
+  // updated on every render, so the next call always uses the most recent callback.
+  //
+  // The ref is updated in an EFFECT, not during render: writing to a ref in the component body is a
+  // render side effect and this repo has a strict-effects canary. Effects run in declaration order,
+  // so this one has already stored the latest callback by the time the one below fires.
+  const onChangeRef = useRef(onChange);
   useEffect(() => {
-    onChange?.(buffer.text);
-  }, [buffer.text, onChange]);
+    onChangeRef.current = onChange;
+  });
+  useEffect(() => {
+    onChangeRef.current?.(buffer.text);
+  }, [buffer.text]);
   const focusId = useId();
   const { isFocused } = useFocus({ autoFocus, id: focusId });
   const { focus } = useFocusManager();

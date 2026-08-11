@@ -58,3 +58,48 @@ describe("projectKey (M19 T1.1)", () => {
     expect(projectKey("\x1bb").key.meta).toBe(true);
   });
 });
+
+/**
+ * Home/End were parsed and then discarded. `parseKeypress` maps every terminal form of them
+ * (`[H`/`[1~`/`[7~`/`OH` and `[F`/`[4~`/`[8~`/`OF`) to the names "home"/"end", those names are in
+ * `nonAlphanumericKeys` so `input` is blanked, and `projectKey` carried no field for either — so
+ * the key reached the composer as nothing at all and the cursor did not move.
+ *
+ * Measured in a consumer (TheoCode B-068) by A/B against another terminal agent through the same
+ * tmux channel: the identical byte sequences moved that cursor and were dropped here.
+ *
+ * The reducer actions these drive (`move-home`/`move-end`) already existed and are already bound to
+ * ctrl+a/ctrl+e, so this connects a built capability rather than adding one.
+ */
+describe("projectKey — Home and End", () => {
+  it("projects_home_in_every_terminal_form", () => {
+    for (const seq of ["\x1b[H", "\x1b[1~", "\x1b[7~", "\x1bOH"]) {
+      expect(projectKey(seq).key.home, `sequence ${JSON.stringify(seq)}`).toBe(
+        true,
+      );
+    }
+  });
+
+  it("projects_end_in_every_terminal_form", () => {
+    for (const seq of ["\x1b[F", "\x1b[4~", "\x1b[8~", "\x1bOF"]) {
+      expect(projectKey(seq).key.end, `sequence ${JSON.stringify(seq)}`).toBe(
+        true,
+      );
+    }
+  });
+
+  it("home_and_end_insert_no_text", () => {
+    // The floor: a motion key that also typed a character would be worse than one that does
+    // nothing. `nonAlphanumericKeys` already blanks these; this pins it.
+    expect(projectKey("\x1b[H").input).toBe("");
+    expect(projectKey("\x1b[F").input).toBe("");
+  });
+
+  it("home_and_end_are_not_set_by_other_keys", () => {
+    for (const seq of ["\x1b[D", "\x1b[C", "\x1b[A", "\x1b[B", "a"]) {
+      const { key } = projectKey(seq);
+      expect(key.home, `sequence ${JSON.stringify(seq)}`).toBe(false);
+      expect(key.end, `sequence ${JSON.stringify(seq)}`).toBe(false);
+    }
+  });
+});

@@ -8,6 +8,7 @@ import {
   type EditorState,
 } from "./composer-editor.js";
 import type { Key } from "./renderer/input/key.js";
+import { projectKey } from "./renderer/input/key.js";
 
 // M21 T3.1 — the pure editor reducer: kill-ring coalescing, yank/yank-pop, undo
 // (coalesced), and history recall. Fully deterministic (no refs, no timers).
@@ -219,5 +220,38 @@ describe("editorReducer — yank-pop guard (M21 review B1)", () => {
     let s = editorReducer(ringOfTwo(), { type: "yank" }); // "two"
     s = editorReducer(s, { type: "yank-pop" }); // valid → "one"
     expect(s.buffer.text).toBe("one");
+  });
+});
+
+/**
+ * End-to-end for Home/End: raw terminal bytes → projectKey → chordOf → resolveAction →
+ * CHORD_ACTIONS → editorReducer → text buffer. The unit tests prove each seam; this proves they are
+ * actually connected, which is the part that was missing — every piece below `projectKey` already
+ * worked and ctrl+a/ctrl+e already reached them (TheoCode B-068).
+ */
+describe("Home and End move the cursor end-to-end", () => {
+  const apply = (state: EditorState, sequence: string): EditorState => {
+    const { input, key } = projectKey(sequence);
+    const action = editorActionForChord(input, key);
+    return action ? editorReducer(state, action) : state;
+  };
+
+  it("home_moves_the_cursor_to_the_start", () => {
+    const typed = run([type("hello")]);
+    expect(typed.buffer.cursorOffset).toBe(5);
+    expect(apply(typed, "\x1b[H").buffer.cursorOffset).toBe(0);
+  });
+
+  it("end_moves_the_cursor_back_to_the_end", () => {
+    const atStart = apply(run([type("hello")]), "\x1b[H");
+    expect(atStart.buffer.cursorOffset).toBe(0);
+    expect(apply(atStart, "\x1b[F").buffer.cursorOffset).toBe(5);
+  });
+
+  it("home_and_end_insert_nothing", () => {
+    // The failure that would matter most: a motion key that types its own escape sequence into
+    // the buffer. Asserted on the text, not on the cursor.
+    const typed = run([type("hello")]);
+    expect(apply(apply(typed, "\x1b[H"), "\x1b[F").buffer.text).toBe("hello");
   });
 });

@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   // Standalone ignores object — adding any other key would make it file-scoped
   // and silently un-ignore dist/ (SEPA iteration-2 finding).
-  { ignores: ["dist/", "coverage/", "docs/benchmarks/", ".claude/"] },
+  { ignores: ["dist/", "coverage/", "benchmarks/baselines/", ".claude/"] },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   reactHooks.configs["recommended-latest"],

@@ -158,7 +158,7 @@ describe("public API integration (M2 T3.1 — tool scene)", () => {
     expect(frame).toContain("run the tests");
     expect(frame).toContain("on it");
     expect(frame).toContain("⏺");
-    expect(frame).toContain("vitest");
+    expect(frame).toContain("Vitest");
     expect(frame).toContain("all suites green");
   });
 });
@@ -407,7 +407,7 @@ describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
     instance.unmount();
     const plain = stripAnsi(frame);
     expect(plain).toContain("⏺");
-    expect(plain).toContain("vitest");
+    expect(plain).toContain("Vitest");
     expect(plain).toContain("inspecting the failing test");
     expect(plain).toContain("All green now.");
   });
@@ -424,7 +424,7 @@ describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
     // Anchors FIRST — the snapshot is a layout pin, not the oracle.
     const plain = stripAnsi(frame);
     expect(plain).toContain("All green now.");
-    expect(plain).toContain("vitest");
+    expect(plain).toContain("Vitest");
     expect(plain).toContain("⏺");
     expect(frame).toMatchSnapshot("stream-adapter-scene");
   });

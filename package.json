@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
-  "version": "0.48.0",
-  "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
+  "version": "0.51.0",
+  "description": "AI-native TUI primitives for agent CLIs \u2014 streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -16,6 +16,10 @@
     "./renderer": {
       "types": "./dist/renderer/index.d.ts",
       "default": "./dist/renderer/index.js"
+    },
+    "./terminal": {
+      "types": "./dist/terminal/index.d.ts",
+      "default": "./dist/terminal/index.js"
     }
   },
   "main": "./dist/index.js",

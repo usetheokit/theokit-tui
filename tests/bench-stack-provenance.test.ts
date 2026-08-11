@@ -15,7 +15,10 @@ describe("baseline stack provenance (M10 D3)", () => {
     for (const name of files) {
       const b = JSON.parse(
         readFileSync(
-          new URL(`../docs/benchmarks/${name}-baseline.json`, import.meta.url),
+          new URL(
+            `../benchmarks/baselines/${name}-baseline.json`,
+            import.meta.url,
+          ),
           "utf8",
         ),
       ) as { stack?: { ink?: string; react?: string } };

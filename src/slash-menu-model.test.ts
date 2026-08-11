@@ -23,7 +23,12 @@ describe("slash-menu-model (M15 T1.1)", () => {
   it("filter_token_follows_codex_contract", () => {
     const menu = deriveSlashMenu("/clear something", CMDS, 0, false);
     expect(menu.filter).toBe("clear");
-    expect(menu.open).toBe(true);
+    // `open` was asserted TRUE here and that was the bug, not the contract: with the menu open,
+    // Enter completed the selection and replaced the line with the bare command, discarding
+    // ` something`. The FILTER contract — first token after the slash — is what this test is for
+    // and is unchanged. Measured against the reference: it shows the popup only while the caret is
+    // inside the `/name` token (`is_editing_slash_command_name`).
+    expect(menu.open).toBe(false);
     // Line 1 only.
     const multi = deriveSlashMenu("/he\n/clear", CMDS, 0, false);
     expect(multi.filter).toBe("he");
@@ -112,5 +117,53 @@ describe("slash-menu-model (M15 T1.1)", () => {
       "utf8",
     );
     expect(source.match(/from "ink"/g)).toBeNull();
+  });
+});
+
+/**
+ * The menu must CLOSE once an argument begins.
+ *
+ * The filter is the first token after the slash, so `/sandbox read-only` still matched the command
+ * `sandbox` and the menu stayed open — Enter then completed the selection instead of submitting,
+ * REPLACING the line with the bare command and discarding the argument. Measured in a consumer
+ * (TheoCode B-089) across `/export <path>`, `/delete <id>` and `/sandbox <mode>`; the last is silent,
+ * because the command is accepted and the setting simply does not change.
+ *
+ * Typing a space after the command name is the user leaving command SELECTION and starting to write
+ * an argument. There is nothing left to choose.
+ */
+describe("deriveSlashMenu — an argument closes the menu", () => {
+  const commands = [
+    { name: "sandbox", description: "" },
+    { name: "sessions", description: "" },
+  ];
+
+  it("closes_once_a_space_follows_the_command", () => {
+    expect(deriveSlashMenu("/sandbox read-only", commands, 0, false).open).toBe(
+      false,
+    );
+  });
+
+  it("closes_on_the_trailing_space_that_starts_the_argument", () => {
+    // The space IS the commitment: the user has chosen the command and is now typing its argument.
+    expect(deriveSlashMenu("/sandbox ", commands, 0, false).open).toBe(false);
+  });
+
+  it("stays_open_while_the_name_is_still_being_typed", () => {
+    // The floor: closing on a prefix would break completion itself.
+    expect(deriveSlashMenu("/sand", commands, 0, false).open).toBe(true);
+    expect(deriveSlashMenu("/s", commands, 0, false).matches).toHaveLength(2);
+  });
+
+  it("stays_open_on_the_bare_slash", () => {
+    expect(deriveSlashMenu("/", commands, 0, false).open).toBe(true);
+  });
+
+  it("still_reports_the_filter_when_closed_by_an_argument", () => {
+    // The dismissal latch reads `filter`; dropping it would make the menu reopen on the next
+    // keystroke of the argument.
+    expect(
+      deriveSlashMenu("/sandbox read-only", commands, 0, false).filter,
+    ).toBe("sandbox");
   });
 });
