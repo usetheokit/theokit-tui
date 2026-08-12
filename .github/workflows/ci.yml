@@ -58,3 +58,28 @@ jobs:
 
       - name: bench smoke
         run: pnpm bench --smoke
+
+      # B-126 — SonarCloud, analysed from CI rather than by Automatic Analysis.
+      #
+      # Automatic Analysis failed on every pull request here (#70, #71, #72 carry the identical
+      # "The last analysis has failed" comment) while the sibling `theokit-sdk` passes on the same
+      # mechanism — so the difference is in that project's server-side settings, which are not
+      # readable from a repository. Reporting from CI supersedes it.
+      #
+      # Runs once (node 22) rather than per matrix leg: the analysis is of the source, and two
+      # identical scans would race for the same server-side report.
+      #
+      # SKIPS LOUDLY when the token is absent, instead of failing or pretending. `SONAR_TOKEN` is
+      # created in SonarCloud and added by the repository owner; until then the step says so in the
+      # log rather than leaving a red check whose cause nobody can read.
+      - name: sonarcloud
+        if: matrix.node-version == '22.x'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "::notice title=SonarCloud::SONAR_TOKEN is not set — analysis skipped."
+            echo "Add it in Settings > Secrets > Actions to replace the failing Automatic Analysis (B-126)."
+            exit 0
+          fi
+          npx --yes sonarqube-scanner@4

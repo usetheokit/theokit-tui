@@ -21,15 +21,34 @@ const RIGHT_ARROW = "\u001B[C";
 const BACKSPACE = "\u007F";
 
 const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
-// Empirically, frames from writes landing in the same Ink flush window never
-// reach lastFrame() (verified live in review); settle 50ms per write — the
-// ink-ui test idiom — so each event flushes its own frame.
-const settle = async () => new Promise((resolve) => setTimeout(resolve, 50));
+// B-125 — a FIXED 50ms sleep per write is what made this file fail about one full-suite run in
+// twenty (`multichar_input_burst_inserts_atomically`, measured over 20 consecutive runs). The
+// file's own note two lines up already said a fixed sleep is flaky under load and that polling is
+// the answer; `type()` just never used the polling helper.
+//
+// This waits for the frame to STOP CHANGING instead of guessing how long that takes: two identical
+// consecutive reads mean Ink has flushed and settled. Unloaded it returns in ~2 ticks, faster than
+// the old sleep; loaded it waits as long as it needs, up to a ceiling well above the 50ms that was
+// failing. The ceiling exists so a genuinely stuck render fails the test rather than hanging it.
+const settle = async () => {
+  let previous: string | undefined;
+  for (let elapsed = 0; elapsed < 400; elapsed += 10) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const frame = lastRenderedFrame();
+    if (frame !== undefined && frame === previous) return;
+    previous = frame;
+  }
+};
+
+/** Set by `mount`, so `settle` can watch the instance under test without threading it through. */
+let currentInstance: { lastFrame: () => string | undefined } | undefined;
+const lastRenderedFrame = () => currentInstance?.lastFrame();
 
 // SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write
 // immediately after render() is silently dropped. Always settle after mount.
 async function mount(ui: Parameters<typeof render>[0]) {
   const instance = render(ui);
+  currentInstance = instance;
   await tick();
   await tick();
   return instance;

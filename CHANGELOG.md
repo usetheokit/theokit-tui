@@ -3,6 +3,19 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [0.52.1] - 2026-08-12
+
+### Fixed
+
+- **The suite no longer fails about one full run in twenty (B-125).** Two timing assumptions, both
+  measured over twenty consecutive runs rather than reasoned about. `chat-composer` slept a fixed
+  50ms after each simulated keystroke — its own comment already said a fixed sleep is flaky under
+  load and that polling was the answer — and now waits for two identical consecutive frames.
+  `chat-composer.onchange` assumed two ticks were enough for `useInput` to subscribe before writing;
+  under load the keystroke was dropped and the failure surfaced two seconds later in a `waitFor`,
+  far from the cause. It now writes until the key lands, which resends a lost event rather than
+  retrying a failed assertion.
+
 ## [0.52.0] - 2026-08-11
 
 ### Added
