@@ -75,7 +75,21 @@ describe("README public-copy contract (M8 T1.2)", () => {
     expect(md).toMatch(/## (How it works|Architecture|Internals)/);
   });
 
-  it("readme_quickstart_symbols_resolve", async () => {
+  /**
+   * B-125 — 30s rather than vitest's 5s default, sized from measurement.
+   *
+   * This case spends almost all of its budget on ONE thing: `await import("../src/index.js")` pulls
+   * the whole barrel — every component, Ink, React, the highlighter. Measured on this machine, that
+   * import alone costs 1 553 ms under the full suite and 3 233 ms in isolation, against a 5 000 ms
+   * budget. The margin is under two seconds and the suite's collect phase varies with load, so the
+   * budget was crossed about one run in six: captured as `Test timed out in 5000ms`.
+   *
+   * Raising a timeout to quiet a flake is usually a workaround. It is not one here, and the
+   * distinction is worth stating: the timeout is not what this case asserts, and nothing about the
+   * assertion is weakened. A symbol that genuinely fails to resolve still fails on the first tick.
+   * What was wrong is a default budget applied to a test whose subject IS an expensive import.
+   */
+  it("readme_quickstart_symbols_resolve", { timeout: 30_000 }, async () => {
     const codeBlock = /```tsx?\n([\s\S]*?)```/.exec(md)?.[1] ?? "";
     const importMatch = /import \{([^}]+)\} from "@theokit\/tui"/.exec(
       codeBlock,
