@@ -8,6 +8,34 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 // Poll-until-condition instead of a fixed sleep (review F-tests-8 — a fixed
 // 50 ms settle is a flake surface under CI load; testing.md § 6).
+/**
+ * B-125 — write `input` until it lands, rather than assuming two ticks were enough to subscribe.
+ *
+ * `useInput` attaches AFTER the mount frame, so a write issued before that is silently dropped —
+ * and "two ticks" is a guess about scheduling, not a fact about the component. Under a loaded suite
+ * the guess is wrong about one run in twenty, and the symptom is this file's `waitFor` timing out
+ * two seconds later, far from the cause.
+ *
+ * Re-writing is the right compensation because a dropped keystroke is exactly what happened: the
+ * component never saw it, so sending it again is not a retry of a failed assertion but a resend of
+ * a lost event.
+ */
+const typeUntil = async (
+  inst: { stdin: { write: (s: string) => void } },
+  input: string,
+  landed: () => boolean,
+  timeoutMs = 2000,
+) => {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    inst.stdin.write(input);
+    for (let i = 0; i < 10; i += 1) {
+      await tick();
+      if (landed()) return;
+    }
+  }
+};
+
 const waitFor = async (predicate: () => boolean, timeoutMs = 2000) => {
   const start = Date.now();
   while (!predicate()) {
@@ -61,10 +89,11 @@ describe("ChatComposer onChange", () => {
     // The seeded draft stays editable — typing appends at the seeded cursor.
     // Two ticks: the useInput subscription attaches after the mount frame
     // (same idiom as the sibling test above).
-    await tick();
-    await tick();
-    inst.stdin.write("!");
-    await waitFor(() => onChange.mock.calls.at(-1)?.[0] === "draft!");
+    await typeUntil(
+      inst,
+      "!",
+      () => onChange.mock.calls.at(-1)?.[0] === "draft!",
+    );
     expect(onChange.mock.calls.at(-1)?.[0]).toBe("draft!");
     inst.unmount();
   });
