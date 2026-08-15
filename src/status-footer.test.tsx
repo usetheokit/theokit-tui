@@ -71,22 +71,35 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   // lose the row entirely.
   it("forwards_a_custom_mode_label_to_the_mode_row", async () => {
     const frame = strip(
-      await renderFrame(<StatusFooter left={<Text>main</Text>} modeLabel="\u23f5\u23f5 full-auto on" />),
+      await renderFrame(
+        <StatusFooter
+          left={<Text>main</Text>}
+          modeLabel="\u23f5\u23f5 full-auto on"
+        />,
+      ),
     );
 
     expect(frame).toContain("full-auto on");
-    expect(frame, "the cycle hint belongs to the row, not the vocabulary").toContain(
-      "shift+tab to cycle",
+    expect(
+      frame,
+      "the cycle hint belongs to the row, not the vocabulary",
+    ).toContain("shift+tab to cycle");
+    expect(frame, "the agents hint is part of the mode row").toContain(
+      "for agents",
     );
-    expect(frame, "the agents hint is part of the mode row").toContain("for agents");
   });
 
   it("a_custom_mode_label_replaces_the_default_hint_row", async () => {
-    const frame = strip(await renderFrame(<StatusFooter left={<Text>main</Text>} modeLabel="suggest on" />));
-
-    expect(frame, "the shortcuts hint still occupied the mode row").not.toContain(
-      "? for shortcuts",
+    const frame = strip(
+      await renderFrame(
+        <StatusFooter left={<Text>main</Text>} modeLabel="suggest on" />,
+      ),
     );
+
+    expect(
+      frame,
+      "the shortcuts hint still occupied the mode row",
+    ).not.toContain("? for shortcuts");
   });
 
   it("a_label_does_not_switch_off_the_closed_union_check_on_mode", async () => {
@@ -108,14 +121,17 @@ describe("StatusFooter (#45 — two-line footer)", () => {
       ),
     );
 
-    expect(frame, "a typo'd mode rendered anyway once a label was passed").not.toContain(
-      "suggest on",
-    );
+    expect(
+      frame,
+      "a typo'd mode rendered anyway once a label was passed",
+    ).not.toContain("suggest on");
   });
 
   it("footer_without_the_new_prop_is_unchanged", async () => {
     // Backward-compatibility guard: `modeLabel` is opt-in.
-    const frame = strip(await renderFrame(<StatusFooter left={<Text>main</Text>} />));
+    const frame = strip(
+      await renderFrame(<StatusFooter left={<Text>main</Text>} />),
+    );
 
     expect(frame).toContain("? for shortcuts");
   });

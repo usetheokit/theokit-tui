@@ -64,7 +64,10 @@ export function StatusFooter({
         <Box>
           {/* `mode` is forwarded even alongside `modeLabel` so its closed-union check still
               runs — a caller that passes both a label and a typo'd mode hears about the typo. */}
-          <ModeIndicator mode={mode} {...(modeLabel === undefined ? {} : { label: modeLabel })} />
+          <ModeIndicator
+            mode={mode}
+            {...(modeLabel === undefined ? {} : { label: modeLabel })}
+          />
           <Text dimColor> · {AGENTS_HINT}</Text>
         </Box>
       ) : (

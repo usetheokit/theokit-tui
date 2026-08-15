@@ -56,7 +56,6 @@ async function pressUntil(
   }
 }
 
-
 /**
  * Type into a MASKED input, retrying until the mask echoes the expected length.
  * `typeWhenReady` waits for the text itself, which a masked field must never show.
@@ -186,7 +185,9 @@ describe("FreeTextInput (M23)", () => {
     await typeMaskedWhenReady(app, "sk-secret", 9);
 
     const frame = app.lastFrame() ?? "";
-    expect(frame, "the plaintext reached the terminal").not.toContain("sk-secret");
+    expect(frame, "the plaintext reached the terminal").not.toContain(
+      "sk-secret",
+    );
     expect(frame).toContain("\u2022".repeat(9));
     app.unmount();
   });
@@ -246,7 +247,10 @@ describe("FreeTextInput (M23)", () => {
     // caught. The count is the whole property here: the newline must vanish, not be swallowed into
     // the buffer as a fifth character.
     const dots = /\u2022+/.exec(app.lastFrame() ?? "")?.[0] ?? "";
-    expect(dots.length, "the pasted newline became a character in the secret").toBe(4);
+    expect(
+      dots.length,
+      "the pasted newline became a character in the secret",
+    ).toBe(4);
     app.unmount();
   });
 
