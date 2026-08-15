@@ -3,6 +3,46 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [0.53.0] - 2026-08-14
+
+### Added
+
+- **`FreeTextInput` ganha um modo mascarado (`mask`) — U-9.** Um app de terminal que le uma API key
+  tinha de reconstruir o componente inteiro para nao ecoar o que o usuario digita; o consumidor
+  medido carrega 63 linhas de `SecretInput` proprio por causa disso, e copias reconstruidas sao
+  justamente onde o texto puro vaza. `mask: true` usa `•`; uma string contribui seu primeiro
+  grafema, para que um valor de varios caracteres nao infle o comprimento renderizado — vazar um
+  comprimento errado ainda e vazar um comprimento.
+
+  A mascara e uma questao de RENDERIZACAO: `onSubmit` continua recebendo o texto real. Um
+  componente que mascarasse tambem o valor submetido seria silenciosamente inutil, e so no ponto em
+  que a credencial falha — remotamente, depois, com uma mensagem de provider que nao diz nada sobre
+  isso.
+
+  E a colagem foi tratada porque um campo mascarado e onde se COLA: um valor vindo de gerenciador de
+  senha chega como um pedaco unico que pode carregar quebra de linha. Inseri-la crua poe uma quebra
+  dentro do segredo; deixa-la passar como Enter submete um segredo truncado. Nenhuma das duas falhas
+  aparece ali — as duas surgem depois, como erro opaco de autenticacao.
+
+  **O que este modo NAO promete:** manter o segredo fora da memoria. Ele vive no buffer como
+  qualquer outro texto. Uma versao que o movesse para um `ref` seria o mesmo heap com uma historia
+  mais forte — e a nota original que motivou este item afirmava que o consumidor mantinha o segredo
+  fora do state do React, o que foi verificado e **e falso** (ele usa `useState`). A propriedade que
+  este modo de fato entrega e a que importa num terminal: o texto puro nunca chega a tela, onde
+  cairia no scrollback, num compartilhamento de tela ou numa sessao gravada.
+
+- **`StatusFooter` passa a encaminhar `modeLabel` para a linha de modo — U-8.** O `ModeIndicator` ja
+  aceitava `label` exatamente para um produto cujo vocabulario de permissao nao e este (um agente
+  estilo Codex usa `suggest | auto-edit | full-auto`). O que faltava e que o rodape composto nunca
+  encaminhava: a saida de emergencia ficava um nivel abaixo e fora de alcance, entao quem usava
+  `StatusFooter` empilhava o modo no `left` e perdia a linha — que e o que o consumidor medido faz.
+
+  **Encaminhar, nao alargar.** Alargar a uniao de `mode` deixaria `plna` renderizar como um modo;
+  exigir que quem chama DIGA que esta fora do vocabulario mantem o typo sendo um erro e torna a
+  saida explicita. `mode` segue encaminhado mesmo junto de `modeLabel`, para que a checagem de
+  uniao fechada continue rodando — um chamador que passe um label e um modo com typo ouve sobre o
+  typo.
+
 ## [0.52.1] - 2026-08-12
 
 ### Fixed

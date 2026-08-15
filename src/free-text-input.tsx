@@ -33,6 +33,29 @@ export interface FreeTextInputProps extends LayoutMarginProps {
    * `ChatComposer` / `SelectList` / the agent-decision surfaces.
    */
   autoFocus?: boolean;
+  /**
+   * U-9 — render a placeholder instead of the typed text (API keys, tokens, passwords).
+   *
+   * `true` uses `•`; a string uses its first grapheme. Absent means plaintext, exactly as before.
+   *
+   * The mask is a RENDERING concern only: `onSubmit` still receives the real text. A component
+   * that masked the submitted value too would be silently useless, and only at the point the
+   * credential fails — remotely, later, with a provider message that says nothing about it.
+   *
+   * What this deliberately does NOT claim: that the secret is kept out of memory. It lives in the
+   * buffer like any other text, and a version that moved it to a ref would be the same heap with a
+   * stronger-sounding story. The property this DOES give is the one that matters at a terminal —
+   * the plaintext never reaches the screen, where it would land in scrollback, a screen share, or
+   * a recorded session.
+   */
+  mask?: boolean | string;
+}
+
+/** `•` by default; a caller's string contributes its first grapheme, so a multi-char value cannot
+ *  silently inflate the rendered length and leak how long the secret is. */
+function maskCharOf(mask: boolean | string): string {
+  if (mask === true || mask === "") return "•";
+  return [...String(mask)][0] ?? "•";
 }
 
 export function FreeTextInput({
@@ -40,6 +63,7 @@ export function FreeTextInput({
   onSubmit,
   onCancel,
   autoFocus = true,
+  mask,
   ...margin
 }: FreeTextInputProps) {
   const [state, dispatch] = useReducer(textBufferReducer, initialTextBuffer);
@@ -67,14 +91,29 @@ export function FreeTextInput({
       } else if (key.backspace || key.delete) {
         dispatch({ type: "delete-backward" });
       } else if (input && !key.ctrl && !key.meta) {
-        dispatch({ type: "insert", text: input });
+        // A masked field is where a value gets PASTED — from a password manager or a browser —
+        // and a paste arrives as one chunk that may carry a trailing newline. Inserting it raw
+        // would put a line break inside the secret; letting it through as Enter would submit a
+        // truncated one. Neither failure is visible here: both surface later, remotely, as an
+        // opaque auth error. So a masked insert drops newlines and keeps the rest verbatim.
+        const text = mask === undefined ? input : input.replace(/\r?\n/g, "");
+        if (text) {
+          dispatch({ type: "insert", text });
+        }
       }
     },
     { isActive: isFocused },
   );
+  // Grapheme count, not `.length`: an emoji or a combining mark is one thing the user typed, and
+  // code units would render more dots than characters entered — leaking a wrong length is still
+  // leaking a length.
+  const rendered =
+    mask === undefined
+      ? state.text
+      : maskCharOf(mask).repeat([...state.text].length);
   const content = (
     <Text>
-      {label} {state.text}
+      {label} {rendered}
       <Text dimColor>▏</Text>
     </Text>
   );

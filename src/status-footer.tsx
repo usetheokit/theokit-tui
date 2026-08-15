@@ -26,6 +26,20 @@ export interface StatusFooterProps extends LayoutMarginProps {
   right?: ReactNode;
   /** Permission mode for the bottom row. `default` (or absent) shows no mode. */
   mode?: PermissionMode;
+  /**
+   * U-8 — the mode row's text, for a product whose permission vocabulary is not this one.
+   *
+   * `ModeIndicator` already accepts a `label` for exactly this, and deliberately keeps `mode` a
+   * CLOSED union so a misspelling is still caught. What was missing is that the composed footer
+   * never forwarded it: the escape hatch sat one level down and out of reach, so a consumer using
+   * `StatusFooter` with a Codex-style vocabulary (`suggest | auto-edit | full-auto`) had to stuff
+   * its mode into `left` and lose the row — which is what the measured consumer does.
+   *
+   * Forwarding, not widening. Widening `mode` would let `plna` render as a mode; requiring the
+   * caller to SAY it is outside the vocabulary keeps the typo an error and makes the exit explicit.
+   * Takes precedence over `mode` when both are passed, matching `ModeIndicator`.
+   */
+  modeLabel?: string;
   /** The bottom hint shown when no mode is active. Default `? for shortcuts · ← for agents`. */
   hint?: string;
 }
@@ -34,9 +48,11 @@ export function StatusFooter({
   left,
   right,
   mode = "default",
+  modeLabel,
   hint = DEFAULT_HINT,
   ...margin
 }: StatusFooterProps) {
+  const showsMode = modeLabel !== undefined || mode !== "default";
   return (
     // width 100% so the top row can space-between to the terminal edges.
     <Box flexDirection="column" width="100%" {...pickMargin(margin)}>
@@ -44,9 +60,11 @@ export function StatusFooter({
         <Box>{left}</Box>
         <Box>{right}</Box>
       </Box>
-      {mode !== "default" ? (
+      {showsMode ? (
         <Box>
-          <ModeIndicator mode={mode} />
+          {/* `mode` is forwarded even alongside `modeLabel` so its closed-union check still
+              runs — a caller that passes both a label and a typo'd mode hears about the typo. */}
+          <ModeIndicator mode={mode} {...(modeLabel === undefined ? {} : { label: modeLabel })} />
           <Text dimColor> · {AGENTS_HINT}</Text>
         </Box>
       ) : (
