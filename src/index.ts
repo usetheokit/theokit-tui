@@ -57,6 +57,15 @@ export type { ToolCardResult } from "./tool-card-result.js";
 // already shipped; the name→presentation maps did not, so every product wrote them (292 LOC
 // downstream, plus a hand-written name-mismatch throw to keep the halves in sync). Both halves are
 // ours, so this is the only place they can be kept together.
+// T3.4 — the footer that lists shortcuts, derived from the same capabilities the surface binds. A
+// hand-written literal beside the key handler drifts silently and one-directionally: the help keeps
+// advertising a key that no longer works, and no test fails because the string is still the string.
+export {
+  keyboardHelpFor,
+  type KeyboardHelpEntry,
+  type KeyCapability,
+} from "./keyboard-help-model.js";
+
 export {
   DEFAULT_TOOL_PRESENTATION,
   KNOWN_TOOL_NAMES,
@@ -184,6 +193,10 @@ export { deriveSelectList, windowFor } from "./select-list-model.js";
 export type {
   SelectListItem,
   SelectListView,
+  // T3.4 — where the selected row sits. `trailing` (the default, unchanged) keeps it at the bottom;
+  // `centred` keeps it in the middle, which is what an overlay walking backwards through history
+  // needs. An option on the existing clamp, never a second function beside it.
+  WindowAnchor,
   WindowView,
 } from "./select-list-model.js";
 

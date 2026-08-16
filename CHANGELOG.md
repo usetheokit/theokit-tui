@@ -7,6 +7,23 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **`windowFor` ganha ancora centrada, e a ajuda de teclado passa a derivar das capacidades — T3.4.**
+  Duas metades que sobraram no consumidor. A janela ja reportava `hiddenBefore`/`hiddenAfter` como
+  contagem desde a 0.53.0 (U-10); o que faltava era a **ancora** — a janela trailing prende a selecao
+  na ultima linha, e um overlay que anda para tras no historico precisa dela no meio, com as linhas
+  dos dois lados visiveis. Entrou como **opcao** com o comportamento atual no default: qualquer outra
+  coisa re-ancora silenciosamente toda lista de todo consumidor no upgrade. Desvio deliberado do
+  pseudo-codigo do plano, que propunha um `windowAround` novo: ja existia exatamente uma
+  implementacao desse clamp, exportada e consumida, e uma irma ao lado seriam duas implementacoes de
+  uma regra so, discordando na primeira vez que alguem tocar em qualquer uma (G12).
+
+  `keyboardHelpFor` deriva o rodape de atalhos das mesmas capacidades que a superficie liga. O
+  literal escrito a mao mora ao lado do handler que ele descreve sem nada segurando os dois juntos, e
+  a falha e silenciosa e de mao unica: reamarra-se uma tecla e a ajuda continua anunciando a antiga,
+  o usuario aperta e nada acontece, e nenhum teste quebra porque a string continua sendo a string.
+  Capacidade sem tecla, com tecla em branco, ou desabilitada nao entra — anunciar um atalho que nao
+  responde e pior do que nao mencionar.
+
 - **Os mapas de apresentacao de tool chegam ao pacote — T3.1.** `ToolCallCard`, `ToolResult`,
   `ShellEnvelope` e os medidores ja vinham daqui; o que faltava era a metade que diz **qual nome le
   como**. Sem ela, todo produto escreve a sua: o consumidor medido carrega 292 linhas de

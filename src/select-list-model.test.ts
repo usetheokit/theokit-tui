@@ -162,3 +162,93 @@ describe("U-10 — WindowView reports the hidden counts", () => {
     expect(view.overflowDown).toBe(view.hiddenAfter > 0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// T3.4 — the centred anchor.
+//
+// `windowFor` already reports `hiddenBefore`/`hiddenAfter` as counts (U-10, 0.53.0). What stayed
+// downstream was the ANCHOR: the trailing window keeps the selection at the BOTTOM, and an overlay
+// that lets you walk backwards through history wants it in the MIDDLE, so the rows on either side
+// are visible as you move.
+//
+// Deliberate deviation from the plan's pseudo-code, which proposed a new `windowAround(...)`. There
+// is already a function that computes exactly this window and is exported and consumed; a second one
+// beside it would be two implementations of one clamp, disagreeing the first time either is touched
+// (G12). The anchor is an OPTION, and its default is the current behaviour — otherwise every list in
+// every consumer silently re-anchors on upgrade.
+describe("windowFor — centred anchor", () => {
+  it("test_the_default_anchor_is_unchanged", () => {
+    // The whole safety of adding the option. Same call, same answer as before it existed.
+    expect(windowFor(10, 5, 5)).toEqual(windowFor(10, 5, 5, "trailing"));
+    expect(
+      windowFor(10, 5, 5).windowStart,
+      "trailing keeps the selection at the bottom",
+    ).toBe(1);
+  });
+
+  it("test_a_centred_selection_sits_in_the_middle_of_the_window", () => {
+    const view = windowFor(10, 5, 5, "centred");
+    expect(view.windowStart).toBe(3);
+    expect(view.clampedIndex).toBe(5);
+    expect(view.hiddenBefore).toBe(3);
+    expect(view.hiddenAfter).toBe(2);
+  });
+
+  it("test_near_the_head_a_centred_window_clamps_instead_of_going_negative", () => {
+    // Centring cannot centre at the ends, and the clamped case is where off-by-one lives — so both
+    // ends are asserted explicitly rather than by symmetry.
+    const view = windowFor(10, 0, 5, "centred");
+    expect(view.windowStart).toBe(0);
+    expect(view.hiddenBefore).toBe(0);
+    expect(view.hiddenAfter).toBe(5);
+  });
+
+  it("test_near_the_tail_a_centred_window_clamps_instead_of_running_past_the_end", () => {
+    const view = windowFor(10, 9, 5, "centred");
+    expect(view.windowStart).toBe(5);
+    expect(view.hiddenBefore).toBe(5);
+    expect(view.hiddenAfter, "there is nothing after the last row").toBe(0);
+  });
+
+  it("test_a_window_larger_than_the_list_hides_nothing_under_either_anchor", () => {
+    for (const anchor of ["trailing", "centred"] as const) {
+      const view = windowFor(3, 1, 10, anchor);
+      expect(view.windowStart, anchor).toBe(0);
+      expect(view.hiddenBefore, anchor).toBe(0);
+      expect(view.hiddenAfter, anchor).toBe(0);
+      expect(view.clampedIndex, anchor).toBe(1);
+    }
+  });
+
+  it("test_an_empty_list_is_a_no_op_under_either_anchor", () => {
+    expect(windowFor(0, 3, 5, "centred")).toEqual(
+      windowFor(0, 3, 5, "trailing"),
+    );
+  });
+
+  it("test_the_selection_is_always_inside_the_window_it_returns", () => {
+    // The property the whole function exists for, asserted across the space rather than at points.
+    for (const total of [1, 2, 5, 10, 33]) {
+      for (let selected = -2; selected <= total + 1; selected += 1) {
+        for (const size of [1, 2, 5, 10]) {
+          for (const anchor of ["trailing", "centred"] as const) {
+            const view = windowFor(total, selected, size, anchor);
+            if (total === 0) continue;
+            const where = `total=${total} selected=${selected} size=${size} ${anchor}`;
+            expect(view.clampedIndex, where).toBeGreaterThanOrEqual(
+              view.windowStart,
+            );
+            expect(view.clampedIndex, where).toBeLessThan(
+              view.windowStart + size,
+            );
+            expect(view.windowStart, where).toBeGreaterThanOrEqual(0);
+            expect(
+              view.hiddenBefore + Math.min(size, total) + view.hiddenAfter,
+              where,
+            ).toBe(total);
+          }
+        }
+      }
+    }
+  });
+});

@@ -30,14 +30,31 @@ export interface WindowView {
 }
 
 /**
- * The M15 trailing window: the active row is kept visible at the BOTTOM of the
- * window (never past the tail, never negative). Byte-identical to
- * `slash-menu-model.ts:69-87` for `count > 0`; a safe no-op at `count === 0`.
+ * Where the selected row sits inside the window.
+ *
+ * `trailing` (the default, and the M15 behaviour) keeps it at the BOTTOM — right for a menu that
+ * grows upward from a prompt. `centred` keeps it in the MIDDLE, which is what an overlay that walks
+ * backwards through history needs: the rows on either side stay visible as you move.
+ */
+export type WindowAnchor = "trailing" | "centred";
+
+/**
+ * The windowed view for a match count + selection.
+ *
+ * T3.4 — `anchor` is an OPTION rather than a second function. There was already exactly one
+ * implementation of this clamp, exported and consumed; a sibling `windowAround` beside it would be
+ * two implementations of one rule, disagreeing the first time either is touched (G12). The default
+ * is the existing behaviour, because anything else silently re-anchors every list in every consumer
+ * on upgrade.
+ *
+ * Byte-identical to `slash-menu-model.ts:69-87` for `count > 0` under the default anchor; a safe
+ * no-op at `count === 0`.
  */
 export function windowFor(
   count: number,
   selectionIndex: number,
   window: number,
+  anchor: WindowAnchor = "trailing",
 ): WindowView {
   if (count === 0) {
     return {
@@ -50,8 +67,12 @@ export function windowFor(
     };
   }
   const clampedIndex = Math.min(Math.max(selectionIndex, 0), count - 1);
+  // How far above the selection the window opens. Trailing puts the selection on the last row;
+  // centred puts it in the middle, biased UP on an even window so the row keeps more context ahead
+  // of it than behind — which is the direction a list is usually read.
+  const lead = anchor === "centred" ? Math.floor((window - 1) / 2) : window - 1;
   const windowStart = Math.min(
-    Math.max(clampedIndex - (window - 1), 0),
+    Math.max(clampedIndex - lead, 0),
     Math.max(count - window, 0),
   );
   // U-10 — the counts are what this function already computed; the booleans are derived from them
