@@ -52,6 +52,18 @@ export type {
 // truncateLines stays module-internal (ADR D7 — SEPA phase-2 F1).
 export { MAX_RESULT_CHARS, ToolResult } from "./tool-result.js";
 export type { ToolCardResult } from "./tool-card-result.js";
+
+// T3.1 — the missing half of tool rendering: which NAME reads how. The card and the envelope
+// already shipped; the name→presentation maps did not, so every product wrote them (292 LOC
+// downstream, plus a hand-written name-mismatch throw to keep the halves in sync). Both halves are
+// ours, so this is the only place they can be kept together.
+export {
+  DEFAULT_TOOL_PRESENTATION,
+  KNOWN_TOOL_NAMES,
+  toolPresentation,
+  type KnownToolName,
+  type ToolPresentation,
+} from "./tool-presentation.js";
 export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";
 
 // ensureHighlighter stays module-internal (EC-10 — D7 precedent);

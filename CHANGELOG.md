@@ -3,6 +3,27 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Added
+
+- **Os mapas de apresentacao de tool chegam ao pacote — T3.1.** `ToolCallCard`, `ToolResult`,
+  `ShellEnvelope` e os medidores ja vinham daqui; o que faltava era a metade que diz **qual nome le
+  como**. Sem ela, todo produto escreve a sua: o consumidor medido carrega 292 linhas de
+  `HEADERS_BY_TOOL` / `BODY_BY_TOOL` / `APPROVAL_LABELS`, mais um `tool_name_mismatch` escrito a mao
+  no registry para segurar o contrato de chaves por disciplina. As duas metades sao nossas — as
+  factories donas dos nomes, este pacote dono do render — entao este e o unico lugar onde elas podem
+  ficar juntas. `DEFAULT_TOOL_PRESENTATION` traz 20 nomes medidos das factories; `toolPresentation()`
+  aceita override parcial (trocar um header nao obriga a repetir os outros dezenove) e responde por
+  qualquer nome, inclusive um que o produto inventou. Todo leitor trata a entrada como hostil: input e
+  output de tool vem de um modelo e de subprocessos, e um render que estoura derruba a sessao por uma
+  string que o modelo errou.
+
+  Nota de acoplamento, registrada e nao resolvida: a lista de nomes e conhecimento duplicado. Este
+  pacote **nao** importa `@theokit/agents` e nao deve — a dependencia corre no sentido contrario — 
+  entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
+  uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
+
 ## [0.53.0] - 2026-08-14
 
 ### Added
