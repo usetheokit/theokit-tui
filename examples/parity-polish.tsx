@@ -52,7 +52,7 @@ function Demo() {
         hiddenCount={11}
       />
       <Text>
-        {osc8Link("docs", "https://github.com/usetheodev/theokit-tui")}
+        {osc8Link("docs", "https://github.com/usetheokit/theokit-tui")}
       </Text>
     </Box>
   );

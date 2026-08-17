@@ -50,7 +50,7 @@ function Demo() {
           hints={[
             "/help for commands",
             "esc to cancel a running turn",
-            "docs: github.com/usetheodev/theokit-tui",
+            "docs: github.com/usetheokit/theokit-tui",
           ]}
         >
           <Text dimColor>cwd: ~/projects/demo</Text>

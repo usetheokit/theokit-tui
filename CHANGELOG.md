@@ -48,6 +48,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
   uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
 
+### Changed
+
+- **O repositório passou para a organização oficial `usetheokit`.** Clones existentes continuam
+  funcionando: o GitHub redireciona permanentemente o remote antigo `usetheodev/theokit-tui`. Os
+  campos `repository`, `bugs` e `homepage`, o README, os exemplos que imprimem o link de documentação
+  no terminal e o `NOTICE` agora apontam para `usetheokit`. (usetheokit/theokit#316)
+
+- **O texto da licença Apache-2.0 foi completado com o apêndice de copyright.** O LICENSE trazia o
+  corpo oficial, mas com o apêndice ainda no formato de instrução (`Copyright [yyyy] [name of
+  copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a "Theo ecosystem
+  contributors (usetheodev)" — divergente do titular usado em todos os outros repositórios. Os dois
+  agora declaram `Copyright 2026 usetheo.dev`. (usetheokit/theokit#316)
+
+- `sonar-project.properties` passa a declarar `sonar.organization=usetheokit` e
+  `sonar.projectKey=usetheokit_theokit-tui`, acompanhando a mudança de organização. A organização e o
+  projeto correspondentes precisam existir no SonarCloud — do contrário o step de análise falha.
+  (usetheokit/theokit#316)
+
 ## [0.53.0] - 2026-08-14
 
 ### Added
