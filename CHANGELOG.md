@@ -7,6 +7,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que
+  está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo
+  empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que
+  `git commit --no-verify` não consegue pular. Falsos positivos confirmados são silenciados linha a
+  linha com um comentário `trufflehog:ignore`, nunca excluindo o caminho — excluir o caminho
+  esconderia também um segredo real acrescentado depois àquele mesmo fixture. (secret-scanning-2026-08)
+
 - **`windowFor` ganha ancora centrada, e a ajuda de teclado passa a derivar das capacidades — T3.4.**
   Duas metades que sobraram no consumidor. A janela ja reportava `hiddenBefore`/`hiddenAfter` como
   contagem desde a 0.53.0 (U-10); o que faltava era a **ancora** — a janela trailing prende a selecao

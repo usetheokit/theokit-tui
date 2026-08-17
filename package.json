@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
   "version": "0.53.0",
-  "description": "AI-native TUI primitives for agent CLIs \u2014 streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
+  "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -62,7 +62,8 @@
     "example:all": "tsx examples/all-components.tsx",
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "prepublishOnly": "pnpm gates && pnpm build",
-    "example:claude-code": "tsx examples/claude-code-scene.tsx"
+    "example:claude-code": "tsx examples/claude-code-scene.tsx",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "peerDependencies": {
     "figlet": "^1.7.0",
