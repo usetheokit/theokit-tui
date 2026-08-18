@@ -40,3 +40,11 @@ export type { QuestionPromptProps } from "./question-prompt.js";
 export { PlanApproval } from "./plan-approval.js";
 
 export type { PlanApprovalProps } from "./plan-approval.js";
+
+// B-003 — the presentational sibling of `SelectList`. `SelectList` owns keys and asks the user to
+// choose; this one only shows where you are in a list something else is driving. It exists because
+// the centred anchor and the hidden-row COUNTS were added to `windowFor` for exactly this view,
+// and the view was never shipped — so the one measured consumer rebuilt the clamp by hand.
+export { WindowedList } from "./windowed-list.js";
+
+export type { WindowedListProps } from "./windowed-list.js";

@@ -19,6 +19,7 @@ import {
   ContextWindowBar,
   CostMeter,
   UsagePanel,
+  WindowedList,
   DEFAULT_APPROVAL_CHOICES,
   DiffViewer,
   ExpandableOutput,
@@ -136,6 +137,10 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
   ["Image", (m) => <Image {...m} base64Data="AAAA" mimeType="image/png" />],
   ["Pager", (m) => <Pager {...m} content={"line1\nline2"} onClose={noop} />],
   [
+    "WindowedList",
+    (m) => <WindowedList {...m} rows={["a", "b", "c"]} selected={1} />,
+  ],
+  [
     "SelectList",
     (m) => (
       <SelectList
@@ -238,7 +243,7 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
 describe("universal margin contract (LayoutMarginProps)", () => {
   it("covers_every_public_visual_component", () => {
     // Guard against silent drift: if a new component ships, add it here.
-    expect(CASES.length).toBe(36);
+    expect(CASES.length).toBe(37);
   });
 
   for (const [name, make] of CASES) {
