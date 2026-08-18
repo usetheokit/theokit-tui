@@ -7,6 +7,52 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **Varredura de review sobre o TheoCode — 3 achados registrados (B-015..B-017).** Primeira medicao
+  sob o dominio `theocode-app` alargado. Os quatro gates do repo passam a mao em HEAD (typecheck,
+  534 testes, knip, depcruise) e o achado esta no que ninguem roda: **`.github` nao existe e nunca
+  existiu em 383 commits**, entao todo gate depende de alguem lembrar. Isso e o mecanismo por tras
+  dos outros dois — `crossval` reporta 31 de 114 itens fechados sem `fixed_in` (contiguos B-096 a
+  B-127, disciplina abandonada em data conhecida) e nenhum pipeline o invoca; e 15 arquivos alterados
+  desde 2026-08-09 nao tem teste algum que os importe, incluindo uma recusa de delecao e um veto de
+  seguranca. Um candidato foi rastreado ate o consumidor e **recusado** — `all-sessions.ts:132`
+  parece engolir erro no caminho do GC e o chamador e fail-closed. Registrar o que foi checado e
+  limpo e o que distingue uma varredura de uma que parou de olhar. (theocode-review-sweep-2026-08-18)
+
+- **14 itens de backlog registrados — sete pares extracao/adocao.** Cada par e um componente: a
+  extracao em `tui-library` e a adocao em `theocode-app` que a prova. A metade de adocao esta
+  bloqueada na extracao e diz isso — e o que impede uma extracao de ser dada como pronta enquanto a
+  duplicata que a justificou continua em disco. As extracoes entram `triaged` com ponteiro verificado
+  (a medicao ja aconteceu); as adocoes entram `raw` com `evidence: none-yet`, porque o export que
+  elas adotariam ainda nao existe e apontar para o arquivo a deletar nao e evidencia de defeito.
+  - **theokit-tui:** backlog B-001 — `UsagePanel` — the three usage meters have no composed form, so every consumer assembles them (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-002 — Delete the local usage panel once the library ships one (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-003 — No overlay for walking backwards through history, though both halves it needs already shipped (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-004 — Retire the local backtrack overlay in favour of the library one (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-005 — Two channels advertise affordances the app never wired, and the default parameter is the cause (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-006 — Drop the local shortcut and footer-hint filters once the library gates them (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-007 — Nothing expresses which surface OWNS the input row, so consumers write a nested ternary chain (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-008 — Rewrite the input slot as declared layers (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-009 — No frame budget for derived timeline state, so a streaming turn re-derives on every token (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-010 — Consume the library's frame budget instead of the local one (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-011 — Warning on a threshold crossing has no primitive, so a per-turn warning is the easy default (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-012 — Keep the copy, drop the edge detector (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-013 — The clear-screen sequence is not published, and the half people omit is the scrollback (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-014 — Delete the local ANSI constant, or kill this item with its pair (backlog-init-2026-08-18)
+
+- **`BACKLOG.md` — o registro de manutencao que faltava, e a tabela de roteamento corrigida.** O
+  install trazia `rules/cycle-backlog.md` nomeando o ecossistema `theo-platform` (`theo`,
+  `theo-cloud`, `theo-lens`, …), nenhum deles com checkout nesta arvore. Como `scripts/route_domain.py`
+  parseia justamente essa tabela, todo repo daqui roteava para lugar nenhum e o gate G1 recusava
+  qualquer item — uma tabela herdada que descrevia outro workspace nao e um default, e um defeito
+  silencioso. Passa a declarar os dois dominios que existem em disco: `tui-library` (`theokit-tui`) e
+  `theocode-app` (`TheoCode`, em `modelo/TheoCode/`), cada um com o especialista escrito
+  (`.claude/agents/`), porque `route_domain.py` sai com codigo 3 quando a tabela nomeia um dono que
+  nao esta no disco. O par e o ponto: a biblioteca publica as primitivas, o app e obrigado a escrever
+  a mao o que ela nao entregou — e isso e a medicao. O gate 0.2 do `/backlog-init` (raiz
+  guarda-chuva) foi dispensado deliberadamente e o motivo esta escrito no proprio arquivo, com o
+  custo nomeado. Registro nasce vazio: item sem `why_now`, sem DoD e sem dono e herdado como se fosse
+  decisao. (backlog-init-2026-08-18)
+
 - **Gate de estrutura em CI — ADR 0003.** `tests/lint/structure.test.ts` reprova o PR que devolve um
   arquivo solto para a raiz de `src/`, cria pasta sem barrel, passa de 25 arquivos por pasta, exporta
   dois componentes do mesmo modulo, deixa componente inline com mais de 40 linhas, usa qualificador
@@ -111,6 +157,17 @@ copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a 
   (usetheokit/theokit#316)
 
 ### Fixed
+
+- **O gate `no-ptbr` parava de varrer na borda de outro repositorio.** `SCAN_ROOTS = ["."]` varre a
+  arvore inteira — de proposito, porque uma lista mantida a mao apodrece assim que alguem adiciona um
+  pacote. So que a arvore passou a conter `modelo/TheoCode`, um checkout proprio (383 commits) de um
+  produto irmao nosso, com politica de idioma propria: 5 ofensas em `BACKLOG.md` e
+  `tools/check-english-only.mjs` que este repositorio nao pode corrigir e nao deve reescrever —
+  editar o historico de outro repo para satisfazer o nosso linter. O corte e estrutural, nao um nome
+  em `SKIP_DIRS`: diretorio que carrega `.git` E outro repositorio, e "contem .git" nao envelhece,
+  enquanto uma lista de exclusao envelhece no dia do segundo checkout. Custo zero de I/O — o
+  `Dirent[]` ja estava em maos. Coberto por teste com poder de deteccao verificado por mutacao:
+  desarmar o guard deixa o teste vermelho. (backlog-init-2026-08-18)
 
 - **O guard `it_count_never_decreases` nao enxergava renames e morria com ENOENT.** Ele comparava o
   caminho do commit base com o disco; qualquer arquivo de teste movido o derrubava antes de contar.
