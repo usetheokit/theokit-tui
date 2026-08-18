@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.54.0] - 2026-08-18
+
+### Added
+
 - **`UsagePanel` — os tres medidores de uso em um bloco (B-001).** `ContextWindowBar`,
   `TokenUsageChart` e `CostMeter` ja existiam separados e nada os compunha, entao todo consumidor de
   `readTurnUsage` escrevia a mesma projecao de `TurnUsage` para `TokenCategory` na mao — 13 linhas
@@ -114,6 +128,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
   uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
 
+
 ### Changed
 
 - **`src/` passa a ser organizado por dominio de produto, e nenhum componente exportado divide
@@ -166,6 +181,7 @@ copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a 
   `sonar.projectKey=usetheokit_theokit-tui`, acompanhando a mudança de organização. A organização e o
   projeto correspondentes precisam existir no SonarCloud — do contrário o step de análise falha.
   (usetheokit/theokit#316)
+
 
 ### Fixed
 
