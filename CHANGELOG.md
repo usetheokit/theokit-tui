@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.57.0] - 2026-08-18
+
+### Added
+
 - **`selectSurface` — decidir qual superficie e dona da regiao sem desenhar nada (B-007).** Todo
   agente de terminal tem gate de confirmacao, login, pergunta e composer disputando uma linha, e a
   resposta e sempre um ternario aninhado dentro do JSX. A ordem E o contrato ali, e nao fica
@@ -18,16 +32,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   montar nada, e `render` e um thunk para que a superficie vencedora so seja construida quando
   alguem de fato for desenha-la. Nao mora em `@theokit/tui/keys` de proposito — aquele subpath
   promete ser livre de React. (b007-surface-layers-2026-08-18)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.56.0] - 2026-08-18
 
