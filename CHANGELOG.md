@@ -17,6 +17,21 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.60.0] - 2026-08-18
+
+### Added
+
+- **`CLEAR_SCREEN_AND_SCROLLBACK` em `@theokit/tui/terminal` (B-013).** O item foi registrado
+  **esperando ser morto** — uma linha de ANSI e exatamente onde o degrau 5 da parcimonia morde — e
+  sobreviveu pela clausula escrita antes de medir. `\\x1b[2J\\x1b[H`, a variante sem apagar o
+  scrollback, deixa a tela em branco e o cursor no topo: e exatamente o que um reset correto
+  aparenta. A diferenca so aparece quando alguem rola para cima e encontra a conversa que lhe
+  disseram estar apagada — e o atraso e ilimitado. Nenhum teste deste pacote enxerga isso: todas as
+  assercoes sao sobre o frame renderizado, e scrollback e o que o terminal guarda fora dele. Entao
+  o que e publicado e o NOME, nao os bytes: o pacote ja tinha a sequencia oposta, privada no output
+  engine, correta la porque um redraw completo e dono da tela e nao pode destruir saida que nao
+  escreveu. As duas diferem por tres caracteres e significam coisas opostas. (b013-clear-screen-2026-08-18)
+
 ## [0.59.0] - 2026-08-18
 
 ### Added

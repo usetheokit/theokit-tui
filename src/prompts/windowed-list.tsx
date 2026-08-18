@@ -56,6 +56,26 @@ function assertWindow(window: number): void {
   }
 }
 
+/**
+ * B-026 — the guard `window` had and `selected` did not.
+ *
+ * `windowFor` clamps with `Math.min(Math.max(selectionIndex, 0), count - 1)`, and every comparison
+ * against `NaN` is false, so `clampedIndex` and `windowStart` both become `NaN` and
+ * `rows.slice(NaN, NaN)` returns `[]`. The list rendered EMPTY — no error, no log, nothing on
+ * screen — and no test written alongside this component asked. An adversarial probe did.
+ *
+ * Out-of-range integers are NOT rejected: clamping them is the documented behaviour, and `-1` is
+ * the no-selection sentinel. What is refused is a value that is not an integer at all, because
+ * that is the one the arithmetic cannot express and silently answers with nothing.
+ */
+function assertSelected(selected: number): void {
+  if (typeof selected !== "number" || !Number.isInteger(selected)) {
+    throw new TypeError(
+      `WindowedList: selected must be an integer (or ${String(NO_SELECTION)} for none) — got ${String(selected)}`,
+    );
+  }
+}
+
 /** One row of the window. Extracted for the same reason as the guard. */
 function WindowedRow({
   row,
@@ -91,8 +111,9 @@ export function WindowedList({
   header,
   ...margin
 }: WindowedListProps) {
-  // Boundary guard FIRST — the F10 idiom `CostMeter` and `ContextWindowBar` use.
+  // Boundary guards FIRST — the F10 idiom `CostMeter` and `ContextWindowBar` use.
   assertWindow(window);
+  assertSelected(selected);
 
   const theme = useTheoTheme();
   const mono = isMonochrome(theme);
