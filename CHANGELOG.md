@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.61.0] - 2026-08-18
+
+### Added
+
 - **`reportGuardFailure` and `GuardSink` in `@theokit/tui` (B-025).** A boundary guard that fires
   now leaves one **durable** record — `[theokit/tui] <ISO-8601> <Component>: <message>` — on a sink
   that defaults to `process.stderr` and is injectable. It buys **persistence, not visibility**, and
@@ -20,6 +34,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   type is `never`, so the existing throw contract is unchanged. What this does NOT fix is filed as
   **B-031**: one invalid prop still unmounts the whole app, shows the end user a developer stack,
   and exits 0. (b025-silent-guards-2026-08-18)
+
 
 ### Changed
 
@@ -60,9 +75,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   reported. No rendering changed. (b025-silent-guards-2026-08-18)
 
 
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -99,8 +111,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   invariant it always meant: the cell is a valid `dots` frame and is not frame[0]. Internal to the
   test suite; no published behaviour changed. The remaining load-sensitivity is a third class,
   filed and planned as B-033. (b020-deterministic-frames-2026-08-18)
-
-### Security
 
 ## [0.60.1] - 2026-08-18
 
