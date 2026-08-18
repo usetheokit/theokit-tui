@@ -40,3 +40,8 @@ export type { ToastProps, ToastVariant } from "./toast.js";
 export { notify } from "./notify.js";
 
 export type { NotifyProtocol, NotifySink } from "./notify.js";
+
+// B-011 — the discipline the channels above ship without: say it when it gets worse, and only
+// then. Owns no thresholds, no classifier and no copy — deciding WHICH level you are at is the
+// caller's policy, and for the measured consumer it lives in another package entirely.
+export { useRisingEdge } from "./use-rising-edge.js";
