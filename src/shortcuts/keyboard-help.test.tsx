@@ -48,4 +48,13 @@ describe("KeyboardHelp", () => {
     expect(quit).toBeDefined();
     expect(quit?.description).toContain("app");
   });
+
+  // TA-1 (review) — this panel renders fifteen description strings and pinned none of them. The
+  // Ctrl+C correction in this same slice changed one and the full suite stayed green: the change
+  // was verified by running an example and reading the output by eye, which is not a gate.
+  it("default_panel_layout", async () => {
+    expect(
+      await renderFrame(<KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />),
+    ).toMatchSnapshot("keyboard-help-defaults");
+  });
 });

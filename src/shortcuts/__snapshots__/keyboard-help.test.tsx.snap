@@ -1,0 +1,21 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`KeyboardHelp > default_panel_layout > keyboard-help-defaults 1`] = `
+"[36m╭──────────────────────────────────────────────────────────────────────────────────────────────────╮[39m
+[36m│[39m [1m[36mKeyboard shortcuts[39m[22m                                                                               [36m│[39m
+[36m│[39m [36mEnter[39m               [2mSend the message[22m                                                             [36m│[39m
+[36m│[39m [36mAlt+Enter / Ctrl+J[39m  [2mInsert a newline[22m                                                             [36m│[39m
+[36m│[39m [36m/[39m                   [2mOpen the command menu[22m                                                        [36m│[39m
+[36m│[39m [36m@[39m                   [2mMention a file / browse paths[22m                                                [36m│[39m
+[36m│[39m [36m![39m                   [2mRun a shell command[22m                                                          [36m│[39m
+[36m│[39m [36m?[39m                   [2mToggle this help[22m                                                             [36m│[39m
+[36m│[39m [36m↑ ↓[39m                 [2mHistory (empty line) / menu navigation[22m                                       [36m│[39m
+[36m│[39m [36mEsc[39m                 [2mDismiss the menu / cancel[22m                                                    [36m│[39m
+[36m│[39m [36mCtrl+A / Ctrl+E[39m     [2mJump to line start / end[22m                                                     [36m│[39m
+[36m│[39m [36mAlt+B / Alt+F[39m       [2mMove a word back / forward[22m                                                   [36m│[39m
+[36m│[39m [36mCtrl+W[39m              [2mDelete the word before the cursor[22m                                            [36m│[39m
+[36m│[39m [36mCtrl+U / Ctrl+K[39m     [2mDelete to line start / end[22m                                                   [36m│[39m
+[36m│[39m [36mCtrl+Y[39m              [2mYank (paste the last kill)[22m                                                   [36m│[39m
+[36m│[39m [36mCtrl+C[39m              [2mQuit (handled by the app, not the composer)[22m                                  [36m│[39m
+[36m╰──────────────────────────────────────────────────────────────────────────────────────────────────╯[39m"
+`;
