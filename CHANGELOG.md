@@ -51,6 +51,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- **The last two guessed budgets in the suite become measured ones (B-034).** `degrade-matrix`
+  spawns `pnpm exec tsx` three times per run and budgeted 20000 ms with nothing recorded beside it;
+  one spawn measures 2621 ms at load 13, so that 7.6x margin still failed with `ETIMEDOUT` at load
+  30. Now 60000 ms, with the measurement in the code and the better fix named rather than
+  overlooked: pre-compiling the probe and spawning `node` would take it to ~100 ms and remove the
+  sensitivity instead of budgeting for it. `typeUntil` in the composer suite carried the third copy
+  of the 2000 ms bound that B-033 measured expiring on a correct frame, and now shares the one
+  budget. Measured after: **five consecutive `npm test` runs at default workers, loads 11.46 to
+  31.07, all green** — where the suite previously failed routinely at load 13.
+  (b034-measured-budgets-2026-08-18)
+
 - **Tests wait for a condition instead of for a number of milliseconds (B-033).** 13 files slept a
   fixed duration and then asserted — encoding "the effect completes within N ms", which is true on
   an idle laptop and false on a loaded one. A shared `waitFor` polls the condition each site was
