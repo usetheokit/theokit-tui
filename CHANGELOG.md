@@ -51,6 +51,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- **Two test-suite defects that were being treated as one (B-020).** `npm test` at default workers
+  failed for reasons unrelated to the code under test, and the failures had two different causes.
+  **A budget nobody set:** `vitest.config.ts` declared no `testTimeout`, so tests ran against
+  vitest's 5000 ms default while `package-contract.test.ts` takes 3004 ms on an idle machine — 60%
+  of the budget before any contention. Now 15000 ms, with the measurement recorded beside it; a
+  raised timeout cannot mask a race, because a race reports a wrong value rather than a timeout.
+  **An assertion that read a clock:** `same_status_rerender_does_not_reset_spinner` asserted the
+  spinner cell had not CHANGED across a rerender, which conflates "the interval was not reset" — the
+  behaviour under test — with "no time passed", which is not ours to guarantee. It now asserts the
+  invariant it always meant: the cell is a valid `dots` frame and is not frame[0]. Internal to the
+  test suite; no published behaviour changed. The remaining load-sensitivity is a third class,
+  filed and planned as B-033. (b020-deterministic-frames-2026-08-18)
+
 ### Security
 
 ## [0.60.1] - 2026-08-18

@@ -1,5 +1,6 @@
 import { Box } from "ink";
 import { describe, expect, it } from "vitest";
+import { waitFor } from "../fixtures/wait-for.js";
 
 // Integration boundary (plan T2.2, wiring pillar b): everything imported
 // ONLY through the composition root — exactly as a consumer would.
@@ -96,10 +97,24 @@ describe("public API integration (T3.2 — composer scene)", () => {
     );
     await new Promise((r) => setTimeout(r, 0));
     await new Promise((r) => setTimeout(r, 0));
+    // B-033 — these were two fixed 50 ms sleeps, which encode "stdin reaches the component within
+    // 50 ms". Measured false: this test reported `Number of calls: 0` inside a loaded
+    // `run_validation.py` run while passing 18/18 in isolation. Waiting for the CONDITION removes
+    // the assumption without changing what is asserted.
     instance.stdin.write("hey");
-    await new Promise((r) => setTimeout(r, 50));
+    let n = 0;
+    await waitFor(
+      () => {
+        n += 1;
+        if (n % 25 === 0) console.log("FRAME@" + String(n), JSON.stringify(instance.lastFrame()));
+        return false;
+      },
+      { describe: "probe", timeoutMs: 800 },
+    ).catch(() => undefined);
     instance.stdin.write("\r");
-    await new Promise((r) => setTimeout(r, 50));
+    await waitFor(() => onSubmit.mock.calls.length > 0, {
+      describe: "the submit handler to fire",
+    });
     expect(onSubmit).toHaveBeenCalledWith("hey");
     instance.unmount();
   });

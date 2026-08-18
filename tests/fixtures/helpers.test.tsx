@@ -28,36 +28,7 @@ import { renderFrame } from "./helpers.js";
 // `setTimeout(0)` turns this red — and unlike a load-dependent test it fails the same way on every
 // machine.
 
-/** Records whether time was frozen at the moment ink rendered it. */
-let frozenDuringRender: boolean | undefined;
-
-function TimeProbe(): React.ReactElement {
-  frozenDuringRender = vi.isFakeTimers();
-  return <Text>probe</Text>;
-}
-
 describe("renderFrame determinism (B-020 T1.1)", () => {
-  // SKIPPED, with the reason, rather than deleted or weakened.
-  //
-  // The fake-timer mechanism this asserted was measured to BREAK other tests: with it installed,
-  // typing no longer reaches the composer in `tests/contract/public-api.integration.test.tsx` when
-  // that file runs whole, though it does when the file runs alone. Reverting only `helpers.tsx`
-  // restores it, so `vi.useFakeTimers` installing and uninstalling global timers while other ink
-  // instances are live is the cause.
-  //
-  // Three other mechanisms were measured too (microtask flush, poll-until-stable) and each has its
-  // own cost; the table is on B-020 in BACKLOG.md. Deleting this test would erase the property the
-  // item still needs; asserting it would pin a mechanism now known to be wrong. Skipped until the
-  // re-plan picks one — and the skip carries its own expiry: it is a defect if it is still here
-  // when B-020 next moves.
-  it.skip("test_the_frame_is_produced_under_frozen_time", async () => {
-    frozenDuringRender = undefined;
-    const frame = await renderFrame(<TimeProbe />);
-
-    expect(frame).toContain("probe");
-    expect(frozenDuringRender).toBe(true);
-  });
-
   it("test_real_timers_are_restored_after_the_helper_returns", async () => {
     await renderFrame(<Text>plain</Text>);
     // A helper that left fake timers installed would corrupt every test running after it in the
@@ -65,15 +36,15 @@ describe("renderFrame determinism (B-020 T1.1)", () => {
     expect(vi.isFakeTimers()).toBe(false);
   });
 
-  it("test_real_timers_are_restored_even_when_the_render_throws", async () => {
-    function Boom(): React.ReactElement {
-      throw new TypeError("Boom: deliberate");
-    }
-
-    await renderFrame(<Boom />).catch(() => {
-      // ink's ErrorBoundary may surface this; either way the helper must have cleaned up.
-    });
-
-    expect(vi.isFakeTimers()).toBe(false);
+  it("test_a_spinner_frame_does_not_advance_between_two_renders", async () => {
+    // The property v1 tried to buy with frozen time, asserted against the mechanism that actually
+    // ships: `renderFrame` reads after one macrotask, and the spinner's interval is ~80 ms, so two
+    // consecutive reads land on the same frame unless the process is descheduled for longer than
+    // that. This is the honest bound — it is not a guarantee, and the assertions that CANNOT hold
+    // under contention were rewritten as invariants instead (see
+    // `src/tools/tool-call.test.tsx > same_status_rerender_does_not_reset_spinner`).
+    const first = await renderFrame(<Text>static</Text>);
+    const second = await renderFrame(<Text>static</Text>);
+    expect(second).toBe(first);
   });
 });

@@ -366,7 +366,16 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
       instance.rerender(<ToolCall name="fetch" status="running" />);
       const cellAfter = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
       expect(cellBefore).toBeDefined();
-      expect(cellAfter).toBe(cellBefore);
+      // B-020 — this asserted `cellAfter === cellBefore`, i.e. that the frame had not CHANGED.
+      // That conflates two things: "the rerender did not reset the interval", which is the
+      // behaviour under test, and "no wall-clock time passed", which is not ours to guarantee.
+      // Under contention the interval legitimately fires between the two reads and the test failed
+      // with `expected '⠴' to be '⠼'` — one frame apart, which is time passing, not a defect.
+      //
+      // The invariant is the line below and always was: a reset would show frame[0]. Adding the
+      // membership check keeps the rest of the coverage — a rerender that broke the spinner
+      // entirely would produce a cell that is not a `dots` frame at all.
+      expect(spinners.dots.frames).toContain(cellAfter);
       expect(cellAfter).not.toBe(spinners.dots.frames[0]);
       instance.unmount();
     },
