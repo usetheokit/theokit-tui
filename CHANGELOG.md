@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.56.0] - 2026-08-18
+
+### Added
+
 - **`composerShortcutsFor` e `footerHintFor` — anunciar so o que o app realmente ligou (B-005).**
   Medido: cinco das quinze entradas de `DEFAULT_COMPOSER_SHORTCUTS` descrevem um recurso que o
   `ChatComposer` condiciona a um prop opcional, e uma delas — `Ctrl+C` — nao tem handler nenhum no
@@ -17,16 +31,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   desligado. Os defaults atuais ficam **intactos** — mudar default e a mudanca silenciosa, que e
   exatamente o defeito deste item. `Ctrl+C` mantem a linha e perde a atribuicao falsa: o defeito
   era de quem e o atalho, nao se ele existe. (b005-capability-affordances-2026-08-18)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.55.0] - 2026-08-18
 
