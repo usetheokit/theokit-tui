@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.59.0] - 2026-08-18
+
+### Added
+
 - **`useRisingEdge` — dizer quando piora, e so entao (B-011).** O pacote ja publicava os CANAIS
   para avisar o usuario — `Toast`, `Notice`, `notify` — e nenhum deles impunha QUANDO: `notify`
   escreve um bell a cada chamada, e o `Toast` disciplina a dispensa, nao o disparo. Entao a regra
@@ -19,16 +33,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   nem texto: decidir em QUE nivel voce esta e politica de quem chama. Nivel fora da ordem lanca
   erro tipado, validado no corpo do render — porque um throw dentro de efeito o React nao entrega
   como rejeicao, e o teste passaria vazio. (b011-rising-edge-2026-08-18)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.58.0] - 2026-08-18
 
