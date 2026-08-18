@@ -17,6 +17,32 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.62.0] - 2026-08-18
+
+### Changed
+
+- **`windowFor` and `SelectList` refuse a window they cannot describe (B-021).** The hidden-row
+  counts are a partition of the list, and a non-positive or fractional window made them describe
+  something else: `window = 0` put `windowStart` past the selection so nothing rendered while both
+  arrows still claimed rows, `window = -1` made the counts sum to 21 in a list of 20, and `2.5` hid
+  seven and a half rows. `SelectList` exposes `window` publicly and passed it through unvalidated,
+  so a consumer could get a menu that advertised contents it never drew. `windowFor`,
+  `deriveSelectList` and `SelectList` now all throw a typed error naming the entry point the caller
+  actually used.
+
+  **What that means concretely, measured under `ink@7.1.0` rather than described as "throws":** a
+  throw from a component's render tears the whole app down, a developer stack with absolute paths
+  prints to stdout, and the process exits **0**. `render()` itself returns normally — but
+  `waitUntilExit()` REJECTS with the guard's own error, so a consumer awaiting it does receive it.
+  An earlier draft of this paragraph said the consumer "cannot catch it", which this package's own
+  probe (`guard-sink.integration.test.tsx`) and `error-handling.md` § 3.1 both contradict. That is the package idiom across 21 guarded components and it is worse than the
+  wording "throws a typed error" suggests, so it is stated plainly here rather than discovered. **Refused rather than clamped**, because the
+  counts exist precisely to stop information being destroyed (U-10) and clamping would destroy the
+  caller's mistake instead. Blast radius measured before shipping: the only known consumer renders
+  `SelectList` without a `window` prop, and its `windowFor` mentions are comments explaining why it
+  does NOT use it — `grep -rn "windowFor\|SelectList" modelo/TheoCode/` → 12 hits, 0 affected.
+  (b021-window-invariant-2026-08-18)
+
 ## [0.61.0] - 2026-08-18
 
 ### Added
