@@ -2,6 +2,7 @@ import { Box } from "ink";
 import type { ReactElement } from "react";
 
 import type { TurnUsage } from "../agent/messages-to-events.js";
+import { assertFiniteNonNegative } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
@@ -111,13 +112,15 @@ function assertForwardedUsage(usage: TurnUsage): void {
   for (const field of FORWARDED_USAGE_FIELDS) {
     const value = usage[field];
     if (value === undefined) continue;
-    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-      reportGuardFailure(
-        "UsagePanel",
-        new TypeError(
-          `UsagePanel: usage.${field} must be a finite number >= 0 — got ${String(value)}`,
-        ),
-      );
+    try {
+      // The predicate has ONE home (ADR D2). v1 re-inlined it verbatim from `format.ts:20`, whose
+      // docstring records a prior architecture review consolidating it — "one home past rule-of-3".
+      // The helper is not made to report directly: it lives in `src/format`, a low-level module,
+      // and importing `src/status` there would invert the dependency direction
+      // (`rules/architecture.md` § 1).
+      assertFiniteNonNegative(value, `UsagePanel: usage.${field} must be a finite number >= 0`);
+    } catch (err) {
+      reportGuardFailure("UsagePanel", err as Error);
     }
   }
 }

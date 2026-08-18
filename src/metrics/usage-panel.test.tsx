@@ -155,6 +155,16 @@ describe("UsagePanel", () => {
     ).toThrow("UsagePanel: usage.reasoningTokens");
   });
 
+  it("a_non_finite_output_token_count_is_refused_by_the_panel_itself", () => {
+    // `/review` (F-xval-1) found the surviving mutant on the one ADR this slice exists to satisfy:
+    // `outputTokens` was IN `FORWARDED_USAGE_FIELDS` and exercised by no test, so deleting it from
+    // the list killed nothing. It is forwarded (`tokenCategories` -> `TokenUsageChart`), so a NaN
+    // there reproduces the D2 failure mode exactly like `inputTokens` does.
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, outputTokens: Number.NaN } }),
+    ).toThrow("UsagePanel: usage.outputTokens");
+  });
+
   it("the_error_names_UsagePanel_not_a_child", () => {
     let message = "";
     try {
