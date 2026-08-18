@@ -56,6 +56,12 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.WindowedList).toBe("function");
   });
 
+  it("terminal_subpath_exposes_the_scrollback_clearing_sequence", async () => {
+    const term = await import("../../src/terminal/index.js");
+    // B-013 — the assertion that matters is `\x1b[3J`. Its absence looks like a correct clear.
+    expect(term.CLEAR_SCREEN_AND_SCROLLBACK).toContain("\u001B[3J");
+  });
+
   it("public_entry_exposes_the_rising_edge_hook", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.useRisingEdge).toBe("function");
