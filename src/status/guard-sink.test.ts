@@ -19,6 +19,14 @@ import { reportGuardFailure } from "./guard-sink.js";
 // asserted here before it exists. A test written after the implementation would assert whatever
 // the implementation happened to write.
 
+/** A raw ESC. Written as a code point so this file carries no control byte of its own. */
+const ESC_CHAR = String.fromCharCode(27);
+const NEWLINE = String.fromCharCode(10);
+/** Any C0 control character. */
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHAR_RE = /[\u0000-\u001F\u007F]/;
+const ISO_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
 function fakeSink() {
   const lines: string[] = [];
   return {
@@ -205,5 +213,99 @@ describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
       process.stderr.write = realWrite;
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+// B-025 v2 T1.1 — the record is SAFE and ATTRIBUTABLE (plan ADRs D5, D6).
+//
+// The offending value inside a guard's message is untrusted BY CONSTRUCTION: the guard fired
+// precisely because a caller passed something wrong. `/review` measured a hostile prop producing
+// ONE write and TWO physical lines, the second a well-formed forged `[theokit/tui]` record, with a
+// raw ESC reaching the stream — which, with no `installStderrGuard` installed, clears the user's
+// screen. `src/status/notify.ts:40-42` documents this exact hazard for the sibling writer, and v1
+// cited that file as precedent without applying its warning.
+//
+// These are asserted BEFORE they exist because v1 proved the alternative: its "exactly one line"
+// claim was defeated by an input the author had not thought of, and nothing caught it.
+
+/** A string carrying the two things a record must survive: a control byte and a line break. */
+const HOSTILE_VALUE =
+  "12" + NEWLINE + "[theokit/tui] CostMeter: costUsd OK" + ESC_CHAR + "[2J" + ESC_CHAR + "[H";
+
+describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
+  it("test_record_escapes_control_characters", () => {
+    const sink = fakeSink();
+    expect(() => {
+      reportGuardFailure(
+        "UsagePanel",
+        new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`),
+        sink,
+      );
+    }).toThrow(TypeError);
+
+    const line = onlyLine(sink);
+    // Every C0 control byte except the single trailing terminator must be gone.
+    expect(CONTROL_CHAR_RE.test(line.slice(0, -1))).toBe(false);
+  });
+
+  it("test_record_is_one_physical_line", () => {
+    const sink = fakeSink();
+    expect(() => {
+      reportGuardFailure(
+        "UsagePanel",
+        new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`),
+        sink,
+      );
+    }).toThrow(TypeError);
+
+    // Content plus the trailing terminator: splitting on the newline yields exactly two parts.
+    expect(onlyLine(sink).split(NEWLINE).length).toBe(2);
+  });
+
+  it("test_hostile_message_cannot_forge_a_second_record", () => {
+    const sink = fakeSink();
+    expect(() => {
+      reportGuardFailure(
+        "UsagePanel",
+        new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`),
+        sink,
+      );
+    }).toThrow(TypeError);
+
+    // A reader tailing the log counts records by the prefix. One fire, one prefix.
+    const matches = onlyLine(sink).match(/\[theokit\/tui]/g) ?? [];
+    expect(matches.length).toBe(1);
+  });
+
+  it("test_record_carries_an_iso_timestamp", () => {
+    const sink = fakeSink();
+    expect(() => {
+      reportGuardFailure("CostMeter", new TypeError("CostMeter: costUsd must be >= 0 — got -1"), sink);
+    }).toThrow(TypeError);
+
+    // The blessed destination is an append-only log rotating at 10 MB x 10 generations, so "when"
+    // is unrecoverable unless the record carries it (`/review` F-dom-3).
+    expect(onlyLine(sink)).toMatch(ISO_RE);
+  });
+
+  it("test_the_component_is_a_field_not_a_convention", () => {
+    const sink = fakeSink();
+    // `reportGuardFailure(new Error("bad"))` type-checked in v1 and emitted the generic message
+    // `.claude/rules/error-handling.md` § 5 bans. The component is now an argument.
+    //
+    // Asserted by inspecting the caught value rather than with `toThrow(/component/i)`: that form
+    // PASSED against the old two-argument signature, because the call threw the bare string `""`
+    // and the matcher was satisfied by accident. A test that passes for the wrong reason is the
+    // defect `/review` found across v1 — so this one pins the type, the message AND the absence of
+    // a record.
+    let caught: unknown;
+    try {
+      reportGuardFailure("", new TypeError("bad"), sink);
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(TypeError);
+    expect((caught as Error).message).toMatch(/component/i);
+    expect(sink.lines).toHaveLength(0);
   });
 });
