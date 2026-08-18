@@ -7,9 +7,9 @@ import {
   type RendererNode,
 } from "./host-config.js";
 import { StdoutContext, type StdoutContextValue } from "./hooks/use-stdout.js";
-import { OutputEngine } from "./output-engine.js";
-import { Output } from "./output-grid.js";
-import { renderNodeToOutput } from "./render-node.js";
+import { OutputEngine } from "./output/output-engine.js";
+import { Output } from "./output/output-grid.js";
+import { renderNodeToOutput } from "./output/render-node.js";
 import type { Terminal } from "./terminal.js";
 
 // M18 renderer (plan m18-yoga-layout, ADR D2): the public seam. createRenderer

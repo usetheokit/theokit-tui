@@ -75,7 +75,7 @@ render(<App />);
 
 Swap `demoTurn` for your real stream: `useAgentStream` consumes any
 `AsyncIterable<AgentStreamEvent>` (or a factory) — SDK streams, SSE, fixtures.
-See `examples/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
+See `examples/scenes/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
 
 ## Primitives
 
@@ -137,7 +137,7 @@ Two constraints come with it:
 Rendering that same banner as a plain child of your app (outside the timeline)
 puts it in the live region, where it duplicates on scroll. There is no general
 `insertHistory` primitive yet — see
-[#55](https://github.com/usetheodev/theokit-tui/issues/55).
+[#55](https://github.com/usetheokit/theokit-tui/issues/55).
 
 ## Development
 

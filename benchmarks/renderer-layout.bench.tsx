@@ -117,7 +117,7 @@ async function main(): Promise<void> {
   };
   const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
-  const outFile = join(outDir, "m18-renderer-layout-baseline.json");
+  const outFile = join(outDir, "renderer-layout-baseline.json");
   writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
   process.stdout.write(
     `\nrenderer-layout bench (load ${round(loadAtStart)}):\n` +

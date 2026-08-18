@@ -7,6 +7,86 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.54.0] - 2026-08-18
+
+### Added
+
+- **`UsagePanel` — os tres medidores de uso em um bloco (B-001).** `ContextWindowBar`,
+  `TokenUsageChart` e `CostMeter` ja existiam separados e nada os compunha, entao todo consumidor de
+  `readTurnUsage` escrevia a mesma projecao de `TurnUsage` para `TokenCategory` na mao — 13 linhas
+  medidas em um consumidor real. As duas pontas dessa projecao sao deste pacote, entao uma mudanca
+  em qualquer uma quebrava cada copia em silencio. A ordem vertical e um prop com default, nao um
+  layout fixo: a medicao apontou a ordenacao como a UNICA parte da composicao que e decisao de
+  produto. `contextWindow` e opcional porque `TurnUsage` nao carrega o tamanho da janela — sem ele a
+  barra mostra a contagem absoluta em vez de inventar uma porcentagem; um numero nao-positivo
+  explicito continua sendo erro de programacao e falha alto, nomeando o proprio componente.
+  (b001-usage-panel-2026-08-18)
+
+- **Varredura de review sobre o TheoCode — 3 achados registrados (B-015..B-017).** Primeira medicao
+  sob o dominio `theocode-app` alargado. Os quatro gates do repo passam a mao em HEAD (typecheck,
+  534 testes, knip, depcruise) e o achado esta no que ninguem roda: **`.github` nao existe e nunca
+  existiu em 383 commits**, entao todo gate depende de alguem lembrar. Isso e o mecanismo por tras
+  dos outros dois — `crossval` reporta 31 de 114 itens fechados sem `fixed_in` (contiguos B-096 a
+  B-127, disciplina abandonada em data conhecida) e nenhum pipeline o invoca; e 15 arquivos alterados
+  desde 2026-08-09 nao tem teste algum que os importe, incluindo uma recusa de delecao e um veto de
+  seguranca. Um candidato foi rastreado ate o consumidor e **recusado** — `all-sessions.ts:132`
+  parece engolir erro no caminho do GC e o chamador e fail-closed. Registrar o que foi checado e
+  limpo e o que distingue uma varredura de uma que parou de olhar. (theocode-review-sweep-2026-08-18)
+
+- **14 itens de backlog registrados — sete pares extracao/adocao.** Cada par e um componente: a
+  extracao em `tui-library` e a adocao em `theocode-app` que a prova. A metade de adocao esta
+  bloqueada na extracao e diz isso — e o que impede uma extracao de ser dada como pronta enquanto a
+  duplicata que a justificou continua em disco. As extracoes entram `triaged` com ponteiro verificado
+  (a medicao ja aconteceu); as adocoes entram `raw` com `evidence: none-yet`, porque o export que
+  elas adotariam ainda nao existe e apontar para o arquivo a deletar nao e evidencia de defeito.
+  - **theokit-tui:** backlog B-001 — `UsagePanel` — the three usage meters have no composed form, so every consumer assembles them (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-002 — Delete the local usage panel once the library ships one (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-003 — No overlay for walking backwards through history, though both halves it needs already shipped (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-004 — Retire the local backtrack overlay in favour of the library one (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-005 — Two channels advertise affordances the app never wired, and the default parameter is the cause (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-006 — Drop the local shortcut and footer-hint filters once the library gates them (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-007 — Nothing expresses which surface OWNS the input row, so consumers write a nested ternary chain (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-008 — Rewrite the input slot as declared layers (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-009 — No frame budget for derived timeline state, so a streaming turn re-derives on every token (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-010 — Consume the library's frame budget instead of the local one (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-011 — Warning on a threshold crossing has no primitive, so a per-turn warning is the easy default (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-012 — Keep the copy, drop the edge detector (backlog-init-2026-08-18)
+  - **theokit-tui:** backlog B-013 — The clear-screen sequence is not published, and the half people omit is the scrollback (backlog-init-2026-08-18)
+  - **TheoCode:** backlog B-014 — Delete the local ANSI constant, or kill this item with its pair (backlog-init-2026-08-18)
+
+- **`BACKLOG.md` — o registro de manutencao que faltava, e a tabela de roteamento corrigida.** O
+  install trazia `rules/cycle-backlog.md` nomeando o ecossistema `theo-platform` (`theo`,
+  `theo-cloud`, `theo-lens`, …), nenhum deles com checkout nesta arvore. Como `scripts/route_domain.py`
+  parseia justamente essa tabela, todo repo daqui roteava para lugar nenhum e o gate G1 recusava
+  qualquer item — uma tabela herdada que descrevia outro workspace nao e um default, e um defeito
+  silencioso. Passa a declarar os dois dominios que existem em disco: `tui-library` (`theokit-tui`) e
+  `theocode-app` (`TheoCode`, em `modelo/TheoCode/`), cada um com o especialista escrito
+  (`.claude/agents/`), porque `route_domain.py` sai com codigo 3 quando a tabela nomeia um dono que
+  nao esta no disco. O par e o ponto: a biblioteca publica as primitivas, o app e obrigado a escrever
+  a mao o que ela nao entregou — e isso e a medicao. O gate 0.2 do `/backlog-init` (raiz
+  guarda-chuva) foi dispensado deliberadamente e o motivo esta escrito no proprio arquivo, com o
+  custo nomeado. Registro nasce vazio: item sem `why_now`, sem DoD e sem dono e herdado como se fosse
+  decisao. (backlog-init-2026-08-18)
+
+- **Gate de estrutura em CI — ADR 0003.** `tests/lint/structure.test.ts` reprova o PR que devolve um
+  arquivo solto para a raiz de `src/`, cria pasta sem barrel, passa de 25 arquivos por pasta, exporta
+  dois componentes do mesmo modulo, deixa componente inline com mais de 40 linhas, usa qualificador
+  de teste fora do registro (`integration`, `e2e`), prefixa arquivo com id de milestone ou usa
+  `-model` sem view ao lado. Segue o precedente de `tests/lint/no-ptbr.test.ts` — politica como
+  teste, sem ferramenta nova — e roda dentro de `pnpm gates`. A deriva que motivou tudo isso passou
+  por code review por 147 arquivos sem ser barrada: regra que so vive na cabeca do revisor erode.
+  (architecture-review-2026-08)
+
 - Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que
   está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo
   empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que
@@ -44,9 +124,86 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   string que o modelo errou.
 
   Nota de acoplamento, registrada e nao resolvida: a lista de nomes e conhecimento duplicado. Este
-  pacote **nao** importa `@theokit/agents` e nao deve — a dependencia corre no sentido contrario — 
+  pacote **nao** importa `@theokit/agents` e nao deve — a dependencia corre no sentido contrario —
   entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
   uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
+
+
+### Changed
+
+- **`src/` passa a ser organizado por dominio de produto, e nenhum componente exportado divide
+  arquivo com outro — ADRs 0001/0002.** A superficie publica do pacote nao muda: os quatro subpaths
+  (`.`, `./renderer`, `./terminal`, `./keys`) exportam exatamente os mesmos simbolos de antes, o que
+  `tests/contract/export-surface.test.ts` e `tests/contract/public-api.integration.test.tsx`
+  verificam a cada commit. O que muda e o caminho de arquivo de cada modulo dentro do pacote — quem
+  fazia deep import (`@theokit/tui/dist/chat-composer.js`, nunca suportado) precisa passar pelo
+  barrel. `src/` tinha 147 arquivos em um unico diretorio: 71 modulos, 61 testes co-locados e 15
+  snapshots. Agora sao 14 pastas de dominio (`agent/`, `chat/`, `tools/`, `diff/`, `markdown/`,
+  `prompts/`, `metrics/`, `branding/`, `layout/`, `status/`, `theme/`, `shortcuts/`, `search/`,
+  `format/`), cada uma com barrel proprio, e `src/index.ts` caiu de 288 para 27 linhas — deixou de
+  ser lista escrita a mao e ponto garantido de conflito de merge. `chat-composer.tsx` caiu de 806
+  para 575 linhas: os sete componentes que dividiam o arquivo viraram modulos em `chat/composer/`.
+  (architecture-review-2026-08)
+
+- **A politica de export que vivia em comentario agora tem lugar proprio: `docs/adr/`.** O codigo
+  citava ADRs por id (`D7`, `EC-10`, `arch-5`) que nao existiam como arquivo — 47 ids distintos em
+  248 citacoes. `docs/adr/README.md` indexa cada um com todas as linhas que dependem dele, gerado
+  por `docs/adr/build-legacy-index.py`. O indice torna os ids localizaveis; ele nao inventa a
+  justificativa que nunca foi escrita. (architecture-review-2026-08)
+
+- **`tests/` e `examples/` passam a ser divididos por proposito.** `tests/` ganhou
+  `contract/`, `examples/`, `benchmarks/` e `fixtures/` ao lado do `renderer/` que ja existia;
+  `examples/` ganhou `components/`, `scenes/` e `renderer/`. Os scripts `example:*` continuam
+  valendo, apontando para os novos caminhos. (architecture-review-2026-08)
+
+- **22 arquivos deixam de comecar por id de milestone.** `m17-skeleton-parity.md` ordenava por
+  cronologia do projeto e nao dizia nada a quem le; o milestone agora fica dentro do arquivo.
+  Vale para `benchmarks/baselines/*`, `tests/*` e `wiki/*`. (architecture-review-2026-08)
+
+- **O sufixo `-model` passa a significar algo — ADR 0004.** Ele marcava a metade headless de um
+  componente, mas acertava 3 vezes em 8, e outros 23 modulos headless nao o usavam. Agora so e
+  valido quando existe a view de mesmo nome ao lado; os cinco que nao tinham par perderam o sufixo
+  (`diff-model.ts` -> `diff.ts`, `markdown-model.ts` -> `markdown.ts`, e assim por diante).
+  (architecture-review-2026-08)
+
+- **O repositório passou para a organização oficial `usetheokit`.** Clones existentes continuam
+  funcionando: o GitHub redireciona permanentemente o remote antigo `usetheodev/theokit-tui`. Os
+  campos `repository`, `bugs` e `homepage`, o README, os exemplos que imprimem o link de documentação
+  no terminal e o `NOTICE` agora apontam para `usetheokit`. (usetheokit/theokit#316)
+
+- **O texto da licença Apache-2.0 foi completado com o apêndice de copyright.** O LICENSE trazia o
+  corpo oficial, mas com o apêndice ainda no formato de instrução (`Copyright [yyyy] [name of
+copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a "Theo ecosystem
+  contributors (usetheodev)" — divergente do titular usado em todos os outros repositórios. Os dois
+  agora declaram `Copyright 2026 usetheo.dev`. (usetheokit/theokit#316)
+
+- `sonar-project.properties` passa a declarar `sonar.organization=usetheokit` e
+  `sonar.projectKey=usetheokit_theokit-tui`, acompanhando a mudança de organização. A organização e o
+  projeto correspondentes precisam existir no SonarCloud — do contrário o step de análise falha.
+  (usetheokit/theokit#316)
+
+
+### Fixed
+
+- **O gate `no-ptbr` parava de varrer na borda de outro repositorio.** `SCAN_ROOTS = ["."]` varre a
+  arvore inteira — de proposito, porque uma lista mantida a mao apodrece assim que alguem adiciona um
+  pacote. So que a arvore passou a conter `modelo/TheoCode`, um checkout proprio (383 commits) de um
+  produto irmao nosso, com politica de idioma propria: 5 ofensas em `BACKLOG.md` e
+  `tools/check-english-only.mjs` que este repositorio nao pode corrigir e nao deve reescrever —
+  editar o historico de outro repo para satisfazer o nosso linter. O corte e estrutural, nao um nome
+  em `SKIP_DIRS`: diretorio que carrega `.git` E outro repositorio, e "contem .git" nao envelhece,
+  enquanto uma lista de exclusao envelhece no dia do segundo checkout. Custo zero de I/O — o
+  `Dirent[]` ja estava em maos. Coberto por teste com poder de deteccao verificado por mutacao:
+  desarmar o guard deixa o teste vermelho. (backlog-init-2026-08-18)
+
+- **O guard `it_count_never_decreases` nao enxergava renames e morria com ENOENT.** Ele comparava o
+  caminho do commit base com o disco; qualquer arquivo de teste movido o derrubava antes de contar.
+  Agora indexa os testes atuais por basename (com unicidade verificada, para a premissa falhar alto
+  se deixar de valer), carrega uma tabela explicita de renames deliberados e trata arquivo de teste
+  realmente apagado como contagem zero — um enfraquecimento que a assercao **diz**, em vez de um
+  crash. A deteccao de rename do proprio git foi testada antes e descartada com evidencia: contra um
+  base distante, 120 de 161 movimentacoes puras ainda eram lidas como delete+add.
+  (architecture-review-2026-08)
 
 ## [0.53.0] - 2026-08-14
 

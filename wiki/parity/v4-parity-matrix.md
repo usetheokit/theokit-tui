@@ -41,15 +41,15 @@ G = Gemini · P = pi · M = mastracode · T = tau · O = OpenCode
 
 # Committed in the V4 renderer program (M17–M21)
 
-| Category                                          | Peers                  | Milestone                                                                     |
-| ------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------- |
-| Flicker-free renderer (CSI-2026, diff strategies) | P (Cx/CC equiv native) | [M17](/renderer/m17-skeleton-parity.md)–[M18](/renderer/m18-layout-parity.md) |
-| Bracketed paste → collapsed placeholder           | CC, Cx (PasteBurst), P | [M19](/renderer/m19-input-stack.md)                                           |
-| Remappable keybindings (emacs defaults)           | P, M, Cx               | [M19](/renderer/m19-input-stack.md)                                           |
-| PTY e2e harness (@xterm/headless)                 | P (test infra)         | M17/[M19](/renderer/m19-input-stack.md)                                       |
-| Inline images (kitty/iTerm2)                      | P, CC(input)           | M21                                                                           |
-| Editor upgrade: undo/kill-ring/word-nav/history   | P, Cx, G, CC, O        | M21                                                                           |
-| Fuzzy + @file-mention autocomplete                | CC, Cx, G, T, O        | M21                                                                           |
+| Category                                          | Peers                  | Milestone                                                             |
+| ------------------------------------------------- | ---------------------- | --------------------------------------------------------------------- |
+| Flicker-free renderer (CSI-2026, diff strategies) | P (Cx/CC equiv native) | [M17](/renderer/skeleton-parity.md)–[M18](/renderer/layout-parity.md) |
+| Bracketed paste → collapsed placeholder           | CC, Cx (PasteBurst), P | [M19](/renderer/input-stack.md)                                       |
+| Remappable keybindings (emacs defaults)           | P, M, Cx               | [M19](/renderer/input-stack.md)                                       |
+| PTY e2e harness (@xterm/headless)                 | P (test infra)         | M17/[M19](/renderer/input-stack.md)                                   |
+| Inline images (kitty/iTerm2)                      | P, CC(input)           | M21                                                                   |
+| Editor upgrade: undo/kill-ring/word-nav/history   | P, Cx, G, CC, O        | M21                                                                   |
+| Fuzzy + @file-mention autocomplete                | CC, Cx, G, T, O        | M21                                                                   |
 
 # NEW milestones required by this matrix (M22–M25) — ALL SHIPPED
 
@@ -100,5 +100,5 @@ The re-audit was an independent 2-specialist refutation panel (per
 library-scope row has the exit-gate triple; the two borderline rows ship ✓ with
 the honesty note above. No app-scope row from the "Explicitly OUT" list was
 mis-graded as a library gap. Full report:
-[M25 exit-gate re-audit](/parity/m25-exit-gate-re-audit.md). Every M22–M25
+[M25 exit-gate re-audit](/parity/exit-gate-re-audit.md). Every M22–M25
 milestone is released (v0.23.0–v0.26.0); **the V4 parity program is closed.**

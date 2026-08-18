@@ -2,12 +2,12 @@ import { render } from "ink-testing-library";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
-import { actionForKey } from "../../chat-composer.js";
+import { actionForKey } from "../../chat/chat-composer.js";
 import {
   initialTextBuffer,
   textBufferReducer,
   type TextBufferState,
-} from "../../text-buffer.js";
+} from "../../chat/text-buffer.js";
 import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { createInputSource, type InputSource } from "./input-source.js";
 import { InputContext, useInput } from "./use-input.js";

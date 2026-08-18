@@ -78,5 +78,5 @@ newline. The files are excluded from lint (`eslint.config.js`) and from Prettier
 (`.prettierignore`) so a regenerated fixture is never reformatted into a diff.
 
 Two of these baselines carry the byte-cost evidence for the own renderer:
-`m17-renderer-skeleton` ([M17](/renderer/m17-skeleton-parity.md)) and
-`m20-comparative` ([M20 comparative bench](/benchmarks/m20-comparative-bench.md)).
+`m17-renderer-skeleton` ([M17](/renderer/skeleton-parity.md)) and
+`m20-comparative` ([M20 comparative bench](/benchmarks/comparative-bench.md)).

@@ -193,11 +193,11 @@ if (!smoke) {
   const outPath = join(
     dirname(fileURLToPath(import.meta.url)),
     "baselines",
-    "m2-tool-cards-baseline.json",
+    "tool-cards-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
   console.log(
-    "baseline written: benchmarks/baselines/m2-tool-cards-baseline.json",
+    "baseline written: benchmarks/baselines/tool-cards-baseline.json",
   );
 }

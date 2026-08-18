@@ -2,8 +2,8 @@ import { Text } from "ink";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 
-import { renderFrame } from "./helpers.js";
-import type { LayoutMarginProps } from "../src/layout-props.js";
+import { renderFrame } from "./fixtures/helpers.js";
+import type { LayoutMarginProps } from "../src/layout/layout-props.js";
 import {
   AgentStreaming,
   AgentTimeline,
@@ -18,6 +18,7 @@ import {
   CollapsibleBlock,
   ContextWindowBar,
   CostMeter,
+  UsagePanel,
   DEFAULT_APPROVAL_CHOICES,
   DiffViewer,
   ExpandableOutput,
@@ -120,6 +121,16 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
     (m) => <TokenUsageChart {...m} usage={{ input: 1000, output: 500 }} />,
   ],
   ["CostMeter", (m) => <CostMeter {...m} costUsd={1.23} />],
+  [
+    "UsagePanel",
+    (m) => (
+      <UsagePanel
+        {...m}
+        usage={{ inputTokens: 12_000, outputTokens: 3_000, totalTokens: 15_000 }}
+        contextWindow={128_000}
+      />
+    ),
+  ],
   ["ChatComposer", (m) => <ChatComposer {...m} onSubmit={noop} />],
   ["WelcomeBanner", (m) => <WelcomeBanner {...m} name="Theo" />],
   ["Image", (m) => <Image {...m} base64Data="AAAA" mimeType="image/png" />],
@@ -227,7 +238,7 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
 describe("universal margin contract (LayoutMarginProps)", () => {
   it("covers_every_public_visual_component", () => {
     // Guard against silent drift: if a new component ships, add it here.
-    expect(CASES.length).toBe(35);
+    expect(CASES.length).toBe(36);
   });
 
   for (const [name, make] of CASES) {

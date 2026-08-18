@@ -51,8 +51,8 @@ green, so a later reader cannot mistake bonus parity for a mandated row.
 
 # Applied
 
-- The gate's outcome for V4 → [M25 exit-gate re-audit](/parity/m25-exit-gate-re-audit.md).
-- The same discipline applied to a look-and-feel change → [M26 component UX parity](/parity/m26-component-ux-parity.md),
+- The gate's outcome for V4 → [M25 exit-gate re-audit](/parity/exit-gate-re-audit.md).
+- The same discipline applied to a look-and-feel change → [M26 component UX parity](/parity/component-ux-parity.md),
   where four of five surfaces were honest `no-change` decisions.
 
 [^matrix]: V4 parity matrix, § Exit gate and the `†` honesty note.

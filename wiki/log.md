@@ -7,21 +7,21 @@ concepts. `docs/` was removed afterwards; this bundle is its successor.
 
 **Conversion map** — nine source documents became twelve concepts:
 
-| Source (at `9fd7eb1`)                    | Concept                                |
-| ---------------------------------------- | -------------------------------------- |
-| `docs/ttfatt.md`                         | `/benchmarks/ttfatt.md`                |
-| `docs/v4-parity-matrix.md`               | `/parity/v4-parity-matrix.md`          |
-| `docs/component-parity.md`               | `/parity/m26-component-ux-parity.md`   |
-| `docs/renderer/m17-parity-report.md`     | `/renderer/m17-skeleton-parity.md`     |
-| `docs/renderer/m18-parity-report.md`     | `/renderer/m18-layout-parity.md`       |
-| `docs/renderer/m19-input-report.md`      | `/renderer/m19-input-stack.md`         |
-| `docs/renderer/m20-parity-report.md`     | `/renderer/m20-component-parity.md`    |
-| `docs/renderer/m20-comparative-bench.md` | `/benchmarks/m20-comparative-bench.md` |
-| `docs/renderer/m25-parity-report.md`     | `/parity/m25-exit-gate-re-audit.md`    |
-| (extracted, cross-cutting)               | `/concepts/differential-renderer.md`   |
-| (extracted, cross-cutting)               | `/concepts/ink-parity-gate.md`         |
-| (extracted, cross-cutting)               | `/concepts/exit-gate-triple.md`        |
-| (extracted, previously undocumented)     | `/benchmarks/baselines.md`             |
+| Source (at `9fd7eb1`)                | Concept                              |
+| ------------------------------------ | ------------------------------------ |
+| `docs/ttfatt.md`                     | `/benchmarks/ttfatt.md`              |
+| `docs/v4-parity-matrix.md`           | `/parity/v4-parity-matrix.md`        |
+| `docs/component-parity.md`           | `/parity/component-ux-parity.md`     |
+| `docs/renderer/m17-parity-report.md` | `/renderer/skeleton-parity.md`       |
+| `docs/renderer/m18-parity-report.md` | `/renderer/layout-parity.md`         |
+| `docs/renderer/m19-input-report.md`  | `/renderer/input-stack.md`           |
+| `docs/renderer/m20-parity-report.md` | `/renderer/component-parity.md`      |
+| `docs/renderer/comparative-bench.md` | `/benchmarks/comparative-bench.md`   |
+| `docs/renderer/m25-parity-report.md` | `/parity/exit-gate-re-audit.md`      |
+| (extracted, cross-cutting)           | `/concepts/differential-renderer.md` |
+| (extracted, cross-cutting)           | `/concepts/ink-parity-gate.md`       |
+| (extracted, cross-cutting)           | `/concepts/exit-gate-triple.md`      |
+| (extracted, previously undocumented) | `/benchmarks/baselines.md`           |
 
 **Non-document content moved, not converted.** `docs/benchmarks/*.json` (13 files)
 are test fixtures read by `tests/bench-baseline.test.ts`,
