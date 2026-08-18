@@ -32,3 +32,10 @@ export type { ProgressActivityProps } from "./progress-activity.js";
 export { MultiStepProgress } from "./multi-step-progress.js";
 
 export type { MultiStepProgressProps } from "./multi-step-progress.js";
+
+// B-001 — the composed form of the three meters above. Both ends of the projection it performs
+// are this package's (`TurnUsage` and `TokenCategory`), so every consumer of `readTurnUsage` was
+// writing the same mapping by hand and a change to either end broke each copy silently.
+export { UsagePanel, USAGE_PANEL_SECTIONS } from "./usage-panel.js";
+
+export type { UsagePanelProps, UsagePanelSection } from "./usage-panel.js";

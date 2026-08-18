@@ -97,6 +97,24 @@ describe("UsagePanel", () => {
     expect(plain).toContain("input");
   });
 
+  // D3, the other half — the guard above keeps an ABSENT window from crashing; an explicit
+  // non-positive one is a programming error and must still fail loudly (error-handling.md § 2).
+  // Nothing asserted this until a mutation run showed the omission: removing the guard leaves the
+  // suite green, because `tsc` — not vitest — is what catches it (TS2375 under
+  // exactOptionalPropertyTypes). The behavioural half needed its own test.
+  it("throws_a_typed_error_naming_itself_on_a_non_positive_context_window", () => {
+    // Called as a function, which is how this domain tests boundary guards
+    // (`context-window-bar.test.tsx:261`). Rendering it would NOT work: React catches a throw
+    // during render, so `renderFrame` resolves with an empty frame instead of rejecting —
+    // measured, not assumed, and the reason the first draft of this test was wrong.
+    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
+      TypeError,
+    );
+    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
+      "UsagePanel: contextWindow must be a finite number > 0 when given",
+    );
+  });
+
   // EC-3 — disabling every section yields silence, not an empty frame.
   it("renders_nothing_when_every_section_is_disabled", async () => {
     const plain = stripAnsi(
