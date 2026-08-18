@@ -56,6 +56,15 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.WindowedList).toBe("function");
   });
 
+  it("public_entry_exposes_coalescing_and_the_frame_budget", async () => {
+    const mod = await import("../../src/index.js");
+    expect(typeof mod.useCoalesced).toBe("function");
+    // B-009 — the budget was complete and tested and reachable by NOBODY. Pinned from the renderer
+    // subpath, because unreachability was the defect and a test is what stops it recurring.
+    const renderer = await import("../../src/renderer/index.js");
+    expect(typeof renderer.createFrameBudget).toBe("function");
+  });
+
   it("public_entry_exposes_surface_layer_selection", async () => {
     const mod = await import("../../src/index.js");
     // B-007 — the render twin of `routeThroughLayers`. Pinned here because it deliberately does
