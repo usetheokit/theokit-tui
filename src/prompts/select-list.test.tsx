@@ -178,3 +178,70 @@ describe("SelectList component (M22 T1.1)", () => {
     app.unmount();
   });
 });
+
+// B-021 T1.3 — the public prop fails naming its OWN component.
+//
+// `SelectListProps.window` is public (`select-list.tsx:27`) and was passed to `deriveSelectList`
+// unvalidated, so a consumer passing 0 got a menu that rendered nothing while both arrows claimed
+// rows. `windowFor` now refuses it — but without a guard here the message would name `windowFor`,
+// a model function the caller never called. That is the failure `agent-timeline.tsx:62` identified
+// and `UsagePanel` was corrected for in B-025.
+describe("SelectList window validation (B-021)", () => {
+  const invalid = [0, -1, 2.5, Number.NaN];
+
+  for (const window of invalid) {
+    it(`test_a_window_of_${String(window)}_is_refused_naming_SelectList`, () => {
+      // Called as a function, which is how this package tests boundary guards placed before hooks
+      // (the F10 idiom). Rendering would send the throw to ink's error boundary instead.
+      const refuse = () =>
+        SelectList({ items, onSubmit: () => undefined, window });
+
+      expect(refuse).toThrow(TypeError);
+      expect(refuse).toThrow("SelectList: window");
+    });
+  }
+
+  it("test_the_error_names_SelectList_not_windowFor", () => {
+    let message = "";
+    try {
+      SelectList({ items, onSubmit: () => undefined, window: 0 });
+    } catch (err) {
+      message = (err as Error).message;
+    }
+
+    expect(message).toContain("SelectList");
+    // The whole point: not the model function the caller never called.
+    expect(message).not.toContain("windowFor");
+    expect(message).toContain("0");
+  });
+});
+
+// B-021 review F-dom-1 — ADR D1 justifies crashing the app with "the guard reports through
+// `reportGuardFailure`, so the failure leaves a durable record". That was asserted by NOTHING:
+// mutating the call to a plain `throw` left all 1589 tests green. It is verbatim the defect review
+// caught in B-025, re-committed one slice later by a plan citing B-025 as prior art.
+describe("the SelectList guard leaves a record (B-021 review)", () => {
+  it("test_a_refused_window_reaches_the_sink", () => {
+    const records: string[] = [];
+    const realWrite = process.stderr.write;
+    process.stderr.write = ((chunk: unknown): boolean => {
+      const text = String(chunk);
+      if (text.startsWith("[theokit/tui]")) {
+        records.push(text);
+        return true;
+      }
+      return realWrite.call(process.stderr, text as never);
+    }) as typeof process.stderr.write;
+
+    try {
+      expect(() =>
+        SelectList({ items, onSubmit: () => undefined, window: 0 }),
+      ).toThrow(TypeError);
+    } finally {
+      process.stderr.write = realWrite;
+    }
+
+    // The throw is half the contract; the durable record is the half ADR D1 rests on.
+    expect(records.join("")).toContain("SelectList: window");
+  });
+});

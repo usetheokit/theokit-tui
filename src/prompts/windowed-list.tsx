@@ -43,10 +43,15 @@ function oneLine(text: string): string {
 /**
  * The window guard, extracted so the component body stays under the repo's complexity ceiling.
  *
- * `windowFor` does not validate: measured, `window = 0` returns a `windowStart` PAST the selection
- * and `window = -1` returns `hiddenBefore 11` + `hiddenAfter 10` for a list of 20 — counts that
- * contradict the total. A view built on that would state a falsehood in numbers, which is worse
- * than rendering nothing, so this refuses at the boundary and names the component (ADR D4).
+ * This guard predates `windowFor`'s own. It was written because `windowFor` did NOT validate —
+ * measured then, `window = 0` returned a `windowStart` PAST the selection and `window = -1`
+ * returned `hiddenBefore 11` + `hiddenAfter 10` for a list of 20, counts contradicting the total.
+ *
+ * B-021 fixed that at the source, so the original justification no longer holds. This guard stays
+ * for the reason `agent-timeline.tsx:62` gives: a component naming ITSELF sends the caller to the
+ * code they wrote, where `windowFor`'s message names a model function they never called. Unlike
+ * `SelectList` it does not report through the sink — the honest residue of B-021, left rather than
+ * papered over.
  */
 function assertWindow(window: number): void {
   if (typeof window !== "number" || !Number.isInteger(window) || window < 1) {
