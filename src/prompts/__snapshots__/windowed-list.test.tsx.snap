@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`WindowedList > centred_window_layout > windowed-list-centred 1`] = `
+"▲ 7
+  turn 7
+  turn 8
+  turn 9
+❯ turn 10
+  turn 11
+  turn 12
+  turn 13
+▼ 6"
+`;
+
+exports[`WindowedList > short_list_layout_has_no_counts > windowed-list-short 1`] = `
+"  turn 0
+❯ turn 1
+  turn 2"
+`;
