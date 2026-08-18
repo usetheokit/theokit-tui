@@ -9,6 +9,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.62.0] - 2026-08-18
+
+### Changed
+
 - **`windowFor` and `SelectList` refuse a window they cannot describe (B-021).** The hidden-row
   counts are a partition of the list, and a non-positive or fractional window made them describe
   something else: `window = 0` put `windowStart` past the selection so nothing rendered while both
@@ -30,15 +42,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `SelectList` without a `window` prop, and its `windowFor` mentions are comments explaining why it
   does NOT use it — `grep -rn "windowFor\|SelectList" modelo/TheoCode/` → 12 hits, 0 affected.
   (b021-window-invariant-2026-08-18)
-
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.61.0] - 2026-08-18
 
