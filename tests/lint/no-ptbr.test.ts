@@ -34,7 +34,8 @@
  */
 
 import type { Dirent } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -83,7 +84,7 @@ const FILE_ALLOWLIST = new Set<string>([
   // B-065 — one comment QUOTES the Portuguese word it replaced, to explain why the fixture reads as
   // it does. Translating the quotation would delete the explanation and leave a comment that says
   // a rename happened without saying what from. Linting a citation is linting the wrong thing.
-  "tests/m92-assert-valid-events.test.ts",
+  "tests/agent-events-validation.test.ts",
   // A recall probe whose assertion is what a model ANSWERS. It matches both spellings of a Brazilian
   // city because a model replying in Portuguese uses the accented one; dropping that alternative to
   // satisfy this gate would narrow what the probe accepts and weaken the audit it exists to run.
@@ -322,6 +323,20 @@ async function walk(dir: string, out: string[] = []): Promise<string[]> {
     // A scan root that does not exist is not a violation — packages come and go.
     return out;
   }
+  // A directory carrying its own `.git` is ANOTHER REPOSITORY, and its prose is not this gate's
+  // jurisdiction. `modelo/TheoCode` is the live case: a sibling product of ours, checked out here
+  // to be read and co-evolved, whose own `BACKLOG.md` and `tools/check-english-only.mjs` are
+  // written in Portuguese by its own policy. Sweeping it reported 5 offenders this repository
+  // cannot fix and must not rewrite — editing another repo's history to satisfy our linter.
+  //
+  // Structural on purpose, NOT a name in `SKIP_DIRS`. This file already argues that a gate whose
+  // coverage is a hand-kept list decays the moment someone adds a package; the inverse decays the
+  // same way — a hand-kept EXCLUSION list goes stale the moment a second checkout appears under a
+  // different name. "Contains .git" cannot go stale, and it costs nothing: the `Dirent[]` is
+  // already in hand, so this adds no syscall.
+  //
+  // The repository root is exempt from its own rule, or the gate would scan nothing at all.
+  if (dir !== REPO_ROOT && entries.some((e) => e.name === ".git")) return out;
   const subdirs: string[] = [];
   for (const entry of entries) {
     const full = join(dir, entry.name);
@@ -440,4 +455,44 @@ describe("codebase is English-only (no PT-BR)", () => {
     },
     SWEEP_TIMEOUT_MS,
   );
+});
+
+describe("the sweep stops at another repository's edge", () => {
+  /**
+   * Pins the nested-checkout guard in `walk`, which is otherwise untestable BY OBSERVATION: the
+   * repository-wide assertion above is green whether or not the guard exists, as long as nobody
+   * has a foreign checkout on disk. Deleting `modelo/` would make the real regression invisible
+   * and the guard would be removed as dead code the next time someone tidied.
+   *
+   * The fixture is built in the OS temp directory rather than under the repository, because a
+   * fixture inside `src/` or `tests/` would be swept by the very gate it is describing.
+   */
+  it("does_not_descend_into_a_directory_that_carries_its_own_git", async () => {
+    const root = await mkdtemp(join(tmpdir(), "no-ptbr-nested-"));
+    try {
+      const foreign = join(root, "vendored-product");
+      await mkdir(foreign, { recursive: true });
+      // A `.git` FILE, not a directory — that is what a worktree or a submodule leaves behind, and
+      // the guard reads the entry name so both shapes must count.
+      await writeFile(join(foreign, ".git"), "gitdir: ../elsewhere\n", "utf8");
+      await writeFile(
+        join(foreign, "leia-me.md"),
+        "Este arquivo nao esta em ingles, porem pertence a outro repositorio.\n",
+        "utf8",
+      );
+      // A sibling that is NOT a checkout, proving the guard excludes the checkout and nothing else.
+      const ours = join(root, "ours");
+      await mkdir(ours, { recursive: true });
+      await writeFile(join(ours, "readme.md"), "This one is ours.\n", "utf8");
+
+      const walked = (await walk(root)).map((f) => relative(root, f));
+
+      expect(
+        walked,
+        "a directory carrying .git is another repository — sweeping it reports offenders this repo cannot fix and must not rewrite",
+      ).toEqual([join("ours", "readme.md")]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });

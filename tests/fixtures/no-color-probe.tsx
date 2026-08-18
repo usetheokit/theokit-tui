@@ -1,19 +1,20 @@
 import { Box } from "ink";
 import { render } from "ink-testing-library";
 
-import { AgentStreaming } from "../../src/agent-streaming.js";
-import { ChatComposer } from "../../src/chat-composer.js";
-import { CodeBlock } from "../../src/code-block.js";
-import { ContextWindowBar } from "../../src/context-window-bar.js";
-import { CostMeter } from "../../src/cost-meter.js";
-import { DiffViewer } from "../../src/diff-viewer.js";
-import { AgentTimeline } from "../../src/agent-timeline.js";
-import { ChatThread } from "../../src/chat-thread.js";
-import { TheoTUIProvider } from "../../src/theme.js";
-import { TokenUsageChart } from "../../src/token-usage-chart.js";
-import { WelcomeBanner } from "../../src/welcome-banner.js";
-import { ToolCall, ToolCallCard } from "../../src/tool-call.js";
-import { ToolResult } from "../../src/tool-result.js";
+import { AgentStreaming } from "../../src/agent/agent-streaming.js";
+import { ChatComposer } from "../../src/chat/chat-composer.js";
+import { CodeBlock } from "../../src/markdown/code-block.js";
+import { ContextWindowBar } from "../../src/metrics/context-window-bar.js";
+import { CostMeter } from "../../src/metrics/cost-meter.js";
+import { DiffViewer } from "../../src/diff/diff-viewer.js";
+import { AgentTimeline } from "../../src/agent/agent-timeline.js";
+import { ChatThread } from "../../src/chat/chat-thread.js";
+import { TheoTUIProvider } from "../../src/theme/theme.js";
+import { TokenUsageChart } from "../../src/metrics/token-usage-chart.js";
+import { WelcomeBanner } from "../../src/branding/welcome-banner.js";
+import { ToolCall } from "../../src/tools/tool-call.js";
+import { ToolCallCard } from "../../src/tools/tool-call-card.js";
+import { ToolResult } from "../../src/tools/tool-result.js";
 
 // NO_COLOR probe (M0 T2.1 + M1 T4.2 + M2 T3.1): chalk fixes its color level
 // at module load, so the degraded render can only be produced in a FRESH

@@ -74,10 +74,10 @@ engines share Ink's chalk transform and `@alcalzone/ansi-tokenize`.[^m18-report]
 
 # Results
 
-- [M17](/renderer/m17-skeleton-parity.md) — skeleton scene identical; the wider
+- [M17](/renderer/skeleton-parity.md) — skeleton scene identical; the wider
   surface deferred with per-row verdicts.
-- [M18](/renderer/m18-layout-parity.md) — 14/14 under real Yoga.
-- [M20](/renderer/m20-component-parity.md) — 16/16 components, 0 divergences.
+- [M18](/renderer/layout-parity.md) — 14/14 under real Yoga.
+- [M20](/renderer/component-parity.md) — 16/16 components, 0 divergences.
 
 The gate exists because the engine it verifies is a rewrite; see
 [Differential renderer](/concepts/differential-renderer.md).

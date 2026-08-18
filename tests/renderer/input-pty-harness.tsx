@@ -3,10 +3,10 @@ import {
   editorReducer,
   initialEditorState,
   type EditorState,
-} from "../../src/composer-editor.js";
+} from "../../src/chat/composer-editor.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
 import type { Key } from "../../src/renderer/input/key.js";
-import type { TextBufferAction } from "../../src/text-buffer.js";
+import type { TextBufferAction } from "../../src/chat/text-buffer.js";
 
 // M19 T3.1 PTY harness (plan §6): a standalone program node-pty spawns in a REAL
 // pseudo-terminal. It reads process.stdin through OUR InputSource in RAW MODE
