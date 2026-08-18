@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import type { TurnUsage } from "../agent/messages-to-events.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 import { ContextWindowBar } from "./context-window-bar.js";
 import { CostMeter } from "./cost-meter.js";
 import type { TokenCategory } from "./token-usage-chart.js";
@@ -80,6 +81,47 @@ const SECTION_RENDERERS: Record<
 };
 
 /**
+ * The `usage` fields this panel FORWARDS, and therefore the ones it is responsible for.
+ *
+ * `totalTokens`, `cacheWriteTokens` and `durationMs` are absent on purpose: the panel passes them
+ * to nobody, and guarding a field it never touches would be the composite claiming authority over
+ * data it does not use.
+ */
+const FORWARDED_USAGE_FIELDS = [
+  "inputTokens",
+  "outputTokens",
+  "cacheReadTokens",
+  "reasoningTokens",
+  "cost",
+] as const;
+
+/**
+ * Validate every `usage` field the panel forwards (plan ADR D2).
+ *
+ * Without this the same input still fails — but from inside `ContextWindowBar` or `CostMeter`, so
+ * the message names a component the caller never wrote. That is the failure
+ * `src/agent/agent-timeline.tsx:62` identified and lifted to the composition boundary; this is the
+ * same move, applied to the composite that was violating it.
+ *
+ * `undefined` passes: those fields are optional on `TurnUsage`, and B-001 ADR D2 is that absent
+ * stays absent. A present `0` also passes — it is a measurement the agent reported, not a missing
+ * one.
+ */
+function assertForwardedUsage(usage: TurnUsage): void {
+  for (const field of FORWARDED_USAGE_FIELDS) {
+    const value = usage[field];
+    if (value === undefined) continue;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+      reportGuardFailure(
+        new TypeError(
+          `UsagePanel: usage.${field} must be a finite number >= 0 — got ${String(value)}`,
+        ),
+      );
+    }
+  }
+}
+
+/**
  * A turn's usage as one block: context bar, token chart, cost meter.
  *
  * Exists because both ends of the projection are this package's — `TurnUsage` and
@@ -102,10 +144,13 @@ export function UsagePanel({
       !Number.isFinite(contextWindow) ||
       contextWindow <= 0)
   ) {
-    throw new TypeError(
-      `UsagePanel: contextWindow must be a finite number > 0 when given — got ${String(contextWindow)}`,
+    reportGuardFailure(
+      new TypeError(
+        `UsagePanel: contextWindow must be a finite number > 0 when given — got ${String(contextWindow)}`,
+      ),
     );
   }
+  assertForwardedUsage(usage);
   return (
     <Box flexDirection="column" {...pickMargin(margin)}>
       {order.map((section, index) => (
