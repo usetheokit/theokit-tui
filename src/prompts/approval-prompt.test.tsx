@@ -1,5 +1,6 @@
 import { Text } from "ink";
 import { describe, expect, it } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { ApprovalPrompt } from "./approval-prompt.js";
@@ -84,7 +85,10 @@ describe("ApprovalPrompt component (M23 T1.2)", () => {
     );
     await app.flush();
     app.stdin.write("\x1b"); // a lone ESC is held ~20ms…
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    // B-033 — was a fixed 40 ms sleep past the meta-prefix window.
+    await waitForCondition(() => decisions.length > 0, {
+      describe: "the prompt to emit a decision after the ESC window closes",
+    });
     await app.flush();
     expect(decisions).toEqual(["reject"]);
     app.unmount();

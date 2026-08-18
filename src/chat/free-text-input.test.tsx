@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
 import { FreeTextInput } from "./free-text-input.js";
@@ -165,8 +166,10 @@ describe("FreeTextInput (M23)", () => {
     // Type a probe so we know the input is focused + subscribed before Esc.
     await typeWhenReady(app, "x");
     app.stdin.write("\x1b"); // a lone ESC (held ~20ms) blurs → cancel
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    await app.flush();
+    // B-033 — was a fixed 40 ms sleep past the meta-prefix window.
+    await waitForCondition(() => cancelled === 1, {
+      describe: "the lone ESC to cancel once its meta-prefix window closes",
+    });
     await app.flush();
     expect(cancelled).toBe(1);
     app.unmount();

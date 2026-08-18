@@ -51,6 +51,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- **Tests wait for a condition instead of for a number of milliseconds (B-033).** 13 files slept a
+  fixed duration and then asserted — encoding "the effect completes within N ms", which is true on
+  an idle laptop and false on a loaded one. A shared `waitFor` polls the condition each site was
+  really about and fails naming what never happened, which is how a defect in a different slice was
+  identified rather than mistaken for a slow test. Five fixed-duration waits remain, each carrying a
+  written reason: two are poll intervals inside bounded waits (already the target idiom), two are
+  fixtures where the delay IS the subject, and one asserts that something does NOT happen, which has
+  no condition to poll for. Internal to the test suite; no published behaviour changed.
+  (b033-wait-for-condition-2026-08-18)
+
 - **Two test-suite defects that were being treated as one (B-020).** `npm test` at default workers
   failed for reasons unrelated to the code under test, and the failures had two different causes.
   **A budget nobody set:** `vitest.config.ts` declared no `testTimeout`, so tests ran against

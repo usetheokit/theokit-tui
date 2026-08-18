@@ -46,15 +46,27 @@ export interface WaitForOptions {
   /**
    * How long to keep trying.
    *
-   * 2000 ms by default, matching the bound `waitForFrame` in `src/chat/chat-composer.test.tsx`
-   * already uses — a number with precedent in this repository rather than a fresh guess.
+   * 10000 ms by default.
+   *
+   * The first draft used 2000 ms, "matching the bound `waitForFrame` already uses" — and that bound
+   * turned out to be the defect rather than the precedent. Measured 2026-08-18: at load 26,
+   * `chat-composer.test.tsx > slash_command_menu_still_works_unchanged` exhausted exactly that
+   * 2000 ms and failed with "frame never contained \"show help\"". The frame was correct; the
+   * budget was not.
+   *
+   * 10000 ms sits under B-020's 15000 ms `testTimeout`, deliberately: a wait that outlived the test
+   * timeout would surrender the failure message to vitest's generic one, and the message naming
+   * what never happened is the entire point of this helper.
+   *
+   * The cost is that a genuinely broken wait takes 10 s to report. That is paid once per real
+   * breakage, against a false failure paid on every loaded run.
    */
   readonly timeoutMs?: number;
   /** How long to wait between attempts. */
   readonly intervalMs?: number;
 }
 
-const DEFAULT_TIMEOUT_MS = 2000;
+const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_INTERVAL_MS = 5;
 
 /**

@@ -99,7 +99,8 @@ describe("PlanApproval component (M23 T3.1)", () => {
     await waitForFrame(app, "Type feedback:");
     await typeWhenReady(app, "z"); // ensure the input is focused before Esc
     app.stdin.write("\x1b"); // Esc → cancel back to the choice bar
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    // B-033 — the sleep was redundant: `waitForFrame` below already polls for this exact frame,
+    // so the 40 ms only delayed a wait that was already correct.
     await waitForFrame(app, "Approve"); // the choice bar is back
     expect(app.lastFrame()).toContain("Revise");
     expect(app.lastFrame()).not.toContain("Type feedback:");
@@ -145,6 +146,9 @@ describe("PlanApproval component (M23 T3.1)", () => {
     );
     await app.flush();
     app.stdin.write("\x1b"); // a lone ESC (held ~20ms) on the choice bar
+    // duration is the subject: this asserts that something does NOT happen. A condition-wait can
+    // only wait for a state to ARRIVE, so there is nothing to poll for — the window itself is what
+    // gives the assertion meaning. Kept deliberately (B-033 § Scope).
     await new Promise((resolve) => setTimeout(resolve, 40));
     await app.flush();
     // Esc must NOT approve — the safe default is revise (with no feedback yet).

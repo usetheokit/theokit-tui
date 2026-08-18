@@ -1,5 +1,6 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import {
   ChatComposer,
@@ -33,6 +34,8 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 const settle = async () => {
   let previous: string | undefined;
   for (let elapsed = 0; elapsed < 400; elapsed += 10) {
+    // duration is the subject: this is a POLL INTERVAL inside a bounded condition-wait, not a
+    // sleep-then-assert. It is already the idiom B-033 converts other sites TO.
     await new Promise((resolve) => setTimeout(resolve, 10));
     const frame = lastRenderedFrame();
     if (frame !== undefined && frame === previous) return;
@@ -72,19 +75,17 @@ async function waitForFrame(
   instance: Awaited<ReturnType<typeof mount>>,
   substring: string,
   present = true,
-  timeoutMs = 2000,
+  timeoutMs: number | undefined = undefined,
 ): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if ((instance.lastFrame() ?? "").includes(substring) === present) {
-      return;
-    }
-    await tick();
-  }
-  throw new Error(
-    `frame ${present ? "never contained" : "still contained"} ${JSON.stringify(
-      substring,
-    )} — got:\n${instance.lastFrame()}`,
+  // B-033 — delegates to the shared helper so the BOUND lives in one place. This loop's own 2000ms
+  // was the measured defect: at load 26 it expired on a frame that was correct, and the same number
+  // was copied into a second helper further down this very file.
+  await waitForCondition(
+    () => (instance.lastFrame() ?? "").includes(substring) === present,
+    {
+      describe: `the frame to ${present ? "contain" : "stop containing"} ${JSON.stringify(substring)} — last frame:\n${instance.lastFrame() ?? ""}`,
+      ...(timeoutMs === undefined ? {} : { timeoutMs }),
+    },
   );
 }
 
@@ -798,13 +799,19 @@ const typeUntil = async (
   }
 };
 
-const waitFor = async (predicate: () => boolean, timeoutMs = 2000) => {
-  const start = Date.now();
-  while (!predicate()) {
-    if (Date.now() - start > timeoutMs) return;
-    await tickOnchange();
-  }
+/**
+ * B-033 — the file's SECOND hand-rolled polling loop, now delegating to the shared helper.
+ *
+ * Two copies of the same idiom with the same unmeasured 2000ms bound existed in this one file. That
+ * is what a per-file idiom becomes, and it is why the bound now lives in `tests/fixtures/wait-for`.
+ */
+const waitFor = async (predicate: () => boolean, timeoutMs?: number) => {
+  await waitForCondition(predicate, {
+    describe: "a condition in chat-composer.test.tsx",
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+  });
 };
+
 
 /**
  * M54 (agent-builder backtrack) — `onChange` reports buffer text so the host can enforce a

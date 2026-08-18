@@ -84,6 +84,9 @@ describe("createWriteQueue", () => {
     const queue = createWriteQueue();
     let done = 0;
     const work = async (): Promise<void> => {
+      // duration is the subject: this simulates work that TAKES time, which is what makes the
+      // queue's serialisation observable. There is no condition to poll for — the delay IS the
+      // fixture (B-033 § Scope).
       await new Promise((r) => setTimeout(r, 5));
       done += 1;
     };
