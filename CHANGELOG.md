@@ -17,6 +17,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.60.1] - 2026-08-18
+
+### Fixed
+
+- **`WindowedList` drew NOTHING when `selected` was `NaN` (B-026).** `windowFor` clamps with
+  `Math.min(Math.max(selected, 0), count - 1)`, and every comparison against `NaN` is false — so
+  `clampedIndex` and `windowStart` both became `NaN`, `rows.slice(NaN, NaN)` returned `[]`, and the
+  list rendered empty: no error, no log, nothing on screen. The `window` prop had a guard and
+  `selected` did not. A non-integer `selected` is now refused with a typed error naming the
+  component; in-range integers are still clamped, and `-1` remains the "no selection" sentinel.
+  (b026-windowedlist-nan-2026-08-18)
+
 ## [0.60.0] - 2026-08-18
 
 ### Added
