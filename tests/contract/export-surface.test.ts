@@ -56,6 +56,15 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.WindowedList).toBe("function");
   });
 
+  it("public_entry_exposes_capability_derivation", async () => {
+    const mod = await import("../../src/index.js");
+    // B-005 — the derivation the two advertising channels never had.
+    expect(typeof mod.composerShortcutsFor).toBe("function");
+    expect(typeof mod.footerHintFor).toBe("function");
+    // The defaults are deliberately UNCHANGED, so an existing caller renders as before.
+    expect(mod.footerHintFor({})).toBe("");
+  });
+
   it("public_entry_exposes_keyboard_help_surface", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.KeyboardHelp).toBe("function");
