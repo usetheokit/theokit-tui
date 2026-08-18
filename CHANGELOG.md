@@ -18,6 +18,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   counts replaced the booleans in the model in the first place — this view had kept
   discarding them.
 
+  **API docs corrected in the same change.** `WindowedList`'s TSDoc asserted that "`SelectList`
+  renders a bare `▲` and throws away the `hiddenBefore`". That shipped: `tsup` builds declarations,
+  so the sentence reached `dist/index.d.ts` and consumers read it as hover text. It is now three
+  lines stating what the model carries and what this component renders — no version numbers, no
+  history. A package whose CHANGELOG says a divergence is fixed while its API docs say it exists has
+  told the reader two things.
+
   A third view — the slash / mention menu inside `ChatComposer` — still renders bare arrows.
   It is not part of this change: its `SlashMenu` type hand-re-declares the window contract
   instead of extending `WindowView`, so the counts arrive at runtime but are absent from the
