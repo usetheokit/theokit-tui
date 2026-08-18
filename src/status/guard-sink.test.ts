@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { installStderrGuard } from "../terminal/stderr-guard.js";
 
 import type { GuardSink } from "./guard-sink.js";
-import { reportGuardFailure } from "./guard-sink.js";
+import { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
 
 // B-025 — the sink that leaves a DURABLE record when a boundary guard fires.
 //
@@ -352,5 +352,84 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
     expect(caught).toBeInstanceOf(TypeError);
     expect((caught as Error).message).toMatch(/component/i);
     expect(sink.lines).toHaveLength(0);
+  });
+});
+
+// B-025 v2 T2.1 — a lost record is COUNTED, never swallowed (plan ADR D4).
+//
+// This is the slice's own defect reproduced one layer down. `GuardSink.write` was typed `void` in
+// v1, so the `false` that `src/terminal/stderr-guard.ts:82` returns to signal a lost write was
+// discarded, and the surrounding empty catch discarded a throw. A dead sink therefore made every
+// guard diagnostic vanish — a mechanism built to end silent failure, failing silently.
+//
+// `stderr-guard.ts:11-19` already rejected this design in prose and implemented the third option:
+// count the loss, report it when the terminal is free. These tests hold this module to the same
+// standard its own dependency set years ago.
+describe("a lost record is counted (B-025 v2 T2.1)", () => {
+  it("test_a_healthy_sink_records_no_loss", () => {
+    const sink = fakeSink();
+    const before = lostGuardRecords();
+
+    expect(() => {
+      reportGuardFailure("CostMeter", new TypeError("CostMeter: costUsd must be >= 0 — got -1"), sink);
+    }).toThrow(TypeError);
+
+    expect(lostGuardRecords()).toBe(before);
+  });
+
+  it("test_a_false_return_counts_a_lost_record", () => {
+    // `false` is not an error — it is `installStderrGuard`'s documented way of saying the write
+    // was lost (its log path was unwritable). A `void` return type threw that away.
+    const dead: GuardSink = { write: (): boolean => false };
+    const before = lostGuardRecords();
+
+    expect(() => {
+      reportGuardFailure("UsagePanel", new TypeError("UsagePanel: usage.cost must be >= 0 — got -1"), dead);
+    }).toThrow(TypeError);
+
+    expect(lostGuardRecords()).toBe(before + 1);
+  });
+
+  it("test_a_throwing_sink_counts_a_lost_record", () => {
+    const broken: GuardSink = {
+      write: (): boolean => {
+        throw new Error("EPIPE: broken pipe");
+      },
+    };
+    const before = lostGuardRecords();
+
+    expect(() => {
+      reportGuardFailure("Notice", new TypeError("Notice: variant unknown — got 'x'"), broken);
+    }).toThrow(TypeError);
+
+    expect(lostGuardRecords()).toBe(before + 1);
+  });
+
+  it("test_a_lost_record_does_not_replace_the_original_error", () => {
+    const dead: GuardSink = { write: (): boolean => false };
+    const original = new TypeError("ContextWindowBar: usedTokens must be >= 0 — got -5");
+
+    // Counting the loss must not turn a diagnosable guard failure into something else. The caller
+    // still receives exactly the error the guard raised.
+    let caught: unknown;
+    try {
+      reportGuardFailure("ContextWindowBar", original, dead);
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBe(original);
+  });
+
+  it("test_the_counter_is_monotonic_and_reading_does_not_reset_it", () => {
+    const dead: GuardSink = { write: (): boolean => false };
+    expect(() => {
+      reportGuardFailure("Toast", new TypeError("Toast: variant unknown — got 'purple'"), dead);
+    }).toThrow(TypeError);
+
+    // Two consecutive reads with no fire between them must agree. A counter that resets on read
+    // makes "how many diagnostics did we lose this session" unanswerable by a second reader.
+    const first = lostGuardRecords();
+    const second = lostGuardRecords();
+    expect(first).toBe(second);
   });
 });
