@@ -1,4 +1,9 @@
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { installStderrGuard } from "../terminal/stderr-guard.js";
 
 import type { GuardSink } from "./guard-sink.js";
 import { reportGuardFailure } from "./guard-sink.js";
@@ -141,5 +146,64 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
     expect(() => {
       reportGuardFailure(original, broken);
     }).toThrow(original);
+  });
+});
+
+// B-025 T1.3 — the interaction with `installStderrGuard`, MEASURED.
+//
+// The plan flagged this as a real risk and refused to guess: a TUI owns the screen, so a fix that
+// makes guards visible by writing into the middle of a frame has traded one silent failure for a
+// loud wrong one. `src/terminal/stderr-guard.ts` exists for exactly that hazard.
+//
+// The measurement, run here rather than reasoned about:
+//
+//   `installStderrGuard` REPLACES `process.stderr.write` with one that appends to a log file. The
+//   sink resolves its default through `process.stderr` at CALL time, not at module load, so a
+//   guard line written while the guard is installed lands in the log and NOT in the frame. The
+//   disposer restores the original stream, and lines written after it go to the terminal again.
+//
+// Which settles the plan's Q3 and leaves the default as `process.stderr`: with the guard installed
+// the frame is safe, and without it the line reaches the terminal — the accepted cost, and the
+// right side of the trade, because a corrupted frame is repainted and a silent failure is not.
+describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
+  it("a_guard_line_lands_in_the_log_file_and_not_in_the_frame", () => {
+    const dir = mkdtempSync(join(tmpdir(), "guard-sink-"));
+    const logPath = join(dir, "session.log");
+    const framed: string[] = [];
+
+    // Stand in for the terminal: whatever reaches the REAL stream would have hit the frame.
+    const realWrite = process.stderr.write;
+    process.stderr.write = ((chunk: unknown): boolean => {
+      framed.push(String(chunk));
+      return true;
+    }) as typeof process.stderr.write;
+
+    try {
+      const dispose = installStderrGuard(logPath, { label: "guard-sink-test" });
+      try {
+        expect(() => {
+          reportGuardFailure(
+            new TypeError("UsagePanel: contextWindow must be > 0 — got 0"),
+            // No sink argument: this is the DEFAULT path, which is the one under test.
+          );
+        }).toThrow(TypeError);
+      } finally {
+        dispose();
+      }
+
+      expect(readFileSync(logPath, "utf8")).toContain("UsagePanel: contextWindow");
+      // Nothing reached the stream the frame is painted on.
+      expect(framed.join("")).not.toContain("UsagePanel: contextWindow");
+
+      // And after teardown the line goes to the terminal again — the guard is scoped to the
+      // session, not a permanent redirect.
+      expect(() => {
+        reportGuardFailure(new TypeError("CostMeter: costUsd must be >= 0 — got -1"));
+      }).toThrow(TypeError);
+      expect(framed.join("")).toContain("CostMeter: costUsd");
+    } finally {
+      process.stderr.write = realWrite;
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
