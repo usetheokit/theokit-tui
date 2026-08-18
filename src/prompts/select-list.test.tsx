@@ -343,6 +343,15 @@ describe("SelectList hidden-row counts (B-022)", () => {
   //
   // The numbers below are the model's, measured: `windowFor(12, 6, 4)` -> hiddenBefore 3,
   // hiddenAfter 5; `windowFor(12, 11, 4)` -> hiddenBefore 8, hiddenAfter 0.
+  // SECOND-PASS FIX (F-tests-6 / F-arch-9 / F-dom-13). Every assertion below used `toContain`, and
+  // a bare numeral has no right boundary: a mutant rendering `▲ 30` — or `▲ 33` — passed all three
+  // of these tests, leaving only the snapshot to catch it. Leaning on a snapshot for exactness is
+  // leaning on an artifact people regenerate with `-u`.
+  //
+  // Comparing whole trimmed LINES fixes that at the root: `▲ 3` is the entire row or it is not.
+  const rowsOf = (frame: string): string[] =>
+    frame.split("\n").map((line) => line.trim());
+
   describe("the upper edge (B-022 review fix)", () => {
     it("test_a_scrolled_menu_shows_the_hidden_count_above_and_below", async () => {
       // Arrange
@@ -366,8 +375,8 @@ describe("SelectList hidden-row counts (B-022)", () => {
       // Assert — both edges, with DIFFERENT numbers. That difference is what makes the test able
       // to fail: a rendering that swapped the two counts, or emitted a constant, or dropped the
       // interpolation, produces something other than this pair.
-      expect(frame).toContain("▲ 3");
-      expect(frame).toContain("▼ 5");
+      expect(rowsOf(frame)).toContain("▲ 3");
+      expect(rowsOf(frame)).toContain("▼ 5");
     });
 
     it("test_the_last_row_hides_everything_above_and_nothing_below", async () => {
@@ -390,7 +399,7 @@ describe("SelectList hidden-row counts (B-022)", () => {
       // Assert — the mirror of the very first test in this block. Together the two pin the rule
       // rather than one example: eight hidden above here, eight hidden BELOW there, and the arrow
       // that carries the count changes with the edge.
-      expect(frame).toContain("▲ 8");
+      expect(rowsOf(frame)).toContain("▲ 8");
       expect(frame).not.toContain("▼");
     });
 
@@ -399,10 +408,25 @@ describe("SelectList hidden-row counts (B-022)", () => {
       // every assertion in the original slice observed the one configuration where `hiddenAfter`
       // happened to be 8, so a literal `8` and a formula ignoring `windowStart` both survived).
       //
-      // Comparing the frame to `windowFor` is not circular: `windowFor` is this module's contract
-      // and is tested on its own in `select-list-model.test.ts`. What is asserted here is the
-      // component's only job — that it RENDERS those numbers rather than numbers of its own.
-      for (const steps of [0, 2, 5, 8]) {
+      // SECOND-PASS CORRECTION (F-arch-8). This comment used to say flatly that comparing the frame
+      // to `windowFor` "is not circular". Review disproved that: mutating `hiddenAfter` INSIDE
+      // `windowFor` leaves this test green, because the expectation and the frame move together
+      // through the same function. So state the scope instead of denying the problem.
+      //
+      // What this test pins is the RENDERING WIRING — that the component emits the model's numbers
+      // rather than numbers of its own. Every render-layer mutant dies here. It pins NOTHING about
+      // whether the arithmetic is right; that is `select-list-model.test.ts`, which kills those
+      // mutants seven times over, and the two hard-coded tests above, which kill them here.
+      //
+      // Those two are load-bearing for exactly that reason. A later DRY pass looking at three tests
+      // over one component must not delete them as redundant with this one — they are the only
+      // assertions in this file that do not move when the model does.
+      //
+      // Positions (F-arch-12 / F-tests-5): steps 0 and 2 used to yield the IDENTICAL state
+      // (hiddenBefore 0, hiddenAfter 8), so the loop claimed four cases and exercised three. And
+      // none produced `hiddenBefore === 1` — the first value past zero — so a `> 1` guard mutant
+      // survived the entire 1609-test suite. `steps 4` is that boundary.
+      for (const steps of [0, 4, 6, 8]) {
         const app = render(
           createElement(SelectList, {
             items: many,
@@ -420,14 +444,18 @@ describe("SelectList hidden-row counts (B-022)", () => {
 
         const view = windowFor(many.length, steps, 4);
 
-        expect(frame).toContain(
-          view.hiddenBefore > 0 ? `▲ ${String(view.hiddenBefore)}` : "",
-        );
-        if (view.hiddenBefore === 0) expect(frame).not.toContain("▲");
-        expect(frame).toContain(
-          view.hiddenAfter > 0 ? `▼ ${String(view.hiddenAfter)}` : "",
-        );
-        if (view.hiddenAfter === 0) expect(frame).not.toContain("▼");
+        // Not `toContain(cond ? x : "")` — that degenerates to `toContain("")` on the zero
+        // branch, which passes against any string at all (F-tests-7 / F-arch-9 / F-dom-13).
+        if (view.hiddenBefore > 0) {
+          expect(rowsOf(frame)).toContain(`▲ ${String(view.hiddenBefore)}`);
+        } else {
+          expect(frame).not.toContain("▲");
+        }
+        if (view.hiddenAfter > 0) {
+          expect(rowsOf(frame)).toContain(`▼ ${String(view.hiddenAfter)}`);
+        } else {
+          expect(frame).not.toContain("▼");
+        }
       }
     });
   });

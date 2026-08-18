@@ -106,16 +106,9 @@ function WindowedRow({
  * for {@link SelectList} instead when the user must filter and choose; reach for this when
  * something else owns the keys and this only has to show where you are.
  *
- * The counts are the point: a boolean cannot be turned back into a number, which is why the model
- * carries `hiddenBefore` / `hiddenAfter` rather than the `overflowUp` / `overflowDown` derived from
- * them.
- *
- * This sentence used to read "`SelectList` renders a bare `▲` and throws away the `hiddenBefore`".
- * That was true when written and stopped being true in 0.63.0 (B-022), when `SelectList` was
- * changed to render the counts this component already rendered. It is corrected rather than
- * deleted because it shipped: this is TSDoc on an exported component, so it reaches consumers as
- * hover text in `dist/index.d.ts`, and a package that says in its CHANGELOG that a divergence is
- * fixed while its API docs say it exists has told the reader two things.
+ * The counts are the point: a boolean cannot be turned back into a number, so the model carries
+ * `hiddenBefore` / `hiddenAfter` alongside the `overflowUp` / `overflowDown` derived from them, and
+ * this component renders the numbers.
  */
 export function WindowedList({
   rows,
