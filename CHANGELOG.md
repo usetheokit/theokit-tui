@@ -14,8 +14,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   something else: `window = 0` put `windowStart` past the selection so nothing rendered while both
   arrows still claimed rows, `window = -1` made the counts sum to 21 in a list of 20, and `2.5` hid
   seven and a half rows. `SelectList` exposes `window` publicly and passed it through unvalidated,
-  so a consumer could get a menu that advertised contents it never drew. Both now throw a typed
-  error naming the component the caller actually wrote. **Refused rather than clamped**, because the
+  so a consumer could get a menu that advertised contents it never drew. `windowFor`,
+  `deriveSelectList` and `SelectList` now all throw a typed error naming the entry point the caller
+  actually used.
+
+  **What that means concretely, measured under `ink@7.1.0` rather than described as "throws":** a
+  throw from a component's render tears the whole app down, `render()` returns normally so the
+  consumer cannot catch it, a developer stack with absolute paths prints to stdout, and the process
+  exits **0**. That is the package idiom across 21 guarded components and it is worse than the
+  wording "throws a typed error" suggests, so it is stated plainly here rather than discovered. **Refused rather than clamped**, because the
   counts exist precisely to stop information being destroyed (U-10) and clamping would destroy the
   caller's mistake instead. Blast radius measured before shipping: the only known consumer renders
   `SelectList` without a `window` prop, and its `windowFor` mentions are comments explaining why it

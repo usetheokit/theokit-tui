@@ -284,10 +284,17 @@ describe("windowFor invariants (B-021)", () => {
         for (const selectionIndex of [-1, 0, 1, Math.floor(count / 2), count - 1, count]) {
           for (const anchor of ["centred", "trailing"] as const) {
             const view = windowFor(count, selectionIndex, window, anchor);
-            const visible = Math.max(
-              Math.min(window, count - view.windowStart),
-              0,
-            );
+            // The oracle is INDEPENDENT of `windowStart`, and that is the whole point.
+            //
+            // The first version computed `visible` FROM `view.windowStart`, which made the
+            // assertion an algebraic identity: substituting hiddenBefore = windowStart and
+            // hiddenAfter = max(count - (windowStart + window), 0) yields `count` for ANY
+            // windowStart. Review verified it over 14,880 tuples — zero possible failures — and
+            // showed three real windowStart mutants surviving it, one of them contradicting this
+            // module's own documented "biased UP on an even window" behaviour.
+            //
+            // How many rows a window of `window` can show over a list of `count` depends on neither.
+            const visible = Math.min(window, count);
             expect(
               view.hiddenBefore + visible + view.hiddenAfter,
               `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)} anchor=${anchor}`,
@@ -303,12 +310,35 @@ describe("windowFor invariants (B-021)", () => {
       if (count === 0) continue; // the all-zero early return is a legitimate distinct state
       for (const window of VALID_WINDOWS) {
         for (const selectionIndex of [-1, 0, Math.floor(count / 2), count - 1, count]) {
-          const view = windowFor(count, selectionIndex, window, "centred");
-          const label = `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)}`;
+          for (const anchor of ["centred", "trailing"] as const) {
+          const view = windowFor(count, selectionIndex, window, anchor);
+          // BOTH anchors. The first version hardcoded "centred", and review measured a trailing
+          // off-by-one violating containment 21 times with zero violations under centred — so the
+          // companion test could not close the gap the sweep left.
+          const label = `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)} anchor=${anchor}`;
           expect(view.clampedIndex, label).toBeGreaterThanOrEqual(view.windowStart);
           expect(view.clampedIndex, label).toBeLessThan(view.windowStart + window);
+          }
         }
       }
+    }
+  });
+
+  it("test_a_centred_window_keeps_more_context_ahead_than_behind", () => {
+    // The partition invariant CANNOT catch this, and that is not a flaw in it: a different
+    // `windowStart` is still a valid partition. What a wrong `lead` breaks is the CENTRING POLICY
+    // this module documents at `select-list-model.ts` — "biased UP on an even window so the row
+    // keeps more context ahead of it than behind, which is the direction a list is usually read".
+    //
+    // Review measured `Math.floor((window - 1) / 2)` → `Math.ceil` surviving the entire suite while
+    // contradicting that sentence. A documented behaviour with no test is a comment, not a
+    // contract.
+    for (const window of [4, 6, 10]) {
+      const view = windowFor(100, 50, window, "centred");
+      const above = view.clampedIndex - view.windowStart;
+      const below = window - 1 - above;
+      expect(above, `window=${String(window)}`).toBe(Math.floor((window - 1) / 2));
+      expect(below, `window=${String(window)} — more context ahead`).toBeGreaterThan(above);
     }
   });
 
@@ -339,5 +369,36 @@ describe("windowFor invariants (B-021)", () => {
     const refuse = () => windowFor(20, 10, -1, "centred");
     expect(refuse).toThrow(TypeError);
     expect(refuse).toThrow("-1");
+  });
+});
+
+// B-021 review — the entry points the plan failed to enumerate, and the ordering it left unpinned.
+describe("every public entry point refuses the window (B-021 review)", () => {
+  it("test_deriveSelectList_refuses_and_names_itself", () => {
+    // `deriveSelectList` is PUBLIC (`src/prompts/index.ts:9`) with a required, unvalidated
+    // `window`. The plan enumerated four CALL SITES and missed that one of them IS the API — so it
+    // threw naming `windowFor`, the misattribution ADR D3 exists to prevent, on the one public path
+    // where it still bit (review F-wire-1).
+    const refuse = () =>
+      deriveSelectList({
+        items: [{ value: "a", label: "a" }],
+        filter: "",
+        selectionIndex: 0,
+        window: 0,
+      });
+
+    expect(refuse).toThrow(TypeError);
+    expect(refuse).toThrow("deriveSelectList: window");
+  });
+
+  it("test_the_guard_runs_before_the_empty_list_shortcut", () => {
+    // The guard used to sit BELOW the `count === 0` early return, so the same invalid argument was
+    // accepted or refused depending on how many items happened to match. Three reviewers found it
+    // independently; nothing pinned the ordering, so a mutant hoisting or sinking it stayed green.
+    const refuseEmpty = () => windowFor(0, 0, -1, "centred");
+    const refuseNonEmpty = () => windowFor(20, 10, -1, "centred");
+
+    expect(refuseEmpty).toThrow(TypeError);
+    expect(refuseNonEmpty).toThrow(TypeError);
   });
 });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { SelectList } from "./select-list.js";
+import type { GuardSink } from "../status/guard-sink.js";
 import type { SelectListItem } from "./select-list-model.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 
@@ -213,5 +214,36 @@ describe("SelectList window validation (B-021)", () => {
     // The whole point: not the model function the caller never called.
     expect(message).not.toContain("windowFor");
     expect(message).toContain("0");
+  });
+});
+
+// B-021 review F-dom-1 — ADR D1 justifies crashing the app with "the guard reports through
+// `reportGuardFailure`, so the failure leaves a durable record". That was asserted by NOTHING:
+// mutating the call to a plain `throw` left all 1589 tests green. It is verbatim the defect review
+// caught in B-025, re-committed one slice later by a plan citing B-025 as prior art.
+describe("the SelectList guard leaves a record (B-021 review)", () => {
+  it("test_a_refused_window_reaches_the_sink", () => {
+    const records: string[] = [];
+    const realWrite = process.stderr.write;
+    process.stderr.write = ((chunk: unknown): boolean => {
+      const text = String(chunk);
+      if (text.startsWith("[theokit/tui]")) {
+        records.push(text);
+        return true;
+      }
+      return realWrite.call(process.stderr, text as never);
+    }) as typeof process.stderr.write;
+
+    try {
+      expect(() =>
+        SelectList({ items, onSubmit: () => undefined, window: 0 }),
+      ).toThrow(TypeError);
+    } finally {
+      process.stderr.write = realWrite;
+    }
+
+    // The throw is half the contract; the durable record is the half ADR D1 rests on.
+    expect(records.join("")).toContain("SelectList: window");
+    void ({} as GuardSink);
   });
 });

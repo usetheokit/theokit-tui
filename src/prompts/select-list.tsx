@@ -9,6 +9,7 @@ import {
   deriveSelectList,
   type SelectListItem,
 } from "./select-list-model.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 import { useTheoTheme } from "../theme/theme.js";
 
 // M22 SelectList (plan m22-interaction-primitives T1.1, ADR A3): a windowed
@@ -121,7 +122,15 @@ export function SelectList({
   // would name `windowFor` — a model function the caller never called. That is the failure
   // `src/agent/agent-timeline.tsx:62` identified and `UsagePanel` was corrected for in B-025: an
   // error naming a component the caller never wrote sends them looking in the wrong place.
-  assertPositiveWindow(window, "SelectList");
+  try {
+    assertPositiveWindow(window, "SelectList");
+  } catch (err) {
+    // Reporting happens HERE, at the component boundary, not inside the pure model — the shape
+    // `src/metrics/usage-panel.tsx:121` already uses, and the ruling B-025 made when it declined to
+    // let `assertFiniteNonNegative` report from `src/format`. This slice put the report in the model
+    // and review caught the inversion.
+    reportGuardFailure("SelectList", err as Error);
+  }
   const [filter, setFilter] = useState("");
   const [selectionIndex, setSelectionIndex] = useState(0);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());

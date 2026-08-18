@@ -8,7 +8,6 @@
 
 import { fuzzyMatch } from "../search/fuzzy.js";
 
-import { reportGuardFailure } from "../status/guard-sink.js";
 
 export interface SelectListItem {
   /** Stable identity (multi-select is keyed by this). */
@@ -51,23 +50,22 @@ export type WindowAnchor = "trailing" | "centred";
  * replaced two booleans with numbers precisely because information was being destroyed. Clamping
  * destroys the caller's mistake instead, and they learn nothing.
  *
- * `component` is the name the CALLER recognises. `SelectList` passes its own so the message does
- * not point at a model function nobody called — the failure `src/agent/agent-timeline.tsx:62`
- * identified.
+ * `component` is the name the CALLER recognises, so the message does not point at a model function
+ * nobody called — the failure `src/agent/agent-timeline.tsx:62` identified.
  *
- * Extracted rather than inlined twice because the lint said so: the guard pushed `SelectList` to
- * cyclomatic complexity 11 against a limit of 10. That is the rule-of-3 trigger this slice's plan
- * recorded as an open question (Q1), fired by a gate rather than by preference.
+ * It THROWS and does not report. Reporting from here would import `src/status` — a feature folder —
+ * into a module whose own header declares it pure with "zero deps beyond `fuzzy.ts`", inverting the
+ * dependency direction `rules/architecture.md` § 1 holds. B-025 faced this exact choice for
+ * `assertFiniteNonNegative` and DECLINED for the same reason (`src/metrics/usage-panel.tsx:117`);
+ * this slice violated that ruling and review caught it. The reporting happens at the component
+ * boundary, in the try/catch shape `usage-panel.tsx:121` already uses.
  *
  * @internal
  */
 export function assertPositiveWindow(window: number, component: string): void {
   if (!Number.isInteger(window) || window <= 0) {
-    reportGuardFailure(
-      component,
-      new TypeError(
-        `${component}: window must be a positive integer — got ${String(window)}`,
-      ),
+    throw new TypeError(
+      `${component}: window must be a positive integer — got ${String(window)}`,
     );
   }
 }
@@ -90,6 +88,12 @@ export function windowFor(
   window: number,
   anchor: WindowAnchor = "trailing",
 ): WindowView {
+  // ABOVE the empty-list return, deliberately. Below it, `windowFor(0, 10, -1)` succeeded while
+  // `windowFor(20, 10, -1)` threw — the same invalid argument accepted or refused depending on data
+  // unrelated to what is being validated. On the `deriveSelectList` path that meant an invalid
+  // window crashed only once the filter matched something: a data-dependent failure far from the
+  // mistake. Found independently by three reviewers (B-021 review: F-arch-3, F-wire-2, F-dom-3).
+  assertPositiveWindow(window, "windowFor");
   if (count === 0) {
     return {
       clampedIndex: 0,
@@ -100,7 +104,6 @@ export function windowFor(
       overflowDown: false,
     };
   }
-  assertPositiveWindow(window, "windowFor");
   const clampedIndex = Math.min(Math.max(selectionIndex, 0), count - 1);
   // How far above the selection the window opens. Trailing puts the selection on the last row;
   // centred puts it in the middle, biased UP on an even window so the row keeps more context ahead
@@ -169,6 +172,11 @@ function filterItems<Item extends SelectListItem>(
 export function deriveSelectList<Item extends SelectListItem>(
   opts: DeriveSelectListOptions<Item>,
 ): SelectListView<Item> {
+  // `deriveSelectList` is PUBLIC (`src/prompts/index.ts:9`) and its `window` is a required,
+  // unvalidated number — a fourth entry point the plan failed to enumerate. Without this it throws
+  // naming `windowFor`, which is precisely the misattribution ADR D3 exists to prevent, left
+  // unapplied on the one public path where it still bites (B-021 review: F-wire-1).
+  assertPositiveWindow(opts.window, "deriveSelectList");
   const matches = filterItems(opts.items, opts.filter, opts.fuzzy === true);
   const view = windowFor(matches.length, opts.selectionIndex, opts.window);
   return {
