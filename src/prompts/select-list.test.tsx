@@ -245,3 +245,67 @@ describe("the SelectList guard leaves a record (B-021 review)", () => {
     expect(records.join("")).toContain("SelectList: window");
   });
 });
+
+// B-022 — the menu says what the scrubber says.
+//
+// `SelectList` rendered a bare `▲` while `view.hiddenBefore` sat unused in the same view object.
+// `WindowedList` renders `▲ {hiddenBefore}` from the identical model. The package documented the
+// divergence at the moment it created it (`windowed-list.tsx:109`: "SelectList renders a bare ▲ and
+// throws away the hiddenBefore it computed in the same view object, and a boolean cannot be turned
+// back into a number").
+//
+// U-10 replaced the booleans with counts for exactly that reason. One view adopted the improvement;
+// the other kept consuming the boolean derived FROM the number it discards.
+//
+// A count is MORE useful in a menu than in a scrubber, not less: a menu is filtered, so the number
+// of hidden matches changes as the user types, and that is how they learn whether narrowing works
+// (ADR D1).
+describe("SelectList hidden-row counts (B-022)", () => {
+  const many = Array.from({ length: 12 }, (_, i) => ({
+    value: `item-${String(i)}`,
+    label: `item-${String(i)}`,
+  }));
+
+  it("test_a_windowed_menu_shows_the_hidden_count_below", async () => {
+    const app = render(
+      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
+    );
+    await app.flush();
+    const frame = app.lastFrame() ?? "";
+    app.unmount();
+
+    // Selection starts at the top: nothing above, eight below a window of four over twelve items.
+    expect(frame).toContain("▼ 8");
+  });
+
+  it("test_no_arrow_is_rendered_when_nothing_is_hidden", async () => {
+    const app = render(
+      createElement(SelectList, { items: many.slice(0, 3), window: 10, onSubmit: () => {} }),
+    );
+    await app.flush();
+    const frame = app.lastFrame() ?? "";
+    app.unmount();
+
+    // A count of zero renders no arrow at all — never `▲ 0`, which would be noise claiming meaning.
+    expect(frame).not.toContain("▲");
+    expect(frame).not.toContain("▼");
+  });
+
+  it("test_the_count_shrinks_as_the_filter_narrows_the_list", async () => {
+    // The case that makes a count worth more in a menu than in a scrubber: it tells the user
+    // whether typing is working.
+    const app = render(
+      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
+    );
+    await app.flush();
+    expect(app.lastFrame() ?? "").toContain("▼ 8");
+
+    app.stdin.write("item-1");
+    await app.flush();
+    const filtered = app.lastFrame() ?? "";
+    app.unmount();
+
+    // "item-1" matches item-1, item-10 and item-11 — three matches, none hidden.
+    expect(filtered).not.toContain("▼ 8");
+  });
+});
