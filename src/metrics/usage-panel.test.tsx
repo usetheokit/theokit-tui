@@ -115,6 +115,77 @@ describe("UsagePanel", () => {
     );
   });
 
+  // B-025 T1.4 / ADR D2 — the composite validates what it FORWARDS.
+  //
+  // `src/agent/agent-timeline.tsx:62` established the reasoning: validation belongs at the
+  // composition boundary, so the message names the component the caller actually wrote. This
+  // panel guarded `contextWindow` and stopped there — so a bad `inputTokens` failed from inside
+  // `ContextWindowBar` and a bad `cost` from inside `CostMeter`, both naming a component the
+  // caller never mentioned. Its own ADR D3 argued for this and the argument was not applied.
+  //
+  // Scope is exactly what the panel passes on: inputTokens, outputTokens, and the optional
+  // cacheReadTokens / reasoningTokens / cost. `totalTokens`, `cacheWriteTokens` and `durationMs`
+  // are NOT forwarded and are NOT validated here — guarding a field it does not use would be the
+  // composite claiming authority over data it never touches.
+  it("a_non_finite_input_token_count_is_refused_by_the_panel_itself", () => {
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
+    ).toThrow(TypeError);
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
+    ).toThrow("UsagePanel: usage.inputTokens");
+  });
+
+  it("a_non_finite_cost_is_refused_by_the_panel_itself", () => {
+    // Measured in the B-025 probe: NaN reaches CostMeter and blanks the whole panel — the
+    // sections that were fine vanish with the one that was not. Validating only inputTokens was
+    // rejected in ADR D2 for exactly this.
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, cost: Number.NaN } }),
+    ).toThrow("UsagePanel: usage.cost");
+  });
+
+  it("a_negative_optional_token_count_is_refused_by_the_panel_itself", () => {
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, cacheReadTokens: -1 } }),
+    ).toThrow("UsagePanel: usage.cacheReadTokens");
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, reasoningTokens: -1 } }),
+    ).toThrow("UsagePanel: usage.reasoningTokens");
+  });
+
+  it("the_error_names_UsagePanel_not_a_child", () => {
+    let message = "";
+    try {
+      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } });
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    expect(message).toContain("UsagePanel");
+    // The whole point of the ADR: not ContextWindowBar, which the caller never wrote.
+    expect(message).not.toContain("ContextWindowBar");
+    // And the offending value, per error-handling.md § 5.
+    expect(message).toContain("NaN");
+  });
+
+  it("a_turn_that_omits_the_optional_fields_still_renders", async () => {
+    // The guard must not turn ABSENT into invalid. `TurnUsage` marks these optional and ADR D2 of
+    // B-001 says absent stays absent; a guard that rejected `undefined` would break every turn an
+    // agent reports without a cache read.
+    const plain = stripAnsi(await renderFrame(<UsagePanel usage={minimalTurn} />));
+    expect(plain).toContain("input");
+  });
+
+  it("a_present_zero_is_a_measurement_and_is_accepted", async () => {
+    // 0 is a reported value, not a missing one. Rejecting it would discard a real measurement.
+    const plain = stripAnsi(
+      await renderFrame(
+        <UsagePanel usage={{ ...minimalTurn, cacheReadTokens: 0, cost: 0 }} />,
+      ),
+    );
+    expect(plain).toContain("cached");
+  });
+
   // TA-1 (review) — every sibling meter pins its rendering in __snapshots__; this one pinned only
   // substrings, so the composed LAYOUT — the thing the component exists to produce — was asserted
   // by nothing. Two snapshots: the full turn and the minimal one, because the difference between
