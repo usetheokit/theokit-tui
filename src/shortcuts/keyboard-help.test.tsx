@@ -39,4 +39,13 @@ describe("KeyboardHelp", () => {
       expect(frame).toContain(chord);
     }
   });
+
+  // D3 / EC-4 — located by `keys`, never by index: an index-based assertion breaks silently the
+  // first time an entry is inserted above it. `grep -c 'ctrl.*"c"'` in chat-composer.tsx returns
+  // 0, so the composer never handled this chord; the row is true and the attribution was not.
+  it("the_quit_row_attributes_the_chord_to_the_runtime", () => {
+    const quit = DEFAULT_COMPOSER_SHORTCUTS.find((s) => s.keys === "Ctrl+C");
+    expect(quit).toBeDefined();
+    expect(quit?.description).toContain("app");
+  });
 });

@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
+import type { FooterAffordances } from "../shortcuts/composer-capabilities.js";
+import { footerHintFor } from "../shortcuts/composer-capabilities.js";
 import { ModeIndicator, type PermissionMode } from "./mode-indicator.js";
 
 // #45 StatusFooter — the two-line Claude Code footer that composes the status
@@ -42,6 +44,19 @@ export interface StatusFooterProps extends LayoutMarginProps {
   modeLabel?: string;
   /** The bottom hint shown when no mode is active. Default `? for shortcuts · ← for agents`. */
   hint?: string;
+  /**
+   * B-005 — which affordances THIS app actually has, governing BOTH rows.
+   *
+   * The `hint` prop above reaches only the row drawn when no mode is active. The mode row used to
+   * append `· ← for agents` with no prop consulted at all, so an app with a permission mode and no
+   * agents panel advertised one and could not stop it — a prop that works in one branch of two is
+   * worse than no prop, because the caller believes they suppressed it.
+   *
+   * Absent leaves both rows exactly as before. Present, it wins over `hint` — and an EMPTY
+   * declaration is a declaration: it renders nothing, rather than falling back to a default that
+   * means "say everything the toolkit can do" (ADR D4).
+   */
+  affordances?: FooterAffordances;
 }
 
 export function StatusFooter({
@@ -50,9 +65,15 @@ export function StatusFooter({
   mode = "default",
   modeLabel,
   hint = DEFAULT_HINT,
+  affordances,
   ...margin
 }: StatusFooterProps) {
   const showsMode = modeLabel !== undefined || mode !== "default";
+  // `=== undefined`, never falsiness: `footerHintFor({})` returns `""`, and `||` would restore the
+  // full default — this item's own defect, re-created by the fix for it (ADR D4).
+  const resolvedHint =
+    affordances === undefined ? hint : footerHintFor(affordances);
+  const showsAgents = affordances === undefined || affordances.agents === true;
   return (
     // width 100% so the top row can space-between to the terminal edges.
     <Box flexDirection="column" width="100%" {...pickMargin(margin)}>
@@ -68,11 +89,14 @@ export function StatusFooter({
             mode={mode}
             {...(modeLabel === undefined ? {} : { label: modeLabel })}
           />
-          <Text dimColor> · {AGENTS_HINT}</Text>
+          {/* The separator belongs to the affordance, not to the row: blanking only the text
+              would leave `⏵⏵ auto-accept edits on · `, a trailing middot that reads as a
+              truncated line rather than a deliberate absence (ADR D5). */}
+          {showsAgents ? <Text dimColor> · {AGENTS_HINT}</Text> : null}
         </Box>
       ) : (
         <Text dimColor wrap="truncate-end">
-          {hint}
+          {resolvedHint}
         </Text>
       )}
     </Box>
