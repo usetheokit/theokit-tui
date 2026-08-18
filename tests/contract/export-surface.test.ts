@@ -56,6 +56,14 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.WindowedList).toBe("function");
   });
 
+  it("public_entry_exposes_surface_layer_selection", async () => {
+    const mod = await import("../../src/index.js");
+    // B-007 — the render twin of `routeThroughLayers`. Pinned here because it deliberately does
+    // NOT ship from `@theokit/tui/keys`: that subpath promises to stay React-free.
+    expect(typeof mod.selectSurface).toBe("function");
+    expect(mod.selectSurface([], {}).layer).toBeNull();
+  });
+
   it("public_entry_exposes_capability_derivation", async () => {
     const mod = await import("../../src/index.js");
     // B-005 — the derivation the two advertising channels never had.
