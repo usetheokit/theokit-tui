@@ -7,13 +7,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
-- **`WindowedList` desenhava NADA quando `selected` era `NaN` (B-026).** `windowFor` clampa com
-  `Math.min(Math.max(selected, 0), count - 1)`, e toda comparacao contra `NaN` e falsa — entao
-  `clampedIndex` e `windowStart` viravam `NaN`, `rows.slice(NaN, NaN)` devolvia `[]` e a lista
-  renderizava vazia: sem erro, sem log, nada na tela. O prop `window` tinha guarda e `selected`
-  nao. Agora um `selected` nao-inteiro e recusado com erro tipado nomeando o componente; inteiros
-  fora de faixa continuam sendo clampados e `-1` segue sendo o sentinela de "nenhuma selecao".
-  (b026-windowedlist-nan-2026-08-18)
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.60.0] - 2026-08-18
+
+### Added
 
 - **`CLEAR_SCREEN_AND_SCROLLBACK` em `@theokit/tui/terminal` (B-013).** O item foi registrado
   **esperando ser morto** — uma linha de ANSI e exatamente onde o degrau 5 da parcimonia morde — e
@@ -25,16 +31,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   o que e publicado e o NOME, nao os bytes: o pacote ja tinha a sequencia oposta, privada no output
   engine, correta la porque um redraw completo e dono da tela e nao pode destruir saida que nao
   escreveu. As duas diferem por tres caracteres e significam coisas opostas. (b013-clear-screen-2026-08-18)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.59.0] - 2026-08-18
 
