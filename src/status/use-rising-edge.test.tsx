@@ -10,7 +10,6 @@ const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
 /** A caller's own vocabulary — the hook must not know these words. */
 const LEVELS = ["calm", "busy", "urgent"] as const;
-type Level = (typeof LEVELS)[number];
 
 function Probe({
   level,
