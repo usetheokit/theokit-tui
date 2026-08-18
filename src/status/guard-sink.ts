@@ -47,6 +47,13 @@
  * It does NOT deduplicate: a guard firing every render is a repeating problem and one collapsed
  * line hides it.
  *
+ * **What that does NOT buy is a count of fires.** Measured 2026-08-18 with a real `render()`: ONE
+ * logical guard failure produces **2 records**, stable across `NODE_ENV=test` and
+ * `NODE_ENV=production`, because React re-invokes a component whose render threw. v1 claimed the
+ * absence of deduplication let an operator count fires; it does not — the multiplier is a renderer
+ * implementation detail. `src/status/guard-sink.render.test.tsx` pins the number so an upgrade that
+ * changes it is reported rather than silently contradicting this paragraph.
+ *
  * @public
  */
 
