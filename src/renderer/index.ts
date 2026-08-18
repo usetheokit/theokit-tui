@@ -5,3 +5,12 @@
 
 export { createRenderer, type Renderer } from "./renderer.js";
 export { type Terminal, ProcessTerminal } from "./terminal.js";
+
+// B-009 — the frame budget. It was written, tested with nine cases, and exported from nowhere:
+// `npx knip` run without config (as `/code-quality` runs it) counts its own test as a consumer, so
+// the dead-code gate reported the tree clean. Reachable now.
+export {
+  createFrameBudget,
+  type FrameBudget,
+  type FrameBudgetOptions,
+} from "./frame-budget.js";

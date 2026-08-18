@@ -95,6 +95,10 @@ describe("useCoalesced", () => {
       />,
     );
     await tick();
+    // OUTSIDE the window, deliberately. Inside it the budget refuses anyway, so the assertion
+    // would pass against an implementation that keys on `compute`'s identity — mutation showed
+    // exactly that: the first draft of this test survived the mutant it was written to catch.
+    clock.advance(200);
     app.rerender(
       <Probe
         compute={() => {
