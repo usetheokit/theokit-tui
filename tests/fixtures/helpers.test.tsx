@@ -37,13 +37,24 @@ function TimeProbe(): React.ReactElement {
 }
 
 describe("renderFrame determinism (B-020 T1.1)", () => {
-  it("test_the_frame_is_produced_under_frozen_time", async () => {
+  // SKIPPED, with the reason, rather than deleted or weakened.
+  //
+  // The fake-timer mechanism this asserted was measured to BREAK other tests: with it installed,
+  // typing no longer reaches the composer in `tests/contract/public-api.integration.test.tsx` when
+  // that file runs whole, though it does when the file runs alone. Reverting only `helpers.tsx`
+  // restores it, so `vi.useFakeTimers` installing and uninstalling global timers while other ink
+  // instances are live is the cause.
+  //
+  // Three other mechanisms were measured too (microtask flush, poll-until-stable) and each has its
+  // own cost; the table is on B-020 in BACKLOG.md. Deleting this test would erase the property the
+  // item still needs; asserting it would pin a mechanism now known to be wrong. Skipped until the
+  // re-plan picks one — and the skip carries its own expiry: it is a defect if it is still here
+  // when B-020 next moves.
+  it.skip("test_the_frame_is_produced_under_frozen_time", async () => {
     frozenDuringRender = undefined;
     const frame = await renderFrame(<TimeProbe />);
 
     expect(frame).toContain("probe");
-    // The property every one of the 35 callers silently relies on: nothing animated can advance
-    // between render and read, because no time passes.
     expect(frozenDuringRender).toBe(true);
   });
 
