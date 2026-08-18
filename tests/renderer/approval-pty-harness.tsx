@@ -1,6 +1,6 @@
 import { Text } from "ink";
 
-import { ApprovalPrompt } from "../../src/approval-prompt.js";
+import { ApprovalPrompt } from "../../src/prompts/approval-prompt.js";
 import { FocusProvider } from "../../src/renderer/hooks/use-focus.js";
 import { createRenderer } from "../../src/renderer/renderer.js";
 import { ProcessTerminal } from "../../src/renderer/terminal.js";

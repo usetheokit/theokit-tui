@@ -17,8 +17,8 @@ import {
   createRootNode,
 } from "../../src/renderer/host-config.js";
 import { createRenderer } from "../../src/renderer/index.js";
-import { Output } from "../../src/renderer/output-grid.js";
-import { renderNodeToOutput } from "../../src/renderer/render-node.js";
+import { Output } from "../../src/renderer/output/output-grid.js";
+import { renderNodeToOutput } from "../../src/renderer/output/render-node.js";
 import Yoga from "yoga-layout";
 import { VirtualTerminal } from "./virtual-terminal.js";
 
@@ -27,7 +27,7 @@ import { VirtualTerminal } from "./virtual-terminal.js";
 // layouts are compared (SGR stripped — a NO_COLOR pass isolates layout from
 // color; SGR byte-parity is tracked separately). DoD: ≥ 90% of scenes match
 // byte-identical; every divergence is documented in
-// wiki/renderer/m18-layout-parity.md. This is the M18 exit gate against the
+// wiki/renderer/layout-parity.md. This is the M18 exit gate against the
 // existing corpus.
 
 const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*m", "g");

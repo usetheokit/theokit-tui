@@ -13,3 +13,6 @@ dist/
 .claude/halt-loop-prompts/
 .claude/ralph-loop.local.md
 coverage/
+architecture-output
+.claude
+docs

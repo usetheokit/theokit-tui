@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { Image } from "../../src/index.js";
 import { createRenderer } from "../../src/renderer/index.js";
-import { Output } from "../../src/renderer/output-grid.js";
+import { Output } from "../../src/renderer/output/output-grid.js";
 import { VirtualTerminal } from "./virtual-terminal.js";
 
 // M21 T2.1 (plan m21-premium-capabilities, ADR A2): the image wiring — a

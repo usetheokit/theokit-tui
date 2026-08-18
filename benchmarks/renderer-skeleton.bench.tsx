@@ -150,7 +150,7 @@ async function main(): Promise<void> {
 
   const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
-  const outFile = join(outDir, "m17-renderer-skeleton-baseline.json");
+  const outFile = join(outDir, "renderer-skeleton-baseline.json");
   writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
 
   process.stdout.write(

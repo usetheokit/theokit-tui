@@ -8,7 +8,7 @@ sources:
     resource: "git:9fd7eb1:docs/renderer/m17-parity-report.md"
     last_modified: 2026-07-08
   - id: m20-bench
-    resource: "git:9fd7eb1:docs/renderer/m20-comparative-bench.md"
+    resource: "git:9fd7eb1:docs/renderer/comparative-bench.md"
     last_modified: 2026-07-08
   - id: renderer-src
     resource: "file:src/renderer/"
@@ -27,8 +27,8 @@ those, synchronising the update with the terminal's synchronized-output mode
 (CSI 2026).[^m17-report]
 
 The engine is the _output_ half of the V4 renderer program; its _input_ half is
-the ported key stack described in [M19 input stack](/renderer/m19-input-stack.md).
-Layout is real Yoga, ported at M18 — see [M18 layout parity](/renderer/m18-layout-parity.md).
+the ported key stack described in [M19 input stack](/renderer/input-stack.md).
+Layout is real Yoga, ported at M18 — see [M18 layout parity](/renderer/layout-parity.md).
 
 # Why it exists (the byte argument)
 
@@ -69,7 +69,7 @@ terminal — a patch lands on the wrong row. Relative positioning is
 scroll-invariant, and a regression test pins it:
 `scrollback-corpus.test.tsx › patches_the_live_frame_correctly_after_static_overflows_the_screen`
 (3 static + 4 live rows on a 5-row terminal). See
-[M20 component parity](/renderer/m20-component-parity.md).
+[M20 component parity](/renderer/component-parity.md).
 
 # Verification
 

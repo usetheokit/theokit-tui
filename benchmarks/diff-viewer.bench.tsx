@@ -225,11 +225,11 @@ if (!smoke) {
   const outPath = join(
     dirname(fileURLToPath(import.meta.url)),
     "baselines",
-    "m4-diff-viewer-baseline.json",
+    "diff-viewer-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
   console.log(
-    "baseline written: benchmarks/baselines/m4-diff-viewer-baseline.json",
+    "baseline written: benchmarks/baselines/diff-viewer-baseline.json",
   );
 }

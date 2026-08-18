@@ -75,7 +75,7 @@ render(<App />);
 
 Swap `demoTurn` for your real stream: `useAgentStream` consumes any
 `AsyncIterable<AgentStreamEvent>` (or a factory) — SDK streams, SSE, fixtures.
-See `examples/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
+See `examples/scenes/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
 
 ## Primitives
 

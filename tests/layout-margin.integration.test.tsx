@@ -2,8 +2,8 @@ import { Text } from "ink";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 
-import { renderFrame } from "./helpers.js";
-import type { LayoutMarginProps } from "../src/layout-props.js";
+import { renderFrame } from "./fixtures/helpers.js";
+import type { LayoutMarginProps } from "../src/layout/layout-props.js";
 import {
   AgentStreaming,
   AgentTimeline,

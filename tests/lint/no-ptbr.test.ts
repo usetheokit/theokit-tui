@@ -83,7 +83,7 @@ const FILE_ALLOWLIST = new Set<string>([
   // B-065 — one comment QUOTES the Portuguese word it replaced, to explain why the fixture reads as
   // it does. Translating the quotation would delete the explanation and leave a comment that says
   // a rename happened without saying what from. Linting a citation is linting the wrong thing.
-  "tests/m92-assert-valid-events.test.ts",
+  "tests/agent-events-validation.test.ts",
   // A recall probe whose assertion is what a model ANSWERS. It matches both spellings of a Brazilian
   // city because a model replying in Portuguese uses the accented one; dropping that alternative to
   // satisfy this gate would narrow what the probe accepts and weaken the audit it exists to run.

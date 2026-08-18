@@ -7,6 +7,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **Gate de estrutura em CI — ADR 0003.** `tests/lint/structure.test.ts` reprova o PR que devolve um
+  arquivo solto para a raiz de `src/`, cria pasta sem barrel, passa de 25 arquivos por pasta, exporta
+  dois componentes do mesmo modulo, deixa componente inline com mais de 40 linhas, usa qualificador
+  de teste fora do registro (`integration`, `e2e`), prefixa arquivo com id de milestone ou usa
+  `-model` sem view ao lado. Segue o precedente de `tests/lint/no-ptbr.test.ts` — politica como
+  teste, sem ferramenta nova — e roda dentro de `pnpm gates`. A deriva que motivou tudo isso passou
+  por code review por 147 arquivos sem ser barrada: regra que so vive na cabeca do revisor erode.
+  (architecture-review-2026-08)
+
 - Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que
   está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo
   empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que
@@ -44,11 +53,46 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   string que o modelo errou.
 
   Nota de acoplamento, registrada e nao resolvida: a lista de nomes e conhecimento duplicado. Este
-  pacote **nao** importa `@theokit/agents` e nao deve — a dependencia corre no sentido contrario — 
+  pacote **nao** importa `@theokit/agents` e nao deve — a dependencia corre no sentido contrario —
   entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
   uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
 
 ### Changed
+
+- **`src/` passa a ser organizado por dominio de produto, e nenhum componente exportado divide
+  arquivo com outro — ADRs 0001/0002.** A superficie publica do pacote nao muda: os quatro subpaths
+  (`.`, `./renderer`, `./terminal`, `./keys`) exportam exatamente os mesmos simbolos de antes, o que
+  `tests/contract/export-surface.test.ts` e `tests/contract/public-api.integration.test.tsx`
+  verificam a cada commit. O que muda e o caminho de arquivo de cada modulo dentro do pacote — quem
+  fazia deep import (`@theokit/tui/dist/chat-composer.js`, nunca suportado) precisa passar pelo
+  barrel. `src/` tinha 147 arquivos em um unico diretorio: 71 modulos, 61 testes co-locados e 15
+  snapshots. Agora sao 14 pastas de dominio (`agent/`, `chat/`, `tools/`, `diff/`, `markdown/`,
+  `prompts/`, `metrics/`, `branding/`, `layout/`, `status/`, `theme/`, `shortcuts/`, `search/`,
+  `format/`), cada uma com barrel proprio, e `src/index.ts` caiu de 288 para 27 linhas — deixou de
+  ser lista escrita a mao e ponto garantido de conflito de merge. `chat-composer.tsx` caiu de 806
+  para 575 linhas: os sete componentes que dividiam o arquivo viraram modulos em `chat/composer/`.
+  (architecture-review-2026-08)
+
+- **A politica de export que vivia em comentario agora tem lugar proprio: `docs/adr/`.** O codigo
+  citava ADRs por id (`D7`, `EC-10`, `arch-5`) que nao existiam como arquivo — 47 ids distintos em
+  248 citacoes. `docs/adr/README.md` indexa cada um com todas as linhas que dependem dele, gerado
+  por `docs/adr/build-legacy-index.py`. O indice torna os ids localizaveis; ele nao inventa a
+  justificativa que nunca foi escrita. (architecture-review-2026-08)
+
+- **`tests/` e `examples/` passam a ser divididos por proposito.** `tests/` ganhou
+  `contract/`, `examples/`, `benchmarks/` e `fixtures/` ao lado do `renderer/` que ja existia;
+  `examples/` ganhou `components/`, `scenes/` e `renderer/`. Os scripts `example:*` continuam
+  valendo, apontando para os novos caminhos. (architecture-review-2026-08)
+
+- **22 arquivos deixam de comecar por id de milestone.** `m17-skeleton-parity.md` ordenava por
+  cronologia do projeto e nao dizia nada a quem le; o milestone agora fica dentro do arquivo.
+  Vale para `benchmarks/baselines/*`, `tests/*` e `wiki/*`. (architecture-review-2026-08)
+
+- **O sufixo `-model` passa a significar algo — ADR 0004.** Ele marcava a metade headless de um
+  componente, mas acertava 3 vezes em 8, e outros 23 modulos headless nao o usavam. Agora so e
+  valido quando existe a view de mesmo nome ao lado; os cinco que nao tinham par perderam o sufixo
+  (`diff-model.ts` -> `diff.ts`, `markdown-model.ts` -> `markdown.ts`, e assim por diante).
+  (architecture-review-2026-08)
 
 - **O repositório passou para a organização oficial `usetheokit`.** Clones existentes continuam
   funcionando: o GitHub redireciona permanentemente o remote antigo `usetheodev/theokit-tui`. Os
@@ -57,7 +101,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 - **O texto da licença Apache-2.0 foi completado com o apêndice de copyright.** O LICENSE trazia o
   corpo oficial, mas com o apêndice ainda no formato de instrução (`Copyright [yyyy] [name of
-  copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a "Theo ecosystem
+copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a "Theo ecosystem
   contributors (usetheodev)" — divergente do titular usado em todos os outros repositórios. Os dois
   agora declaram `Copyright 2026 usetheo.dev`. (usetheokit/theokit#316)
 
@@ -65,6 +109,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `sonar.projectKey=usetheokit_theokit-tui`, acompanhando a mudança de organização. A organização e o
   projeto correspondentes precisam existir no SonarCloud — do contrário o step de análise falha.
   (usetheokit/theokit#316)
+
+### Fixed
+
+- **O guard `it_count_never_decreases` nao enxergava renames e morria com ENOENT.** Ele comparava o
+  caminho do commit base com o disco; qualquer arquivo de teste movido o derrubava antes de contar.
+  Agora indexa os testes atuais por basename (com unicidade verificada, para a premissa falhar alto
+  se deixar de valer), carrega uma tabela explicita de renames deliberados e trata arquivo de teste
+  realmente apagado como contagem zero — um enfraquecimento que a assercao **diz**, em vez de um
+  crash. A deteccao de rename do proprio git foi testada antes e descartada com evidencia: contra um
+  base distante, 120 de 161 movimentacoes puras ainda eram lidas como delete+add.
+  (architecture-review-2026-08)
 
 ## [0.53.0] - 2026-08-14
 

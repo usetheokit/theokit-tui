@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { createRenderer } from "../../src/renderer/index.js";
 import { useStdout } from "../../src/renderer/hooks/use-stdout.js";
-import { OutputEngine } from "../../src/renderer/output-engine.js";
+import { OutputEngine } from "../../src/renderer/output/output-engine.js";
 import { VirtualTerminal } from "./virtual-terminal.js";
 
 // M20 T1.1 (plan m20-scrollback-cutover, ADR D1): the scrollback oracle. Ink's

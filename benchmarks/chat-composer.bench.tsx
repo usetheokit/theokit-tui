@@ -148,11 +148,9 @@ if (!smoke) {
   const outPath = join(
     dirname(fileURLToPath(import.meta.url)),
     "baselines",
-    "m15-composer-baseline.json",
+    "composer-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/m15-composer-baseline.json",
-  );
+  console.log("baseline written: benchmarks/baselines/composer-baseline.json");
 }

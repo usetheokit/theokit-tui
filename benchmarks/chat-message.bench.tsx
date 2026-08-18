@@ -156,11 +156,11 @@ if (!smoke) {
   const outPath = join(
     dirname(fileURLToPath(import.meta.url)),
     "baselines",
-    "m0-chat-message-baseline.json",
+    "chat-message-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
   console.log(
-    `baseline written: benchmarks/baselines/m0-chat-message-baseline.json`,
+    `baseline written: benchmarks/baselines/chat-message-baseline.json`,
   );
 }
