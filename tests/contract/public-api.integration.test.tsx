@@ -102,15 +102,9 @@ describe("public API integration (T3.2 — composer scene)", () => {
     // `run_validation.py` run while passing 18/18 in isolation. Waiting for the CONDITION removes
     // the assumption without changing what is asserted.
     instance.stdin.write("hey");
-    let n = 0;
-    await waitFor(
-      () => {
-        n += 1;
-        if (n % 25 === 0) console.log("FRAME@" + String(n), JSON.stringify(instance.lastFrame()));
-        return false;
-      },
-      { describe: "probe", timeoutMs: 800 },
-    ).catch(() => undefined);
+    await waitFor(() => (instance.lastFrame() ?? "").includes("hey"), {
+      describe: "the composer to echo the typed text",
+    });
     instance.stdin.write("\r");
     await waitFor(() => onSubmit.mock.calls.length > 0, {
       describe: "the submit handler to fire",
