@@ -105,6 +105,22 @@ describe("WindowedList", () => {
     expect(body[0]).toContain("first second third");
   });
 
+  it("centred_window_layout", async () => {
+    expect(
+      stripAnsi(
+        await renderFrame(
+          <WindowedList rows={rows(20)} selected={10} window={7} />,
+        ),
+      ),
+    ).toMatchSnapshot("windowed-list-centred");
+  });
+
+  it("short_list_layout_has_no_counts", async () => {
+    expect(
+      stripAnsi(await renderFrame(<WindowedList rows={rows(3)} selected={1} />)),
+    ).toMatchSnapshot("windowed-list-short");
+  });
+
   it("clamps_a_selection_past_the_end", async () => {
     const plain = stripAnsi(
       await renderFrame(<WindowedList rows={rows(5)} selected={99} window={7} />),
