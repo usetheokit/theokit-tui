@@ -9,6 +9,25 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **`SelectList` now shows HOW MANY rows are hidden, not just that some are (B-022).** The
+  overflow chrome went from a bare `▲` / `▼` to `▲ 3` / `▼ 8`, matching what `WindowedList`
+  already rendered from the identical model. Both components consume the same view object;
+  one was reading the counts and the other was reading booleans derived from those same
+  counts, so the same list under two public components told the user two different things
+  about the same state. A boolean cannot be turned back into a number, which is why the
+  counts replaced the booleans in the model in the first place — this view had kept
+  discarding them.
+
+  **Blast radius, measured:** `grep -rn "SelectList" modelo/TheoCode/` → **6 hits, 0
+  affected**. The single render passes 4 items and no `window`, against a default of 5, so
+  nothing is hidden and no arrow is drawn either before or after this change.
+
+  **Width cost, measured:** the widest frame line is unchanged (11 bytes before and after,
+  `awk '{ print length }' | sort -rn | head -1`). The count lands on the arrow row, which is
+  the shortest row in the frame — it grows from 1 to 3 bytes and stays far below the label
+  and counter rows. A menu whose labels are shorter than `▼ 999` would widen; none in this
+  repo or its consumer are.
+
 ### Deprecated
 
 ### Removed
