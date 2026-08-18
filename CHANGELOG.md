@@ -23,6 +23,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **The guard record is sanitised against every line-breaking code point, and a malformed `error` is
+  refused (B-025).** `JSON.stringify` escapes C0 only, so 33 code points reached the record raw —
+  including U+0085, U+2028 and U+2029, which are Unicode line terminators: a reader that splits
+  Unicode-aware still saw a second, well-formed, correctly-timestamped `[theokit/tui]` record, and
+  U+009B / U+009D are the 8-bit CSI and OSC introducers. `reportGuardFailure` also read
+  `error.message` without checking it, so a malformed argument threw from outside the guarded
+  region — no record, no loss counted, and the guard's own diagnostic replaced by a `TypeError`
+  about the reporter. Both are now refused, and both are pinned: reverting either turns four tests
+  red, where before each was covered by nothing. (b025-silent-guards-2026-08-18)
+
 - **`UsagePanel` refuses an unknown `order` section (B-025).** It crashed with
   `SECTION_RENDERERS[section] is not a function` — no record, no attribution, and a message naming a
   module-private constant the caller cannot see. A repeated name still draws twice and an empty list
