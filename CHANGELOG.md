@@ -23,13 +23,27 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **BREAKING: `reportGuardFailure` now takes `(component, error, sink?)` (B-025).** It shipped in
+  `0.60.1` as `(error, sink?)`. The component is a required argument rather than a convention
+  inside the message, because the record is about to be adopted by 20 more call sites (B-028) and a
+  convention decays exactly then — `reportGuardFailure(new Error("bad"))` type-checked before and
+  emitted the generic message our error-handling rule bans. `GuardSink.write` also returns
+  `boolean` instead of `void`: `false` is how `process.stderr` and this package's own
+  `installStderrGuard` report a LOST write, and discarding it made a dead sink silent — the very
+  failure the sink exists to prevent, one layer down. Lost records are now counted and readable via
+  `lostGuardRecords()`. Blast radius measured before shipping: `grep -rn "reportGuardFailure"`
+  across the only known consumer returns **0**, so no caller outside this package breaks.
+  (b025-silent-guards-2026-08-18)
+
 - **`UsagePanel` now validates every `usage` field it forwards (B-025).** It guarded `contextWindow`
   and stopped there, so a non-finite `inputTokens` failed from inside `ContextWindowBar` and a bad
   `cost` from inside `CostMeter` — both naming a component the caller never wrote. `inputTokens`,
   `outputTokens` and the optional `cacheReadTokens` / `reasoningTokens` / `cost` are now refused at
-  the panel's own boundary with an error that names `UsagePanel`. Absent optional fields still pass
+  the panel's own boundary with an error that names `UsagePanel`, using the shared
+  `assertFiniteNonNegative` rather than a re-inlined copy of it. Absent optional fields still pass
   and a present `0` is still accepted: absent stays absent, and `0` is a measurement the agent
   reported. No rendering changed. (b025-silent-guards-2026-08-18)
+
 
 ### Deprecated
 

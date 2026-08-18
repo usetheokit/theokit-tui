@@ -51,7 +51,7 @@
  * logical guard failure produces **2 records**, stable across `NODE_ENV=test` and
  * `NODE_ENV=production`, because React re-invokes a component whose render threw. v1 claimed the
  * absence of deduplication let an operator count fires; it does not — the multiplier is a renderer
- * implementation detail. `src/status/guard-sink.render.test.tsx` pins the number so an upgrade that
+ * implementation detail. `src/status/guard-sink.integration.test.tsx` pins the number so an upgrade that
  * changes it is reported rather than silently contradicting this paragraph.
  *
  * @public

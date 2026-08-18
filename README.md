@@ -139,6 +139,45 @@ puts it in the live region, where it duplicates on scroll. There is no general
 `insertHistory` primitive yet — see
 [#55](https://github.com/usetheokit/theokit-tui/issues/55).
 
+### When a component rejects a prop, it writes to stderr
+
+Components in this package validate their props and throw a typed `TypeError` before rendering.
+Since `0.61`, a guard that fires also writes **one line to `process.stderr`** before throwing:
+
+```
+[theokit/tui] 2026-08-18T15:22:59Z UsagePanel: contextWindow must be a finite number > 0 when given — got 0
+```
+
+The line exists because a terminal frame is not a log. Ink prints its own error panel when a render
+throws, but that panel is on stdout and is gone at the next repaint or once the scrollback rolls —
+so an operator debugging an intermittent guard has nothing to read afterwards. The record is what
+survives.
+
+**A TUI owns the screen, so you should redirect stderr for the life of your session.** This package
+ships `installStderrGuard` for exactly that: it sends stderr — these records, and anything else in
+your process that writes there — to a rotating log file instead of into the middle of a frame.
+
+```ts
+import { installStderrGuard } from "@theokit/tui/terminal";
+
+const dispose = installStderrGuard("~/.your-cli/session.log", { label: "your-cli" });
+try {
+  // render your app
+} finally {
+  dispose(); // restores stderr and reports how many writes were lost, if any
+}
+```
+
+Without it, a record can land mid-frame and corrupt the display until the next full repaint. That
+is the accepted trade: a corrupted frame is repainted, a silent failure is not.
+
+Two limits worth knowing:
+
+- The sink is a per-call parameter, so there is no global `setGuardSink` today. `installStderrGuard`
+  is the lever. If you need a finer one, open an issue — it has not been asked for yet.
+- One logical guard failure produces **two** records, because React re-invokes a component whose
+  render threw. The count is a renderer detail, not a count of failures.
+
 ## Development
 
 Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).

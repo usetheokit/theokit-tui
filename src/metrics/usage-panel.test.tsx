@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { TurnUsage } from "../agent/messages-to-events.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
@@ -15,6 +15,37 @@ const minimalTurn: TurnUsage = {
   outputTokens: 3_000,
   totalTokens: 15_000,
 };
+
+/**
+ * Guard records this file's tests produced, captured instead of printed.
+ *
+ * B-025 v2 T3.2. Measured before this existed: `npx vitest run src/metrics/` put **9**
+ * `[theokit/tui]` records on the operator's real stderr, because `UsagePanel`'s guards call
+ * `reportGuardFailure` with the DEFAULT sink and nothing here redirected it.
+ *
+ * Capturing rather than merely silencing is the point: the records are now something the tests can
+ * assert on, so the one behaviour this slice adds stops being invisible to the suite that exercises
+ * the component. Silencing alone would have made the suite quieter and no less blind.
+ */
+let guardRecords: string[] = [];
+let realStderrWrite: typeof process.stderr.write;
+
+beforeEach(() => {
+  guardRecords = [];
+  realStderrWrite = process.stderr.write;
+  process.stderr.write = ((chunk: unknown): boolean => {
+    const text = String(chunk);
+    if (text.startsWith("[theokit/tui]")) {
+      guardRecords.push(text);
+      return true;
+    }
+    return realStderrWrite.call(process.stderr, text as never);
+  }) as typeof process.stderr.write;
+});
+
+afterEach(() => {
+  process.stderr.write = realStderrWrite;
+});
 
 // B-001 (plan b001-usage-panel, ADRs D1/D2/D3): the composed usage panel.
 describe("UsagePanel", () => {
@@ -135,6 +166,10 @@ describe("UsagePanel", () => {
     expect(() =>
       UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
     ).toThrow("UsagePanel: usage.inputTokens");
+
+    // T3.2 — the throw is only half the contract. The record is the other half, and until this
+    // existed the suite could not tell `reportGuardFailure(...)` from a plain `throw`.
+    expect(guardRecords.join("")).toContain("UsagePanel: usage.inputTokens");
   });
 
   it("a_non_finite_cost_is_refused_by_the_panel_itself", () => {
