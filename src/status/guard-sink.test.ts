@@ -24,6 +24,23 @@ function fakeSink() {
   };
 }
 
+/**
+ * The one line the sink received.
+ *
+ * A helper rather than `sink.lines[0]!` because `exactOptionalPropertyTypes` is on and the
+ * non-null assertion would hide the very thing worth failing on: a test that asserts about a line
+ * that was never written should fail LOUDLY, naming what it expected, not read `undefined` and
+ * compare it to a string.
+ */
+function onlyLine(sink: { lines: readonly string[] }): string {
+  if (sink.lines.length !== 1) {
+    throw new Error(
+      `expected exactly one line on the sink, got ${String(sink.lines.length)}`,
+    );
+  }
+  return sink.lines[0] as string;
+}
+
 describe("reportGuardFailure (B-025 T1.1)", () => {
   it("a_reported_guard_failure_reaches_the_sink_and_still_throws", () => {
     const sink = fakeSink();
@@ -50,7 +67,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
 
     // `.claude/rules/error-handling.md` § 5 bans the generic message. A line that says only
     // "invalid input" tells an operator nothing they can act on: WHICH component, and WHICH value.
-    const [line] = sink.lines;
+    const line = onlyLine(sink);
     expect(line).toContain("WindowedList");
     expect(line).toContain("NaN");
   });
@@ -62,7 +79,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
       reportGuardFailure(new TypeError("CostMeter: costUsd must be >= 0 — got -1"), sink);
     }).toThrow(TypeError);
 
-    const [line] = sink.lines;
+    const line = onlyLine(sink);
     // A log a consumer reads carries diagnostics from everything in the process. `installStderrGuard`
     // prefixes its own teardown report for the same reason; this follows that precedent.
     expect(line).toMatch(/^\[theokit\/tui]/);

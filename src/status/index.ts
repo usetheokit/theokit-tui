@@ -45,3 +45,10 @@ export type { NotifyProtocol, NotifySink } from "./notify.js";
 // then. Owns no thresholds, no classifier and no copy — deciding WHICH level you are at is the
 // caller's policy, and for the measured consumer it lives in another package entirely.
 export { useRisingEdge } from "./use-rising-edge.js";
+
+// B-025 — a fired boundary guard writes one line outside the frame, then throws. Measured: 24
+// components guard their props, nothing catches the throw, and the result on screen is an EMPTY
+// FRAME. Reporting is additive; the throw contract is untouched.
+export { reportGuardFailure } from "./guard-sink.js";
+
+export type { GuardSink } from "./guard-sink.js";
