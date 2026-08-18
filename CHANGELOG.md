@@ -7,6 +7,14 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **`WindowedList` desenhava NADA quando `selected` era `NaN` (B-026).** `windowFor` clampa com
+  `Math.min(Math.max(selected, 0), count - 1)`, e toda comparacao contra `NaN` e falsa — entao
+  `clampedIndex` e `windowStart` viravam `NaN`, `rows.slice(NaN, NaN)` devolvia `[]` e a lista
+  renderizava vazia: sem erro, sem log, nada na tela. O prop `window` tinha guarda e `selected`
+  nao. Agora um `selected` nao-inteiro e recusado com erro tipado nomeando o componente; inteiros
+  fora de faixa continuam sendo clampados e `-1` segue sendo o sentinela de "nenhuma selecao".
+  (b026-windowedlist-nan-2026-08-18)
+
 - **`CLEAR_SCREEN_AND_SCROLLBACK` em `@theokit/tui/terminal` (B-013).** O item foi registrado
   **esperando ser morto** — uma linha de ANSI e exatamente onde o degrau 5 da parcimonia morde — e
   sobreviveu pela clausula escrita antes de medir. `\\x1b[2J\\x1b[H`, a variante sem apagar o

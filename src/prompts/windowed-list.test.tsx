@@ -128,4 +128,34 @@ describe("WindowedList", () => {
     expect(plain).toContain("turn 4");
     expect(plain).not.toContain("▲");
   });
+
+  // B-026 — found by an adversarial probe, not by the tests written alongside this component.
+  // `windowFor` clamps with Math.min(Math.max(selected, 0), count - 1), and every comparison
+  // against NaN is false, so clampedIndex and windowStart become NaN and rows.slice(NaN, NaN)
+  // returns []. The list rendered EMPTY: no error, no log, nothing on screen. `window` was
+  // guarded and `selected` was not, which is the whole defect.
+  it("rejects_a_non_integer_selection_with_a_typed_error_naming_itself", () => {
+    expect(() =>
+      WindowedList({ rows: rows(3), selected: Number.NaN, window: 2 }),
+    ).toThrow(TypeError);
+    expect(() =>
+      WindowedList({ rows: rows(3), selected: Number.NaN, window: 2 }),
+    ).toThrow("WindowedList: selected must be an integer");
+    expect(() =>
+      WindowedList({ rows: rows(3), selected: 1.5, window: 2 }),
+    ).toThrow(TypeError);
+    expect(() =>
+      WindowedList({ rows: rows(3), selected: Number.POSITIVE_INFINITY, window: 2 }),
+    ).toThrow(TypeError);
+  });
+
+  it("still_accepts_the_no_selection_sentinel_and_any_integer", async () => {
+    // -1 is the documented "no selection"; out-of-range integers clamp rather than throw.
+    for (const selected of [-1, 0, 2, 999]) {
+      const plain = stripAnsi(
+        await renderFrame(<WindowedList rows={rows(5)} selected={selected} window={3} />),
+      );
+      expect(plain.trim()).not.toBe("");
+    }
+  });
 });
