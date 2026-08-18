@@ -1,5 +1,9 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
+import {
+  waitFor as waitForCondition,
+  WAIT_BUDGET_MS,
+} from "../../tests/fixtures/wait-for.js";
 
 import {
   ChatComposer,
@@ -33,6 +37,8 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 const settle = async () => {
   let previous: string | undefined;
   for (let elapsed = 0; elapsed < 400; elapsed += 10) {
+    // duration is the subject: this is a POLL INTERVAL inside a bounded condition-wait, not a
+    // sleep-then-assert. It is already the idiom B-033 converts other sites TO.
     await new Promise((resolve) => setTimeout(resolve, 10));
     const frame = lastRenderedFrame();
     if (frame !== undefined && frame === previous) return;
@@ -72,19 +78,17 @@ async function waitForFrame(
   instance: Awaited<ReturnType<typeof mount>>,
   substring: string,
   present = true,
-  timeoutMs = 2000,
+  timeoutMs: number | undefined = undefined,
 ): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if ((instance.lastFrame() ?? "").includes(substring) === present) {
-      return;
-    }
-    await tick();
-  }
-  throw new Error(
-    `frame ${present ? "never contained" : "still contained"} ${JSON.stringify(
-      substring,
-    )} — got:\n${instance.lastFrame()}`,
+  // B-033 — delegates to the shared helper so the BOUND lives in one place. This loop's own 2000ms
+  // was the measured defect: at load 26 it expired on a frame that was correct, and the same number
+  // was copied into a second helper further down this very file.
+  await waitForCondition(
+    () => (instance.lastFrame() ?? "").includes(substring) === present,
+    {
+      describe: `the frame to ${present ? "contain" : "stop containing"} ${JSON.stringify(substring)} — last frame:\n${instance.lastFrame() ?? ""}`,
+      ...(timeoutMs === undefined ? {} : { timeoutMs }),
+    },
   );
 }
 
@@ -786,7 +790,10 @@ const typeUntil = async (
   inst: { stdin: { write: (s: string) => void } },
   input: string,
   landed: () => boolean,
-  timeoutMs = 2000,
+  // B-034 — was 2000 ms, the third copy of that number in this file and the one B-033 did not
+  // reach. It re-sends input between attempts, which `waitFor` does not, so it shares the BUDGET
+  // rather than delegating the loop.
+  timeoutMs = WAIT_BUDGET_MS,
 ) => {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -798,13 +805,30 @@ const typeUntil = async (
   }
 };
 
-const waitFor = async (predicate: () => boolean, timeoutMs = 2000) => {
-  const start = Date.now();
-  while (!predicate()) {
-    if (Date.now() - start > timeoutMs) return;
-    await tickOnchange();
-  }
+/**
+ * B-033 — the file's SECOND hand-rolled polling loop, now delegating to the shared helper.
+ *
+ * Two copies of the same idiom with the same unmeasured 2000ms bound existed in this one file. That
+ * is what a per-file idiom becomes, and it is why the bound now lives in `tests/fixtures/wait-for`.
+ */
+/**
+ * `describe` is REQUIRED here for the same reason the shared helper requires it, and this wrapper
+ * defeated that requirement by supplying a constant: review measured a plausible off-by-one in
+ * `chat-composer.tsx` failing as a 10.1 s timeout saying "a condition in chat-composer.test.tsx",
+ * where the pre-B-033 local loop failed in 2.1 s saying `expected 'h' to be 'hi'`. A mandatory
+ * field satisfied by a placeholder is an optional field with extra steps.
+ */
+const waitFor = async (
+  predicate: () => boolean,
+  describe: string,
+  timeoutMs?: number,
+) => {
+  await waitForCondition(predicate, {
+    describe,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+  });
 };
+
 
 /**
  * M54 (agent-builder backtrack) — `onChange` reports buffer text so the host can enforce a
@@ -823,7 +847,10 @@ describe("ChatComposer onChange", () => {
     await tickOnchange();
     inst.stdin.write("hi");
     // The last onChange reflects the typed text.
-    await waitFor(() => onChange.mock.calls.at(-1)?.[0] === "hi");
+    await waitFor(
+      () => onChange.mock.calls.at(-1)?.[0] === "hi",
+      `onChange to report "hi" — last saw ${String(onChange.mock.calls.at(-1)?.[0])}`,
+    );
     const calls = onChange.mock.calls.map((c) => c[0]);
     expect(calls.at(-1)).toBe("hi");
     inst.unmount();
@@ -843,7 +870,10 @@ describe("ChatComposer onChange", () => {
         />
       </TheoTUIProvider>,
     );
-    await waitFor(() => onChange.mock.calls.length > 0);
+    await waitFor(
+      () => onChange.mock.calls.length > 0,
+      "onChange to fire at least once",
+    );
     // (a) the seeded draft appears in the frame…
     expect(inst.lastFrame()).toContain("draft");
     // (b) …and onChange fired after mount with the initial text.
@@ -876,7 +906,10 @@ describe("issue #59 item 3 — an unstable onChange identity does not re-fire", 
       </TheoTUIProvider>
     );
     const inst = render(tree());
-    await waitFor(() => spy.mock.calls.length > 0);
+    await waitFor(
+      () => spy.mock.calls.length > 0,
+      "the submit spy to be called",
+    );
     await tickOnchange();
     const antes = spy.mock.calls.length;
 

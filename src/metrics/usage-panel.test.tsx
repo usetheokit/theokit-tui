@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { TurnUsage } from "../agent/messages-to-events.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
@@ -15,6 +15,37 @@ const minimalTurn: TurnUsage = {
   outputTokens: 3_000,
   totalTokens: 15_000,
 };
+
+/**
+ * Guard records this file's tests produced, captured instead of printed.
+ *
+ * B-025 v2 T3.2. Measured before this existed: `npx vitest run src/metrics/` put **9**
+ * `[theokit/tui]` records on the operator's real stderr, because `UsagePanel`'s guards call
+ * `reportGuardFailure` with the DEFAULT sink and nothing here redirected it.
+ *
+ * Capturing rather than merely silencing is the point: the records are now something the tests can
+ * assert on, so the one behaviour this slice adds stops being invisible to the suite that exercises
+ * the component. Silencing alone would have made the suite quieter and no less blind.
+ */
+let guardRecords: string[] = [];
+let realStderrWrite: typeof process.stderr.write;
+
+beforeEach(() => {
+  guardRecords = [];
+  realStderrWrite = process.stderr.write;
+  process.stderr.write = ((chunk: unknown): boolean => {
+    const text = String(chunk);
+    if (text.startsWith("[theokit/tui]")) {
+      guardRecords.push(text);
+      return true;
+    }
+    return realStderrWrite.call(process.stderr, text as never);
+  }) as typeof process.stderr.write;
+});
+
+afterEach(() => {
+  process.stderr.write = realStderrWrite;
+});
 
 // B-001 (plan b001-usage-panel, ADRs D1/D2/D3): the composed usage panel.
 describe("UsagePanel", () => {
@@ -102,17 +133,129 @@ describe("UsagePanel", () => {
   // Nothing asserted this until a mutation run showed the omission: removing the guard leaves the
   // suite green, because `tsc` — not vitest — is what catches it (TS2375 under
   // exactOptionalPropertyTypes). The behavioural half needed its own test.
+  it("an_unknown_order_section_is_refused_with_an_attributable_error", () => {
+    // F-dom-3 (review v2): this crashed with `SECTION_RENDERERS[section] is not a function` — no
+    // record, no attribution, and a message naming a module-private constant. The caller sees the
+    // component they wrote and the value they passed.
+    expect(() =>
+      UsagePanel({
+        usage: minimalTurn,
+        order: ["context", "typo-section"] as never,
+      }),
+    ).toThrow("UsagePanel: order contains an unknown section");
+    expect(guardRecords.join("")).toContain("unknown section");
+  });
+
+  it("a_non_positive_context_window_reaches_the_sink_too", () => {
+    // F-tests-1 (review v2), mutation-confirmed: `UsagePanel` has TWO `reportGuardFailure` call
+    // sites, and only the `usage` one was asserted to reach the sink. Replacing the `contextWindow`
+    // guard at `usage-panel.tsx:151` with a plain `throw` left 190 tests green — the integration
+    // test drives `cost: NaN`, which routes through `assertForwardedUsage`, never through here.
+    //
+    // The branch's own header claimed BOTH call sites were closed. One was.
+    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
+      TypeError,
+    );
+    expect(guardRecords.join("")).toContain("UsagePanel: contextWindow");
+  });
+
   it("throws_a_typed_error_naming_itself_on_a_non_positive_context_window", () => {
     // Called as a function, which is how this domain tests boundary guards
-    // (`context-window-bar.test.tsx:261`). Rendering it would NOT work: React catches a throw
-    // during render, so `renderFrame` resolves with an empty frame instead of rejecting —
-    // measured, not assumed, and the reason the first draft of this test was wrong.
+    // (`context-window-bar.test.tsx:261`). Rendering it through `renderFrame` would NOT work: that
+    // helper wraps `ink-testing-library`, which resolves with an empty frame instead of rejecting.
+    // That is the HARNESS, not production — a real `render()` prints ink's ERROR panel and exits
+    // (B-031). T3.1 asserts the production path with a real render.
     expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
       TypeError,
     );
     expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
       "UsagePanel: contextWindow must be a finite number > 0 when given",
     );
+  });
+
+  // B-025 T1.4 / ADR D2 — the composite validates what it FORWARDS.
+  //
+  // `src/agent/agent-timeline.tsx:62` established the reasoning: validation belongs at the
+  // composition boundary, so the message names the component the caller actually wrote. This
+  // panel guarded `contextWindow` and stopped there — so a bad `inputTokens` failed from inside
+  // `ContextWindowBar` and a bad `cost` from inside `CostMeter`, both naming a component the
+  // caller never mentioned. Its own ADR D3 argued for this and the argument was not applied.
+  //
+  // Scope is exactly what the panel passes on: inputTokens, outputTokens, and the optional
+  // cacheReadTokens / reasoningTokens / cost. `totalTokens`, `cacheWriteTokens` and `durationMs`
+  // are NOT forwarded and are NOT validated here — guarding a field it does not use would be the
+  // composite claiming authority over data it never touches.
+  it("a_non_finite_input_token_count_is_refused_by_the_panel_itself", () => {
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
+    ).toThrow(TypeError);
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
+    ).toThrow("UsagePanel: usage.inputTokens");
+
+    // T3.2 — the throw is only half the contract. The record is the other half, and until this
+    // existed the suite could not tell `reportGuardFailure(...)` from a plain `throw`.
+    expect(guardRecords.join("")).toContain("UsagePanel: usage.inputTokens");
+  });
+
+  it("a_non_finite_cost_is_refused_by_the_panel_itself", () => {
+    // Measured in the B-025 probe: NaN reaches CostMeter and blanks the whole panel — the
+    // sections that were fine vanish with the one that was not. Validating only inputTokens was
+    // rejected in ADR D2 for exactly this.
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, cost: Number.NaN } }),
+    ).toThrow("UsagePanel: usage.cost");
+  });
+
+  it("a_negative_optional_token_count_is_refused_by_the_panel_itself", () => {
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, cacheReadTokens: -1 } }),
+    ).toThrow("UsagePanel: usage.cacheReadTokens");
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, reasoningTokens: -1 } }),
+    ).toThrow("UsagePanel: usage.reasoningTokens");
+  });
+
+  it("a_non_finite_output_token_count_is_refused_by_the_panel_itself", () => {
+    // `/review` (F-xval-1) found the surviving mutant on the one ADR this slice exists to satisfy:
+    // `outputTokens` was IN `FORWARDED_USAGE_FIELDS` and exercised by no test, so deleting it from
+    // the list killed nothing. It is forwarded (`tokenCategories` -> `TokenUsageChart`), so a NaN
+    // there reproduces the D2 failure mode exactly like `inputTokens` does.
+    expect(() =>
+      UsagePanel({ usage: { ...minimalTurn, outputTokens: Number.NaN } }),
+    ).toThrow("UsagePanel: usage.outputTokens");
+  });
+
+  it("the_error_names_UsagePanel_not_a_child", () => {
+    let message = "";
+    try {
+      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } });
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    expect(message).toContain("UsagePanel");
+    // The whole point of the ADR: not ContextWindowBar, which the caller never wrote.
+    expect(message).not.toContain("ContextWindowBar");
+    // And the offending value, per error-handling.md § 5.
+    expect(message).toContain("NaN");
+  });
+
+  it("a_turn_that_omits_the_optional_fields_still_renders", async () => {
+    // The guard must not turn ABSENT into invalid. `TurnUsage` marks these optional and ADR D2 of
+    // B-001 says absent stays absent; a guard that rejected `undefined` would break every turn an
+    // agent reports without a cache read.
+    const plain = stripAnsi(await renderFrame(<UsagePanel usage={minimalTurn} />));
+    expect(plain).toContain("input");
+  });
+
+  it("a_present_zero_is_a_measurement_and_is_accepted", async () => {
+    // 0 is a reported value, not a missing one. Rejecting it would discard a real measurement.
+    const plain = stripAnsi(
+      await renderFrame(
+        <UsagePanel usage={{ ...minimalTurn, cacheReadTokens: 0, cost: 0 }} />,
+      ),
+    );
+    expect(plain).toContain("cached");
   });
 
   // TA-1 (review) — every sibling meter pins its rendering in __snapshots__; this one pinned only

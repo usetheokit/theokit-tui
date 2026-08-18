@@ -13,16 +13,21 @@ import {
  * WHY THIS FILE EXISTS. Six components shipped in one session, each with tests whose detection
  * power was verified by mutation — and every one of those tests was written by the author of the
  * code, exercising the inputs that author had designed for. Not one asked what happens when the
- * numbers are wrong. A probe with inputs nobody chose found an empty frame on `-1`, `NaN` and
- * `Infinity` across four components in minutes (B-025), and a NaN selection blanking a list
- * (B-026).
+ * numbers are wrong. A probe with inputs nobody chose found — under the test harness — an empty
+ * frame on `-1`, `NaN` and `Infinity` across four components in minutes (B-025), and a NaN
+ * selection blanking a list (B-026). The B-026 blanking is real in production too; the empty
+ * frames were the harness, which is what B-025 v1 got wrong.
  *
  * So the assertions here are INVARIANTS — "this can never be true" — rather than examples. An
  * example test agrees with the implementation by construction; an invariant can disagree with it.
  *
- * Scope is deliberately the PURE surface. Components are covered by their own suites, and the
- * render-time hole is B-025's to close: a throw during a React render becomes an empty frame, so
- * asserting component behaviour here would be asserting React's swallow rather than ours.
+ * Scope is deliberately the PURE surface. Components are covered by their own suites, and asserting
+ * their guards HERE would assert the harness rather than the code: under `renderFrame` /
+ * `ink-testing-library` a render-time throw yields an empty frame, so a `not.toContain` passes
+ * vacuously. That is a property of the harness — measured against a real `render()`, ink's own
+ * `ErrorBoundary` fires and prints a stack (B-031). The sentence here previously said "a throw
+ * during a React render becomes an empty frame" full stop, which is the generalisation that
+ * produced B-025 v1's false premise.
  */
 
 describe("adversarial: windowFor never contradicts its own inputs", () => {

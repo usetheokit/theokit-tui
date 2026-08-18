@@ -2,6 +2,7 @@ import { Text } from "ink";
 import { cleanup, render } from "ink-testing-library";
 import { createElement, useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { waitFor as waitForCondition } from "../../../tests/fixtures/wait-for.js";
 
 import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { createInputSource } from "../input/input-source.js";
@@ -18,8 +19,8 @@ afterEach(cleanup); // unmount each tree so leftover focus arbiters don't cross-
 // component useInput — the exact ordering the composer relies on for ESC-refocus.
 
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
-// A lone ESC is delivered after the InputSource's ~20ms flush delay.
-const tickEsc = (): Promise<void> => new Promise((r) => setTimeout(r, 40));
+// `tickEsc` — a fixed 40 ms past the InputSource's ~20 ms flush delay — was removed by B-033. Its
+// one caller now waits for the CONDITION the assertion checks, so nothing needs to know the number.
 
 /**
  * Poll `lastFrame()` until it contains `substring` (or does not, when
@@ -279,7 +280,11 @@ describe("useFocus / useFocusManager arbiter (M20 T2.1)", () => {
     source.onKey(() => order.push("subscriber"));
     source.onKeyPriority(() => order.push("arbiter"));
     stdin.send("\x1b");
-    await tickEsc(); // lone ESC flushes after the delay
+    // B-033 — was `tickEsc()`, a fixed 40 ms past the InputSource flush delay. The condition is
+    // the assertion below: both handlers have run.
+    await waitForCondition(() => order.length === 2, {
+      describe: "both key handlers to run after the lone ESC flushes",
+    });
     expect(order).toEqual(["arbiter", "subscriber"]);
     source.stop();
   });

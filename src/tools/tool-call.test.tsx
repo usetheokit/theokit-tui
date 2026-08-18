@@ -366,7 +366,16 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
       instance.rerender(<ToolCall name="fetch" status="running" />);
       const cellAfter = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
       expect(cellBefore).toBeDefined();
-      expect(cellAfter).toBe(cellBefore);
+      // B-020 — this asserted `cellAfter === cellBefore`, i.e. that the frame had not CHANGED.
+      // That conflates two things: "the rerender did not reset the interval", which is the
+      // behaviour under test, and "no wall-clock time passed", which is not ours to guarantee.
+      // Under contention the interval legitimately fires between the two reads and the test failed
+      // with `expected '⠴' to be '⠼'` — one frame apart, which is time passing, not a defect.
+      //
+      // The invariant is the line below and always was: a reset would show frame[0]. Adding the
+      // membership check keeps the rest of the coverage — a rerender that broke the spinner
+      // entirely would produce a cell that is not a `dots` frame at all.
+      expect(spinners.dots.frames).toContain(cellAfter);
       expect(cellAfter).not.toBe(spinners.dots.frames[0]);
       instance.unmount();
     },
@@ -568,10 +577,14 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
   });
 
   it("malformed_patch_error_propagates", () => {
-    // EC-1: a malformed patch throws the TYPED error at the CARD boundary
-    // (synchronous — probed: a child render throw is swallowed by ink's
-    // error boundary into a silent empty frame; the card validates the
-    // patch up-front so the failure is loud, per error-handling.md § 2).
+    // EC-1: a malformed patch throws the TYPED error at the CARD boundary, synchronously, so the
+    // card validates the patch up-front and the failure is loud (error-handling.md § 2).
+    //
+    // This comment said a child render throw is swallowed by ink's error boundary "into a silent
+    // empty frame". The empty frame is what `renderFrame` / `ink-testing-library` produces; against
+    // a real `render()` that boundary prints an ERROR panel with a stack and the app exits (B-031).
+    // The probe it cites went through the harness — the same generalisation B-025 v1 made, found
+    // here while sweeping for it (B-025 v2 T1.3).
     const bad = () =>
       ToolCallCard({
         name: "edit",

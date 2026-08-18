@@ -45,3 +45,19 @@ export type { NotifyProtocol, NotifySink } from "./notify.js";
 // then. Owns no thresholds, no classifier and no copy — deciding WHICH level you are at is the
 // caller's policy, and for the measured consumer it lives in another package entirely.
 export { useRisingEdge } from "./use-rising-edge.js";
+
+// B-025 — a fired boundary guard leaves one DURABLE record, then throws. Reporting is additive;
+// the throw contract 37 test files rest on is untouched.
+//
+// This comment claimed the opposite until 2026-08-18, and said "Measured:" while doing so: that no
+// error boundary was in play and the result on screen was a blank region. Measured against a real
+// `render()` with ink@7.1.0, ink's own ErrorBoundary fires and prints a stack to stdout, then the
+// app unmounts and the process exits 0 (B-031). What production lacks is DURABILITY — that panel
+// is transient stdout, erased by the next repaint.
+//
+// It survived the sweep that corrected the other four artifacts because that sweep's criterion was
+// a grep for one PHRASING and this file used another. The lesson is in `guard-sink.ts`; the record
+// of it is here.
+export { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
+
+export type { GuardSink } from "./guard-sink.js";
