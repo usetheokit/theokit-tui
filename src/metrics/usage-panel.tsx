@@ -113,6 +113,7 @@ function assertForwardedUsage(usage: TurnUsage): void {
     if (value === undefined) continue;
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
       reportGuardFailure(
+        "UsagePanel",
         new TypeError(
           `UsagePanel: usage.${field} must be a finite number >= 0 — got ${String(value)}`,
         ),
@@ -145,6 +146,7 @@ export function UsagePanel({
       contextWindow <= 0)
   ) {
     reportGuardFailure(
+      "UsagePanel",
       new TypeError(
         `UsagePanel: contextWindow must be a finite number > 0 when given — got ${String(contextWindow)}`,
       ),

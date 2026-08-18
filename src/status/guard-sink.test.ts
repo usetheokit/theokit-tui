@@ -30,8 +30,9 @@ const ISO_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 function fakeSink() {
   const lines: string[] = [];
   return {
-    write: (s: string): void => {
+    write: (s: string): boolean => {
       lines.push(s);
+      return true;
     },
     lines,
   };
@@ -62,7 +63,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
     // The throw is the contract 37 test files rest on. Reporting is ADDITIVE: it never replaces
     // the throw, and this assertion is what keeps a future "just log it" refactor honest.
     expect(() => {
-      reportGuardFailure(error, sink);
+      reportGuardFailure("UsagePanel", error, sink);
     }).toThrow(error);
 
     expect(sink.lines).toHaveLength(1);
@@ -73,6 +74,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
 
     expect(() => {
       reportGuardFailure(
+        "WindowedList",
         new TypeError("WindowedList: selected must be an integer — got NaN"),
         sink,
       );
@@ -89,7 +91,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
     const sink = fakeSink();
 
     expect(() => {
-      reportGuardFailure(new TypeError("CostMeter: costUsd must be >= 0 — got -1"), sink);
+      reportGuardFailure("UsagePanel", new TypeError("CostMeter: costUsd must be >= 0 — got -1"), sink);
     }).toThrow(TypeError);
 
     const line = onlyLine(sink);
@@ -105,7 +107,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
   it("the_same_guard_firing_twice_writes_twice", () => {
     const sink = fakeSink();
     const fire = (): void => {
-      reportGuardFailure(new TypeError("Toast: variant unknown — got 'purple'"), sink);
+      reportGuardFailure("UsagePanel", new TypeError("Toast: variant unknown — got 'purple'"), sink);
     };
 
     expect(fire).toThrow(TypeError);
@@ -127,7 +129,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
 
     try {
       expect(() => {
-        reportGuardFailure(new TypeError("Notice: variant unknown — got 'x'"), sink);
+        reportGuardFailure("UsagePanel", new TypeError("Notice: variant unknown — got 'x'"), sink);
       }).toThrow(TypeError);
     } finally {
       process.stderr.write = realWrite;
@@ -142,7 +144,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
 
   it("a_sink_that_throws_does_not_replace_the_original_error", () => {
     const broken: GuardSink = {
-      write: (): void => {
+      write: (): boolean => {
         throw new Error("EPIPE: broken pipe");
       },
     };
@@ -152,7 +154,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
     // into an EPIPE nobody can trace back to the real cause. Reporting is best-effort; the guard's
     // own error is not.
     expect(() => {
-      reportGuardFailure(original, broken);
+      reportGuardFailure("ContextWindowBar", original, broken);
     }).toThrow(original);
   });
 });
@@ -191,6 +193,7 @@ describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
       try {
         expect(() => {
           reportGuardFailure(
+        "UsagePanel",
             new TypeError("UsagePanel: contextWindow must be > 0 — got 0"),
             // No sink argument: this is the DEFAULT path, which is the one under test.
           );
@@ -206,7 +209,7 @@ describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
       // And after teardown the line goes to the terminal again — the guard is scoped to the
       // session, not a permanent redirect.
       expect(() => {
-        reportGuardFailure(new TypeError("CostMeter: costUsd must be >= 0 — got -1"));
+        reportGuardFailure("UsagePanel", new TypeError("CostMeter: costUsd must be >= 0 — got -1"));
       }).toThrow(TypeError);
       expect(framed.join("")).toContain("CostMeter: costUsd");
     } finally {
@@ -272,9 +275,41 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
       );
     }).toThrow(TypeError);
 
-    // A reader tailing the log counts records by the prefix. One fire, one prefix.
-    const matches = onlyLine(sink).match(/\[theokit\/tui]/g) ?? [];
-    expect(matches.length).toBe(1);
+    // A RECORD is delimited by a newline, so forgery means producing a second LINE that starts
+    // with the prefix — which is what the measured attack did before the escaping existed.
+    //
+    // This assertion first counted the prefix ANYWHERE in the line and expected 1. It failed at 2,
+    // and the failure was the test's fault, not the code's: the hostile value literally contains
+    // the text `[theokit/tui]`, and with the newline escaped that copy sits MID-record where no
+    // reader parses it as a record start. Corrected to the property that actually matters rather
+    // than to the number that made it green.
+    const line = onlyLine(sink);
+    const starts = line
+      .split(NEWLINE)
+      .filter((part) => part.startsWith("[theokit/tui]"));
+    expect(starts.length).toBe(1);
+    // And the copy carried by the attacker is still THERE, escaped and readable — the diagnostic
+    // content was preserved, not silently dropped.
+    expect(line).toContain("[theokit/tui] CostMeter: costUsd OK");
+  });
+
+  it("test_the_component_field_does_not_duplicate_the_message_prefix", () => {
+    const sink = fakeSink();
+    // Every guard in this package writes `"UsagePanel: <what>"`, a convention older than this
+    // module. Without stripping it the record read `UsagePanel: UsagePanel: ...`. Found by reading
+    // the output of a real run — every unit test here authors its own message, so none of them
+    // reproduced the convention the 21 real call sites follow. That gap is the point.
+    expect(() => {
+      reportGuardFailure(
+        "UsagePanel",
+        new TypeError("UsagePanel: contextWindow must be a finite number > 0 when given — got 0"),
+        sink,
+      );
+    }).toThrow(TypeError);
+
+    const line = onlyLine(sink);
+    expect(line).toContain("UsagePanel: contextWindow must be");
+    expect(line).not.toContain("UsagePanel: UsagePanel:");
   });
 
   it("test_record_carries_an_iso_timestamp", () => {
