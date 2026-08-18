@@ -67,6 +67,19 @@ export interface WaitForOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+
+/**
+ * The suite's one wait budget, exported so a helper that cannot use `waitFor` itself still shares
+ * the number rather than inventing a fourth one.
+ *
+ * B-034 — `chat-composer.test.tsx`'s `typeUntil` RE-SENDS input between attempts, which `waitFor`
+ * does not do, so it cannot simply delegate. It carried its own 2000 ms: the exact number B-033
+ * measured expiring on a correct frame, in the same file where two other copies had already been
+ * replaced.
+ *
+ * @internal
+ */
+export const WAIT_BUDGET_MS = DEFAULT_TIMEOUT_MS;
 const DEFAULT_INTERVAL_MS = 5;
 
 /**

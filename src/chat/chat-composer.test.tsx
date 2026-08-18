@@ -1,6 +1,9 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
-import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
+import {
+  waitFor as waitForCondition,
+  WAIT_BUDGET_MS,
+} from "../../tests/fixtures/wait-for.js";
 
 import {
   ChatComposer,
@@ -787,7 +790,10 @@ const typeUntil = async (
   inst: { stdin: { write: (s: string) => void } },
   input: string,
   landed: () => boolean,
-  timeoutMs = 2000,
+  // B-034 — was 2000 ms, the third copy of that number in this file and the one B-033 did not
+  // reach. It re-sends input between attempts, which `waitFor` does not, so it shares the BUDGET
+  // rather than delegating the loop.
+  timeoutMs = WAIT_BUDGET_MS,
 ) => {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
