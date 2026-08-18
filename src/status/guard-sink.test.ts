@@ -8,16 +8,26 @@ import { installStderrGuard } from "../terminal/stderr-guard.js";
 import type { GuardSink } from "./guard-sink.js";
 import { reportGuardFailure } from "./guard-sink.js";
 
-// B-025 T1.1 — the sink that makes a fired boundary guard observable.
+// B-025 — the sink that leaves a DURABLE record when a boundary guard fires.
 //
-// Measured before this existed: 24 public components throw from a boundary guard, this package
-// ships no error boundary, and Ink's renderer catches nothing — so a guard that fires produces an
-// EMPTY FRAME. No error, no log, nothing on screen. `src/agent/agent-timeline.tsx:189` records the
-// same thing in the package's own words: `renderFrame` of an invalid event RESOLVES.
+// This header stated the opposite of the truth in v1: it claimed the package had no error boundary
+// anywhere in play, that the renderer discarded the throw, and that the result was a blank region
+// with nothing recorded. Measured against a real `render()` with ink@7.1.0: ink ships an
+// `ErrorBoundary` and it fires, printing an `ERROR` panel with a stack to stdout, unmounting the
+// whole app, and exiting 0 (B-031). The false phrasing is deliberately NOT quoted here, so a grep
+// for it stays a reliable guard against it coming back.
 //
-// The property under test is a side effect nobody can see in a frame, which is exactly why it is
-// asserted here before it exists. A test written after the implementation would assert whatever
-// the implementation happened to write.
+// The empty frame is what `renderFrame` / `ink-testing-library` produces — a property of the TEST
+// HARNESS. `src/agent/agent-timeline.tsx:189` says exactly that, about `renderFrame`, and v1
+// generalised it to production without measuring production.
+//
+// What production genuinely lacks is DURABILITY: the panel is transient stdout, erased by the next
+// repaint or lost to scrollback, and `installStderrGuard` does not capture it. That is what this
+// module provides — persistence, not visibility.
+//
+// The property under test is a side effect nobody can see in a frame, which is why it is asserted
+// before it exists. A test written afterwards would assert whatever the implementation happened to
+// write.
 
 /** A raw ESC. Written as a code point so this file carries no control byte of its own. */
 const ESC_CHAR = String.fromCharCode(27);

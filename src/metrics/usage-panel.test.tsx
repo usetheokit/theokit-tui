@@ -104,9 +104,10 @@ describe("UsagePanel", () => {
   // exactOptionalPropertyTypes). The behavioural half needed its own test.
   it("throws_a_typed_error_naming_itself_on_a_non_positive_context_window", () => {
     // Called as a function, which is how this domain tests boundary guards
-    // (`context-window-bar.test.tsx:261`). Rendering it would NOT work: React catches a throw
-    // during render, so `renderFrame` resolves with an empty frame instead of rejecting —
-    // measured, not assumed, and the reason the first draft of this test was wrong.
+    // (`context-window-bar.test.tsx:261`). Rendering it through `renderFrame` would NOT work: that
+    // helper wraps `ink-testing-library`, which resolves with an empty frame instead of rejecting.
+    // That is the HARNESS, not production — a real `render()` prints ink's ERROR panel and exits
+    // (B-031). T3.1 asserts the production path with a real render.
     expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
       TypeError,
     );

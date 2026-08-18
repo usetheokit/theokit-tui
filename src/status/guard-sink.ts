@@ -12,9 +12,11 @@
  * `ERROR` panel to **stdout** carrying the message, the absolute source path, a source excerpt and
  * a reconciler stack. `waitUntilExit()` rejects and the process exits **0**.
  *
- * v1 of this file asserted the opposite — "Ink's renderer catches nothing", "an EMPTY FRAME". That
+ * v1 of this file asserted the opposite: that no error boundary was in play, that the renderer
+ * discarded the throw, and that the result was a blank region with nothing recorded anywhere. That
  * measurement was taken through `renderFrame` / `ink-testing-library`, so it described the TEST
- * HARNESS and not the product. The teardown, the developer-facing panel and the exit-0 are filed
+ * HARNESS and not the product. The false phrasing is deliberately not quoted, so a grep for it
+ * stays a reliable guard against it returning. The teardown, the developer-facing panel and the exit-0 are filed
  * as **B-031**; this module does not address them.
  *
  * ## What this module is for, then

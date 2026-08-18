@@ -7,18 +7,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
-- **`reportGuardFailure` and `GuardSink` in `@theokit/tui` (B-025).** 24 components in this package
-  validate their props and throw a typed `TypeError` before any hook — a deliberate convention, so
-  a test calling a component as a plain function reaches the guard. What was never decided is what
-  a USER sees. React unwinds a render-time throw, Ink's renderer catches nothing, and the package
-  ships no error boundary, so a guard that fires draws an **empty frame**: no error, no log, nothing
-  on screen. In a composite the sections that were fine disappear with the one that was not. A fired
-  guard can now write one line to a sink — `process.stderr` by default, injectable — and then throw.
-  Reporting is additive: the return type is `never`, so the existing throw contract is unchanged.
-  Measured, not assumed: when `installStderrGuard` is installed the line lands in its log file and
-  never touches the frame. This buys observability, not visibility — the empty region is still
-  empty, and an on-screen error surface is tracked separately.
-  (b025-silent-guards-2026-08-18)
+- **`reportGuardFailure` and `GuardSink` in `@theokit/tui` (B-025).** A boundary guard that fires
+  now leaves one **durable** record — `[theokit/tui] <ISO-8601> <Component>: <message>` — on a sink
+  that defaults to `process.stderr` and is injectable. It buys **persistence, not visibility**, and
+  the distinction is the whole point: ink's own `ErrorBoundary` already prints an `ERROR` panel with
+  a stack when a guard throws, but that panel is transient stdout, erased by the next repaint or
+  lost to scrollback, and `installStderrGuard` does not capture it — so an operator debugging an
+  intermittent guard has nothing to read. The record is **sanitised** (the offending value is
+  untrusted by construction: interpolated verbatim it injected control bytes into the terminal and
+  forged a second record via an embedded newline) and carries a **timestamp**, because the blessed
+  destination is a log rotating at 10 MB across 10 generations. Reporting is additive — the return
+  type is `never`, so the existing throw contract is unchanged. What this does NOT fix is filed as
+  **B-031**: one invalid prop still unmounts the whole app, shows the end user a developer stack,
+  and exits 0. (b025-silent-guards-2026-08-18)
 
 ### Changed
 
