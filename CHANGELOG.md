@@ -17,6 +17,22 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.57.0] - 2026-08-18
+
+### Added
+
+- **`selectSurface` — decidir qual superficie e dona da regiao sem desenhar nada (B-007).** Todo
+  agente de terminal tem gate de confirmacao, login, pergunta e composer disputando uma linha, e a
+  resposta e sempre um ternario aninhado dentro do JSX. A ordem E o contrato ali, e nao fica
+  registrada em lugar nenhum: no consumidor medido ela atravessa **sete superficies em dois
+  arquivos**. A justificativa nao e legibilidade — e o que da para testar. No mesmo repo, a
+  precedencia de TECLAS e testada (o pacote ja publicou `routeThroughLayers`) e a de RENDER nao,
+  porque observar quem vence exige MONTAR, e montar arrasta `@theocode/agent/config`, `/ask`,
+  `/auth` e `node:os`. Aqui a selecao e pura: `selected.layer` e uma string que um teste afirma sem
+  montar nada, e `render` e um thunk para que a superficie vencedora so seja construida quando
+  alguem de fato for desenha-la. Nao mora em `@theokit/tui/keys` de proposito — aquele subpath
+  promete ser livre de React. (b007-surface-layers-2026-08-18)
+
 ## [0.56.0] - 2026-08-18
 
 ### Added

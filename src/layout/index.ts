@@ -35,3 +35,11 @@ export { ThinkingBlock } from "./thinking-block.js";
 
 export type { CollapsibleBlockProps } from "./collapsible-block.js";
 export type { ThinkingBlockProps } from "./thinking-block.js";
+
+// B-007 — which surface owns a region, decided without drawing anything. The render twin of
+// `routeThroughLayers` (`@theokit/tui/keys`), which it deliberately does not live beside: that
+// subpath promises to be React-free so a consumer routing keys in a test does not pull in file
+// handles, and this one returns nodes.
+export { selectSurface } from "./surface-layers.js";
+
+export type { SelectedSurface, SurfaceLayer } from "./surface-layers.js";
