@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { SelectList } from "./select-list.js";
-import type { GuardSink } from "../status/guard-sink.js";
 import type { SelectListItem } from "./select-list-model.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 
@@ -244,6 +243,5 @@ describe("the SelectList guard leaves a record (B-021 review)", () => {
 
     // The throw is half the contract; the durable record is the half ADR D1 rests on.
     expect(records.join("")).toContain("SelectList: window");
-    void ({} as GuardSink);
   });
 });

@@ -19,9 +19,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   actually used.
 
   **What that means concretely, measured under `ink@7.1.0` rather than described as "throws":** a
-  throw from a component's render tears the whole app down, `render()` returns normally so the
-  consumer cannot catch it, a developer stack with absolute paths prints to stdout, and the process
-  exits **0**. That is the package idiom across 21 guarded components and it is worse than the
+  throw from a component's render tears the whole app down, a developer stack with absolute paths
+  prints to stdout, and the process exits **0**. `render()` itself returns normally — but
+  `waitUntilExit()` REJECTS with the guard's own error, so a consumer awaiting it does receive it.
+  An earlier draft of this paragraph said the consumer "cannot catch it", which this package's own
+  probe (`guard-sink.integration.test.tsx`) and `error-handling.md` § 3.1 both contradict. That is the package idiom across 21 guarded components and it is worse than the
   wording "throws a typed error" suggests, so it is stated plainly here rather than discovered. **Refused rather than clamped**, because the
   counts exist precisely to stop information being destroyed (U-10) and clamping would destroy the
   caller's mistake instead. Blast radius measured before shipping: the only known consumer renders
