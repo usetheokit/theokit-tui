@@ -84,3 +84,10 @@ export type {
   UIMessageLike,
   UIMessagePartLike,
 } from "./messages-to-events.js";
+
+// B-009 — recompute a derivation at most once per window, with a trailing update so the last
+// change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
+// complete and tested and reachable by nobody until this slice exported it.
+export { useCoalesced } from "./use-coalesced.js";
+
+export type { UseCoalescedOptions } from "./use-coalesced.js";

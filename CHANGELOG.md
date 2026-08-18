@@ -17,6 +17,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.58.0] - 2026-08-18
+
+### Added
+
+- **`useCoalesced` e o `createFrameBudget` que ninguem alcancava (B-009).** A premissa do item
+  estava errada, e a verdade e um achado melhor: o orcamento de frame nao faltava.
+  `src/renderer/frame-budget.ts` estava completo, coberto por nove testes, e tratava um salto de
+  relogio para tras **melhor** que a copia do consumidor — considera a ancora obsoleta em vez de
+  clampar, porque clampar perpetua o congelamento pelo tamanho do salto em vez de limita-lo a um
+  frame. Ele so era **inalcancavel**: fora de todo barrel, importado por nada alem do proprio
+  teste. E `npx knip` sem config — como o `/code-quality` o roda — dizia que a arvore estava limpa,
+  porque um import de teste parece uso. O codigo morto nao passou por desatencao: o gate foi
+  perguntado e respondeu que estava tudo bem. Agora ele e exportado, e o hook novo e construido
+  **sobre** ele. O update final e obrigatorio, nao otimizacao: sem ele a ultima mudanca da janela
+  nunca renderiza — o token final de um stream — e tudo parece certo ate o stream parar. Modo
+  leitor de tela zera a janela: coalescer descarta estados intermediarios, que e exatamente o que
+  um leitor de tela precisa anunciar. (b009-frame-budget-hook-2026-08-18)
+
 ## [0.57.0] - 2026-08-18
 
 ### Added
