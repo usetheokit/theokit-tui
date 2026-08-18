@@ -7,7 +7,28 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **`reportGuardFailure` and `GuardSink` in `@theokit/tui` (B-025).** 24 components in this package
+  validate their props and throw a typed `TypeError` before any hook — a deliberate convention, so
+  a test calling a component as a plain function reaches the guard. What was never decided is what
+  a USER sees. React unwinds a render-time throw, Ink's renderer catches nothing, and the package
+  ships no error boundary, so a guard that fires draws an **empty frame**: no error, no log, nothing
+  on screen. In a composite the sections that were fine disappear with the one that was not. A fired
+  guard can now write one line to a sink — `process.stderr` by default, injectable — and then throw.
+  Reporting is additive: the return type is `never`, so the existing throw contract is unchanged.
+  Measured, not assumed: when `installStderrGuard` is installed the line lands in its log file and
+  never touches the frame. This buys observability, not visibility — the empty region is still
+  empty, and an on-screen error surface is tracked separately.
+  (b025-silent-guards-2026-08-18)
+
 ### Changed
+
+- **`UsagePanel` now validates every `usage` field it forwards (B-025).** It guarded `contextWindow`
+  and stopped there, so a non-finite `inputTokens` failed from inside `ContextWindowBar` and a bad
+  `cost` from inside `CostMeter` — both naming a component the caller never wrote. `inputTokens`,
+  `outputTokens` and the optional `cacheReadTokens` / `reasoningTokens` / `cost` are now refused at
+  the panel's own boundary with an error that names `UsagePanel`. Absent optional fields still pass
+  and a present `0` is still accepted: absent stays absent, and `0` is a measurement the agent
+  reported. No rendering changed. (b025-silent-guards-2026-08-18)
 
 ### Deprecated
 

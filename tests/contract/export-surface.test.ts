@@ -62,6 +62,15 @@ describe("public entry surface (T0.2)", () => {
     expect(term.CLEAR_SCREEN_AND_SCROLLBACK).toContain("\u001B[3J");
   });
 
+  it("public_entry_exposes_the_guard_sink", async () => {
+    const mod = await import("../../src/index.js");
+    // B-025 — a fired boundary guard produced an EMPTY FRAME across 24 components: React unwinds
+    // the throw, Ink catches nothing, and nothing is written anywhere. This is the surface that
+    // makes it observable, so it is pinned here: an unexported sink is a sink no consumer can
+    // install, and unreachability is the defect this file exists to catch (see the B-009 note).
+    expect(typeof mod.reportGuardFailure).toBe("function");
+  });
+
   it("public_entry_exposes_the_rising_edge_hook", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.useRisingEdge).toBe("function");
