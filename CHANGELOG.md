@@ -17,6 +17,23 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.59.0] - 2026-08-18
+
+### Added
+
+- **`useRisingEdge` — dizer quando piora, e so entao (B-011).** O pacote ja publicava os CANAIS
+  para avisar o usuario — `Toast`, `Notice`, `notify` — e nenhum deles impunha QUANDO: `notify`
+  escreve um bell a cada chamada, e o `Toast` disciplina a dispensa, nao o disparo. Entao a regra
+  era reescrita a mao em cada consumidor, e a medicao mostrou que duas das oito linhas falham em
+  SILENCIO: ler o nivel anterior depois de sobrescreve-lo faz os dois serem sempre iguais e o aviso
+  nunca dispara; e o booleano de escalada precisa de uma clausula por par ascendente — esquecer uma
+  faz o aviso URGENTE nunca chegar enquanto o primeiro ainda chega, ou seja, o usuario foi avisado
+  uma vez e acredita que esta sendo avisado. Ambas produzem "o aviso nao aparece", que e invisivel
+  porque ausencia de aviso parece ausencia de problema. O hook nao carrega limiar, classificador
+  nem texto: decidir em QUE nivel voce esta e politica de quem chama. Nivel fora da ordem lanca
+  erro tipado, validado no corpo do render — porque um throw dentro de efeito o React nao entrega
+  como rejeicao, e o teste passaria vazio. (b011-rising-edge-2026-08-18)
+
 ## [0.58.0] - 2026-08-18
 
 ### Added

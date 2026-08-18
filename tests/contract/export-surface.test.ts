@@ -56,6 +56,11 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.WindowedList).toBe("function");
   });
 
+  it("public_entry_exposes_the_rising_edge_hook", async () => {
+    const mod = await import("../../src/index.js");
+    expect(typeof mod.useRisingEdge).toBe("function");
+  });
+
   it("public_entry_exposes_coalescing_and_the_frame_budget", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.useCoalesced).toBe("function");
