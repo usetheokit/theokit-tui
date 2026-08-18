@@ -209,7 +209,14 @@ export function SelectList({
   return (
     <Box flexDirection="column" {...margin}>
       <Text dimColor>filter: {filter || "…"}</Text>
-      {view.overflowUp && <Text dimColor>▲</Text>}
+      {/* B-022 — the COUNT, not a bare arrow. `WindowedList` renders the identical model this way,
+          and U-10 replaced the booleans with counts precisely because a boolean cannot be turned
+          back into a number. This view had been consuming `overflowUp` — derived FROM the
+          `hiddenBefore` sitting unused beside it. In a filtered menu the count is worth more than
+          in a scrubber: it changes as the user types, which is how they learn narrowing works. */}
+      {view.hiddenBefore > 0 ? (
+        <Text dimColor>▲ {view.hiddenBefore}</Text>
+      ) : null}
       {/* Only the item rows are gapped — the filter / overflow / counter chrome
           stays flush against the list (issue #50). */}
       <Box flexDirection="column" gap={gap}>
@@ -223,7 +230,9 @@ export function SelectList({
           />
         ))}
       </Box>
-      {view.overflowDown && <Text dimColor>▼</Text>}
+      {view.hiddenAfter > 0 ? (
+        <Text dimColor>▼ {view.hiddenAfter}</Text>
+      ) : null}
       <Text dimColor>{counter}</Text>
     </Box>
   );

@@ -9,6 +9,9 @@ import { TheoTUIProvider, themes } from "../theme/theme.js";
 // M22 T1.1 — the SelectList component driven through the itl-adapter (OUR
 // renderer + InputSource + FocusProvider). Deterministic keyboard oracle.
 
+const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+const stripAnsi = (s: string): string => s.replace(ANSI_RE, "");
+
 const items: SelectListItem[] = [
   { value: "apple", label: "apple", description: "a fruit" },
   { value: "apricot", label: "apricot", description: "" },
@@ -307,5 +310,46 @@ describe("SelectList hidden-row counts (B-022)", () => {
 
     // "item-1" matches item-1, item-10 and item-11 — three matches, none hidden.
     expect(filtered).not.toContain("▼ 8");
+  });
+});
+
+// B-022 D2 — the snapshot the item asked for, which did not exist.
+//
+// The item's DoD says "the snapshot for `SelectList` is updated in the same commit, so the visual
+// change is a reviewable diff". There was no snapshot: `src/prompts/__snapshots__` held only
+// `windowed-list.test.tsx.snap`, and `git log --all` shows one for this component never existed.
+// The plan repeated the assumption without checking it.
+//
+// So this CANNOT show the B-022 change — a snapshot created now has nothing to diff against. It is
+// added anyway, following the sibling's idiom, so the NEXT change to this component is reviewable
+// the way the item wanted this one to be. Saying that plainly is better than presenting a new file
+// as though it demonstrated a diff.
+describe("SelectList layout (B-022 D2)", () => {
+  const many = Array.from({ length: 12 }, (_, i) => ({
+    value: `item-${String(i)}`,
+    label: `item-${String(i)}`,
+  }));
+
+  it("windowed_menu_layout", async () => {
+    const app = render(
+      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
+    );
+    await app.flush();
+    const frame = app.lastFrame() ?? "";
+    app.unmount();
+
+    expect(stripAnsi(frame)).toMatchSnapshot("select-list-windowed");
+  });
+
+  it("short_menu_layout", async () => {
+    const app = render(
+      createElement(SelectList, { items: many.slice(0, 3), onSubmit: () => {} }),
+    );
+    await app.flush();
+    const frame = app.lastFrame() ?? "";
+    app.unmount();
+
+    // The no-overflow case, so the diff between the two snapshots IS the chrome this item changed.
+    expect(stripAnsi(frame)).toMatchSnapshot("select-list-short");
   });
 });
