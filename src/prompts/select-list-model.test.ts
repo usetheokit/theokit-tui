@@ -252,3 +252,92 @@ describe("windowFor — centred anchor", () => {
     }
   });
 });
+
+// B-021 — the counts must PARTITION the list they describe.
+//
+// `select-list-model.ts:77-80` records why the counts exist at all: U-10 replaced two booleans with
+// numbers *because a boolean cannot be turned back into a number*. That makes a wrong count strictly
+// worse than the `overflowUp` / `overflowDown` it replaced — a caller rendering `▲ 11` now states a
+// falsehood it previously could not have stated.
+//
+// Measured before this existed, with the real signature `(count, selectionIndex, window, anchor)`:
+//
+//   window = 0    count=20 sel=10  ->  start=11  before=11  after=9    visible=0
+//   window = -1   count=20 sel=10  ->  start=11  before=11  after=10   visible=0   SUM=21
+//   window = 2.5  count=20 sel=10  ->  start=10  before=10  after=7.5  visible=2.5
+//
+// Three different wrongs: a window whose start sits PAST its own selection so nothing renders while
+// both arrows claim rows; counts summing to 21 in a list of 20; and seven and a half hidden rows.
+//
+// These assert the RULE over the function's whole bounded domain, not the three inputs above. Three
+// example tests would pass for exactly the cases I thought of — the defect class review found four
+// times over in B-025, including inside the commits that were fixing it.
+
+const SWEEP_COUNTS = [0, 1, 2, 5, 20] as const;
+const VALID_WINDOWS = [1, 2, 5, 10, 25] as const;
+const INVALID_WINDOWS = [0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY] as const;
+
+describe("windowFor invariants (B-021)", () => {
+  it("test_the_counts_partition_the_list", () => {
+    for (const count of SWEEP_COUNTS) {
+      for (const window of VALID_WINDOWS) {
+        for (const selectionIndex of [-1, 0, 1, Math.floor(count / 2), count - 1, count]) {
+          for (const anchor of ["centred", "trailing"] as const) {
+            const view = windowFor(count, selectionIndex, window, anchor);
+            const visible = Math.max(
+              Math.min(window, count - view.windowStart),
+              0,
+            );
+            expect(
+              view.hiddenBefore + visible + view.hiddenAfter,
+              `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)} anchor=${anchor}`,
+            ).toBe(count);
+          }
+        }
+      }
+    }
+  });
+
+  it("test_the_selection_is_always_inside_its_window", () => {
+    for (const count of SWEEP_COUNTS) {
+      if (count === 0) continue; // the all-zero early return is a legitimate distinct state
+      for (const window of VALID_WINDOWS) {
+        for (const selectionIndex of [-1, 0, Math.floor(count / 2), count - 1, count]) {
+          const view = windowFor(count, selectionIndex, window, "centred");
+          const label = `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)}`;
+          expect(view.clampedIndex, label).toBeGreaterThanOrEqual(view.windowStart);
+          expect(view.clampedIndex, label).toBeLessThan(view.windowStart + window);
+        }
+      }
+    }
+  });
+
+  it("test_an_empty_list_keeps_its_all_zero_view", () => {
+    // Not swept into the guard: zero rows is a legitimate state with a legitimate rendering, and
+    // conflating it with "you passed a bad window" is what ADR D1 rejects.
+    const view = windowFor(0, 0, 10, "centred");
+    expect(view.windowStart).toBe(0);
+    expect(view.hiddenBefore).toBe(0);
+    expect(view.hiddenAfter).toBe(0);
+  });
+
+  it("test_a_window_larger_than_the_list_shows_everything", () => {
+    const view = windowFor(5, 2, 10, "centred");
+    expect(view.windowStart).toBe(0);
+    expect(view.hiddenBefore).toBe(0);
+    expect(view.hiddenAfter).toBe(0);
+  });
+
+  it("test_a_window_that_cannot_be_described_is_refused", () => {
+    for (const window of INVALID_WINDOWS) {
+      const refuse = () => windowFor(20, 10, window, "centred");
+      expect(refuse, `window=${String(window)}`).toThrow(TypeError);
+    }
+  });
+
+  it("test_a_negative_window_names_the_offending_value", () => {
+    const refuse = () => windowFor(20, 10, -1, "centred");
+    expect(refuse).toThrow(TypeError);
+    expect(refuse).toThrow("-1");
+  });
+});
