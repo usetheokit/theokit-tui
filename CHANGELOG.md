@@ -7,6 +7,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **`UsagePanel` — os tres medidores de uso em um bloco (B-001).** `ContextWindowBar`,
+  `TokenUsageChart` e `CostMeter` ja existiam separados e nada os compunha, entao todo consumidor de
+  `readTurnUsage` escrevia a mesma projecao de `TurnUsage` para `TokenCategory` na mao — 13 linhas
+  medidas em um consumidor real. As duas pontas dessa projecao sao deste pacote, entao uma mudanca
+  em qualquer uma quebrava cada copia em silencio. A ordem vertical e um prop com default, nao um
+  layout fixo: a medicao apontou a ordenacao como a UNICA parte da composicao que e decisao de
+  produto. `contextWindow` e opcional porque `TurnUsage` nao carrega o tamanho da janela — sem ele a
+  barra mostra a contagem absoluta em vez de inventar uma porcentagem; um numero nao-positivo
+  explicito continua sendo erro de programacao e falha alto, nomeando o proprio componente.
+  (b001-usage-panel-2026-08-18)
+
 - **Varredura de review sobre o TheoCode — 3 achados registrados (B-015..B-017).** Primeira medicao
   sob o dominio `theocode-app` alargado. Os quatro gates do repo passam a mao em HEAD (typecheck,
   534 testes, knip, depcruise) e o achado esta no que ninguem roda: **`.github` nao existe e nunca

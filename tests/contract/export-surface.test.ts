@@ -187,6 +187,10 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ContextWindowBar).toBe("function");
     expect(typeof mod.TokenUsageChart).toBe("function");
     expect(typeof mod.CostMeter).toBe("function");
+    // B-001 — the composed form. `USAGE_PANEL_SECTIONS` ships too: it is the default `order`,
+    // so a caller reordering sections needs the vocabulary the panel validates against.
+    expect(typeof mod.UsagePanel).toBe("function");
+    expect(mod.USAGE_PANEL_SECTIONS).toEqual(["context", "tokens", "cost"]);
     // Module-internal by plan decision (M5 ADR D7 — pure cores stay off the
     // entry; a future public formatter export is one line + this pin):
     expect(mod).not.toHaveProperty("renderFillBar");
