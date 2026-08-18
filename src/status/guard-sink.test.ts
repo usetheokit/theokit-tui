@@ -245,6 +245,29 @@ describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
 const HOSTILE_VALUE =
   "12" + NEWLINE + "[theokit/tui] CostMeter: costUsd OK" + ESC_CHAR + "[2J" + ESC_CHAR + "[H";
 
+/**
+ * Every code point that terminates a LINE for some reader, plus the 8-bit escape introducers.
+ *
+ * `HOSTILE_VALUE` above carries only ESC and LF — both C0, both already handled by
+ * `JSON.stringify`. So the C1/DEL/separator escaping added later was pinned by NOTHING: reverting
+ * it left 130 tests green. Found by review (F-tests-13 / F-dom-5), and it is the defect class the
+ * commit that introduced it was written to close.
+ *
+ * U+0085, U+2028 and U+2029 matter because a reader that splits Unicode-aware — Python's
+ * `splitlines()` does — sees a second well-formed `[theokit/tui]` record. U+009B and U+009D are
+ * the 8-bit CSI and OSC introducers.
+ */
+const LINE_BREAKERS: readonly string[] = [
+  String.fromCharCode(0x0b), // VT
+  String.fromCharCode(0x0c), // FF
+  String.fromCharCode(0x85), // NEL
+  String.fromCharCode(0x7f), // DEL
+  String.fromCharCode(0x9b), // CSI, 8-bit
+  String.fromCharCode(0x9d), // OSC, 8-bit
+  "\u2028", // LINE SEPARATOR
+  "\u2029", // PARAGRAPH SEPARATOR
+];
+
 describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
   it("test_record_escapes_control_characters", () => {
     const sink = fakeSink();
@@ -432,4 +455,75 @@ describe("a lost record is counted (B-025 v2 T2.1)", () => {
     const second = lostGuardRecords();
     expect(first).toBe(second);
   });
+});
+
+// B-025 — the escaping the review found unpinned (F-tests-13, F-dom-5).
+//
+// These assert the PROPERTY, not the character list: for every code point some reader treats as a
+// line break, one fired guard still yields exactly one record. Asserting the class rather than the
+// implementation is what makes the test survive a change of technique.
+describe("the record survives every line-breaking code point (B-025)", () => {
+  for (const breaker of LINE_BREAKERS) {
+    const code = `U+${breaker.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
+
+    it(`test_no_second_record_can_be_forged_with_${code}`, () => {
+      const sink = fakeSink();
+      const hostile = `12${breaker}[theokit/tui] CostMeter: costUsd OK`;
+
+      expect(() => {
+        reportGuardFailure(
+          "UsagePanel",
+          new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${hostile}`),
+          sink,
+        );
+      }).toThrow(TypeError);
+
+      const line = onlyLine(sink);
+      // The raw byte must not reach the sink at all...
+      expect(line.includes(breaker)).toBe(false);
+      // ...and no reader, however it splits, finds a second record start.
+      // Built from code points rather than written as a literal: the class deliberately contains
+      // control characters, and a source file carrying them raw is what `no-control-regex` exists
+      // to stop — the same hazard the code under test is about.
+      const anyLineBreak = new RegExp(
+        `[${LINE_BREAKERS.concat(NEWLINE).map((c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`).join("")}]`,
+      );
+      const starts = line
+        .split(anyLineBreak)
+        .filter((part) => part.startsWith("[theokit/tui]"));
+      expect(starts.length).toBe(1);
+    });
+  }
+});
+
+// B-025 — the `error` validation the review found unpinned (F-tests-13).
+//
+// `reportGuardFailure` reads `error.message`. Before this was validated, a malformed `error` threw
+// from OUTSIDE the guarded region: no record, no loss counted, and the guard's own diagnostic
+// replaced by a TypeError about the reporter.
+describe("a malformed error argument is refused (B-025)", () => {
+  const malformed: readonly [string, unknown][] = [
+    ["undefined", undefined],
+    ["a bare string", "not an error"],
+    ["a plain object", { message: "looks like one" }],
+    ["null", null],
+  ];
+
+  for (const [label, value] of malformed) {
+    it(`test_${label.replace(/\s+/g, "_")}_is_refused_by_the_reporter`, () => {
+      const sink = fakeSink();
+      let caught: unknown;
+      try {
+        reportGuardFailure("UsagePanel", value as Error, sink);
+      } catch (err) {
+        caught = err;
+      }
+
+      expect(caught).toBeInstanceOf(TypeError);
+      expect((caught as Error).message).toContain("reportGuardFailure: error must be an Error");
+      // And nothing was written — a malformed call must not emit a record naming a value it could
+      // not read.
+      expect(sink.lines).toHaveLength(0);
+    });
+  }
 });

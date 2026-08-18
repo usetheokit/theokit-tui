@@ -93,7 +93,7 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
     expect(records.join("")).toContain("UsagePanel: usage.cost");
   });
 
-  it("test_record_count_under_real_render", () => {
+  it("test_usage_panel_record_count_under_real_render", () => {
     const { sink, records } = collectingSink();
     const realStderrWrite = process.stderr.write;
     process.stderr.write = ((s: unknown): boolean => sink.write(String(s))) as typeof process.stderr.write;
@@ -108,7 +108,7 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
     // MEASURED, not chosen. The number below was read from a first run and then pinned; if a React
     // or ink upgrade changes it, this test is the thing that says so, and `guard-sink.ts` states
     // the same number.
-    expect(records.length).toBe(RECORDS_PER_FIRE);
+    expect(records.length).toBe(USAGE_PANEL_RECORDS_PER_FIRE);
   });
 });
 
@@ -121,7 +121,7 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
  * It is pinned as a property of `UsagePanel`, NOT of the sink. Review v2 measured that a throw
  * inside an `if` yields 2, an unconditional throw yields 3, and ink's public `concurrent: true`
  * root yields 0 at `render()` return. Naming this constant `RECORDS_PER_FIRE` invited the wider
- * reading, and B-028 plans ~20 more adopters that would each need their own number.
+ * reading, so it now carries the component in its name, and B-028 plans ~20 more adopters that would each need their own number.
  *
  * This number is why `guard-sink.ts` no longer says the absence of deduplication lets an operator
  * count fires: two records for one fire means the count is a renderer implementation detail, not a
@@ -131,4 +131,4 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
  * Pinned rather than asserted loosely (`>= 1`) so that a React or ink upgrade changing it is
  * reported by this test instead of silently changing what the docblock claims.
  */
-const RECORDS_PER_FIRE = 2;
+const USAGE_PANEL_RECORDS_PER_FIRE = 2;

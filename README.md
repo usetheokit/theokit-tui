@@ -195,8 +195,10 @@ Two limits worth knowing:
 
 - The sink is a per-call parameter, so there is no global `setGuardSink` today. `installStderrGuard`
   is the lever. If you need a finer one, open an issue — it has not been asked for yet.
-- One logical guard failure produces **two** records, because React re-invokes a component whose
-  render threw. The count is a renderer detail, not a count of failures.
+- One logical guard failure can produce MORE THAN ONE record, because React re-invokes a component
+  whose render threw. How many depends on the component's own shape and on the renderer mode —
+  measured 2 for a conditional guard, 3 for an unconditional one, and 0 at `render()` return under
+  ink's `concurrent: true` root. The count is a renderer detail, not a count of failures.
 
 ## Development
 

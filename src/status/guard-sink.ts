@@ -3,7 +3,7 @@
  *
  * ## What production actually does (measured, and NOT what v1 of this module claimed)
  *
- * 24 public components in this package validate their props and throw a typed `TypeError` before
+ * 21 public components in this package validate their props and throw a typed `TypeError` before
  * any hook (the F10 idiom, so a test calling the component as a plain function reaches the guard).
  *
  * Measured 2026-08-18 against `ink@7.1.0` + `react@19.2.7` with a real `render()`: a throw from a

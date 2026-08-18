@@ -811,9 +811,20 @@ const typeUntil = async (
  * Two copies of the same idiom with the same unmeasured 2000ms bound existed in this one file. That
  * is what a per-file idiom becomes, and it is why the bound now lives in `tests/fixtures/wait-for`.
  */
-const waitFor = async (predicate: () => boolean, timeoutMs?: number) => {
+/**
+ * `describe` is REQUIRED here for the same reason the shared helper requires it, and this wrapper
+ * defeated that requirement by supplying a constant: review measured a plausible off-by-one in
+ * `chat-composer.tsx` failing as a 10.1 s timeout saying "a condition in chat-composer.test.tsx",
+ * where the pre-B-033 local loop failed in 2.1 s saying `expected 'h' to be 'hi'`. A mandatory
+ * field satisfied by a placeholder is an optional field with extra steps.
+ */
+const waitFor = async (
+  predicate: () => boolean,
+  describe: string,
+  timeoutMs?: number,
+) => {
   await waitForCondition(predicate, {
-    describe: "a condition in chat-composer.test.tsx",
+    describe,
     ...(timeoutMs === undefined ? {} : { timeoutMs }),
   });
 };
@@ -836,7 +847,10 @@ describe("ChatComposer onChange", () => {
     await tickOnchange();
     inst.stdin.write("hi");
     // The last onChange reflects the typed text.
-    await waitFor(() => onChange.mock.calls.at(-1)?.[0] === "hi");
+    await waitFor(
+      () => onChange.mock.calls.at(-1)?.[0] === "hi",
+      `onChange to report "hi" — last saw ${String(onChange.mock.calls.at(-1)?.[0])}`,
+    );
     const calls = onChange.mock.calls.map((c) => c[0]);
     expect(calls.at(-1)).toBe("hi");
     inst.unmount();
@@ -856,7 +870,10 @@ describe("ChatComposer onChange", () => {
         />
       </TheoTUIProvider>,
     );
-    await waitFor(() => onChange.mock.calls.length > 0);
+    await waitFor(
+      () => onChange.mock.calls.length > 0,
+      "onChange to fire at least once",
+    );
     // (a) the seeded draft appears in the frame…
     expect(inst.lastFrame()).toContain("draft");
     // (b) …and onChange fired after mount with the initial text.
@@ -889,7 +906,10 @@ describe("issue #59 item 3 — an unstable onChange identity does not re-fire", 
       </TheoTUIProvider>
     );
     const inst = render(tree());
-    await waitFor(() => spy.mock.calls.length > 0);
+    await waitFor(
+      () => spy.mock.calls.length > 0,
+      "the submit spy to be called",
+    );
     await tickOnchange();
     const antes = spy.mock.calls.length;
 
