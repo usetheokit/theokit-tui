@@ -51,6 +51,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- **Frame assertions no longer depend on how loaded the machine is (B-020).** `renderFrame`, the
+  single determinism point 35 test files go through, awaited `setTimeout(resolve, 0)` and then read
+  the frame — which only works if that tick lands before an animation's first interval. It does not:
+  `setTimeout(0)` fires when the event loop reaches it, and a descheduled worker lets the animation
+  advance first. Measured: `npm test` at default workers failed 3 files under load 13-24 and a
+  different single file on another run, while `--maxWorkers=2` on an idle machine passed 145/1564,
+  every failing file passing in isolation. The helper now renders under frozen time, so no interval
+  can fire between render and read. Internal to the test suite — no published behaviour changed.
+  (b020-deterministic-frames-2026-08-18)
+
 ### Security
 
 ## [0.60.1] - 2026-08-18
