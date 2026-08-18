@@ -49,6 +49,6 @@ export { useRisingEdge } from "./use-rising-edge.js";
 // B-025 — a fired boundary guard writes one line outside the frame, then throws. Measured: 24
 // components guard their props, nothing catches the throw, and the result on screen is an EMPTY
 // FRAME. Reporting is additive; the throw contract is untouched.
-export { reportGuardFailure } from "./guard-sink.js";
+export { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
 
 export type { GuardSink } from "./guard-sink.js";

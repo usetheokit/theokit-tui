@@ -65,6 +65,27 @@ export interface GuardSink {
   write(data: string): boolean;
 }
 
+/**
+ * Diagnostics this process failed to record.
+ *
+ * A module-level integer and a reader — not an event emitter, not an observer registry (parsimony
+ * rung 5). Nobody has asked to subscribe; a consumer that wants to report the number reads it at
+ * teardown, which is what `installStderrGuard` does with its own lost-write count.
+ */
+let lostRecords = 0;
+
+/**
+ * How many guard records this process failed to write.
+ *
+ * Monotonic, and reading does NOT reset it: a counter that reset on read would make "how many
+ * diagnostics did we lose this session" unanswerable by a second reader.
+ *
+ * @public
+ */
+export function lostGuardRecords(): number {
+  return lostRecords;
+}
+
 /** ISO-8601 to the second. Milliseconds add noise a human tailing a log does not read. */
 function stamp(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -123,14 +144,18 @@ export function reportGuardFailure(
   }
   const record = `[theokit/tui] ${stamp()} ${sanitize(component)}: ${sanitize(withoutComponentPrefix(component, error.message))}\n`;
   try {
-    sink.write(record);
+    // `false` is not an error — it is how `process.stderr` and this package's own
+    // `installStderrGuard` (`src/terminal/stderr-guard.ts:82`) report a write that was lost. Typing
+    // it away is what made a dead sink silent.
+    if (!sink.write(record)) {
+      lostRecords += 1;
+    }
   } catch {
-    // Best-effort: re-throwing here would replace a diagnosable guard error with an EPIPE nobody
-    // can trace back to the real cause.
-    //
-    // This is still a swallow, and it is the defect T2.1/T2.2 fix — a `false` return is discarded
-    // too. Left as-is deliberately so T2.1's RED tests fail against it rather than against code
-    // written to pass them.
+    lostRecords += 1;
+    // NOT the swallow `.claude/rules/error-handling.md` § 5 forbids: the loss is counted rather
+    // than discarded, and re-throwing here would replace a diagnosable guard error with an EPIPE
+    // nobody can trace back to the real cause. The caller still receives the guard's own error on
+    // the line below.
   }
   throw error;
 }
