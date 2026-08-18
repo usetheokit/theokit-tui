@@ -230,9 +230,7 @@ export function SelectList({
           />
         ))}
       </Box>
-      {view.hiddenAfter > 0 ? (
-        <Text dimColor>▼ {view.hiddenAfter}</Text>
-      ) : null}
+      {view.hiddenAfter > 0 ? <Text dimColor>▼ {view.hiddenAfter}</Text> : null}
       <Text dimColor>{counter}</Text>
     </Box>
   );

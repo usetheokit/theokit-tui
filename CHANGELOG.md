@@ -18,15 +18,28 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   counts replaced the booleans in the model in the first place — this view had kept
   discarding them.
 
+  A third view — the slash / mention menu inside `ChatComposer` — still renders bare arrows.
+  It is not part of this change: its `SlashMenu` type hand-re-declares the window contract
+  instead of extending `WindowView`, so the counts arrive at runtime but are absent from the
+  type. Registered as a followup rather than silently included, so that "both components
+  consume the same view object" above is not read as "every arrow in the package now carries
+  a count".
+
   **Blast radius, measured:** `grep -rn "SelectList" modelo/TheoCode/` → **6 hits, 0
   affected**. The single render passes 4 items and no `window`, against a default of 5, so
   nothing is hidden and no arrow is drawn either before or after this change.
 
-  **Width cost, measured:** the widest frame line is unchanged (11 bytes before and after,
-  `awk '{ print length }' | sort -rn | head -1`). The count lands on the arrow row, which is
-  the shortest row in the frame — it grows from 1 to 3 bytes and stays far below the label
-  and counter rows. A menu whose labels are shorter than `▼ 999` would widen; none in this
-  repo or its consumer are.
+  **Width cost:** none, and the guarantee is structural rather than a measurement of one case.
+  The count lands on the arrow row, and the counter row (`(7/12)`) is always wider than the
+  arrow row for every list size — so the arrow row can never be the widest line in the frame,
+  at any count. Review measured this from 10 to 100,000 items with one-character labels: the
+  arrow row grows from 3 to 7 columns while the widest line goes 9 → 10, never the arrow.
+
+  The first version of this entry claimed the weaker thing and claimed it wrongly: it said the
+  row "grows from 1 to 3 bytes" using `awk '{ print length }'`, which counts bytes, where `▼`
+  is 3 bytes and `▼ 8` is 5 — so 1 → 3 was a column count wearing a byte label. It also gave
+  a false reason ("a menu whose labels are shorter than `▼ 999` would widen"). Corrected here
+  rather than quietly dropped, because the wrong version shipped in this section.
 
 ### Deprecated
 

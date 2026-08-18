@@ -72,8 +72,10 @@ describe("WindowedList", () => {
     const plain = stripAnsi(
       await renderFrame(<WindowedList rows={rows(50)} selected={25} window={3} />),
     );
-    // The defect this component exists to avoid: `SelectList` renders a bare `▲` and throws the
-    // count away (src/prompts/select-list.tsx:192). A digit must be present next to each marker.
+    // The defect this component exists to avoid. `SelectList` used to render a bare `▲` and throw
+    // the count away; since B-022 (0.63.0) it renders the counts too, and the citation that used to
+    // sit here — `select-list.tsx:192` — no longer holds that code. The assertion is unchanged and
+    // still the right one: a digit must be present next to each marker, whatever the sibling does.
     expect(plain).toMatch(/▲\s*\d+/);
     expect(plain).toMatch(/▼\s*\d+/);
   });

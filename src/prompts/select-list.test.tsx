@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { SelectList } from "./select-list.js";
+import { windowFor } from "./select-list-model.js";
 import type { SelectListItem } from "./select-list-model.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 
@@ -283,7 +284,11 @@ describe("SelectList hidden-row counts (B-022)", () => {
 
   it("test_no_arrow_is_rendered_when_nothing_is_hidden", async () => {
     const app = render(
-      createElement(SelectList, { items: many.slice(0, 3), window: 10, onSubmit: () => {} }),
+      createElement(SelectList, {
+        items: many.slice(0, 3),
+        window: 10,
+        onSubmit: () => {},
+      }),
     );
     await app.flush();
     const frame = app.lastFrame() ?? "";
@@ -297,19 +302,134 @@ describe("SelectList hidden-row counts (B-022)", () => {
   it("test_the_count_shrinks_as_the_filter_narrows_the_list", async () => {
     // The case that makes a count worth more in a menu than in a scrubber: it tells the user
     // whether typing is working.
+    //
+    // REVIEW FIX (F-tests-3 / F-xval-7). This test did not test its own name. It used a window of
+    // four and a filter matching three items, so after typing NOTHING was hidden and no arrow
+    // rendered at all — it then asserted `not.toContain("▼ 8")`, which observes an ABSENT arrow.
+    // Absence is not a shrunken count, and a mutant rendering a constant survived it.
+    //
+    // A window of two keeps an arrow on both sides of the filter, so the assertion can be what the
+    // name claims: a number that goes DOWN.
     const app = render(
-      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
+      createElement(SelectList, { items: many, window: 2, onSubmit: () => {} }),
     );
     await app.flush();
-    expect(app.lastFrame() ?? "").toContain("▼ 8");
+    expect(app.lastFrame() ?? "").toContain("▼ 10");
 
     app.stdin.write("item-1");
     await app.flush();
     const filtered = app.lastFrame() ?? "";
     app.unmount();
 
-    // "item-1" matches item-1, item-10 and item-11 — three matches, none hidden.
-    expect(filtered).not.toContain("▼ 8");
+    // "item-1" matches item-1, item-10 and item-11 — three matches, one of them hidden by a
+    // window of two. The count SHRANK, from ten to one, and is still there to be read.
+    expect(filtered).toContain("▼ 1");
+    expect(filtered).not.toContain("▼ 10");
+  });
+
+  // REVIEW FIX (F-arch-1 / F-tests-1 / F-dom-2 / F-wire-1 / F-xval-2 — the same defect, found
+  // independently by all five reviewers).
+  //
+  // Every test above leaves the selection at row 0, where `hiddenBefore` is 0 and the `▲` branch
+  // is never entered. Both snapshots did the same. So HALF of this slice was pinned by nothing:
+  // reverting `▲ {view.hiddenBefore}` to the pre-B-022 bare `▲` — the exact regression this item
+  // exists to remove — left the full suite green, 1605 passing.
+  //
+  // The plan named this test (`test_a_windowed_menu_shows_the_hidden_count_above`, T1.1 § TDD) and
+  // it was never written; a filter test was silently substituted, and the Coverage Matrix went on
+  // claiming "top-of-list and bottom-of-list cases asserted". The reference component has had this
+  // test all along (`windowed-list.test.tsx:48-55`) — the slice copied the rendering idiom and left
+  // behind the test that protects it.
+  //
+  // The numbers below are the model's, measured: `windowFor(12, 6, 4)` -> hiddenBefore 3,
+  // hiddenAfter 5; `windowFor(12, 11, 4)` -> hiddenBefore 8, hiddenAfter 0.
+  describe("the upper edge (B-022 review fix)", () => {
+    it("test_a_scrolled_menu_shows_the_hidden_count_above_and_below", async () => {
+      // Arrange
+      const app = render(
+        createElement(SelectList, {
+          items: many,
+          window: 4,
+          onSubmit: () => {},
+        }),
+      );
+      await app.flush();
+
+      // Act — six steps down lands on item-6, with rows hidden on BOTH sides.
+      for (let i = 0; i < 6; i++) {
+        app.stdin.write("\u001B[B");
+        await app.flush();
+      }
+      const frame = app.lastFrame() ?? "";
+      app.unmount();
+
+      // Assert — both edges, with DIFFERENT numbers. That difference is what makes the test able
+      // to fail: a rendering that swapped the two counts, or emitted a constant, or dropped the
+      // interpolation, produces something other than this pair.
+      expect(frame).toContain("▲ 3");
+      expect(frame).toContain("▼ 5");
+    });
+
+    it("test_the_last_row_hides_everything_above_and_nothing_below", async () => {
+      // Arrange
+      const app = render(
+        createElement(SelectList, {
+          items: many,
+          window: 4,
+          onSubmit: () => {},
+        }),
+      );
+      await app.flush();
+
+      // Act — one step up wraps to the end of the list.
+      app.stdin.write("\u001B[A");
+      await app.flush();
+      const frame = app.lastFrame() ?? "";
+      app.unmount();
+
+      // Assert — the mirror of the very first test in this block. Together the two pin the rule
+      // rather than one example: eight hidden above here, eight hidden BELOW there, and the arrow
+      // that carries the count changes with the edge.
+      expect(frame).toContain("▲ 8");
+      expect(frame).not.toContain("▼");
+    });
+
+    it("test_the_rendered_counts_are_the_model_counts", async () => {
+      // The rule, stated against the model rather than against a remembered number (F-tests-2:
+      // every assertion in the original slice observed the one configuration where `hiddenAfter`
+      // happened to be 8, so a literal `8` and a formula ignoring `windowStart` both survived).
+      //
+      // Comparing the frame to `windowFor` is not circular: `windowFor` is this module's contract
+      // and is tested on its own in `select-list-model.test.ts`. What is asserted here is the
+      // component's only job — that it RENDERS those numbers rather than numbers of its own.
+      for (const steps of [0, 2, 5, 8]) {
+        const app = render(
+          createElement(SelectList, {
+            items: many,
+            window: 4,
+            onSubmit: () => {},
+          }),
+        );
+        await app.flush();
+        for (let i = 0; i < steps; i++) {
+          app.stdin.write("\u001B[B");
+          await app.flush();
+        }
+        const frame = app.lastFrame() ?? "";
+        app.unmount();
+
+        const view = windowFor(many.length, steps, 4);
+
+        expect(frame).toContain(
+          view.hiddenBefore > 0 ? `▲ ${String(view.hiddenBefore)}` : "",
+        );
+        if (view.hiddenBefore === 0) expect(frame).not.toContain("▲");
+        expect(frame).toContain(
+          view.hiddenAfter > 0 ? `▼ ${String(view.hiddenAfter)}` : "",
+        );
+        if (view.hiddenAfter === 0) expect(frame).not.toContain("▼");
+      }
+    });
   });
 });
 
@@ -341,9 +461,30 @@ describe("SelectList layout (B-022 D2)", () => {
     expect(stripAnsi(frame)).toMatchSnapshot("select-list-windowed");
   });
 
+  it("scrolled_menu_layout", async () => {
+    // REVIEW FIX (F-arch-5). The two original snapshots both rendered at selection 0, so the `▲`
+    // row appeared in NEITHER and they killed none of the upper-edge mutants. The reference
+    // component's snapshot (`windowed-list-centred`) pins both edges; this one now does too.
+    const app = render(
+      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
+    );
+    await app.flush();
+    for (let i = 0; i < 6; i++) {
+      app.stdin.write("\u001B[B");
+      await app.flush();
+    }
+    const frame = app.lastFrame() ?? "";
+    app.unmount();
+
+    expect(stripAnsi(frame)).toMatchSnapshot("select-list-scrolled");
+  });
+
   it("short_menu_layout", async () => {
     const app = render(
-      createElement(SelectList, { items: many.slice(0, 3), onSubmit: () => {} }),
+      createElement(SelectList, {
+        items: many.slice(0, 3),
+        onSubmit: () => {},
+      }),
     );
     await app.flush();
     const frame = app.lastFrame() ?? "";

@@ -1,5 +1,16 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`SelectList layout (B-022 D2) > scrolled_menu_layout > select-list-scrolled 1`] = `
+"filter: …
+▲ 3
+  item-3
+  item-4
+  item-5
+❯ item-6
+▼ 5
+(7/12)"
+`;
+
 exports[`SelectList layout (B-022 D2) > short_menu_layout > select-list-short 1`] = `
 "filter: …
 ❯ item-0
