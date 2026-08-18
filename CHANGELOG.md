@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.58.0] - 2026-08-18
+
+### Added
+
 - **`useCoalesced` e o `createFrameBudget` que ninguem alcancava (B-009).** A premissa do item
   estava errada, e a verdade e um achado melhor: o orcamento de frame nao faltava.
   `src/renderer/frame-budget.ts` estava completo, coberto por nove testes, e tratava um salto de
@@ -20,16 +34,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   nunca renderiza — o token final de um stream — e tudo parece certo ate o stream parar. Modo
   leitor de tela zera a janela: coalescer descarta estados intermediarios, que e exatamente o que
   um leitor de tela precisa anunciar. (b009-frame-budget-hook-2026-08-18)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.57.0] - 2026-08-18
 
