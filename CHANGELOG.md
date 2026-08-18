@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.55.0] - 2026-08-18
+
+### Added
+
 - **`WindowedList` — mostrar onde voce esta numa lista sem tomar o teclado (B-003).** A ancora
   centrada e as contagens `hiddenBefore`/`hiddenAfter` foram acrescentadas ao `windowFor` para um
   scrubber de historico, e a view que as justificou nunca foi entregue — entao o consumidor medido
@@ -19,16 +33,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   sem palavra alguma para traduzir. Recusa `window` nao-positivo com erro tipado: medido, `window`
   igual a 0 devolve um `windowStart` DEPOIS da selecao, e -1 devolve contagens que somam mais que a
   lista inteira. (b003-history-overlay-2026-08-18)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.54.0] - 2026-08-18
 
