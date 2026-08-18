@@ -135,4 +135,65 @@ describe("StatusFooter (#45 — two-line footer)", () => {
 
     expect(frame).toContain("? for shortcuts");
   });
+
+  // B-005 — the branch no prop could reach. `hint` is consulted only when NO mode is active, so
+  // the mode row appended `· ← for agents` unconditionally: an app with a permission mode and no
+  // agents panel advertised one and had no way to stop it.
+  it("the_mode_row_omits_the_agents_hint_when_it_is_not_declared", async () => {
+    const frame = strip(
+      await renderFrame(
+        <StatusFooter
+          left={<Text>main</Text>}
+          mode="auto-accept"
+          affordances={{ shortcuts: true }}
+        />,
+      ),
+    );
+    expect(frame).not.toContain("agents");
+  });
+
+  // D5 / EC-1 — the separator lived inside the same node as the text it separates, so blanking
+  // only the text would render `… on · `, a trailing middot that reads as a truncated line.
+  it("the_mode_row_leaves_no_dangling_separator_when_agents_is_undeclared", async () => {
+    const frame = strip(
+      await renderFrame(
+        <StatusFooter left={<Text>main</Text>} mode="auto-accept" affordances={{}} />,
+      ),
+    );
+    const modeRow = frame.split("\n").find((l) => l.includes("auto-accept"));
+    expect(modeRow?.trimEnd().endsWith("·")).toBe(false);
+    expect(modeRow).not.toContain("· ");
+  });
+
+  // D1 — the whole point of adding a prop instead of changing a default.
+  it("a_footer_with_no_affordances_prop_renders_exactly_as_before", async () => {
+    const withoutProp = strip(
+      await renderFrame(<StatusFooter left={<Text>main</Text>} />),
+    );
+    expect(withoutProp).toContain("? for shortcuts");
+    expect(withoutProp).toContain("← for agents");
+  });
+
+  // D4 / EC-2 — `footerHintFor({})` is `""`, and `hint || DEFAULT` would restore everything.
+  it("an_empty_declaration_renders_an_empty_hint_not_the_default", async () => {
+    const frame = strip(
+      await renderFrame(<StatusFooter left={<Text>main</Text>} affordances={{}} />),
+    );
+    expect(frame).not.toContain("shortcuts");
+    expect(frame).not.toContain("agents");
+  });
+
+  it("affordances_wins_over_hint_when_both_are_passed", async () => {
+    const frame = strip(
+      await renderFrame(
+        <StatusFooter
+          left={<Text>main</Text>}
+          hint="this should not win"
+          affordances={{ shortcuts: true }}
+        />,
+      ),
+    );
+    expect(frame).toContain("? for shortcuts");
+    expect(frame).not.toContain("this should not win");
+  });
 });

@@ -20,3 +20,13 @@ export {
 export { KeyboardHelp, DEFAULT_COMPOSER_SHORTCUTS } from "./keyboard-help.js";
 
 export type { KeyboardHelpProps, KeyboardShortcut } from "./keyboard-help.js";
+
+// B-005 — the derivation the two advertising channels never had. `DEFAULT_COMPOSER_SHORTCUTS` and
+// `StatusFooter`'s default hint both describe what the TOOLKIT can do; these describe what THIS app
+// wired. The defaults are untouched, so an existing caller renders exactly as before.
+export {
+  composerShortcutsFor,
+  footerHintFor,
+  type ComposerCapabilities,
+  type FooterAffordances,
+} from "./composer-capabilities.js";
