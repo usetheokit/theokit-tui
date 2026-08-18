@@ -51,6 +51,9 @@ describe("public entry surface (T0.2)", () => {
     // SelectList, Pager, FreeTextInput, decision prompts) receive keyboard
     // input under pure Ink's `render`.
     expect(typeof mod.InkInputProvider).toBe("function");
+    // B-003 — the presentational sibling. Pinned here so the pair stays visible: SelectList takes
+    // the keys, WindowedList does not.
+    expect(typeof mod.WindowedList).toBe("function");
   });
 
   it("public_entry_exposes_keyboard_help_surface", async () => {

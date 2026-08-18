@@ -7,6 +7,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **`WindowedList` — mostrar onde voce esta numa lista sem tomar o teclado (B-003).** A ancora
+  centrada e as contagens `hiddenBefore`/`hiddenAfter` foram acrescentadas ao `windowFor` para um
+  scrubber de historico, e a view que as justificou nunca foi entregue — entao o consumidor medido
+  reconstruiu o clamp a mao, em 91 linhas cujo proprio docstring nomeia essas duas lacunas como
+  motivo. `SelectList` nao servia, e nao pelo motivo esperado: o input dele **e** condicionado ao
+  foco. O que o desqualifica e ser um MENU — chrome `filter:` obrigatorio, `onSubmit` requerido, e
+  um `▲` pelado que descarta a contagem que ele mesmo calculou. O novo componente e presentacional
+  (provado estruturalmente, nao prometido em docstring), o cabecalho e um SLOT porque e ali que um
+  produto nomeia o proprio gesto, e as linhas ocultas aparecem como numero com glifo de direcao —
+  sem palavra alguma para traduzir. Recusa `window` nao-positivo com erro tipado: medido, `window`
+  igual a 0 devolve um `windowStart` DEPOIS da selecao, e -1 devolve contagens que somam mais que a
+  lista inteira. (b003-history-overlay-2026-08-18)
+
 ### Changed
 
 ### Deprecated
