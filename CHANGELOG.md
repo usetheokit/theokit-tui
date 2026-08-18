@@ -7,6 +7,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **`composerShortcutsFor` e `footerHintFor` — anunciar so o que o app realmente ligou (B-005).**
+  Medido: cinco das quinze entradas de `DEFAULT_COMPOSER_SHORTCUTS` descrevem um recurso que o
+  `ChatComposer` condiciona a um prop opcional, e uma delas — `Ctrl+C` — nao tem handler nenhum no
+  composer. O rodape era pior do que o item dizia: o prop `hint` so e consultado na linha desenhada
+  quando NAO ha modo ativo; a linha de modo acrescentava `· ← for agents` sem consultar prop algum,
+  entao um app com modo de permissao e sem painel de agentes anunciava um e nao tinha como calar.
+  Um prop que funciona em um ramo de dois e pior que prop nenhum, porque quem chama acredita ter
+  desligado. Os defaults atuais ficam **intactos** — mudar default e a mudanca silenciosa, que e
+  exatamente o defeito deste item. `Ctrl+C` mantem a linha e perde a atribuicao falsa: o defeito
+  era de quem e o atalho, nao se ele existe. (b005-capability-affordances-2026-08-18)
+
 ### Changed
 
 ### Deprecated
