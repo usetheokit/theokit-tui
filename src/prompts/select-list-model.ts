@@ -8,6 +8,8 @@
 
 import { fuzzyMatch } from "../search/fuzzy.js";
 
+import { reportGuardFailure } from "../status/guard-sink.js";
+
 export interface SelectListItem {
   /** Stable identity (multi-select is keyed by this). */
   value: string;
@@ -65,6 +67,23 @@ export function windowFor(
       overflowUp: false,
       overflowDown: false,
     };
+  }
+  if (!Number.isInteger(window) || window <= 0) {
+    // B-021 ADR D1 — REFUSE, do not clamp. The counts this function returns are a partition of the
+    // list, and a window it cannot describe makes them describe something else: `window = 0` put
+    // `windowStart` PAST the selection so nothing rendered while both arrows claimed rows,
+    // `window = -1` made the counts sum to 21 in a list of 20, and a fractional window hid seven
+    // and a half rows.
+    //
+    // Clamping was rejected because of why the counts exist at all: U-10 replaced two booleans with
+    // numbers precisely because information was being destroyed. Clamping destroys the caller's
+    // mistake instead, and they learn nothing.
+    reportGuardFailure(
+      "windowFor",
+      new TypeError(
+        `windowFor: window must be a positive integer — got ${String(window)}`,
+      ),
+    );
   }
   const clampedIndex = Math.min(Math.max(selectionIndex, 0), count - 1);
   // How far above the selection the window opens. Trailing puts the selection on the last row;
