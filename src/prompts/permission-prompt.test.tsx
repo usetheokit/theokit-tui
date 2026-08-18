@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { PermissionPrompt } from "./permission-prompt.js";
@@ -89,7 +90,10 @@ describe("PermissionPrompt (Claude Code tool approval)", () => {
     );
     await app.flush();
     app.stdin.write("\x1b"); // a lone ESC is held ~20ms (meta-prefix window)…
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    // B-033 — was a fixed 40 ms sleep past the meta-prefix window.
+    await waitForCondition(() => decided.length > 0, {
+      describe: "the prompt to decide after the ESC window closes",
+    });
     await app.flush();
     expect(decided).toEqual(["no"]);
     app.unmount();

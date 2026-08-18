@@ -63,6 +63,8 @@ function spawnHarness(mod: typeof import("node-pty")): Session {
             );
             return;
           }
+          // duration is the subject: a POLL INTERVAL inside a bounded wait that already rejects
+          // with the pattern it never saw. Already the idiom B-033 converts other sites TO.
           setTimeout(tick, 20);
         };
         tick();

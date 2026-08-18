@@ -62,6 +62,24 @@ describe("public entry surface (T0.2)", () => {
     expect(term.CLEAR_SCREEN_AND_SCROLLBACK).toContain("\u001B[3J");
   });
 
+  it("public_entry_exposes_the_guard_sink", async () => {
+    const mod = await import("../../src/index.js");
+    // B-025 — a fired boundary guard leaves nothing DURABLE. Measured against a real `render()`:
+    // ink's own ErrorBoundary fires and prints a stack to stdout, then the app unmounts and the
+    // process exits 0 (B-031) — so something IS shown, and none of it survives the next repaint or
+    // is captured by `installStderrGuard`. This is the surface that leaves a record instead, so it
+    // is pinned here: unreachability is the defect this file exists to catch (see the B-009 note).
+    expect(typeof mod.reportGuardFailure).toBe("function");
+    // B-025 v2 — the loss counter ships with it. A sink that fails silently is the defect the sink
+    // exists to prevent, so the number of records this process could NOT write is part of the
+    // public surface, not an internal detail.
+    expect(typeof mod.lostGuardRecords).toBe("function");
+    // The signature is pinned because it CHANGED after 0.60.1: `(component, error, sink?)`. An
+    // arity check is crude, but it fails loudly if someone restores the two-argument form, which is
+    // the shape that let an unattributed record through.
+    expect(mod.reportGuardFailure.length).toBe(2);
+  });
+
   it("public_entry_exposes_the_rising_edge_hook", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.useRisingEdge).toBe("function");

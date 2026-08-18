@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { ChoiceRow } from "./choice-row.js";
@@ -79,7 +80,10 @@ describe("ChoiceRow component (M23 T1.1)", () => {
     );
     await app.flush();
     app.stdin.write("\x1b"); // a lone ESC is held ~20ms (meta-prefix window)…
-    await new Promise((resolve) => setTimeout(resolve, 40)); // …past the flush
+    // B-033 — was a fixed 40 ms sleep past the meta-prefix window.
+    await waitForCondition(() => cancelled === 1, {
+      describe: "the lone ESC to cancel once its meta-prefix window closes",
+    });
     await app.flush();
     expect(cancelled).toBe(1);
     app.unmount();

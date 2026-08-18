@@ -2,8 +2,10 @@ import { Box } from "ink";
 import type { ReactElement } from "react";
 
 import type { TurnUsage } from "../agent/messages-to-events.js";
+import { assertFiniteNonNegative } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 import { ContextWindowBar } from "./context-window-bar.js";
 import { CostMeter } from "./cost-meter.js";
 import type { TokenCategory } from "./token-usage-chart.js";
@@ -80,6 +82,50 @@ const SECTION_RENDERERS: Record<
 };
 
 /**
+ * The `usage` fields this panel FORWARDS, and therefore the ones it is responsible for.
+ *
+ * `totalTokens`, `cacheWriteTokens` and `durationMs` are absent on purpose: the panel passes them
+ * to nobody, and guarding a field it never touches would be the composite claiming authority over
+ * data it does not use.
+ */
+const FORWARDED_USAGE_FIELDS = [
+  "inputTokens",
+  "outputTokens",
+  "cacheReadTokens",
+  "reasoningTokens",
+  "cost",
+] as const;
+
+/**
+ * Validate every `usage` field the panel forwards (plan ADR D2).
+ *
+ * Without this the same input still fails — but from inside `ContextWindowBar` or `CostMeter`, so
+ * the message names a component the caller never wrote. That is the failure
+ * `src/agent/agent-timeline.tsx:62` identified and lifted to the composition boundary; this is the
+ * same move, applied to the composite that was violating it.
+ *
+ * `undefined` passes: those fields are optional on `TurnUsage`, and B-001 ADR D2 is that absent
+ * stays absent. A present `0` also passes — it is a measurement the agent reported, not a missing
+ * one.
+ */
+function assertForwardedUsage(usage: TurnUsage): void {
+  for (const field of FORWARDED_USAGE_FIELDS) {
+    const value = usage[field];
+    if (value === undefined) continue;
+    try {
+      // The predicate has ONE home (ADR D2). v1 re-inlined it verbatim from `format.ts:20`, whose
+      // docstring records a prior architecture review consolidating it — "one home past rule-of-3".
+      // The helper is not made to report directly: it lives in `src/format`, a low-level module,
+      // and importing `src/status` there would invert the dependency direction
+      // (`rules/architecture.md` § 1).
+      assertFiniteNonNegative(value, `UsagePanel: usage.${field} must be a finite number >= 0`);
+    } catch (err) {
+      reportGuardFailure("UsagePanel", err as Error);
+    }
+  }
+}
+
+/**
  * A turn's usage as one block: context bar, token chart, cost meter.
  *
  * Exists because both ends of the projection are this package's — `TurnUsage` and
@@ -102,9 +148,30 @@ export function UsagePanel({
       !Number.isFinite(contextWindow) ||
       contextWindow <= 0)
   ) {
-    throw new TypeError(
-      `UsagePanel: contextWindow must be a finite number > 0 when given — got ${String(contextWindow)}`,
+    reportGuardFailure(
+      "UsagePanel",
+      new TypeError(
+        `UsagePanel: contextWindow must be a finite number > 0 when given — got ${String(contextWindow)}`,
+      ),
     );
+  }
+  assertForwardedUsage(usage);
+  // An `order` entry that is not a section name used to crash with
+  // `SECTION_RENDERERS[section] is not a function` — no record, no attribution, and the message
+  // named a module-private constant the caller cannot see. Found by review (F-dom-3) inside the
+  // very component this slice exists to make attributable.
+  //
+  // The prop's docstring says a repeated name draws twice and an empty list draws nothing, both
+  // deliberate. An UNKNOWN name is neither: it is a typo, and it has no honest rendering.
+  for (const section of order) {
+    if (!USAGE_PANEL_SECTIONS.includes(section)) {
+      reportGuardFailure(
+        "UsagePanel",
+        new TypeError(
+          `UsagePanel: order contains an unknown section — got ${String(section)}, expected one of ${USAGE_PANEL_SECTIONS.join(", ")}`,
+        ),
+      );
+    }
   }
   return (
     <Box flexDirection="column" {...pickMargin(margin)}>

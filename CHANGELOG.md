@@ -17,6 +17,101 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.61.0] - 2026-08-18
+
+### Added
+
+- **`reportGuardFailure` and `GuardSink` in `@theokit/tui` (B-025).** A boundary guard that fires
+  now leaves one **durable** record — `[theokit/tui] <ISO-8601> <Component>: <message>` — on a sink
+  that defaults to `process.stderr` and is injectable. It buys **persistence, not visibility**, and
+  the distinction is the whole point: ink's own `ErrorBoundary` already prints an `ERROR` panel with
+  a stack when a guard throws, but that panel is transient stdout, erased by the next repaint or
+  lost to scrollback, and `installStderrGuard` does not capture it — so an operator debugging an
+  intermittent guard has nothing to read. The record is **sanitised** (the offending value is
+  untrusted by construction: interpolated verbatim it injected control bytes into the terminal and
+  forged a second record via an embedded newline) and carries a **timestamp**, because the blessed
+  destination is a log rotating at 10 MB across 10 generations. Reporting is additive — the return
+  type is `never`, so the existing throw contract is unchanged. What this does NOT fix is filed as
+  **B-031**: one invalid prop still unmounts the whole app, shows the end user a developer stack,
+  and exits 0. (b025-silent-guards-2026-08-18)
+
+
+### Changed
+
+- **The guard record is sanitised against every line-breaking code point, and a malformed `error` is
+  refused (B-025).** `JSON.stringify` escapes C0 only, so 33 code points reached the record raw —
+  including U+0085, U+2028 and U+2029, which are Unicode line terminators: a reader that splits
+  Unicode-aware still saw a second, well-formed, correctly-timestamped `[theokit/tui]` record, and
+  U+009B / U+009D are the 8-bit CSI and OSC introducers. `reportGuardFailure` also read
+  `error.message` without checking it, so a malformed argument threw from outside the guarded
+  region — no record, no loss counted, and the guard's own diagnostic replaced by a `TypeError`
+  about the reporter. Both are now refused, and both are pinned: reverting either turns four tests
+  red, where before each was covered by nothing. (b025-silent-guards-2026-08-18)
+
+- **`UsagePanel` refuses an unknown `order` section (B-025).** It crashed with
+  `SECTION_RENDERERS[section] is not a function` — no record, no attribution, and a message naming a
+  module-private constant the caller cannot see. A repeated name still draws twice and an empty list
+  still draws nothing, both documented as deliberate; an unknown name is a typo and now says so,
+  naming the component and the value. (b025-silent-guards-2026-08-18)
+
+- **`GuardSink.write` returns `boolean`, and lost records are counted (B-025).** `false` is how
+  `process.stderr` and this package's own `installStderrGuard` report a write that was LOST, and
+  discarding it made a dead sink silent — the very failure the sink exists to prevent, one layer
+  down. Losses are now counted and readable via `lostGuardRecords()`.
+
+  Not marked BREAKING, and the earlier draft of this entry was wrong to: it claimed
+  `reportGuardFailure` "shipped in 0.60.1" with a two-argument signature. Measured with
+  `git ls-tree`, `src/status/guard-sink.ts` is absent from v0.59.0, v0.60.0 AND v0.60.1 — the whole
+  surface is new and has never been published, so there is no consumer to break and the entry was
+  positioned to derive a false MAJOR bump. Caught by review (F-dom-7).
+
+- **`UsagePanel` now validates every `usage` field it forwards (B-025).** It guarded `contextWindow`
+  and stopped there, so a non-finite `inputTokens` failed from inside `ContextWindowBar` and a bad
+  `cost` from inside `CostMeter` — both naming a component the caller never wrote. `inputTokens`,
+  `outputTokens` and the optional `cacheReadTokens` / `reasoningTokens` / `cost` are now refused at
+  the panel's own boundary with an error that names `UsagePanel`, using the shared
+  `assertFiniteNonNegative` rather than a re-inlined copy of it. Absent optional fields still pass
+  and a present `0` is still accepted: absent stays absent, and `0` is a measurement the agent
+  reported. No rendering changed. (b025-silent-guards-2026-08-18)
+
+
+
+### Fixed
+
+- **The last two guessed budgets in the suite become measured ones (B-034).** `degrade-matrix`
+  spawns `pnpm exec tsx` three times per run and budgeted 20000 ms with nothing recorded beside it;
+  one spawn measures 2621 ms at load 13, so that 7.6x margin still failed with `ETIMEDOUT` at load
+  30. Now 60000 ms, with the measurement in the code and the better fix named rather than
+  overlooked: pre-compiling the probe and spawning `node` would take it to ~100 ms and remove the
+  sensitivity instead of budgeting for it. `typeUntil` in the composer suite carried the third copy
+  of the 2000 ms bound that B-033 measured expiring on a correct frame, and now shares the one
+  budget. Measured after: **five consecutive `npm test` runs at default workers, loads 11.46 to
+  31.07, all green** — where the suite previously failed routinely at load 13.
+  (b034-measured-budgets-2026-08-18)
+
+- **Tests wait for a condition instead of for a number of milliseconds (B-033).** 13 files slept a
+  fixed duration and then asserted — encoding "the effect completes within N ms", which is true on
+  an idle laptop and false on a loaded one. A shared `waitFor` polls the condition each site was
+  really about and fails naming what never happened, which is how a defect in a different slice was
+  identified rather than mistaken for a slow test. Five fixed-duration waits remain, each carrying a
+  written reason: two are poll intervals inside bounded waits (already the target idiom), two are
+  fixtures where the delay IS the subject, and one asserts that something does NOT happen, which has
+  no condition to poll for. Internal to the test suite; no published behaviour changed.
+  (b033-wait-for-condition-2026-08-18)
+
+- **Two test-suite defects that were being treated as one (B-020).** `npm test` at default workers
+  failed for reasons unrelated to the code under test, and the failures had two different causes.
+  **A budget nobody set:** `vitest.config.ts` declared no `testTimeout`, so tests ran against
+  vitest's 5000 ms default while `package-contract.test.ts` takes 3004 ms on an idle machine — 60%
+  of the budget before any contention. Now 15000 ms, with the measurement recorded beside it; a
+  raised timeout cannot mask a race, because a race reports a wrong value rather than a timeout.
+  **An assertion that read a clock:** `same_status_rerender_does_not_reset_spinner` asserted the
+  spinner cell had not CHANGED across a rerender, which conflates "the interval was not reset" — the
+  behaviour under test — with "no time passed", which is not ours to guarantee. It now asserts the
+  invariant it always meant: the cell is a valid `dots` frame and is not frame[0]. Internal to the
+  test suite; no published behaviour changed. The remaining load-sensitivity is a third class,
+  filed and planned as B-033. (b020-deterministic-frames-2026-08-18)
+
 ## [0.60.1] - 2026-08-18
 
 ### Fixed

@@ -1,6 +1,7 @@
 import { Text } from "ink";
 import { cleanup, render } from "ink-testing-library";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { useCoalesced } from "./use-coalesced.js";
 
@@ -168,7 +169,10 @@ describe("useCoalesced", () => {
     );
     // Nothing further arrives; only the trailing update can deliver "last".
     clock.advance(30);
-    await new Promise((r) => setTimeout(r, 40));
+    // B-033 — was a fixed 40 ms sleep. The condition is the assertion below.
+    await waitForCondition(() => (app.lastFrame() ?? "").includes("last"), {
+      describe: "the coalesced frame to show the last value",
+    });
     expect(app.lastFrame()).toContain("last");
   });
 });

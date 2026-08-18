@@ -102,7 +102,8 @@ describe("ApprovalPrompt overlay integration (M23 T4.1)", () => {
     expect(app.lastFrame()).toContain("❯ Allow always");
 
     app.stdin.write("\x1b"); // a lone ESC (held ~20ms)
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    // B-033 — the sleep was redundant: `waitForFrame` below already polls for this frame, so the
+    // 40 ms only delayed a wait that was already correct.
     await waitForFrame(app, "Approve overlay?", false); // overlay popped
     // Esc is a coherent "reject and close": the prompt emits its safe default…
     expect(decisions).toEqual(["reject"]);

@@ -12,9 +12,19 @@ const PROBE = "tests/fixtures/no-color-probe.tsx";
 function spawnProbe(extraEnv: Record<string, string>): string {
   return execFileSync("pnpm", ["exec", "tsx", PROBE], {
     encoding: "utf8",
-    // Kills the child at the deadline — the it-level timeout cannot
-    // interrupt a synchronous execFileSync.
-    timeout: 20000,
+    // Kills the child at the deadline — the it-level timeout cannot interrupt a synchronous
+    // execFileSync, which is why this file carries BOTH layers.
+    //
+    // B-034 — 60000 ms, measured rather than guessed. One spawn costs 2621 ms at load 12.99
+    // (`no_color_scene_degrades_readably`, one spawn; the two-spawn scene measured 5160 ms). The
+    // previous budget of 20000 ms was a 7.6x margin on that and STILL failed with
+    // `spawnSync pnpm ETIMEDOUT` at load ~30.
+    //
+    // The cost is not what the test asserts: this runs `pnpm exec tsx`, i.e. package resolution
+    // plus a TypeScript compile, three times per suite run. Pre-compiling the probe and spawning
+    // `node` would take it to ~100 ms and remove the sensitivity instead of budgeting for it —
+    // that is the better fix and it is deferred as B-034 Q2, not overlooked.
+    timeout: 60000,
     env: {
       PATH: process.env["PATH"] ?? "",
       HOME: process.env["HOME"] ?? "",
@@ -67,7 +77,7 @@ function assertDegradedScene(out: string): void {
 }
 
 describe("degrade matrix (M6 T3.2, plan D6)", () => {
-  it("no_color_scene_degrades_readably", { timeout: 20000 }, () => {
+  it("no_color_scene_degrades_readably", { timeout: 90000 }, () => {
     const out = spawnProbe({ NO_COLOR: "1" });
     assertDegradedScene(out);
     // M10 pipe contract (blueprint Corner 4): ink7 non-interactive writes
@@ -89,7 +99,7 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     // TWO sequential spawns, each with its own 20s deadline — the it-level
     // budget must exceed the worst case (review dom-testing-3; house
     // subprocess-flake history under load).
-    { timeout: 45000 },
+    { timeout: 150000 },
     () => {
       // TERM=dumb resolves the DARK theme at chalk level 0 — no marker by
       // design (EC-1); the composer cursor cell is the inverse-stripped
@@ -124,7 +134,7 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     },
   );
 
-  it("bare_pipe_degrades_without_env", { timeout: 20000 }, () => {
+  it("bare_pipe_degrades_without_env", { timeout: 90000 }, () => {
     // NO color env at all — the pipe itself forces chalk level 0
     // (non-TTY → 0 when FORCE_COLOR is unset): detection proves itself.
     const out = spawnProbe({});
@@ -134,7 +144,7 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     expect(out).not.toContain("┌");
   });
 
-  it("chalk_downsample_canary", { timeout: 20000 }, () => {
+  it("chalk_downsample_canary", { timeout: 90000 }, () => {
     // EC-4 residual guard: pins the INSTALLED chalk's hex→256 rounding at
     // level 2 via the deterministic env recipe TERM=dumb + FORCE_COLOR=2
     // (immune to CI-vendor sniffs — GH Actions forces level 3 otherwise).
@@ -155,7 +165,7 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     ].join("\n");
     const out = execFileSync("node", ["--input-type=module", "-e", script], {
       encoding: "utf8",
-      timeout: 20000,
+      timeout: 60000,
       env: {
         PATH: process.env["PATH"] ?? "",
         HOME: process.env["HOME"] ?? "",

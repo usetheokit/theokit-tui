@@ -30,9 +30,15 @@ export function useRisingEdge<L extends string>(
   severityAscending: readonly L[],
   onRise: (level: L) => void,
 ): void {
-  // Validated in the RENDER body, not the effect, and that placement is load-bearing: React does
-  // not surface an effect throw as a rejection, so a test of an effect throw would pass against an
-  // empty frame. Here the throw is synchronous and a test can assert its message.
+  // Validated in the RENDER body, not the effect, and that placement is load-bearing — but the
+  // reason written here was wrong until 2026-08-18 and is worth correcting rather than deleting.
+  //
+  // It said React does not surface an effect throw as a rejection. Measured under a real ink
+  // render, an effect throw DOES reach ink's error boundary and produces the same ERROR panel a
+  // render throw does. What is true is narrower: under `renderFrame` / `ink-testing-library` the
+  // two are indistinguishable — both yield an empty frame — so a test of an effect throw could not
+  // tell a fired guard from a silent one. Render-body validation is synchronous, so a test calling
+  // this hook directly reaches the throw and can assert its message.
   const rank = severityAscending.indexOf(level);
   if (rank === -1) {
     throw new TypeError(
