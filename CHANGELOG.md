@@ -9,6 +9,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **`windowFor` and `SelectList` refuse a window they cannot describe (B-021).** The hidden-row
+  counts are a partition of the list, and a non-positive or fractional window made them describe
+  something else: `window = 0` put `windowStart` past the selection so nothing rendered while both
+  arrows still claimed rows, `window = -1` made the counts sum to 21 in a list of 20, and `2.5` hid
+  seven and a half rows. `SelectList` exposes `window` publicly and passed it through unvalidated,
+  so a consumer could get a menu that advertised contents it never drew. Both now throw a typed
+  error naming the component the caller actually wrote. **Refused rather than clamped**, because the
+  counts exist precisely to stop information being destroyed (U-10) and clamping would destroy the
+  caller's mistake instead. Blast radius measured before shipping: the only known consumer renders
+  `SelectList` without a `window` prop, and its `windowFor` mentions are comments explaining why it
+  does NOT use it — `grep -rn "windowFor\|SelectList" modelo/TheoCode/` → 12 hits, 0 affected.
+  (b021-window-invariant-2026-08-18)
+
+
 ### Deprecated
 
 ### Removed
