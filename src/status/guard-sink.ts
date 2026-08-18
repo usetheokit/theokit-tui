@@ -47,11 +47,16 @@
  * It does NOT deduplicate: a guard firing every render is a repeating problem and one collapsed
  * line hides it.
  *
- * **What that does NOT buy is a count of fires.** Measured 2026-08-18 with a real `render()`: ONE
- * logical guard failure produces **2 records**, stable across `NODE_ENV=test` and
- * `NODE_ENV=production`, because React re-invokes a component whose render threw. v1 claimed the
- * absence of deduplication let an operator count fires; it does not — the multiplier is a renderer
- * implementation detail. `src/status/guard-sink.integration.test.tsx` pins the number so an upgrade that
+ * **What that does NOT buy is a count of fires.** Measured 2026-08-18 with a real `render()`: one
+ * logical guard failure produces MORE THAN ONE record, because React re-invokes a component whose
+ * render threw. v1 claimed the absence of deduplication let an operator count fires; it does not.
+ *
+ * The multiplier is NOT a fixed property of this module, and an earlier draft of this paragraph
+ * said "2 records" as though it were. Review measured three components with identical signatures:
+ * a throw inside an `if` produced 2, an unconditional throw produced 3, and under ink's public
+ * `concurrent: true` root the count at `render()` return was 0. So it depends on the guarded
+ * component's own shape and on the renderer mode — which is exactly why the count is not a
+ * measurement of anything an operator should read. `src/status/guard-sink.integration.test.tsx` pins the number so an upgrade that
  * changes it is reported rather than silently contradicting this paragraph.
  *
  * @public
@@ -76,8 +81,18 @@ export interface GuardSink {
  * Diagnostics this process failed to record.
  *
  * A module-level integer and a reader — not an event emitter, not an observer registry (parsimony
- * rung 5). Nobody has asked to subscribe; a consumer that wants to report the number reads it at
- * teardown, which is what `installStderrGuard` does with its own lost-write count.
+ * rung 5). Nobody has asked to subscribe.
+ *
+ * This comment claimed the design mirrors what `installStderrGuard` does with its own lost-write
+ * count. It does NOT, and the difference is the whole of it: `stderr-guard.ts:88-96` REPORTS its
+ * count automatically from inside its disposer, requiring nothing of the consumer, while this
+ * counter is only surfaced if someone calls `lostGuardRecords()`. Counting happens; surfacing is
+ * the consumer's to do, and the README says so rather than leaving the symbol to be discovered.
+ *
+ * Deliberately not auto-reported: this module owns no lifecycle. It has no teardown to hook, and
+ * inventing one so it could print at exit would be a bigger surface than the problem
+ * (parsimony rung 1). If a consumer wants the number reported, `installStderrGuard`'s disposer is
+ * where their session already ends.
  */
 let lostRecords = 0;
 
@@ -107,8 +122,21 @@ function stamp(): string {
  * not a JSON document.
  */
 function sanitize(text: string): string {
+  // `JSON.stringify` is the platform's escaper and does most of the work — but it escapes C0 ONLY.
+  // ADR D5 says C0 AND C1, and the gap is not cosmetic: U+0085 (NEL), U+2028 and U+2029 are
+  // Unicode LINE TERMINATORS, so a reader that splits on them — Python's `splitlines()` does —
+  // still sees a second, well-formed, correctly-timestamped `[theokit/tui]` record. U+009B and
+  // U+009D are the 8-bit CSI and OSC introducers. U+007F (DEL) is C0-adjacent and the suite's own
+  // CONTROL_CHAR_RE already demands it.
+  //
+  // Found by review, measured: the first version closed v1's attack and left 33 code points raw.
+  // "One physical line" was true only under the narrower of two definitions of "line".
   const quoted = JSON.stringify(text);
-  return quoted.slice(1, -1);
+  return quoted
+    .slice(1, -1)
+    .replace(/[\u007F-\u009F\u2028\u2029]/g, (ch) =>
+      `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`,
+    );
 }
 
 /**
@@ -144,6 +172,14 @@ export function reportGuardFailure(
   error: Error,
   sink: GuardSink = process.stderr,
 ): never {
+  if (!(error instanceof Error) || typeof error.message !== "string") {
+    // Validated alongside `component`, and INSIDE the guarded region for the same reason: an
+    // unvalidated `error` made `error.message` throw from OUTSIDE the try, producing no record, no
+    // count, and replacing the guard's diagnostic with a TypeError about the reporter.
+    throw new TypeError(
+      `reportGuardFailure: error must be an Error with a message — got ${String(error)}`,
+    );
+  }
   if (typeof component !== "string" || component.trim() === "") {
     throw new TypeError(
       `reportGuardFailure: component must be a non-empty string naming the component whose guard fired — got ${String(component)}`,

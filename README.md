@@ -142,11 +142,17 @@ puts it in the live region, where it duplicates on scroll. There is no general
 ### When a component rejects a prop, it writes to stderr
 
 Components in this package validate their props and throw a typed `TypeError` before rendering.
-Since `0.61`, a guard that fires also writes **one line to `process.stderr`** before throwing:
+Since `0.61`, a guard that fires **may** also write one line to `process.stderr` before throwing:
 
 ```
 [theokit/tui] 2026-08-18T15:22:59Z UsagePanel: contextWindow must be a finite number > 0 when given — got 0
 ```
+
+**One component does this today — `UsagePanel`.** The other 20 guarded components still throw with
+nothing recorded; adopting the sink across them is tracked separately, and until then the absence of
+a line means "this component has not adopted it", not "no guard fired". An earlier version of this
+section stated the record as a property of the package's guards in general, which review measured
+false (1 of 21).
 
 The line exists because a terminal frame is not a log. Ink prints its own error panel when a render
 throws, but that panel is on stdout and is gone at the next repaint or once the scrollback rolls —
@@ -168,8 +174,22 @@ try {
 }
 ```
 
-Without it, a record can land mid-frame and corrupt the display until the next full repaint. That
-is the accepted trade: a corrupted frame is repainted, a silent failure is not.
+Without it, a record can land mid-frame and corrupt the display until the next repaint — and be
+aware of what actually follows a fired guard: ink's error boundary tears the whole app down and the
+process exits **0**. So the record is what survives for you to read afterwards, not a blemish on a
+session that continues. An earlier version of this paragraph offered "a corrupted frame is
+repainted" as the consolation, which this package's own measurement contradicts.
+
+If the sink itself fails — a closed pipe, an unwritable log path — the record is **counted rather
+than swallowed**, and `lostGuardRecords()` returns how many this process lost. Nothing reports that
+number for you: this package owns no lifecycle to hook, so read it where your session already ends.
+
+```ts
+import { lostGuardRecords } from "@theokit/tui";
+
+const lost = lostGuardRecords();
+if (lost > 0) console.error(`[your-cli] ${lost} diagnostic(s) could not be recorded`);
+```
 
 Two limits worth knowing:
 

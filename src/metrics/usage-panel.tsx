@@ -156,6 +156,23 @@ export function UsagePanel({
     );
   }
   assertForwardedUsage(usage);
+  // An `order` entry that is not a section name used to crash with
+  // `SECTION_RENDERERS[section] is not a function` — no record, no attribution, and the message
+  // named a module-private constant the caller cannot see. Found by review (F-dom-3) inside the
+  // very component this slice exists to make attributable.
+  //
+  // The prop's docstring says a repeated name draws twice and an empty list draws nothing, both
+  // deliberate. An UNKNOWN name is neither: it is a typo, and it has no honest rendering.
+  for (const section of order) {
+    if (!USAGE_PANEL_SECTIONS.includes(section)) {
+      reportGuardFailure(
+        "UsagePanel",
+        new TypeError(
+          `UsagePanel: order contains an unknown section — got ${String(section)}, expected one of ${USAGE_PANEL_SECTIONS.join(", ")}`,
+        ),
+      );
+    }
+  }
   return (
     <Box flexDirection="column" {...pickMargin(margin)}>
       {order.map((section, index) => (

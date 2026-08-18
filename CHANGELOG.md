@@ -23,17 +23,22 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
-- **BREAKING: `reportGuardFailure` now takes `(component, error, sink?)` (B-025).** It shipped in
-  `0.60.1` as `(error, sink?)`. The component is a required argument rather than a convention
-  inside the message, because the record is about to be adopted by 20 more call sites (B-028) and a
-  convention decays exactly then — `reportGuardFailure(new Error("bad"))` type-checked before and
-  emitted the generic message our error-handling rule bans. `GuardSink.write` also returns
-  `boolean` instead of `void`: `false` is how `process.stderr` and this package's own
-  `installStderrGuard` report a LOST write, and discarding it made a dead sink silent — the very
-  failure the sink exists to prevent, one layer down. Lost records are now counted and readable via
-  `lostGuardRecords()`. Blast radius measured before shipping: `grep -rn "reportGuardFailure"`
-  across the only known consumer returns **0**, so no caller outside this package breaks.
-  (b025-silent-guards-2026-08-18)
+- **`UsagePanel` refuses an unknown `order` section (B-025).** It crashed with
+  `SECTION_RENDERERS[section] is not a function` — no record, no attribution, and a message naming a
+  module-private constant the caller cannot see. A repeated name still draws twice and an empty list
+  still draws nothing, both documented as deliberate; an unknown name is a typo and now says so,
+  naming the component and the value. (b025-silent-guards-2026-08-18)
+
+- **`GuardSink.write` returns `boolean`, and lost records are counted (B-025).** `false` is how
+  `process.stderr` and this package's own `installStderrGuard` report a write that was LOST, and
+  discarding it made a dead sink silent — the very failure the sink exists to prevent, one layer
+  down. Losses are now counted and readable via `lostGuardRecords()`.
+
+  Not marked BREAKING, and the earlier draft of this entry was wrong to: it claimed
+  `reportGuardFailure` "shipped in 0.60.1" with a two-argument signature. Measured with
+  `git ls-tree`, `src/status/guard-sink.ts` is absent from v0.59.0, v0.60.0 AND v0.60.1 — the whole
+  surface is new and has never been published, so there is no consumer to break and the entry was
+  positioned to derive a false MAJOR bump. Caught by review (F-dom-7).
 
 - **`UsagePanel` now validates every `usage` field it forwards (B-025).** It guarded `contextWindow`
   and stopped there, so a non-finite `inputTokens` failed from inside `ContextWindowBar` and a bad

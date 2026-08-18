@@ -133,6 +133,32 @@ describe("UsagePanel", () => {
   // Nothing asserted this until a mutation run showed the omission: removing the guard leaves the
   // suite green, because `tsc` — not vitest — is what catches it (TS2375 under
   // exactOptionalPropertyTypes). The behavioural half needed its own test.
+  it("an_unknown_order_section_is_refused_with_an_attributable_error", () => {
+    // F-dom-3 (review v2): this crashed with `SECTION_RENDERERS[section] is not a function` — no
+    // record, no attribution, and a message naming a module-private constant. The caller sees the
+    // component they wrote and the value they passed.
+    expect(() =>
+      UsagePanel({
+        usage: minimalTurn,
+        order: ["context", "typo-section"] as never,
+      }),
+    ).toThrow("UsagePanel: order contains an unknown section");
+    expect(guardRecords.join("")).toContain("unknown section");
+  });
+
+  it("a_non_positive_context_window_reaches_the_sink_too", () => {
+    // F-tests-1 (review v2), mutation-confirmed: `UsagePanel` has TWO `reportGuardFailure` call
+    // sites, and only the `usage` one was asserted to reach the sink. Replacing the `contextWindow`
+    // guard at `usage-panel.tsx:151` with a plain `throw` left 190 tests green — the integration
+    // test drives `cost: NaN`, which routes through `assertForwardedUsage`, never through here.
+    //
+    // The branch's own header claimed BOTH call sites were closed. One was.
+    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
+      TypeError,
+    );
+    expect(guardRecords.join("")).toContain("UsagePanel: contextWindow");
+  });
+
   it("throws_a_typed_error_naming_itself_on_a_non_positive_context_window", () => {
     // Called as a function, which is how this domain tests boundary guards
     // (`context-window-bar.test.tsx:261`). Rendering it through `renderFrame` would NOT work: that

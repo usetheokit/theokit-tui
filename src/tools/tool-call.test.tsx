@@ -577,10 +577,14 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
   });
 
   it("malformed_patch_error_propagates", () => {
-    // EC-1: a malformed patch throws the TYPED error at the CARD boundary
-    // (synchronous — probed: a child render throw is swallowed by ink's
-    // error boundary into a silent empty frame; the card validates the
-    // patch up-front so the failure is loud, per error-handling.md § 2).
+    // EC-1: a malformed patch throws the TYPED error at the CARD boundary, synchronously, so the
+    // card validates the patch up-front and the failure is loud (error-handling.md § 2).
+    //
+    // This comment said a child render throw is swallowed by ink's error boundary "into a silent
+    // empty frame". The empty frame is what `renderFrame` / `ink-testing-library` produces; against
+    // a real `render()` that boundary prints an ERROR panel with a stack and the app exits (B-031).
+    // The probe it cites went through the harness — the same generalisation B-025 v1 made, found
+    // here while sweeping for it (B-025 v2 T1.3).
     const bad = () =>
       ToolCallCard({
         name: "edit",

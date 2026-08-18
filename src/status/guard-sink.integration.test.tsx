@@ -41,11 +41,17 @@ function collectingSink(): { sink: GuardSink; records: string[] } {
 /**
  * Render `element` with the REAL ink renderer and tear it down.
  *
- * `reportGuardFailure` runs SYNCHRONOUSLY inside the render body, so the record exists the moment
- * `render()` returns — there is nothing to await for the assertions below.
+ * `reportGuardFailure` runs synchronously inside the render body, so with ink's DEFAULT (legacy)
+ * root the record exists the moment `render()` returns and there is nothing to await.
  *
- * `waitUntilExit()` is deliberately NOT used: it resolves in a real terminal (measured) but hangs
- * under vitest, where stdout is not a TTY. Discovering that is itself part of why this file exists
+ * That is a property of the root mode, not of the module: review measured 0 records at `render()`
+ * return under `concurrent: true`, which is a documented public option (`render.d.ts:82`). A test
+ * that needs the concurrent root must wait rather than read immediately.
+ *
+ * `waitUntilExit()` is deliberately NOT used: measured against a real `render()` it REJECTS with
+ * the guard's own error (which is what `.claude/rules/error-handling.md` § 3.1 records), and under
+ * vitest — where stdout is not a TTY — it hangs. An earlier draft of this docblock said "resolves",
+ * contradicting § 3.1 while both claimed to be measured; the probe output says rejects. Discovering that is itself part of why this file exists
  * — the harness and the product differ, which is the mistake v1 made in the other direction.
  *
  * stdout is swapped for the duration because a throwing tree makes ink print its ERROR panel
@@ -109,9 +115,13 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
 /**
  * Records produced by ONE logical guard failure. MEASURED, not chosen.
  *
- * 2026-08-18: **2**, and stable across `NODE_ENV=test` and `NODE_ENV=production` — so it is React
- * 19's error-recovery re-invocation of a component whose render threw, not StrictMode's double
- * render. `/review` (frontend F-dom-1) measured the same doubling independently.
+ * 2026-08-18: **2 for THIS component**, stable across `NODE_ENV=test` and `NODE_ENV=production` —
+ * React 19's error-recovery re-invocation, not StrictMode's double render.
+ *
+ * It is pinned as a property of `UsagePanel`, NOT of the sink. Review v2 measured that a throw
+ * inside an `if` yields 2, an unconditional throw yields 3, and ink's public `concurrent: true`
+ * root yields 0 at `render()` return. Naming this constant `RECORDS_PER_FIRE` invited the wider
+ * reading, and B-028 plans ~20 more adopters that would each need their own number.
  *
  * This number is why `guard-sink.ts` no longer says the absence of deduplication lets an operator
  * count fires: two records for one fire means the count is a renderer implementation detail, not a

@@ -1,50 +1,52 @@
 import { Text } from "ink";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "./helpers.js";
 
-// B-020 T1.1 — a frame assertion must not depend on the wall clock.
+// B-020 — what `renderFrame` actually guarantees, after the fix that did not survive.
 //
-// THE DEFECT. `renderFrame` awaited `setTimeout(resolve, 0)` and then read the frame, and its own
-// docstring named what that rests on: the 0 ms tick had to land BEFORE ink-spinner's first ~80 ms
-// interval. `setTimeout(0)` does not fire in 0 ms — it fires when the event loop reaches it — so
-// under contention the animation advances first.
+// HISTORY, because the alternative is a file whose narrative contradicts its own code. This suite
+// was written for a fake-timer version of `renderFrame` and asserted that the frame is produced
+// under FROZEN time. That mechanism was measured to BREAK stdin delivery in other tests and was
+// reverted (`5c1b809`), so the assertions were left describing a mechanism that no longer exists:
+// one rendered `<Text>static</Text>` and called it a spinner test, and its sibling asserted
+// `vi.isFakeTimers() === false` against a helper that never installs them. Both were unfalsifiable.
+// Found by review (F-tests-2), and rewritten rather than deleted — the helper still has properties
+// worth pinning, they are just narrower than the ones that were claimed.
 //
-// Measured 2026-08-18: `npm test` at default workers failed 3 files under load 13-24, and a
-// different single file on another run, while `--maxWorkers=2` on an idle machine passed
-// 145/1564. Each failing file passed in isolation and the failing SET differed between runs: the
-// signature of a race, not of a defect in any one test.
-//
-// WHAT THIS FILE DOES NOT DO, stated because the first draft tried and failed. It does not
-// reproduce the race synchronously. Blocking the event loop after `render()` does NOT reproduce
-// it: the pending `setTimeout(0)` expired earlier than the 80 ms interval, so node's timers phase
-// runs it first no matter how long the block lasted. The real trigger is the worker PROCESS being
-// descheduled by the OS, during which real time passes and the loop is free to service the
-// interval — which cannot be forced from inside the process being descheduled. Recording that is
-// better than shipping a test that appears to reproduce a race and actually reproduces nothing.
-//
-// WHAT IT ASSERTS INSTEAD is the invariant that makes the race impossible: the frame is produced
-// under FROZEN time. Under the old helper this is false, so the mutation gate holds — reverting to
-// `setTimeout(0)` turns this red — and unlike a load-dependent test it fails the same way on every
-// machine.
+// WHAT IS TRUE AT HEAD. `renderFrame` renders, awaits one macrotask, reads `lastFrame()` and
+// unmounts. It is deterministic for STATIC content and it does NOT freeze time, so an animated
+// frame read through it remains load-sensitive. That residual sensitivity is B-020's open half:
+// the two fixes that DID ship were a measured `testTimeout` and the removal of one clock-reading
+// assertion, neither of which touches this helper.
 
-describe("renderFrame determinism (B-020 T1.1)", () => {
-  it("test_real_timers_are_restored_after_the_helper_returns", async () => {
-    await renderFrame(<Text>plain</Text>);
-    // A helper that left fake timers installed would corrupt every test running after it in the
-    // same file — a failure mode worse than the one being fixed.
-    expect(vi.isFakeTimers()).toBe(false);
-  });
-
-  it("test_a_spinner_frame_does_not_advance_between_two_renders", async () => {
-    // The property v1 tried to buy with frozen time, asserted against the mechanism that actually
-    // ships: `renderFrame` reads after one macrotask, and the spinner's interval is ~80 ms, so two
-    // consecutive reads land on the same frame unless the process is descheduled for longer than
-    // that. This is the honest bound — it is not a guarantee, and the assertions that CANNOT hold
-    // under contention were rewritten as invariants instead (see
-    // `src/tools/tool-call.test.tsx > same_status_rerender_does_not_reset_spinner`).
+describe("renderFrame (B-020)", () => {
+  it("test_static_content_renders_deterministically", async () => {
     const first = await renderFrame(<Text>static</Text>);
     const second = await renderFrame(<Text>static</Text>);
+
+    expect(first).toContain("static");
     expect(second).toBe(first);
+  });
+
+  it("test_the_instance_is_unmounted_before_the_frame_is_returned", async () => {
+    // The helper unmounts before returning, which is what stops 35 callers from leaking an ink
+    // instance each. Asserted through the observable consequence: a second render of DIFFERENT
+    // content is unaffected by the first, so no previous tree is still painting.
+    await renderFrame(<Text>first-tree</Text>);
+    const frame = await renderFrame(<Text>second-tree</Text>);
+
+    expect(frame).toContain("second-tree");
+    expect(frame).not.toContain("first-tree");
+  });
+
+  it("test_the_frame_is_the_rendered_output_not_an_empty_string", async () => {
+    // `lastFrame() ?? ""` means a helper that awaited too early would silently return "" and every
+    // `not.toContain` assertion in 35 files would pass vacuously — the defect class review found
+    // throughout B-025 v1. This is the floor that stops it.
+    const frame = await renderFrame(<Text>content-present</Text>);
+
+    expect(frame).not.toBe("");
+    expect(frame.trim().length).toBeGreaterThan(0);
   });
 });
