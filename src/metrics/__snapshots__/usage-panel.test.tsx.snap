@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`UsagePanel > full_turn_layout > usage-panel-full-turn 1`] = `
+"█░░░░░░░░░░░░ 91% left (12k used / 128k)
+input     ██████████████████████████ 12k
+output    ███████░░░░░░░░░░░░░░░░░░░  3k
+cached    ██░░░░░░░░░░░░░░░░░░░░░░░░ 800
+reasoning █░░░░░░░░░░░░░░░░░░░░░░░░░ 450
+cost ~$0.42"
+`;
+
+exports[`UsagePanel > minimal_turn_layout_omits_what_was_not_reported > usage-panel-minimal-turn 1`] = `
+"█░░░░░░░░░░░░ 91% left (12k used / 128k)
+input  █████████████████████████████ 12k
+output ███████░░░░░░░░░░░░░░░░░░░░░░  3k"
+`;

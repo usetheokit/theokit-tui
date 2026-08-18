@@ -115,6 +115,38 @@ describe("UsagePanel", () => {
     );
   });
 
+  // TA-1 (review) — every sibling meter pins its rendering in __snapshots__; this one pinned only
+  // substrings, so the composed LAYOUT — the thing the component exists to produce — was asserted
+  // by nothing. Two snapshots: the full turn and the minimal one, because the difference between
+  // them IS ADR D2.
+  it("full_turn_layout", async () => {
+    expect(
+      stripAnsi(
+        await renderFrame(
+          <UsagePanel
+            usage={{
+              ...minimalTurn,
+              cacheReadTokens: 800,
+              reasoningTokens: 450,
+              cost: 0.42,
+            }}
+            contextWindow={128_000}
+          />,
+        ),
+      ),
+    ).toMatchSnapshot("usage-panel-full-turn");
+  });
+
+  it("minimal_turn_layout_omits_what_was_not_reported", async () => {
+    expect(
+      stripAnsi(
+        await renderFrame(
+          <UsagePanel usage={minimalTurn} contextWindow={128_000} />,
+        ),
+      ),
+    ).toMatchSnapshot("usage-panel-minimal-turn");
+  });
+
   // EC-3 — disabling every section yields silence, not an empty frame.
   it("renders_nothing_when_every_section_is_disabled", async () => {
     const plain = stripAnsi(
