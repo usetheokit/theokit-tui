@@ -36,7 +36,11 @@ const instance = render(
       />
       <UsagePanel
         marginTop={1}
-        usage={{ inputTokens: 12_000, outputTokens: 3_000, totalTokens: 15_000 }}
+        usage={{
+          inputTokens: 12_000,
+          outputTokens: 3_000,
+          totalTokens: 15_000,
+        }}
         contextWindow={128_000}
       />
     </Box>

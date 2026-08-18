@@ -43,7 +43,10 @@ export const DEFAULT_COMPOSER_SHORTCUTS: readonly KeyboardShortcut[] = [
   { keys: "Ctrl+W", description: "Delete the word before the cursor" },
   { keys: "Ctrl+U / Ctrl+K", description: "Delete to line start / end" },
   { keys: "Ctrl+Y", description: "Yank (paste the last kill)" },
-  { keys: "Ctrl+C", description: "Quit (handled by the app, not the composer)" },
+  {
+    keys: "Ctrl+C",
+    description: "Quit (handled by the app, not the composer)",
+  },
 ];
 
 /**

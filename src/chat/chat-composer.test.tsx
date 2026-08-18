@@ -829,7 +829,6 @@ const waitFor = async (
   });
 };
 
-
 /**
  * M54 (agent-builder backtrack) — `onChange` reports buffer text so the host can enforce a
  * composer-empty precondition (Codex `is_normal_backtrack_mode`); `initialValue` seeds the

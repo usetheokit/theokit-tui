@@ -69,8 +69,8 @@ describe("selectSurface", () => {
         render: () => <Text>never</Text>,
       },
     ];
-    expect(() => selectSurface(layers, { gated: false, asking: false })).toThrow(
-      TypeError,
-    );
+    expect(() =>
+      selectSurface(layers, { gated: false, asking: false }),
+    ).toThrow(TypeError);
   });
 });

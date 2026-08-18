@@ -27,7 +27,9 @@ const REPO_ROOT = new URL("../..", import.meta.url).pathname;
 function trackedFiles(): string[] {
   return execFileSync("git", ["ls-files"], { cwd: REPO_ROOT, encoding: "utf8" })
     .split("\n")
-    .filter((line) => /\.(ts|tsx|js|jsx|mjs|cjs|json|md|yml|yaml|css)$/.test(line));
+    .filter((line) =>
+      /\.(ts|tsx|js|jsx|mjs|cjs|json|md|yml|yaml|css)$/.test(line),
+    );
 }
 
 /** Runs the real formatter over an explicit file list; returns its exit code. */

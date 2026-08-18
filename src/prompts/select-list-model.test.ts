@@ -275,13 +275,26 @@ describe("windowFor — centred anchor", () => {
 
 const SWEEP_COUNTS = [0, 1, 2, 5, 20] as const;
 const VALID_WINDOWS = [1, 2, 5, 10, 25] as const;
-const INVALID_WINDOWS = [0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY] as const;
+const INVALID_WINDOWS = [
+  0,
+  -1,
+  2.5,
+  Number.NaN,
+  Number.POSITIVE_INFINITY,
+] as const;
 
 describe("windowFor invariants (B-021)", () => {
   it("test_the_counts_partition_the_list", () => {
     for (const count of SWEEP_COUNTS) {
       for (const window of VALID_WINDOWS) {
-        for (const selectionIndex of [-1, 0, 1, Math.floor(count / 2), count - 1, count]) {
+        for (const selectionIndex of [
+          -1,
+          0,
+          1,
+          Math.floor(count / 2),
+          count - 1,
+          count,
+        ]) {
           for (const anchor of ["centred", "trailing"] as const) {
             const view = windowFor(count, selectionIndex, window, anchor);
             // The oracle is INDEPENDENT of `windowStart`, and that is the whole point.
@@ -309,15 +322,25 @@ describe("windowFor invariants (B-021)", () => {
     for (const count of SWEEP_COUNTS) {
       if (count === 0) continue; // the all-zero early return is a legitimate distinct state
       for (const window of VALID_WINDOWS) {
-        for (const selectionIndex of [-1, 0, Math.floor(count / 2), count - 1, count]) {
+        for (const selectionIndex of [
+          -1,
+          0,
+          Math.floor(count / 2),
+          count - 1,
+          count,
+        ]) {
           for (const anchor of ["centred", "trailing"] as const) {
-          const view = windowFor(count, selectionIndex, window, anchor);
-          // BOTH anchors. The first version hardcoded "centred", and review measured a trailing
-          // off-by-one violating containment 21 times with zero violations under centred — so the
-          // companion test could not close the gap the sweep left.
-          const label = `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)} anchor=${anchor}`;
-          expect(view.clampedIndex, label).toBeGreaterThanOrEqual(view.windowStart);
-          expect(view.clampedIndex, label).toBeLessThan(view.windowStart + window);
+            const view = windowFor(count, selectionIndex, window, anchor);
+            // BOTH anchors. The first version hardcoded "centred", and review measured a trailing
+            // off-by-one violating containment 21 times with zero violations under centred — so the
+            // companion test could not close the gap the sweep left.
+            const label = `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)} anchor=${anchor}`;
+            expect(view.clampedIndex, label).toBeGreaterThanOrEqual(
+              view.windowStart,
+            );
+            expect(view.clampedIndex, label).toBeLessThan(
+              view.windowStart + window,
+            );
           }
         }
       }
@@ -337,8 +360,13 @@ describe("windowFor invariants (B-021)", () => {
       const view = windowFor(100, 50, window, "centred");
       const above = view.clampedIndex - view.windowStart;
       const below = window - 1 - above;
-      expect(above, `window=${String(window)}`).toBe(Math.floor((window - 1) / 2));
-      expect(below, `window=${String(window)} — more context ahead`).toBeGreaterThan(above);
+      expect(above, `window=${String(window)}`).toBe(
+        Math.floor((window - 1) / 2),
+      );
+      expect(
+        below,
+        `window=${String(window)} — more context ahead`,
+      ).toBeGreaterThan(above);
     }
   });
 

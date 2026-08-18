@@ -166,7 +166,9 @@ your process that writes there — to a rotating log file instead of into the mi
 ```ts
 import { installStderrGuard } from "@theokit/tui/terminal";
 
-const dispose = installStderrGuard("~/.your-cli/session.log", { label: "your-cli" });
+const dispose = installStderrGuard("~/.your-cli/session.log", {
+  label: "your-cli",
+});
 try {
   // render your app
 } finally {
@@ -188,7 +190,8 @@ number for you: this package owns no lifecycle to hook, so read it where your se
 import { lostGuardRecords } from "@theokit/tui";
 
 const lost = lostGuardRecords();
-if (lost > 0) console.error(`[your-cli] ${lost} diagnostic(s) could not be recorded`);
+if (lost > 0)
+  console.error(`[your-cli] ${lost} diagnostic(s) could not be recorded`);
 ```
 
 Two limits worth knowing:

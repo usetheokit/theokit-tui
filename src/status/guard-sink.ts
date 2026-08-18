@@ -134,8 +134,9 @@ function sanitize(text: string): string {
   const quoted = JSON.stringify(text);
   return quoted
     .slice(1, -1)
-    .replace(/[\u007F-\u009F\u2028\u2029]/g, (ch) =>
-      `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`,
+    .replace(
+      /[\u007F-\u009F\u2028\u2029]/g,
+      (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`,
     );
 }
 

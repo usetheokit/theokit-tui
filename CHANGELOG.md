@@ -100,7 +100,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   **B-031**: one invalid prop still unmounts the whole app, shows the end user a developer stack,
   and exits 0. (b025-silent-guards-2026-08-18)
 
-
 ### Changed
 
 - **The guard record is sanitised against every line-breaking code point, and a malformed `error` is
@@ -139,14 +138,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   and a present `0` is still accepted: absent stays absent, and `0` is a measurement the agent
   reported. No rendering changed. (b025-silent-guards-2026-08-18)
 
-
-
 ### Fixed
 
 - **The last two guessed budgets in the suite become measured ones (B-034).** `degrade-matrix`
   spawns `pnpm exec tsx` three times per run and budgeted 20000 ms with nothing recorded beside it;
-  one spawn measures 2621 ms at load 13, so that 7.6x margin still failed with `ETIMEDOUT` at load
-  30. Now 60000 ms, with the measurement in the code and the better fix named rather than
+  one spawn measures 2621 ms at load 13, so that 7.6x margin still failed with `ETIMEDOUT` at load 30. Now 60000 ms, with the measurement in the code and the better fix named rather than
   overlooked: pre-compiling the probe and spawning `node` would take it to ~100 ms and remove the
   sensitivity instead of budgeting for it. `typeUntil` in the composer suite carried the third copy
   of the 2000 ms bound that B-033 measured expiring on a correct frame, and now shares the one
@@ -398,7 +394,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
   uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
 
-
 ### Changed
 
 - **`src/` passa a ser organizado por dominio de produto, e nenhum componente exportado divide
@@ -451,7 +446,6 @@ copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a 
   `sonar.projectKey=usetheokit_theokit-tui`, acompanhando a mudança de organização. A organização e o
   projeto correspondentes precisam existir no SonarCloud — do contrário o step de análise falha.
   (usetheokit/theokit#316)
-
 
 ### Fixed
 
