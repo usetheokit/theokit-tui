@@ -1,5 +1,7 @@
 import { Text } from "ink";
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+
+import { recordGuardFailure } from "./guard-sink.js";
 
 /**
  * Contains a component failure so it takes its own subtree and nothing else.
@@ -35,6 +37,11 @@ export class ComponentBoundary extends Component<
     readonly children: ReactNode;
     /** Replaces the default one-line fallback. Must not render a stack — the user is not a developer. */
     readonly fallback?: ReactNode;
+    /**
+     * Called with the caught error. The boundary ALREADY writes a durable record; this is for
+     * consumers who route errors somewhere of their own. It does not suppress the record.
+     */
+    readonly onError?: (error: Error, info: ErrorInfo) => void;
   },
   { readonly failed: boolean }
 > {
@@ -44,14 +51,28 @@ export class ComponentBoundary extends Component<
     return { failed: true };
   }
 
-  override componentDidCatch(): void {
-    // `exitCode`, never `exit()`. Setting the code lets the process finish normally — flushing
-    // output, running teardown, unmounting — while telling the shell the truth. `process.exit(1)`
-    // here would truncate in-flight stdout and skip teardown, turning a CONTAINED failure back into
-    // an abrupt one, which is the behaviour being replaced.
+  override componentDidCatch(error: Error, info: ErrorInfo): void {
+    // REVIEW FIX (F-arch-2). This took NO parameters, so the error was discarded: a failure from a
+    // consumer's own subtree produced a fallback line, a non-zero exit code, and nothing anywhere
+    // saying what happened. Measured — `"consumer bug: cannot read 'name' of undefined"` appeared in
+    // no frame, no log and no stream. That is the swallow `.claude/rules/error-handling.md` § 5
+    // forbids, introduced by the component meant to make failures visible.
     //
-    // A consumer who disagrees can set it back: this is a default, not a seizure.
-    process.exitCode = 1;
+    // A contained GUARD failure now leaves two records — one when it fired, one when it was
+    // contained. Different facts, not duplication (§ 3.1, "never deduplicate").
+    recordGuardFailure(this.props.component, error);
+    this.props.onError?.(error, info);
+
+    // REVIEW FIX (F-arch-1). This assigned unconditionally and destroyed a NARROWER code the
+    // consumer had already set: a CLI exiting 2 for a usage error, then hitting a contained guard
+    // failure, exited 1 and lost the reason. D1's mitigation only covered writes AFTER the catch,
+    // which a consumer cannot schedule. A code that is already non-zero is already the truth.
+    //
+    // `exitCode`, never `exit()`: setting the code lets the process finish normally — flushing
+    // output, running teardown, unmounting — while telling the shell the truth. `process.exit(1)`
+    // would truncate in-flight stdout and skip teardown, turning a CONTAINED failure back into an
+    // abrupt one, which is the behaviour being replaced.
+    if (!process.exitCode) process.exitCode = 1;
   }
 
   override render(): ReactNode {
