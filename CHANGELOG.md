@@ -5,6 +5,36 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.66.0] - 2026-08-19
+
+### Added
+
+- **The dead-code gate can now see a module only its own test reaches (B-024).** `pnpm lint` runs
+  `knip --production --include files`, which resolves reachability from what the package actually
+  publishes rather than from a test.
+
+  Measured on this tree: knip under its defaults does NOT report `src/renderer/kill-ring.ts` or
+  `src/renderer/undo-stack.ts` — complete, tested modules whose own headers describe a composer
+  integration that does not exist, and which nothing imports. In production mode it reports both.
+  That is the blind spot the item was filed about, and it is why `/code-quality`'s D1 returned
+  `PASS` with `score_cap: 100` on every audit while unable to answer its own question.
+
+  `examples/` and `benchmarks/` are DECLARED ENTRIES rather than ignored paths: they are unreachable
+  from `exports` by design, but a dead module imported only by a dead example must stay visible.
+  The six known-dead files are exempted one path at a time, each with a written reason and an item
+  that owns the decision — nothing was deleted to make the gate green. See `knip.README.md`.
+
+### Changed
+
+- **The release chain writes the version into every site that carries it (B-059).** The version
+  lives in `package.json` and in `src/index.ts` as an exported constant, and a human kept them in
+  step. The export-surface gate catches a divergence — it did, at 0.63.0, aborting `npm publish`
+  _after_ the tag was cut and pushed, so `v0.63.0` still points at a commit whose exported constant
+  is wrong. `bump_version.py` now writes both, verifies every site before writing any of them, and
+  **names** any other tracked file carrying the old version instead of rewriting it: a version
+  string in a fixture or a documented example is not a site, and replacing it blindly is a
+  corruption no gate would catch. A non-zero exit blocks the release rather than warning.
+
 ## [0.65.0] - 2026-08-19
 
 ### Added

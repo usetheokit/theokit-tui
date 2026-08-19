@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/index.ts",
+    "src/renderer/index.ts",
+    "src/terminal/index.ts",
+    "src/keys/index.ts",
+    "examples/**/*.tsx",
+    "examples/**/*.ts",
+    "benchmarks/**/*.ts",
+    "benchmarks/**/*.tsx"
+  ],
+  "ignore": [
+    "tests/**",
+    "src/renderer/kill-ring.ts",
+    "src/renderer/undo-stack.ts",
+    "src/search/index.ts",
+    "src/renderer/hooks/index.ts",
+    "src/renderer/input/index.ts",
+    "src/renderer/output/index.ts"
+  ]
+}
