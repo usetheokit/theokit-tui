@@ -9,6 +9,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **The repository's own quality gate is green again, and now means the same thing on every
+  machine (B-051).** `pnpm gates` had been red since v0.54.0 — which is also the first version that
+  never reached npm — and `format:check` is its first link, so `lint`, `typecheck`, `test` and
+  `build` had not run in any publish attempt for ten versions. 24 files were reformatted.
+
+  The larger half is that both `format:check` and `lint` walked the FILESYSTEM rather than the git
+  index, so their result depended on whatever untracked files a machine happened to have: a cache
+  directory, a stray scratch file. Both now run over `git ls-files`, and a regression test asserts
+  the rule by planting an untracked file and requiring the gate to stay green.
+
+  No consumer-visible behaviour changes. Recorded here because the gate is what `prepublishOnly`
+  runs, so this is what unblocks publishing at all.
+
 - **`SelectList` now shows HOW MANY rows are hidden, not just that some are (B-022).** The
   overflow chrome went from a bare `▲` / `▼` to `▲ 3` / `▼ 8`, matching what `WindowedList`
   already rendered from the identical model. Both components consume the same view object;
