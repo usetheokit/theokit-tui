@@ -1,3 +1,13 @@
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { render } from "ink";
 import React from "react";
 import { describe, expect, it } from "vitest";
@@ -5,6 +15,8 @@ import { describe, expect, it } from "vitest";
 import { UsagePanel } from "../metrics/usage-panel.js";
 
 import type { GuardSink } from "./guard-sink.js";
+import { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
+import { installStderrGuard } from "../terminal/stderr-guard.js";
 
 // B-025 v2 T2.4 and T3.1 — the two things v1 could not know, because it never drove a real render.
 //
@@ -142,3 +154,66 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
  * reported by this test instead of silently changing what the docblock claims.
  */
 const USAGE_PANEL_RECORDS_PER_FIRE = 2;
+
+// B-040 — the boolean the design rests on, verified against the thing that returns it.
+//
+// `guard-sink.ts` justifies `GuardSink.write` returning `boolean` by citing `stderr-guard.ts`,
+// which returns `false` when its append fails. Every `false`-return test in `guard-sink.test.ts`
+// injects a STUB — written by the same author, in the same session, as the code under test. So the
+// integration the design rests on was asserted nowhere, and a change in `stderr-guard`'s contract
+// (returning `true` on failure, or throwing) would have left every test green.
+//
+// B-025 v2 declared this exact failure scenario — "the log file | parent directory unwritable |
+// `installStderrGuard` on a read-only path" — and never exercised it.
+//
+// No mocks here, and that is the point: `installStderrGuard` already TREATS an unwritable parent as
+// a supported state (`stderr-guard.ts:55-60`: "Unwritable parent. Not fatal, and not silent
+// either"), so the failure needs no cooperation from the code under test. Mocking `node:fs` would
+// re-create the stub problem one layer down.
+describe("B-040 — the real sink, when it cannot write", () => {
+  it("test_a_real_unwritable_sink_counts_a_lost_record_and_still_throws", () => {
+    const dir = mkdtempSync(join(tmpdir(), "theokit-b040-"));
+    const logPath = join(dir, "locked", "guard.log");
+    mkdirSync(join(dir, "locked"), { recursive: true });
+    chmodSync(join(dir, "locked"), 0o500); // r-x: the append fails, the directory still lists
+
+    // Probe rather than assume: chmod is not honoured for root or on some filesystems, and a test
+    // that silently asserted nothing would be worse than one that says it could not run.
+    let writable = true;
+    try {
+      writeFileSync(join(dir, "locked", "probe"), "x");
+    } catch {
+      writable = false;
+    }
+    if (writable) {
+      rmSync(dir, { recursive: true, force: true });
+      return; // chmod not honoured here — the scenario cannot be produced
+    }
+
+    const before = lostGuardRecords();
+    const original = process.stderr.write;
+    const dispose = installStderrGuard(logPath, { label: "b040" });
+    const guardError = new TypeError("B040Probe: the guard fired");
+    let thrown: unknown;
+    try {
+      // The guard's own error must reach the caller UNCHANGED. A version that counted the loss and
+      // swallowed the error would satisfy the counter assertion alone, and that is precisely the
+      // failure `rules/error-handling.md` § 3.1 forbids: "a sink that returns false or throws must
+      // not make the diagnostic vanish — that is the original defect, one layer down".
+      reportGuardFailure("B040Probe", guardError);
+    } catch (err) {
+      thrown = err;
+    } finally {
+      // The guard REPLACES process.stderr.write process-wide, and vitest shares a worker across
+      // files. A leak here would look like unrelated flakiness in other files.
+      dispose();
+      rmSync(dir, { recursive: true, force: true });
+    }
+
+    expect(lostGuardRecords()).toBe(before + 1);
+    // The SAME object, not merely "something threw": a version that caught the guard's error and
+    // raised its own would satisfy a `toThrow` and still have destroyed the diagnostic.
+    expect(thrown).toBe(guardError);
+    expect(process.stderr.write).toBe(original);
+  });
+});

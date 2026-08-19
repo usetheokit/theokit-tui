@@ -6,6 +6,7 @@ import { ApprovalPrompt } from "./approval-prompt.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";
 import { OverlayProvider, useOverlay } from "../renderer/hooks/use-overlay.js";
 import { useInput } from "../renderer/input/use-input.js";
+import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
 
 // M23 T4.1 — the overlay-integration edge case (blueprint edge case 5, ADR D7):
 // an ApprovalPrompt pushed as an overlay (the realistic trigger-driven pattern,
@@ -18,7 +19,7 @@ async function waitForFrame(
   app: ItlInstance,
   substring: string,
   present = true,
-  timeoutMs = 2000,
+  timeoutMs = WAIT_BUDGET_MS,
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {

@@ -34,6 +34,20 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**"],
+      // B-048 — declared, not defaulted, because the Squad gate reads a FILE.
+      //
+      // `coverage_gate.py` looks for `coverage/coverage-summary.json` first, and vitest's default
+      // set (`text`, `html`, `clover`, `json`) writes none of the four names it knows. So the gate
+      // reported "the threshold was NOT verified" on every validation run, and WARN does not block.
+      //
+      // The list REPLACES the defaults rather than extending them, so all four are named here: the
+      // tempting one-line fix (`["text", "json-summary"]`) silently deletes the HTML report people
+      // open locally and the clover.xml other tools consume, and nothing in this repo would fail.
+      //
+      // The `thresholds` below are what actually enforce coverage, at 90 — stricter than the Squad
+      // gate's 80 — and CI runs `pnpm test:coverage`, so a miss fails the job. This key does not
+      // add safety; it stops a gate from emitting noise nobody can act on.
+      reporter: ["text", "html", "clover", "json", "json-summary"],
       // Plan Global DoD: >= 90% on src/** (critical paths at 100%).
       thresholds: {
         statements: 90,

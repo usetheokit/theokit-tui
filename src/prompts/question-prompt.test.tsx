@@ -4,6 +4,7 @@ import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
 import { QuestionPrompt } from "./question-prompt.js";
 import type { SelectListItem } from "./select-list-model.js";
 import type { QuestionAnswer } from "../agent/agent-decision.js";
+import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
 
 /**
  * Poll the frame for `substring` (deterministic, not a fixed sleep — testing.md
@@ -13,7 +14,7 @@ import type { QuestionAnswer } from "../agent/agent-decision.js";
 async function waitForFrame(
   app: ItlInstance,
   substring: string,
-  timeoutMs = 2000,
+  timeoutMs = WAIT_BUDGET_MS,
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
