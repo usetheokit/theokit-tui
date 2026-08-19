@@ -36,6 +36,17 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 // failing. The ceiling exists so a genuinely stuck render fails the test rather than hanging it.
 // B-057 — extracted so the RULE can be tested against an injected frame source, with no timing
 // dependency. The behaviour here is unchanged by the extraction; T1.2 is what changes it.
+// How long to keep waiting before concluding that nothing is coming. It is NOT the correctness
+// mechanism — detecting the reaction is — and it is only ever paid by an input that legitimately
+// changes nothing (an ignored key). Measured: Ink reacts in **8-16 ms** unloaded over eight
+// keystrokes, so 200 ms is ~12x the observed latency.
+//
+// It was 400 ms, and that cost was not free: review measured this file 2.8x slower on a test that
+// types an ignored ESC (223 ms -> 621 ms), and under concurrent load that test reached 11.2 s
+// against a 15 s budget and failed one `pnpm gates` run in three. Halving the ceiling halves the
+// no-reaction penalty while keeping an order of magnitude of margin over the measured latency.
+const CEILING_MS = 200;
+
 const settleWatching = async (
   readFrame: () => string | undefined,
   before?: string,
@@ -46,7 +57,7 @@ const settleWatching = async (
   // old helper returned. A reaction must be OBSERVED first — either the frame differs from what it
   // was before the write, or (when no baseline was captured) the caller is not waiting on one.
   let reacted = before === undefined;
-  for (let elapsed = 0; elapsed < 400; elapsed += 10) {
+  for (let elapsed = 0; elapsed < CEILING_MS; elapsed += 10) {
     // duration is the subject: this is a POLL INTERVAL inside a bounded condition-wait, not a
     // sleep-then-assert. It is already the idiom B-033 converts other sites TO.
     await new Promise((resolve) => setTimeout(resolve, 10));
