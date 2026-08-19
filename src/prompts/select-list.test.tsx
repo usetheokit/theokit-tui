@@ -396,17 +396,21 @@ describe("SelectList hidden-row counts (B-022)", () => {
         createElement(SelectList, {
           items: many,
           window: 4,
+          initialSelectionIndex: 11,
           onSubmit: () => {},
         }),
       );
       await app.flush();
 
-      // Act — one step up wraps to the end of the list.
-      app.stdin.write("\u001B[A");
-      await app.flush();
       const frame = app.lastFrame() ?? "";
       app.unmount();
 
+      // B-054 — this arrives at the last row by PROP, not by up-arrow wrap-around. Measured before
+      // the change: the two mutants "wrap becomes clamp" and "delete the upArrow branch" had
+      // IDENTICAL kill sets of four tests, so this rendering assertion died whenever the key layer
+      // did and could not fail for rendering reasons alone. `up_arrow_wraps_to_the_last_row` (:47)
+      // keeps that key-layer coverage; this test no longer duplicates it.
+      //
       // Assert — the mirror of the very first test in this block. Together the two pin the rule
       // rather than one example: eight hidden above here, eight hidden BELOW there, and the arrow
       // that carries the count changes with the edge.

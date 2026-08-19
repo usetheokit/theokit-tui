@@ -5,6 +5,23 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **`SelectList` accepts an optional `initialSelectionIndex` (B-054).** Omitting it reproduces
+  today's behaviour exactly, so no caller changes.
+
+  It exists because an edge-RENDERING test could only reach the last row by driving the up-arrow,
+  which made it die whenever the key layer died. Measured: the mutants "wrap becomes clamp" and
+  "delete the up-arrow branch" had **identical kill sets of four tests** — nothing in the repo
+  distinguished a broken wrap from a dead arrow. With the prop, both mutants now kill
+  `up_arrow_wraps_to_the_last_row` and spare the rendering test, so the two report different
+  defects. `WindowedList` already took its position as a prop, which is why its equivalent test was
+  three lines.
+
+  The name says `initial` on purpose: the component keeps owning the selection, so a changing value
+  is ignored after first render. A controlled `selected` + `onSelectionChange` pair was rejected —
+  a caller who passes the value and forgets the handler gets inert arrows, and this is published.
+
 ### Fixed
 
 - **Four test helpers were not stripping ANSI at all (B-055).** They spelled the pattern
