@@ -52,14 +52,27 @@ retires it is somewhere else". An unexplained exemption is how the sibling's own
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------- |
 | `src/renderer/kill-ring.ts` (43 LOC)  | complete + tested; its header describes a composer integration that does not exist. 0 production importers, 1 test | B-065                 |
 | `src/renderer/undo-stack.ts` (28 LOC) | same shape, same header, same measurement                                                                          | B-065                 |
-| `src/search/index.ts`                 | an internal barrel. Its own comment says `src/chat` consumes it; measured, `src/chat` imports the concrete modules | B-066                 |
-| `src/renderer/hooks/index.ts`         | `src/index.ts:26` reaches `./renderer/hooks/use-overlay.js` DIRECTLY, so the barrel has no importer                | B-066                 |
-| `src/renderer/input/index.ts`         | same — the barrel is bypassed                                                                                      | B-066                 |
-| `src/renderer/output/index.ts`        | same                                                                                                               | B-066                 |
 
-Nothing was deleted to make this gate green. Deleting 71 LOC of tested code and four barrels from a
-published package is a change that deserves its own measurement, not a side effect of configuring a
-detector.
+Nothing was deleted to make this gate green. Deleting 71 LOC of tested code from a published package
+is a change that deserves its own measurement, not a side effect of configuring a detector.
+
+**The four barrel rows are gone, and were replaced by a rule rather than by a deletion (B-066).**
+`src/**/index.ts` is now an `entry`. The reason is structural rather than cosmetic: ADR 0002 makes a
+barrel the _mechanism_ of privacy — a folder is private BY not being re-exported from the root — so
+an internal domain's barrel having zero importers is the EXPECTED state, not a defect. Measured
+across the whole tree, no sibling domain imports another domain's barrel at all; deep imports are
+the house pattern.
+
+Two gates disagreed and the list was the manual patch between them: `tests/lint/structure.test.ts`
+MANDATES a barrel for every folder under `src/`, and knip called that same barrel unused. Deleting
+the four was measured and refused — it turns that test red, naming those exact folders. The rule
+means the next internal domain gets the right answer without a new line here.
+
+The gate is not weakened, and that was measured rather than asserted. With the two remaining rows
+temporarily unexempted, knip still reports `kill-ring.ts` and `undo-stack.ts`; and a scratch module
+exported from its own barrel and imported by nothing is still reported under the new rule. Declaring
+a barrel an entry makes the BARREL a root, not its exports. The accepted cost is that a barrel which
+is itself entirely dead is now invisible.
 
 **Every entry here is a full path, never a glob** (except `tests/**`, which is a category). A glob
 would let a new dead file inherit an exemption nobody granted it.

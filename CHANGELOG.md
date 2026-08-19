@@ -7,6 +7,31 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **Four dead-code exemptions replaced by one rule (B-066).** `knip.json` listed
+  `src/search/index.ts` and the three `src/renderer/*` barrels by name; it now declares
+  `src/**/index.ts` an entry point and the list drops from seven rows to three.
+
+  The four barrels genuinely have zero importers — and under ADR 0002 that is the EXPECTED state,
+  not a defect: a barrel is the _mechanism_ of privacy, so a folder the root does not re-export has
+  nothing left to import its barrel. Two gates disagreed about it —
+  `tests/lint/structure.test.ts` mandates a barrel for every folder under `src/`, knip called that
+  same barrel unused — and the exemption list was the manual patch between them, growing one line
+  per internal domain. Deleting the four was measured and refused: it turns that test red, naming
+  those exact folders.
+
+  The gate is not weakened, and that was measured rather than asserted: a module exported from its
+  own barrel and imported by nothing is still reported. Declaring a barrel an entry makes the
+  BARREL a root, not its exports.
+
+  Also corrected: `src/search/index.ts`'s header claimed its boundary was "enforceable". Both of its
+  real consumers reach past it with a deep import, one of them from a different and public domain,
+  and no sibling domain in the tree imports another's barrel. The comment now says the boundary is
+  conventional, which is what is true.
+
+  No `dist` artifact changes; nothing published moves.
+
+### Changed
+
 - **A test wait that fails now names the 200 ms event that likely caused it (B-058, phase 1).**
   `settleWatching` reaches a 200 ms ceiling when it observes no reaction to a write, and returned
   quietly. That is correct for a key that legitimately changes nothing — and identical to what a
