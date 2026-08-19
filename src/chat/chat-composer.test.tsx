@@ -48,6 +48,20 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 // no-reaction penalty while keeping an order of magnitude of margin over the measured latency.
 const CEILING_MS = 200;
 
+/**
+ * B-058 — every settle that reached the ceiling WITHOUT observing a reaction, in this file.
+ *
+ * The ceiling stays a quiet return (ADR D3 keeps it BOUNDED), because an input that legitimately
+ * changes nothing — an ignored key — burns it too, and throwing there would turn correct tests red.
+ * But a no-reaction settle is also the signature of a write the component never saw, and today that
+ * is reported ten seconds later by a `waitFor` in another helper, with nothing connecting the two.
+ *
+ * So the event is RECORDED here and surfaced by `waitForFrame` when a wait actually fails. Passing
+ * tests print nothing; a failing one names the write that produced no reaction, at 200 ms, instead
+ * of leaving the reader to infer it from a timeout.
+ */
+const noReactionSettles: string[] = [];
+
 const settleWatching = async (
   readFrame: () => string | undefined,
   before?: string,
@@ -71,6 +85,13 @@ const settleWatching = async (
   // assertion that follows is what reports the failure, with the frame it actually saw). An input
   // that legitimately changes nothing burns it — measured as rare enough that the file got FASTER
   // overall, 27.4s -> 23.9s, because the common case now returns as soon as the change lands.
+  //
+  // B-058 — quiet, not silent. The event is recorded so a later failure can name it.
+  if (!reacted) {
+    noReactionSettles.push(
+      `no reaction within ${String(CEILING_MS)}ms; frame stayed ${JSON.stringify(readFrame() ?? "")}`,
+    );
+  }
 };
 
 // B-057, second review pass — the invariant is ORDER, and a required parameter cannot express it.
@@ -127,6 +148,12 @@ async function type(
 // Ink's render is time-throttled; a fixed `settle` sleep is flaky under load
 // (testing.md §6). Polling resolves as soon as the frame settles and waits as
 // long as needed — deterministic regardless of machine load.
+/** B-058 — renders the recorded no-reaction settles for a failing wait, or nothing when there are none. */
+function describeNoReactionSettles(): string {
+  if (noReactionSettles.length === 0) return "";
+  return `\n\nB-058 — ${String(noReactionSettles.length)} settle(s) reached the ${String(CEILING_MS)}ms ceiling with no reaction observed. A write the component never saw looks exactly like this, and so does a key that legitimately changes nothing:\n  ${noReactionSettles.join("\n  ")}`;
+}
+
 async function waitForFrame(
   instance: Awaited<ReturnType<typeof mount>>,
   substring: string,
@@ -139,7 +166,10 @@ async function waitForFrame(
   await waitForCondition(
     () => (instance.lastFrame() ?? "").includes(substring) === present,
     {
-      describe: `the frame to ${present ? "contain" : "stop containing"} ${JSON.stringify(substring)} — last frame:\n${instance.lastFrame() ?? ""}`,
+      // B-058 — the no-reaction settles are appended to the message, so a wait that fails ten
+      // seconds downstream names the 200ms event that is its likely cause instead of leaving the
+      // reader to guess. Empty on a healthy run, so this adds nothing to a passing test.
+      describe: `the frame to ${present ? "contain" : "stop containing"} ${JSON.stringify(substring)} — last frame:\n${instance.lastFrame() ?? ""}${describeNoReactionSettles()}`,
       ...(timeoutMs === undefined ? {} : { timeoutMs }),
     },
   );
@@ -500,6 +530,37 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     expect(frame).toMatch(/\u25B2\s*4/);
     expect(frame).not.toContain("\u25BC");
     instance.unmount();
+  });
+
+  it("a_failing_wait_names_the_no_reaction_settle_that_preceded_it", async () => {
+    // B-058 — the detection half. A settle that reaches the 200ms ceiling without observing a
+    // reaction is the signature of a write the component never saw; it is ALSO what an ignored key
+    // produces, which is why the ceiling stays a quiet return rather than a throw. What changes is
+    // that the event is recorded, so a wait failing ten seconds later names it.
+    //
+    // Driven with an ESC on a composer with no menu — a keystroke that legitimately changes
+    // nothing, so it burns the ceiling by design and gives us a real recorded event without
+    // faking one.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, [ESC]);
+
+    let message = "";
+    try {
+      // A substring that will never appear, with a short budget: this is the failure path.
+      await waitForFrame(
+        instance,
+        "this frame will never contain me",
+        true,
+        300,
+      );
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    instance.unmount();
+
+    expect(message).toContain("B-058");
+    expect(message).toContain("no reaction observed");
+    expect(message).toMatch(/settle\(s\) reached the 200ms ceiling/);
   });
 
   it("tab_completes_to_command_with_trailing_space", async () => {

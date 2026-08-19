@@ -5,6 +5,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Changed
+
+- **A test wait that fails now names the 200 ms event that likely caused it (B-058, phase 1).**
+  `settleWatching` reaches a 200 ms ceiling when it observes no reaction to a write, and returned
+  quietly. That is correct for a key that legitimately changes nothing — and identical to what a
+  write the component never saw produces. The event is now recorded and appended to a failing
+  wait's message, so a timeout ten seconds downstream reports the cause instead of the symptom.
+  Passing tests print nothing.
+
+  Test-infrastructure only; no published behaviour changes.
+
+  **The write-side half is NOT fixed, and the reason is on the record.** The mechanism could not be
+  reproduced deterministically: the stdin listener count does not reflect `useInput`'s subscription
+  in this harness (0 listeners at every tick, and the write lands anyway), and forcing the
+  pre-subscription window loses nothing — 0/40 at every tick count, 0/60 under in-process load.
+  Four earlier classes of this failure were declared closed by absence; a fifth is not being added.
+  No wait budget was raised and no worker count lowered.
+
 ### Added
 
 - **`SelectList` accepts an optional `initialSelectionIndex` (B-054).** Omitting it reproduces
