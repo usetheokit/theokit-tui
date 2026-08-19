@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { afterAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // B-051 — `pnpm gates` has been red since v0.54.0, which is also the first version that never
 // reached npm. `format:check` is the first link of `gates` (package.json:63) and `prepublishOnly`
@@ -32,10 +32,10 @@ import { afterAll, describe, expect, it } from "vitest";
 
 const REPO_ROOT = new URL("../..", import.meta.url).pathname;
 
-/** Runs the gate's own command — `pnpm format:check` — and returns its exit code. */
-function prettierCheckRepo(): number {
+/** Runs one of the gate's own scripts BY NAME and returns its exit code. */
+function runGateScript(script: string): number {
   try {
-    execFileSync("pnpm", ["format:check"], {
+    execFileSync("pnpm", [script], {
       cwd: REPO_ROOT,
       encoding: "utf8",
       stdio: "pipe",
@@ -47,23 +47,37 @@ function prettierCheckRepo(): number {
   }
 }
 
-const scratch: string[] = [];
+// Both of the first two links carried the same defect. `format:check` was found first, via
+// `.pytest_cache/README.md`; fixing it exposed `lint`, which failed on a scratch directory this
+// very test had leaked. One rule, two links, so one parameterised test rather than two copies.
+describe.each(["format:check", "lint"])(
+  "gate %s is hermetic (B-051)",
+  (script) => {
+    it("test_an_untracked_file_cannot_turn_the_gate_red", () => {
+      // Arrange — a badly formatted file that git does not know about, in a directory no rule names.
+      //
+      // `try/finally`, not `afterAll`. The first version used `afterAll` and the scratch directory
+      // LEAKED: a `pnpm gates` run that timed out killed the process before the hook could run, and
+      // the leftover file then failed `eslint .` on the NEXT run — a test polluting the repository
+      // it tests. `finally` also runs when the assertion fails; only a SIGKILL escapes it, and the
+      // `b051-scratch-` prefix makes a leak greppable.
+      const dir = mkdtempSync(join(REPO_ROOT, "b051-scratch-"));
+      try {
+        writeFileSync(
+          join(dir, "unformatted.ts"),
+          "const   x=1;;;\n\n\n",
+          "utf8",
+        );
 
-afterAll(() => {
-  for (const path of scratch) rmSync(path, { recursive: true, force: true });
-});
+        // Act — the gate BY NAME, not a copy of its command, so this cannot stay green while
+        // `format:check` is changed back to something non-hermetic.
+        const exitCode = runGateScript(script);
 
-describe("gates are hermetic (B-051)", () => {
-  it("test_an_untracked_file_cannot_turn_the_gate_red", () => {
-    // Arrange — a badly formatted file that git does not know about, in a directory no rule names.
-    const dir = mkdtempSync(join(REPO_ROOT, "b051-scratch-"));
-    scratch.push(dir);
-    writeFileSync(join(dir, "unformatted.ts"), "const   x=1;;;\n\n\n", "utf8");
-
-    // Act — the real gate command, verbatim: `format:check` is `prettier --check .`.
-    const exitCode = prettierCheckRepo();
-
-    // Assert — the untracked file is invisible to it, so two machines agree on the result.
-    expect(exitCode).toBe(0);
-  }, 180_000); // the whole tree, which took 28s idle and 50s under `pnpm gates`. Measured, not guessed. // Explicit, because it exceeds the repo-wide 15s testTimeout: it runs the real formatter over
-});
+        // Assert — the untracked file is invisible to it, so two machines agree on the result.
+        expect(exitCode).toBe(0);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }, 180_000); // `pnpm gates`, against a repo-wide 15s testTimeout. // Explicit: it runs the real formatter over the whole tree, measured at 28s idle and 50s under
+  },
+);
