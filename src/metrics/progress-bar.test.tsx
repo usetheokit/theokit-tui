@@ -6,7 +6,7 @@ import { stripAnsi } from "../format/ansi.js";
 
 const strip = (v: string): string =>
   // Full ANSI strip incl. ESC, so adjacent color runs (filled + empty) join.
-  // eslint-disable-next-line no-control-regex
+
   stripAnsi(v);
 
 describe("ProgressBar", () => {

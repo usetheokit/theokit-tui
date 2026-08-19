@@ -8,8 +8,6 @@ import {
 } from "../agent/messages-to-events.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 /**
  * Reproduces the EXACT footer wiring the scaffolded `tui/App.tsx` uses (create-theokit templates): read
  * each thread message's per-turn usage via `readTurnUsage`, render the last turn's input tokens against the

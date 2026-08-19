@@ -8,7 +8,6 @@ import { TheoTUIProvider } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
 
 /** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
-// eslint-disable-next-line no-control-regex
 
 // PATCH_BASIC duplicate (per-file — plan EC-23; home: src/diff-model.test.ts).
 const PATCH_BASIC = [

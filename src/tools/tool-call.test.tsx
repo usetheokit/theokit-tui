@@ -15,7 +15,6 @@ import { stripAnsi } from "../format/ansi.js";
 const DOTS_FRAME_0 = "⠋";
 
 /** Compound-SGR-safe strip (SEPA phase-1 F7). */
-// eslint-disable-next-line no-control-regex
 
 describe("formatArgs (M26 name(args) header)", () => {
   it("formats_a_present_summary_in_parens", () => {
@@ -401,7 +400,6 @@ describe("ToolCall — toolStatus tokens (M6 T2.1)", () => {
 // bodies — pure composition of DiffViewer/ToolResult/CodeBlock inside the
 // card's indent slot. Snapshot budget for the milestone: <= 3, all here.
 
-// eslint-disable-next-line no-control-regex
 const m16plain = (frame: string | undefined): string => stripAnsi(frame ?? "");
 
 const VALID_PATCH = [

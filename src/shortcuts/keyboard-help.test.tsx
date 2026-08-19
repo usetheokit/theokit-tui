@@ -4,8 +4,6 @@ import { DEFAULT_COMPOSER_SHORTCUTS, KeyboardHelp } from "./keyboard-help.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 describe("KeyboardHelp", () => {
   it("renders_each_shortcut_key_and_description", async () => {
     const frame = stripAnsi(

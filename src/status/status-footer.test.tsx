@@ -5,9 +5,7 @@ import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { StatusFooter } from "./status-footer.js";
 import { stripAnsi } from "../format/ansi.js";
 
-const strip = (v: string): string =>
-  // eslint-disable-next-line no-control-regex
-  stripAnsi(v);
+const strip = (v: string): string => stripAnsi(v);
 
 describe("StatusFooter (#45 — two-line footer)", () => {
   it("top_row_is_justified_left_and_right", async () => {

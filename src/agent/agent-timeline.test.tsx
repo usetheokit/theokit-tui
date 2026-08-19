@@ -26,7 +26,6 @@ const { AgentTimeline } = await import("./agent-timeline.js");
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
-// eslint-disable-next-line no-control-regex
 
 const message = (id: string, text: string): AgentMessageEvent => ({
   id,

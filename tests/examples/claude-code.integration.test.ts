@@ -24,7 +24,7 @@ it(
     );
     // Strip ANSI: the tool header splits "Search" (bold) from "(pattern:" (dim)
     // with SGR codes between them, so assert on the plain text.
-    // eslint-disable-next-line no-control-regex
+
     const plain = stripAnsi(out);
     expect(plain).toContain("Tips for getting started"); // welcome aside
     expect(plain).toContain("!! "); // warning notice

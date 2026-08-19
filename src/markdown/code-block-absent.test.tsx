@@ -15,8 +15,6 @@ import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { CodeBlock, ensureHighlighter } from "./code-block.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 describe("CodeBlock — optional peer absent (T2.1, ADR D2)", () => {
   it("absent_module_degrades_plain_warns_once_and_resolves_undefined", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});

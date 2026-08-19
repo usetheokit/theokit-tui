@@ -38,8 +38,6 @@ import type { AgentStreamEvent } from "../../src/index.js";
 import { renderFrame } from "../fixtures/helpers.js";
 import { stripAnsi } from "../../src/format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 describe("public API integration (T2.2)", () => {
   it("public_entry_composes_provider_and_message_for_both_roles", async () => {
     const frame = await renderFrame(

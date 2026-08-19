@@ -4,8 +4,6 @@ import { CostMeter } from "./cost-meter.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 // T2.3 (plan m5-metrics-surface, ADRs D2/D3): honest cost display.
 describe("CostMeter", () => {
   it("renders_approx_cost_by_default", async () => {

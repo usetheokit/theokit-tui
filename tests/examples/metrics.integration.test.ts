@@ -23,7 +23,7 @@ it(
       },
     );
     // Frames carry ANSI (FORCE_COLOR=1) — strip before anchoring.
-    // eslint-disable-next-line no-control-regex
+
     const plain = stripAnsi(out);
     expect(plain).toMatch(/\d+% (left|used)/);
     expect(plain).toContain("~$");

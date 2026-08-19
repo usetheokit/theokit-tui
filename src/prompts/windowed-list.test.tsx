@@ -4,8 +4,6 @@ import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { WindowedList } from "./windowed-list.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 const rows = (n: number): string[] =>
   Array.from({ length: n }, (_, i) => `turn ${String(i)}`);
 

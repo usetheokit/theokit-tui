@@ -9,8 +9,6 @@ import { stripAnsi } from "../format/ansi.js";
 // ink tree with THEME tokens (blueprint Corner 1 d/e/f). Snapshot budget
 // for the whole milestone: <= 2, both in this suite, both anchored.
 
-// eslint-disable-next-line no-control-regex
-
 const RICH = [
   "# Title",
   "",

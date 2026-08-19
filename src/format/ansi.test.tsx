@@ -42,6 +42,18 @@ describe("stripAnsi (B-055)", () => {
     expect(stripAnsi(`${ESC}[31m${osc8}${ESC}[39m`)).toBe(osc8);
   });
 
+  it("is_sgr_only_and_leaves_other_csi_sequences_intact", () => {
+    // B-055 review (F-tests-1) — the OSC test above cannot discriminate a CSI widening, because
+    // its fixture is built entirely from `ESC ]`. Measured: a third mutant broadening the pattern
+    // to every CSI final byte (`[0-9;]*[a-zA-Z]`) SURVIVED all four tests and 149 more across the
+    // six most-migrated files. So ADR D2's safeguard — "widening must change a test on purpose" —
+    // was true for OSC and false for CSI, on a helper whose one production caller sanitises
+    // UNTRUSTED input.
+    const cursorMoves = `${ESC}[2J${ESC}[1;1H${ESC}[?25l`;
+    expect(stripAnsi(cursorMoves)).toBe(cursorMoves);
+    expect(stripAnsi(`${ESC}[31m${cursorMoves}${ESC}[39m`)).toBe(cursorMoves);
+  });
+
   it("joins_adjacent_colour_runs_so_a_bar_reads_as_one_string", () => {
     // The contract `metrics/progress-bar.test.tsx:7` already documented in a comment —
     // "Full ANSI strip incl. ESC, so adjacent color runs (filled + empty) join."

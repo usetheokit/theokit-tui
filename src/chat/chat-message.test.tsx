@@ -32,7 +32,7 @@ describe("ChatMessage (T2.1)", () => {
     const frame = await renderFrame(
       <ChatMessage role="assistant">reply</ChatMessage>,
     );
-    // eslint-disable-next-line no-control-regex
+
     const plain = stripAnsi(frame);
     expect(plain).toContain("⏺  reply");
   });

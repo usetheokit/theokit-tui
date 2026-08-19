@@ -7,7 +7,6 @@ import { TheoTUIProvider, defaultTheme } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
 
 /** Compound-SGR-safe strip (M2 idiom). */
-// eslint-disable-next-line no-control-regex
 
 const SNIPPET = ["const x = 1;", "function f() {", "  return x;", "}"].join(
   "\n",

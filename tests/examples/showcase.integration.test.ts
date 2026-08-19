@@ -22,7 +22,7 @@ it(
         },
       },
     );
-    // eslint-disable-next-line no-control-regex
+
     const plain = stripAnsi(out);
     // Banner (static path in pipes) — printed exactly once.
     expect(plain).toContain("Theo TUI Showcase");

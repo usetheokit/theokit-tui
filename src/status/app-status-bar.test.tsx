@@ -10,8 +10,6 @@ import { stripAnsi } from "../format/ansi.js";
 // separator emission between PRESENT slots only, width priority, degrade.
 // Snapshot budget for the milestone: <= 2, both here, both anchored.
 
-// eslint-disable-next-line no-control-regex
-
 function renderBar(element: React.ReactElement): string {
   const instance = render(element);
   const frame = instance.lastFrame() ?? "";

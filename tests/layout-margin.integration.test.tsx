@@ -53,7 +53,7 @@ import { stripAnsi } from "../src/format/ansi.js";
 // margin a component already carries.
 async function leadingBlanks(node: ReactElement): Promise<number> {
   const raw = await renderFrame(node);
-  // eslint-disable-next-line no-control-regex
+
   const plain = stripAnsi(raw);
   const lines = plain.split("\n");
   let n = 0;

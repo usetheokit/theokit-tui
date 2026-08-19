@@ -5,8 +5,6 @@ import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { UsagePanel } from "./usage-panel.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 /** The minimum a turn always reports. Optional fields are added per test, never by default —
  *  the whole point of D2 is that absent stays absent. */
 const minimalTurn: TurnUsage = {

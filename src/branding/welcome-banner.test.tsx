@@ -12,8 +12,6 @@ import { stripAnsi } from "../format/ansi.js";
 // static-component shape (boundary pairs, width sweep, batched snapshots,
 // typed negatives, token assert) per blueprint Corner 1.
 
-// eslint-disable-next-line no-control-regex
-
 const nonEmptyLines = (frame: string): string[] =>
   stripAnsi(frame)
     .split("\n")

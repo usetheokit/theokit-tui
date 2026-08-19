@@ -5,8 +5,6 @@ import { TheoTUIProvider } from "../theme/theme.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
 
-// eslint-disable-next-line no-control-regex
-
 const count = (haystack: string, needle: string): number =>
   haystack.split(needle).length - 1;
 

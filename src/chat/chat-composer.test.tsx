@@ -409,7 +409,6 @@ const MANY = Array.from({ length: 9 }, (_, i) => ({
   description: `command ${i}`,
 }));
 
-// eslint-disable-next-line no-control-regex
 const plain = (frame: string | undefined): string => stripAnsi(frame ?? "");
 
 describe("ChatComposer slash menu (M15 T2.1)", () => {

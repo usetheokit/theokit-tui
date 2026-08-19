@@ -31,7 +31,7 @@ it(
     expect(out.indexOf("Theo Stream")).toBeLessThan(out.indexOf("inspecting")); // streamed final message
     // M16: the per-kind tool-detail cards render their shapes (SGR codes
     // sit between gutter and sign — strip before matching).
-    // eslint-disable-next-line no-control-regex
+
     const plainOut = stripAnsi(out);
     expect(plainOut).toMatch(/\d+ \+ added retry/); // diff kind
     expect(plainOut).toContain("stderr:"); // output kind envelope label
