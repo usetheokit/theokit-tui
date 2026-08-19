@@ -5,6 +5,41 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The slash and `@`-mention menus now show HOW MANY rows are hidden (B-052).** The overflow
+  chrome went from a bare `▲` / `▼` to `▲ 4` / `▼ 4`, finishing what B-022 started: three
+  components render the window computed by one `windowFor`, and this was the last one still
+  drawing a bare arrow over counts it already held.
+
+  The counts were never missing from the VALUE — `deriveSlashMenu` spreads `windowFor(...)`, so
+  `hiddenBefore` and `hiddenAfter` were there at runtime the whole time. What hid them was the
+  type: `SlashMenu` re-declared the window contract by hand instead of extending `WindowView`, so
+  the spread widened the value and the interface narrowed it back. It now extends `WindowView`,
+  which is why the same fix reached the `@`-mention menu for free — it shares the shape.
+
+  **Compatibility.** `SlashMenu` is module-internal: `src/chat/index.ts` does not re-export it, so
+  the added fields are invisible to the published surface and no consumer can be constructing one.
+  What DOES change for consumers is the rendered frame of `ChatComposer`, which is why this is a
+  minor and not a patch — a snapshot test over the composer's menu will see the number. Assertions
+  of the shape `toContain("▲")` are unaffected.
+
+  **Two review findings were folded in before release, not filed.** The `@`-mention path was
+  pinned by nothing: zeroing only its counts survived the whole suite, because the fixture returned
+  three candidates against a five-row window, so no mention menu in any test ever overflowed. It
+  now has its own edge test. And the two frozen `CLOSED` literals — which this change had made
+  LONGER — are now one shared `CLOSED_MENU`, its window half taken from `windowFor`'s own
+  empty-list branch: the same hand-copy the interface change removed, one layer down.
+  `SlashMenu.matches` became `readonly` because that shared instance escapes to callers by
+  reference, not only by spread.
+
+  **A third round-2 finding, and it is the one worth reading.** `readonly` alone was not enough:
+  `Object.freeze` returns `Readonly<T>`, and annotating the binding `: SlashMenu` discarded it — so
+  one field was protected and the other eight typechecked as writable while throwing at runtime, a
+  failure that is harmless on an open menu and a hard `TypeError` on a closed one. The annotation is
+  gone, inference keeps every field read-only, and the runtime freeze — which until now was pinned
+  by nothing, measured by removing it and watching the whole suite stay green — has its own test.
+
 ## [0.67.1] - 2026-08-19
 
 ### Fixed

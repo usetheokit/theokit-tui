@@ -16,7 +16,12 @@ export function SlashMenuList({
   );
   return (
     <Box flexDirection="column" paddingLeft={2}>
-      {menu.overflowUp && <Text dimColor>▲</Text>}
+      {/* B-052 — conditioned on the COUNT, matching `SelectList` (select-list.tsx:217) and
+          `WindowedList` (windowed-list.tsx:146). `overflowUp` IS `hiddenBefore > 0`, so reading
+          both would be two predicates for one fact. */}
+      {menu.hiddenBefore > 0 ? (
+        <Text dimColor>▲ {menu.hiddenBefore}</Text>
+      ) : null}
       {visible.map((command, index) => {
         const active = menu.windowStart + index === menu.clampedIndex;
         return (
@@ -42,7 +47,7 @@ export function SlashMenuList({
           </Box>
         );
       })}
-      {menu.overflowDown && <Text dimColor>▼</Text>}
+      {menu.hiddenAfter > 0 ? <Text dimColor>▼ {menu.hiddenAfter}</Text> : null}
       {menu.matches.length > SLASH_MENU_WINDOW && (
         <Text dimColor>
           ({menu.clampedIndex + 1}/{menu.matches.length})
