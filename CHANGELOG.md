@@ -5,6 +5,31 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Security
+
+- **`diff` moved from 7 to 8.0.4, past the published advisory (B-069).** `GHSA-73rr-hh4g-fpgx` /
+  `CVE-2026-24001` is a denial-of-service in jsdiff's patch PARSING, fixed in 8.0.3.
+  `@types/diff` was removed in the same change because jsdiff ships its own typings from 8 onward,
+  so keeping it would have declared types for a version we no longer install.
+
+  **This package was never exposed, and saying so is part of the entry.** The vulnerable
+  `parsePatch` / `applyPatch` have zero call sites here; the advisory itself states that "other
+  methods of the library are unaffected"; the only jsdiff call is `diffWordsWithSpace` over a
+  del/add line-text pair (`src/diff/diff-word.ts:45`); and the single route to it is behind
+  `intraLineHighlight`, whose default is `false`. Consumers who installed 0.68.0 were not at risk —
+  they were carrying an advisory that could not reach them.
+
+  What DID change for a consumer: `npm audit` on a fresh install of 0.68.0 reported 2 advisories,
+  one of them `diff`. It reports one fewer now.
+
+  **What this does not cover.** The package that actually parses an untrusted patch here is
+  `parse-diff` (`src/diff/diff.ts:1`), not jsdiff — and it has not been audited. Filed as its own
+  item rather than implied away, because an entry about a parsing DoS that leaves the real parser
+  unexamined is the more dangerous half of a half-truth.
+
+  Chose 8.0.4 rather than 9.0.0: the advisory is fixed at 8.0.3, and taking a major for a
+  low-severity issue in an unreachable path buys risk with no return.
+
 ### Changed
 
 - **Four dead-code exemptions replaced by one rule (B-066).** `knip.json` listed
