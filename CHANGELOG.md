@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.67.1] - 2026-08-19
+
 ### Fixed
 
 - **The coverage report is now readable by the validation gate (B-048).** `vitest.config.ts`
@@ -22,8 +24,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   replaces vitest's defaults, so the shorter fix would have silently deleted the HTML report people
   open locally. Both halves are pinned by a contract test whose detection power was verified by
   mutation.
-
-### Fixed
 
 - **The guard sink's lost-record count is now verified against the real dependency, not a stub
   (B-040).** `GuardSink.write` returns `boolean` because `installStderrGuard` returns `false` when
