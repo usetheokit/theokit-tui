@@ -34,17 +34,21 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 // consecutive reads mean Ink has flushed and settled. Unloaded it returns in ~2 ticks, faster than
 // the old sleep; loaded it waits as long as it needs, up to a ceiling well above the 50ms that was
 // failing. The ceiling exists so a genuinely stuck render fails the test rather than hanging it.
-const settle = async () => {
+// B-057 — extracted so the RULE can be tested against an injected frame source, with no timing
+// dependency. The behaviour here is unchanged by the extraction; T1.2 is what changes it.
+const settleWatching = async (readFrame: () => string | undefined) => {
   let previous: string | undefined;
   for (let elapsed = 0; elapsed < 400; elapsed += 10) {
     // duration is the subject: this is a POLL INTERVAL inside a bounded condition-wait, not a
     // sleep-then-assert. It is already the idiom B-033 converts other sites TO.
     await new Promise((resolve) => setTimeout(resolve, 10));
-    const frame = lastRenderedFrame();
+    const frame = readFrame();
     if (frame !== undefined && frame === previous) return;
     previous = frame;
   }
 };
+
+const settle = async () => settleWatching(lastRenderedFrame);
 
 /** Set by `mount`, so `settle` can watch the instance under test without threading it through. */
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
@@ -918,5 +922,39 @@ describe("issue #59 item 3 — an unstable onChange identity does not re-fire", 
 
     expect(spy.mock.calls.length).toBe(antes);
     inst.unmount();
+  });
+});
+
+// B-057 — the fourth class of B-034's load-sensitivity tail, pinned deterministically.
+//
+// `settle` returns when two consecutive reads are identical, and TWO IDENTICAL READS ARE SATISFIED
+// TRIVIALLY BY NOTHING HAVING CHANGED YET. It cannot tell "settled after the write" from "has not
+// started reacting to the write". Its decision point is the second poll, ~20ms in; under load that
+// precedes Ink's throttled render, so it hands back a stale frame and the assertion reads it.
+//
+// The suite showed this as two `pnpm gates` runs failing on two DIFFERENT tests in this file, both
+// green in isolation. That is not a regression test — it reproduces only under load. This one
+// drives the helper through an INJECTED frame source, so it fails for the race itself, on any
+// machine, with no timing dependency at all.
+describe("settle (B-057)", () => {
+  it("test_settle_does_not_return_before_the_frame_reacts", async () => {
+    // Arrange — a source that reports the SAME frame for the first three reads (the component has
+    // not reacted yet) and only then reports the reaction.
+    const reads: string[] = [];
+    let call = 0;
+    const source = () => {
+      call += 1;
+      const frame = call <= 3 ? "before" : "after";
+      reads.push(frame);
+      return frame;
+    };
+
+    // Act
+    await settleWatching(source);
+
+    // Assert — the helper must not have returned while the frame still read "before". Under the
+    // old implementation reads 2 and 3 are identical, so it returns at read 3 and every assertion
+    // after it sees the stale frame.
+    expect(reads.at(-1)).toBe("after");
   });
 });
