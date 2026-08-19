@@ -5,6 +5,26 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Every render-path guard now leaves a durable record, and a new silent one cannot land (B-028).**
+  B-025 shipped the mechanism and wired one consumer, deliberately — a mechanism should have one
+  proven consumer before it has 24 — and 20 component files were still throwing typed errors with
+  no record anywhere. All 41 throws across those files now route through `reportGuardFailure`.
+
+  The throw contract is unchanged: `reportGuardFailure` returns `never` and rethrows the SAME error
+  object, so every `toThrow` assertion observes what it observed before.
+
+  The durable part is the gate, not the sweep: `tests/lint/render-guards-report.test.ts` names any
+  component that throws a typed error without reaching the sink, so file 21 cannot repeat file 1.
+  Its limit is stated rather than implied — it matches on the import, not on every throw — and
+  `tests/lint/guard-sink-per-domain.test.ts` closes that hole with one driven guard per domain,
+  each proven by removing the report and watching its domain go red.
+
+  `assertFiniteNonNegative` deliberately does NOT report: the record's first field names the
+  component whose guard fired, and a shared helper called from several components knows none of
+  their names. The caller wraps instead, and `src/format/format.ts` now says so.
+
 ### Added
 
 - **The `[Unreleased]` section is now gated as English, and released entries are still untouchable

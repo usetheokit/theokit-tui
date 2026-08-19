@@ -5,6 +5,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { unionMessage } from "../agent/union-message.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // #3 Notice — a persistent inline banner (distinct from the transient Toast):
 //   !! Both apiKeyHelper and ANTHROPIC_API_KEY set · auth may not work   (warning)
@@ -51,8 +52,11 @@ export interface NoticeProps extends LayoutMarginProps {
 export function Notice({ variant = "info", children, ...margin }: NoticeProps) {
   // Boundary validation FIRST (F10 idiom).
   if (!NOTICE_VARIANTS.includes(variant)) {
-    throw new TypeError(
-      `Notice: invalid variant "${String(variant)}" — expected ${VARIANT_UNION_MESSAGE}`,
+    reportGuardFailure(
+      "Notice",
+      new TypeError(
+        `Notice: invalid variant "${String(variant)}" — expected ${VARIANT_UNION_MESSAGE}`,
+      ),
     );
   }
   const theme = useTheoTheme();

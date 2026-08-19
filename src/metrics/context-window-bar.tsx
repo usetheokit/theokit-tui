@@ -10,6 +10,7 @@ import { assertFiniteNonNegative, formatTokens } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 /** Warn when the used ratio reaches this fraction (gemini default). */
 const WARNING_RATIO = 0.5;
@@ -44,25 +45,36 @@ function assertTokenProps({
   limitTokens,
   baselineTokens,
 }: ContextWindowBarProps): void {
-  assertFiniteNonNegative(
-    usedTokens,
-    "ContextWindowBar: usedTokens must be a finite number >= 0",
-  );
+  try {
+    assertFiniteNonNegative(
+      usedTokens,
+      "ContextWindowBar: usedTokens must be a finite number >= 0",
+    );
+  } catch (err) {
+    reportGuardFailure("ContextWindowBar", err as Error);
+  }
   if (
     limitTokens !== undefined &&
     (typeof limitTokens !== "number" ||
       !Number.isFinite(limitTokens) ||
       limitTokens <= 0)
   ) {
-    throw new TypeError(
-      `ContextWindowBar: limitTokens must be a finite number > 0 — got ${String(limitTokens)}`,
+    reportGuardFailure(
+      "ContextWindowBar",
+      new TypeError(
+        `ContextWindowBar: limitTokens must be a finite number > 0 — got ${String(limitTokens)}`,
+      ),
     );
   }
   if (baselineTokens !== undefined) {
-    assertFiniteNonNegative(
-      baselineTokens,
-      "ContextWindowBar: baselineTokens must be a finite number >= 0",
-    );
+    try {
+      assertFiniteNonNegative(
+        baselineTokens,
+        "ContextWindowBar: baselineTokens must be a finite number >= 0",
+      );
+    } catch (err) {
+      reportGuardFailure("ContextWindowBar", err as Error);
+    }
   }
 }
 
@@ -74,13 +86,19 @@ function assertProps(props: ContextWindowBarProps): void {
     baselineTokens !== undefined &&
     baselineTokens >= limitTokens
   ) {
-    throw new TypeError(
-      `ContextWindowBar: baselineTokens must be < limitTokens — got ${String(baselineTokens)} / ${String(limitTokens)}`,
+    reportGuardFailure(
+      "ContextWindowBar",
+      new TypeError(
+        `ContextWindowBar: baselineTokens must be < limitTokens — got ${String(baselineTokens)} / ${String(limitTokens)}`,
+      ),
     );
   }
   if (width !== undefined && (!Number.isInteger(width) || width < 0)) {
-    throw new TypeError(
-      `ContextWindowBar: width must be an integer >= 0 — got ${String(width)}`,
+    reportGuardFailure(
+      "ContextWindowBar",
+      new TypeError(
+        `ContextWindowBar: width must be an integer >= 0 — got ${String(width)}`,
+      ),
     );
   }
 }

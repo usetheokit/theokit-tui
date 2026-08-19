@@ -6,6 +6,7 @@ import { formatCost, formatTokens } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // M14 AppStatusBar (plan m14-status-bar, ADR D1): the persistent AI-native
 // status line — model · cwd · tokens · cost · state — gemini's FooterRow recipe
@@ -43,8 +44,11 @@ function assertTokens(tokens: AppStatusBarTokens): void {
     !Number.isFinite(tokens.limit) ||
     tokens.limit <= 0
   ) {
-    throw new TypeError(
-      `AppStatusBar: \`tokens\` must have finite used >= 0 and limit > 0 — got used=${String(tokens.used)} limit=${String(tokens.limit)}`,
+    reportGuardFailure(
+      "AppStatusBar",
+      new TypeError(
+        `AppStatusBar: \`tokens\` must have finite used >= 0 and limit > 0 — got used=${String(tokens.used)} limit=${String(tokens.limit)}`,
+      ),
     );
   }
 }

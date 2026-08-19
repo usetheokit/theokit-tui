@@ -3,6 +3,7 @@ import { memo } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme, type TheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // M24 TodoList (plan m24-live-progress-surfaces T1.2, ADR D1): a live checklist
 // keyed by stable id. An item updates IN PLACE when the caller passes a NEW
@@ -76,7 +77,10 @@ function assertUniqueIds(items: readonly TodoItem[]): void {
     if (seen.has(item.id)) {
       // Duplicate keys corrupt row identity / in-place update — fail fast at the
       // boundary (the ChatThread precedent, rules/error-handling.md § 2).
-      throw new TypeError(`TodoList: duplicate item id "${item.id}"`);
+      reportGuardFailure(
+        "TodoList",
+        new TypeError(`TodoList: duplicate item id "${item.id}"`),
+      );
     }
     seen.add(item.id);
   }

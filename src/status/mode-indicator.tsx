@@ -4,6 +4,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { unionMessage } from "../agent/union-message.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // #2 ModeIndicator — the Claude Code permission-mode footer line:
 //   ⏵⏵ auto-accept edits on (shift+tab to cycle)
@@ -47,12 +48,18 @@ export function ModeIndicator({ mode, label, ...margin }: ModeIndicatorProps) {
   // the typed contract, not a crash. `label` opts out of the vocabulary, not out of the check:
   // a `mode` that is present must still be one of the union.
   if (mode !== undefined && !PERMISSION_MODES.includes(mode)) {
-    throw new TypeError(
-      `ModeIndicator: invalid mode "${String(mode)}" — expected ${MODE_UNION_MESSAGE}`,
+    reportGuardFailure(
+      "ModeIndicator",
+      new TypeError(
+        `ModeIndicator: invalid mode "${String(mode)}" — expected ${MODE_UNION_MESSAGE}`,
+      ),
     );
   }
   if (mode === undefined && label === undefined) {
-    throw new TypeError("ModeIndicator: pass either `mode` or `label`");
+    reportGuardFailure(
+      "ModeIndicator",
+      new TypeError("ModeIndicator: pass either `mode` or `label`"),
+    );
   }
   const theme = useTheoTheme();
   const mono = isMonochrome(theme);

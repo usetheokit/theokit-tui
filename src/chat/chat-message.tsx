@@ -6,6 +6,7 @@ import { horizontalMargin } from "../layout/layout-props.js";
 import { MarkdownText } from "../markdown/markdown-text.js";
 import { useTheoTheme } from "../theme/theme.js";
 import { unionMessage } from "../agent/union-message.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // Single source for the role union (M3 D8 retrofit of the M2 VALID_STATUSES
 // idiom): the type, ChatMessage's guard and AgentTimeline's boundary check
@@ -40,14 +41,20 @@ export function ChatMessage({
   // Boundary validation (EC-1, rules/error-handling.md § 2): fail fast with a
   // typed error BEFORE any hook — JS consumers get the contract, not a crash.
   if (!CHAT_ROLES.includes(role)) {
-    throw new TypeError(
-      `ChatMessage: invalid role "${String(role)}" — expected ${unionMessage(CHAT_ROLES)}`,
+    reportGuardFailure(
+      "ChatMessage",
+      new TypeError(
+        `ChatMessage: invalid role "${String(role)}" — expected ${unionMessage(CHAT_ROLES)}`,
+      ),
     );
   }
   if (markdown === true && typeof children !== "string") {
-    throw new TypeError(
-      "ChatMessage: `markdown` requires string children — got " +
-        typeof children,
+    reportGuardFailure(
+      "ChatMessage",
+      new TypeError(
+        "ChatMessage: `markdown` requires string children — got " +
+          typeof children,
+      ),
     );
   }
   const tokens = useTheoTheme().role[role];

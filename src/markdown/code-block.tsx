@@ -7,6 +7,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
 import type { CodeTokens } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // Minimal structural types for lowlight's hast output — the real package
 // types live behind the OPTIONAL peer (plan ADR D2), so we keep a local
@@ -218,8 +219,11 @@ export interface CodeBlockProps extends LayoutMarginProps {
 /** Fail-fast on an invalid `maxLines` (integer >= 1). */
 function assertPositiveMaxLines(maxLines: number | undefined): void {
   if (maxLines !== undefined && (!Number.isInteger(maxLines) || maxLines < 1)) {
-    throw new TypeError(
-      `CodeBlock: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
+    reportGuardFailure(
+      "CodeBlock",
+      new TypeError(
+        `CodeBlock: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
+      ),
     );
   }
 }
