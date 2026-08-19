@@ -1,5 +1,5 @@
 import { render } from "ink-testing-library";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   waitFor as waitForCondition,
   WAIT_BUDGET_MS,
@@ -61,6 +61,15 @@ const CEILING_MS = 200;
  * of leaving the reader to infer it from a timeout.
  */
 const noReactionSettles: string[] = [];
+
+// B-058 review (F-1, HIGH) — cleared per test, and this is not hygiene. Without it the diagnostic
+// points at ANOTHER test's frame while asserting "a write the component never saw looks exactly
+// like this": measured, a probe producing zero settles of its own reported seven, and this file's
+// own pinning test saw 1 in isolation against 5 in the full file. A diagnostic that names the wrong
+// frame is worse than the silence it replaced.
+beforeEach(() => {
+  noReactionSettles.length = 0;
+});
 
 const settleWatching = async (
   readFrame: () => string | undefined,

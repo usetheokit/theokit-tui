@@ -146,6 +146,30 @@ function guardWindow(window: number): void {
   }
 }
 
+/**
+ * B-054 review (F-3) — the same treatment `window` gets, for the same reason and by the same
+ * mechanism.
+ *
+ * `initialSelectionIndex` is a PUBLISHED prop and had no guard, in the very function whose sibling
+ * prop received one in the same commit. Measured before this: `NaN` rendered zero rows and a
+ * `(NaN/12)` counter, `2.5` rendered no selection marker, and neither reached
+ * `reportGuardFailure` — the B-021 `window: 0` shape exactly, one prop over.
+ *
+ * It REPORTS AND THROWS rather than degrading to 0, which was the first attempt and was wrong:
+ * `reportGuardFailure` returns `never` by design, because "the throw is the contract 37 test files
+ * rest on" (`src/status/guard-sink.ts:44-45`). A guard that swallowed it here would be the only
+ * one in the package that does, and `rules/error-handling.md` § 3.1 keeps the throw deliberately.
+ */
+function guardInitialSelection(value: number): void {
+  if (Number.isInteger(value) && value >= 0) return;
+  reportGuardFailure(
+    "SelectList",
+    new RangeError(
+      `SelectList: initialSelectionIndex must be a non-negative integer, received ${String(value)}.`,
+    ),
+  );
+}
+
 export function SelectList({
   items,
   onSubmit,
@@ -159,6 +183,7 @@ export function SelectList({
 }: SelectListProps) {
   // Boundary guard FIRST, before any hook (the F10 idiom), and the component names ITSELF.
   guardWindow(window);
+  guardInitialSelection(initialSelectionIndex);
   const [filter, setFilter] = useState("");
   const [selectionIndex, setSelectionIndex] = useState(initialSelectionIndex);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());

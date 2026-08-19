@@ -390,6 +390,28 @@ describe("SelectList hidden-row counts (B-022)", () => {
       expect(countStartingWith(frame, "▼")).toBe(1);
     });
 
+    it("a_bad_initial_selection_reports_and_throws_like_a_bad_window", async () => {
+      // B-054 review (F-3) — the guard `window` already had, for the prop this slice added.
+      // Measured before it existed: NaN rendered zero rows and a `(NaN/12)` counter, and 2.5
+      // rendered no selection marker, with nothing reported. The B-021 `window: 0` shape, one prop
+      // over.
+      //
+      // It throws rather than degrading, because that is this package's contract:
+      // `reportGuardFailure` returns `never` and 37 test files rest on it.
+      // Called as a FUNCTION, not through `render` — the shape `window: 0` already uses at :209,
+      // because the guard runs before any hook and throws synchronously there.
+      for (const bad of [Number.NaN, 2.5, -1]) {
+        expect(() =>
+          SelectList({
+            items: many,
+            window: 4,
+            initialSelectionIndex: bad,
+            onSubmit: () => undefined,
+          }),
+        ).toThrow(/initialSelectionIndex must be a non-negative integer/);
+      }
+    });
+
     it("test_the_last_row_hides_everything_above_and_nothing_below", async () => {
       // Arrange
       const app = render(

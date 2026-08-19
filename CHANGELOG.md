@@ -41,12 +41,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
   Test-infrastructure only; no published behaviour changes.
 
-  **The write-side half is NOT fixed, and the reason is on the record.** The mechanism could not be
-  reproduced deterministically: the stdin listener count does not reflect `useInput`'s subscription
-  in this harness (0 listeners at every tick, and the write lands anyway), and forcing the
-  pre-subscription window loses nothing — 0/40 at every tick count, 0/60 under in-process load.
-  Four earlier classes of this failure were declared closed by absence; a fifth is not being added.
-  No wait budget was raised and no worker count lowered.
+  **The write-side half is NOT fixed, and the reason is on the record — corrected once, in review.**
+  A first version of this entry claimed the mechanism could not be reproduced. That was wrong twice
+  over: the probe measured `stdin.listenerCount("data")`, and ink never listens to `data`; and it
+  put `useInput` in the root component, where ink attaches synchronously so no window exists.
+
+  Measured after the correction: when the `useInput` consumer mounts LATE — behind a state flip, the
+  shape a composer has when an overlay appears — the first write is destroyed **20 times out of 20**,
+  leaving exactly the reported `bc` after typing `a`, `b`, `c`.
+
+  So a deterministic repro of the class exists, and the fix is still not shipped: what is missing is
+  evidence that the SUITE's failures take that route, since `ChatComposer` calls its input hooks
+  unconditionally. Four earlier classes were declared closed by absence; closing this one by analogy
+  would be the same mistake better disguised. No wait budget was raised and no worker count lowered.
 
 ### Added
 
