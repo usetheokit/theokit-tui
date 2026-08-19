@@ -50,8 +50,14 @@ export const SLASH_MENU_WINDOW = 5;
  *
  * Frozen SHALLOW, and `matches` is frozen too because this object escapes to callers by reference
  * at `deriveSlashMenu`'s early return, not only by spread.
+ *
+ * **No `: SlashMenu` annotation, deliberately.** `Object.freeze` returns `Readonly<T>`; annotating
+ * the binding discards it, so only the fields declared `readonly` on the interface stay protected
+ * and the other eight typecheck as writable while throwing at runtime — a data-dependent failure
+ * (B-052 review, F-arch-4). Inferring the type keeps every field read-only at compile time, and
+ * `tsc --noEmit` was measured clean at every existing use site: assignment, spread and return.
  */
-export const CLOSED_MENU: SlashMenu = Object.freeze({
+export const CLOSED_MENU = Object.freeze({
   open: false,
   filter: "",
   matches: Object.freeze([]),

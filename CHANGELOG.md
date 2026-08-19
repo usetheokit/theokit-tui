@@ -33,6 +33,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `SlashMenu.matches` became `readonly` because that shared instance escapes to callers by
   reference, not only by spread.
 
+  **A third round-2 finding, and it is the one worth reading.** `readonly` alone was not enough:
+  `Object.freeze` returns `Readonly<T>`, and annotating the binding `: SlashMenu` discarded it — so
+  one field was protected and the other eight typechecked as writable while throwing at runtime, a
+  failure that is harmless on an open menu and a hard `TypeError` on a closed one. The annotation is
+  gone, inference keeps every field read-only, and the runtime freeze — which until now was pinned
+  by nothing, measured by removing it and watching the whole suite stay green — has its own test.
+
 ## [0.67.1] - 2026-08-19
 
 ### Fixed
