@@ -3,12 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { Stack } from "./stack.js";
-
-const strip = (v: string): string => v.replace(/\[[0-9;]*m/g, "");
+import { stripAnsi } from "../format/ansi.js";
 
 describe("Stack (vertical rhythm)", () => {
   it("inserts_one_blank_line_between_children_by_default", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <Stack>
           <Text>a</Text>
@@ -22,7 +21,7 @@ describe("Stack (vertical rhythm)", () => {
   });
 
   it("respects_a_custom_gap", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <Stack gap={2}>
           <Text>a</Text>
@@ -34,7 +33,7 @@ describe("Stack (vertical rhythm)", () => {
   });
 
   it("gap_zero_packs_children", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <Stack gap={0}>
           <Text>a</Text>
@@ -51,7 +50,7 @@ describe("Stack (vertical rhythm)", () => {
         <Text>x</Text>
       </Stack>,
     );
-    const lines = strip(raw).split("\n");
+    const lines = stripAnsi(raw).split("\n");
     // marginTop lives OUTSIDE the stack; gap is only BETWEEN children.
     expect(lines[0]).toBe("");
     expect(lines[1]).toBe("");

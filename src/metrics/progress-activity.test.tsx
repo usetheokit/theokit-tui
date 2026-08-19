@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { ProgressActivity } from "./progress-activity.js";
-
-const strip = (v: string): string => v.replace(/\[[0-9;]*m/g, "");
+import { stripAnsi } from "../format/ansi.js";
 
 describe("ProgressActivity (compaction-style progress)", () => {
   it("reproduces_the_two_line_compaction_look", async () => {
     // ✳ Compacting conversation… (7m 3s · ↑ 24.6k tokens)
     // ██░░… 10%
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <ProgressActivity
           label="Compacting conversation…"
@@ -29,7 +28,7 @@ describe("ProgressActivity (compaction-style progress)", () => {
   });
 
   it("meta_is_optional", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(<ProgressActivity label="Indexing…" percent={0} />),
     );
     const lines = frame.split("\n").filter((l) => l.trim() !== "");
@@ -39,7 +38,7 @@ describe("ProgressActivity (compaction-style progress)", () => {
   });
 
   it("down_arrow_for_shrinking_context", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <ProgressActivity
           label="Compacting…"

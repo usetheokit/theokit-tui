@@ -5,6 +5,33 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Four test helpers were not stripping ANSI at all (B-055).** They spelled the pattern
+  `/\[[0-9;]*m/g` — a `/` straight into `\[`, with no escape byte. Measured against the shipped
+  `Banner`: 8 escape bytes in, 8 escape bytes out. They deleted the colour _parameters_ and left the
+  escapes, so a frame they "stripped" still failed exact equality and passed every substring
+  assertion — which is why all three files were green. `src/layout/stack.test.tsx` is the one that
+  was one colour away from failing with an unreadable diff naming the wrong cause.
+
+  The same pattern also eats plain text: `"value [1m] and [;m end"` came back as `"value ] and  end"`.
+
+### Changed
+
+- **One `stripAnsi` for the package, replacing 39 hand-rolled constructs across 35 files (B-055).**
+  They came in four spellings; three of them (``, a raw `0x1B` byte, `String.fromCharCode(27)`)
+  all denote U+001B and were equivalent, and the fourth is the defect above. The production
+  sanitiser at `markdown/code-block.tsx` now uses it too — byte-identical semantics, so nothing
+  it renders changes.
+
+  Nothing is added to the public surface: the module is absent from `src/format/index.ts`, and the
+  `exports` map has no wildcard, so no consumer can reach it. Verified against the built `dist`.
+
+  Its scope stays SGR-only on purpose, pinned by a test. Widening to the OSC families would change
+  what a sanitiser of **untrusted** input removes — an OSC 8 hyperlink or an OSC 52 clipboard write
+  survives it today — and that is registered as its own item rather than smuggled into a
+  de-duplication.
+
 ## [0.68.0] - 2026-08-19
 
 ### Fixed
