@@ -25,6 +25,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   </ComponentBoundary>;
   ```
 
+  It records what it caught, and it does not overwrite a narrower exit code you already set — a CLI
+  that exited `2` for a usage error still exits `2`. An optional `onError(error, info)` prop routes
+  the error wherever you keep them; it does not suppress the record.
+
   **Nothing changes until you wrap something.** This package does not wrap its own components: a
   boundary renders a fallback, so doing it for you would change what 21 components render on
   failure — and whether to keep going after one is a policy you own, not one a library should take.
