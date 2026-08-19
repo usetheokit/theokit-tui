@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.65.0] - 2026-08-19
+
 ### Added
 
 - **A dependency-rule gate runs with every other gate, and it found a real cycle (B-023).** Every
