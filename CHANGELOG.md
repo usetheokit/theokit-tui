@@ -9,6 +9,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.63.0] - 2026-08-18
+
+### Changed
+
 - **The test suite is deterministic at default worker count again (B-057).** `pnpm gates` now exits
   0 on three consecutive runs; it had been failing intermittently on a different test each time.
   The cause was a test helper that waited for the rendered frame to STOP CHANGING — a condition
@@ -73,14 +85,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   is 3 bytes and `▼ 8` is 5 — so 1 → 3 was a column count wearing a byte label. It also gave
   a false reason ("a menu whose labels are shorter than `▼ 999` would widen"). Corrected here
   rather than quietly dropped, because the wrong version shipped in this section.
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.62.0] - 2026-08-18
 
