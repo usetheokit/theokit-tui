@@ -59,5 +59,8 @@ export { useRisingEdge } from "./use-rising-edge.js";
 // a grep for one PHRASING and this file used another. The lesson is in `guard-sink.ts`; the record
 // of it is here.
 export { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
+// B-031 — the containment half. `guard-sink` records that a guard fired; this keeps the failure
+// from taking the whole application, the user's session, and the shell's idea of success with it.
+export { ComponentBoundary } from "./component-boundary.js";
 
 export type { GuardSink } from "./guard-sink.js";
