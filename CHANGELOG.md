@@ -25,8 +25,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
   The larger half is that both `format:check` and `lint` walked the FILESYSTEM rather than the git
   index, so their result depended on whatever untracked files a machine happened to have: a cache
-  directory, a stray scratch file. Both now run over `git ls-files`, and a regression test asserts
-  the rule by planting an untracked file and requiring the gate to stay green.
+  directory, a stray scratch file. Both now read `git ls-files`, and both refuse an empty list
+  rather than reporting success — the first repair had left them exiting 0 outside a git repository,
+  having inspected nothing.
+
+  A regression test runs the real gate against a throwaway three-file repository: an untracked bad
+  file is ignored, a tracked bad file is caught, and no `.git` fails closed.
 
   No consumer-visible behaviour changes. Recorded here because the gate is what `prepublishOnly`
   runs, so this is what unblocks publishing at all.
