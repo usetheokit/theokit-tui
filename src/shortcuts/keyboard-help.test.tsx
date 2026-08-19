@@ -54,7 +54,9 @@ describe("KeyboardHelp", () => {
   // was verified by running an example and reading the output by eye, which is not a gate.
   it("default_panel_layout", async () => {
     expect(
-      await renderFrame(<KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />),
+      await renderFrame(
+        <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />,
+      ),
     ).toMatchSnapshot("keyboard-help-defaults");
   });
 });

@@ -106,8 +106,9 @@ function WindowedRow({
  * for {@link SelectList} instead when the user must filter and choose; reach for this when
  * something else owns the keys and this only has to show where you are.
  *
- * The counts are the point. `SelectList` renders a bare `▲` and throws away the `hiddenBefore` it
- * computed in the same view object, and a boolean cannot be turned back into a number.
+ * The counts are the point: a boolean cannot be turned back into a number, so the model carries
+ * `hiddenBefore` / `hiddenAfter` alongside the `overflowUp` / `overflowDown` derived from them, and
+ * this component renders the numbers.
  */
 export function WindowedList({
   rows,

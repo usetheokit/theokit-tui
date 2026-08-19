@@ -244,7 +244,9 @@ describe("UsagePanel", () => {
     // The guard must not turn ABSENT into invalid. `TurnUsage` marks these optional and ADR D2 of
     // B-001 says absent stays absent; a guard that rejected `undefined` would break every turn an
     // agent reports without a cache read.
-    const plain = stripAnsi(await renderFrame(<UsagePanel usage={minimalTurn} />));
+    const plain = stripAnsi(
+      await renderFrame(<UsagePanel usage={minimalTurn} />),
+    );
     expect(plain).toContain("input");
   });
 

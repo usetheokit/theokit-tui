@@ -118,7 +118,10 @@ function assertForwardedUsage(usage: TurnUsage): void {
       // The helper is not made to report directly: it lives in `src/format`, a low-level module,
       // and importing `src/status` there would invert the dependency direction
       // (`rules/architecture.md` § 1).
-      assertFiniteNonNegative(value, `UsagePanel: usage.${field} must be a finite number >= 0`);
+      assertFiniteNonNegative(
+        value,
+        `UsagePanel: usage.${field} must be a finite number >= 0`,
+      );
     } catch (err) {
       reportGuardFailure("UsagePanel", err as Error);
     }

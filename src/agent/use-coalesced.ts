@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
-import { createFrameBudget, type FrameBudget } from "../renderer/frame-budget.js";
+import {
+  createFrameBudget,
+  type FrameBudget,
+} from "../renderer/frame-budget.js";
 
 /** How long a window lasts by default: one frame at 30fps. */
 const DEFAULT_WINDOW_MS = 34;
@@ -73,11 +76,13 @@ export function useCoalesced<T>(
   const latest = useRef(compute);
   latest.current = compute;
 
-  const state = useRef<{ value: T | undefined; key: unknown; primed: boolean }>({
-    value: undefined,
-    key: undefined,
-    primed: false,
-  });
+  const state = useRef<{ value: T | undefined; key: unknown; primed: boolean }>(
+    {
+      value: undefined,
+      key: undefined,
+      primed: false,
+    },
+  );
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [, force] = useState(0);
 

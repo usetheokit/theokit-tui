@@ -8,7 +8,6 @@
 
 import { fuzzyMatch } from "../search/fuzzy.js";
 
-
 export interface SelectListItem {
   /** Stable identity (multi-select is keyed by this). */
   value: string;

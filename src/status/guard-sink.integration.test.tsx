@@ -72,7 +72,11 @@ function renderForReal(element: React.ReactElement): void {
   }
 }
 
-const goodTurn = { inputTokens: 12_000, outputTokens: 3_000, totalTokens: 15_000 };
+const goodTurn = {
+  inputTokens: 12_000,
+  outputTokens: 3_000,
+  totalTokens: 15_000,
+};
 
 describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
   it("test_a_bad_prop_on_UsagePanel_reaches_the_sink_through_a_real_render", () => {
@@ -81,10 +85,13 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
     // observe them from a render is to redirect the default. That is itself the finding behind
     // /review F-dom-4 and plan Q2: a consumer has no per-call lever either.
     const realStderrWrite = process.stderr.write;
-    process.stderr.write = ((s: unknown): boolean => sink.write(String(s))) as typeof process.stderr.write;
+    process.stderr.write = ((s: unknown): boolean =>
+      sink.write(String(s))) as typeof process.stderr.write;
     try {
       renderForReal(
-        React.createElement(UsagePanel, { usage: { ...goodTurn, cost: Number.NaN } }),
+        React.createElement(UsagePanel, {
+          usage: { ...goodTurn, cost: Number.NaN },
+        }),
       );
     } finally {
       process.stderr.write = realStderrWrite;
@@ -96,10 +103,13 @@ describe("the sink under a real ink render (B-025 v2 T2.4, T3.1)", () => {
   it("test_usage_panel_record_count_under_real_render", () => {
     const { sink, records } = collectingSink();
     const realStderrWrite = process.stderr.write;
-    process.stderr.write = ((s: unknown): boolean => sink.write(String(s))) as typeof process.stderr.write;
+    process.stderr.write = ((s: unknown): boolean =>
+      sink.write(String(s))) as typeof process.stderr.write;
     try {
       renderForReal(
-        React.createElement(UsagePanel, { usage: { ...goodTurn, cost: Number.NaN } }),
+        React.createElement(UsagePanel, {
+          usage: { ...goodTurn, cost: Number.NaN },
+        }),
       );
     } finally {
       process.stderr.write = realStderrWrite;

@@ -83,7 +83,7 @@ describe("useRisingEdge", () => {
     ).toThrow(TypeError);
     expect(() =>
       Probe({ level: "catastrophic", onRise: () => undefined }),
-    ).toThrow("useRisingEdge: level \"catastrophic\" is not in the ordering");
+    ).toThrow('useRisingEdge: level "catastrophic" is not in the ordering');
   });
 
   it("an_inline_callback_does_not_cause_a_repeat_fire", async () => {
@@ -123,7 +123,11 @@ describe("useRisingEdge", () => {
   it("a_fresh_ordering_array_with_the_same_levels_does_not_refire", async () => {
     const onRise = vi.fn();
     const app = render(
-      <Probe level="calm" onRise={onRise} levels={["calm", "busy", "urgent"]} />,
+      <Probe
+        level="calm"
+        onRise={onRise}
+        levels={["calm", "busy", "urgent"]}
+      />,
     );
     await tick();
     app.rerender(
