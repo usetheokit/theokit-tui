@@ -9,8 +9,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 - **The coverage report is now readable by the validation gate (B-048).** `vitest.config.ts`
   declared a coverage block with no `reporter`, so the default set shipped — `text`, `html`,
-  `clover`, `json` — and none of those is a filename the Squad gate looks for. It reported *"the
-  threshold was NOT verified"* on every validation run, and a WARN does not block.
+  `clover`, `json` — and none of those is a filename the Squad gate looks for. It reported _"the
+  threshold was NOT verified"_ on every validation run, and a WARN does not block.
 
   **This adds no safety, and saying so is the point.** The config declares thresholds of 90 on all
   four metrics and CI runs `pnpm test:coverage`, which fails the job when one is missed — so
