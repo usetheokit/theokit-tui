@@ -186,6 +186,29 @@ export function reportGuardFailure(
       `reportGuardFailure: component must be a non-empty string naming the component whose guard fired — got ${String(component)}`,
     );
   }
+  recordGuardFailure(component, error, sink);
+  throw error;
+}
+
+/**
+ * Write the durable record WITHOUT throwing.
+ *
+ * B-031 — extracted so `ComponentBoundary` can record a failure it has just contained. The boundary
+ * catches an error that has already been thrown, so it cannot use `reportGuardFailure`, whose whole
+ * contract is that it throws. Before this existed the boundary took no parameters and the error
+ * vanished: a non-guard error produced a fallback line, a non-zero exit code, and nothing anywhere
+ * saying what happened — the swallow `.claude/rules/error-handling.md` § 5 forbids, introduced by
+ * the very component meant to make failures visible.
+ *
+ * A contained guard failure therefore produces TWO records: one when the guard fired, one when it
+ * was contained. That is not duplication to be collapsed — they are different facts, and § 3.1's
+ * "never deduplicate" applies for the same reason it does there: a repeating pair IS the signal.
+ */
+export function recordGuardFailure(
+  component: string,
+  error: Error,
+  sink: GuardSink = process.stderr,
+): void {
   const record = `[theokit/tui] ${stamp()} ${sanitize(component)}: ${sanitize(withoutComponentPrefix(component, error.message))}\n`;
   try {
     // `false` is not an error — it is how `process.stderr` and this package's own
@@ -201,5 +224,4 @@ export function reportGuardFailure(
     // nobody can trace back to the real cause. The caller still receives the guard's own error on
     // the line below.
   }
-  throw error;
 }

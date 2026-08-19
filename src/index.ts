@@ -6,7 +6,7 @@
 // policy (which symbols stay module-internal) lives in each domain's barrel,
 // next to the code it governs, rather than as prose here. See docs/adr/.
 
-export const VERSION = "0.63.1";
+export const VERSION = "0.64.0";
 
 export * from "./theme/index.js";
 export * from "./layout/index.js";

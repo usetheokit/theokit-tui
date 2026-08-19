@@ -17,6 +17,36 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.64.0] - 2026-08-18
+
+### Added
+
+- **`ComponentBoundary` — a component failure no longer takes the whole application, the user's
+  session, and the shell's idea of success with it (B-031).** Measured against real `ink@7.1.0`: a
+  component that throws from a prop guard unmounted the ENTIRE tree, printed ink's ERROR panel to
+  the end user with an absolute source path and a source excerpt, and left the process exiting
+  **0** — a CLI that died reporting success to its shell, so any script, CI job or supervisor
+  treated the crash as a clean run.
+
+  Wrapped, the same failure renders one dim line, the siblings survive, and the process exits
+  non-zero:
+
+  ```tsx
+  import { ComponentBoundary } from "@theokit/tui";
+
+  <ComponentBoundary component="SelectList">
+    <SelectList items={items} window={window} onSubmit={onSubmit} />
+  </ComponentBoundary>;
+  ```
+
+  It records what it caught, and it does not overwrite a narrower exit code you already set — a CLI
+  that exited `2` for a usage error still exits `2`. An optional `onError(error, info)` prop routes
+  the error wherever you keep them; it does not suppress the record.
+
+  **Nothing changes until you wrap something.** This package does not wrap its own components: a
+  boundary renders a fallback, so doing it for you would change what 21 components render on
+  failure — and whether to keep going after one is a policy you own, not one a library should take.
+
 ## [0.63.1] - 2026-08-18
 
 ### Fixed
