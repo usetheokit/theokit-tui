@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.66.0] - 2026-08-19
+
 ### Added
 
 - **The dead-code gate can now see a module only its own test reaches (B-024).** `pnpm lint` runs
