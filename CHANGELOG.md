@@ -5,6 +5,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **The `[Unreleased]` section is now gated as English, and released entries are still untouchable
+  (B-027).** The rule for new entries lived only inside the comment granting the exemption that
+  disables its enforcement — and that comment let seven consecutive releases ship in Portuguese
+  (0.54.0 through 0.60.0), written by an author who had read it. The new gate reads only the section
+  that is still mutable; entries for a released version stay exactly as they shipped, because
+  translating one would rewrite the record of what shipped.
+
+  Proven with the same line in two places: injected into `[Unreleased]` it turns the gate red;
+  injected into `## [0.60.0]` it does not.
+
 ## [0.66.0] - 2026-08-19
 
 ### Added
