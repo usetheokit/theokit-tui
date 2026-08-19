@@ -5,6 +5,33 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **A dependency-rule gate runs with every other gate, and it found a real cycle (B-023).** Every
+  `/code-quality` run reported the same INFO — "no architecture rules declared" — so the dependency
+  detector was skipped on every audit. `.dependency-cruiser.cjs` now declares `no-circular` (error),
+  `not-to-dev-dep` (error) and `no-orphans` (warn), and `pnpm gates` runs it.
+
+  The first measurement was worth more than the gate: `dependency-cruiser --no-config` reported
+  "no dependency violations found" over 384 modules, which is vacuous — with no rules there is
+  nothing to violate. With a real rule it found
+  `renderer/host-config.ts → renderer/text-measure.ts → renderer/host-config.ts`.
+
+  **What is deliberately absent: folder-layering rules.** Measured, the domain graph runs both ways
+  — `layout → prompts` and `prompts → layout`, `agent → chat` and `status → agent`. A layering rule
+  would fail on the day it landed against a design nobody agreed to, and a rule waived on arrival
+  teaches everyone to waive rules. This gate catches cycles and dev-dependency leaks; it does not
+  make the layering enforced.
+
+### Fixed
+
+- **The renderer's node type no longer closes an import cycle (B-023).** `RendererNode` and
+  `RootNode` moved to `src/renderer/node.ts`, a leaf that imports nothing from its siblings;
+  `host-config.ts` re-exports them, so no import site changed and no public export moved. The cycle
+  cost nothing at runtime — `text-measure.ts` used `import type`, which TypeScript erases — but
+  dependency-cruiser reports both directions as plain imports, so keeping it would have required a
+  path exception naming the two files the rule had just caught.
+
 ### Fixed
 
 - **The edge-case coverage analyzer counts what a plan declares, and finds the tests the plan names
