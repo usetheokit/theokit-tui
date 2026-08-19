@@ -9,6 +9,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **The test suite is deterministic at default worker count again (B-057).** `pnpm gates` now exits
+  0 on three consecutive runs; it had been failing intermittently on a different test each time.
+  The cause was a test helper that waited for the rendered frame to STOP CHANGING — a condition
+  satisfied trivially in the window between a keystroke and the render, so it handed back a stale
+  frame and the assertion after it read one. It now waits for the reaction to be observed first.
+
+  Test infrastructure only; no consumer-visible behaviour changes. Recorded because it is what
+  makes the gate above trustworthy, and because the gate is what `prepublishOnly` runs.
+
 - **The repository's own quality gate is green again, and now means the same thing on every
   machine (B-051).** `pnpm gates` had been red since v0.54.0 — which is also the first version that
   never reached npm — and `format:check` is its first link, so `lint`, `typecheck`, `test` and
