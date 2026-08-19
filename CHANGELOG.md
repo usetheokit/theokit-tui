@@ -5,6 +5,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.68.0] - 2026-08-19
+
+### Fixed
+
+- **The exported `VERSION` constant tracks the manifest again.** It read `0.67.1` while
+  `package.json` said `0.68.0` — caught by the contract test written for exactly this
+  ("prevents silent drift at the first release bump") before anything was published, so no
+  consumer ever saw the mismatch. Recorded here rather than under `[Unreleased]` because it
+  belongs to THIS release: putting it in the next one would describe this cut inside the
+  following one.
+
 ### Changed
 
 - **The slash and `@`-mention menus now show HOW MANY rows are hidden (B-052).** The overflow
