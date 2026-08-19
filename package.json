@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
   "version": "0.64.0",
-  "description": "AI-native TUI primitives for agent CLIs \u2014 streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
+  "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -42,6 +42,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
+    "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "lint": "test -n \"$(git ls-files '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs')\" && git ls-files -z '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' | xargs -0 eslint --no-warn-ignored",
     "format": "git ls-files -z | xargs -0 prettier --write --ignore-unknown",
     "format:check": "test -n \"$(git ls-files)\" && git ls-files -z | xargs -0 prettier --check --ignore-unknown",
@@ -60,7 +61,7 @@
     "example:showcase": "tsx examples/scenes/showcase.tsx",
     "example:renderer": "tsx examples/renderer/renderer-skeleton.tsx",
     "example:all": "tsx examples/scenes/all-components.tsx",
-    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm build",
     "prepublishOnly": "pnpm gates && pnpm build",
     "example:claude-code": "tsx examples/scenes/claude-code-scene.tsx",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
@@ -96,6 +97,7 @@
     "@vitest/coverage-v8": "^3.0.0",
     "@xterm/headless": "5.5.0",
     "cli-spinners": "^2.9.2",
+    "dependency-cruiser": "18.2.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "ink-testing-library": "^4.0.0",

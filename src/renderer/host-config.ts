@@ -1,10 +1,15 @@
 import { createContext } from "react";
 import createReconciler from "react-reconciler";
 import { DefaultEventPriority } from "react-reconciler/constants.js";
-import Yoga, { type Node as YogaNode } from "yoga-layout";
+import Yoga from "yoga-layout";
 
+import type { RendererNode, RootNode } from "./node.js";
 import { measureTextNode } from "./text-measure.js";
 import { applyStyles, type Style } from "./yoga-style.js";
+
+// B-023 — the node types moved to `./node.js` to break a cycle with `text-measure.ts`.
+// Re-exported here so every existing import site keeps working.
+export type { RendererNode, RootNode } from "./node.js";
 
 // M17 host-config (plan m17-renderer-skeleton, ADR D1 / 0003): the minimal
 // react-reconciler 0.33 mutation-mode host — Ink 7's hook subset reduced to
@@ -13,26 +18,6 @@ import { applyStyles, type Style } from "./yoga-style.js";
 // resetAfterCommit is THE render trigger (Ink calls onRender there; we call
 // the injected onCommit). Everything React 19 requires but the skeleton does
 // not use is stubbed honestly — no NotImplemented throws (LSP).
-
-/** A renderable node in the renderer tree (M18: carries a yoga node). */
-export interface RendererNode {
-  type: string;
-  props: Record<string, unknown>;
-  children: RendererNode[];
-  /** Only set on text instances (type === "#text"). */
-  text?: string;
-  parent?: RendererNode | undefined;
-  /**
-   * The yoga layout node. Absent for `#text` and for a `<Text>` nested inside
-   * another `<Text>` (virtual text — it participates only through its parent's
-   * measure func). M18 T1.1 wires the tree; the measure func binding is T2.1.
-   */
-  yogaNode?: YogaNode | undefined;
-}
-
-export interface RootNode extends RendererNode {
-  type: "#root";
-}
 
 export function createRootNode(): RootNode {
   return {

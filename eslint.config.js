@@ -30,4 +30,22 @@ export default tseslint.config(
       complexity: ["error", 10],
     },
   },
+  // `.cjs` files are CommonJS, and `module` is a global there. Without this, eslint's
+  // `no-undef` fires on `module.exports` in `.dependency-cruiser.cjs`.
+  //
+  // Found by CI, not locally, and the reason is worth keeping: `lint` reads `git ls-files`, so a
+  // file that is not yet in the index is not linted. A local `pnpm gates` before `git add` covers
+  // every file EXCEPT the new one — which is usually the only one worth linting. That is the
+  // index-scoped gate (B-051) behaving exactly as designed; the gap is in when it is run.
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        module: "writable",
+        require: "readonly",
+        __dirname: "readonly",
+      },
+    },
+  },
 );

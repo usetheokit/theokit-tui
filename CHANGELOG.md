@@ -7,6 +7,45 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **A dependency-rule gate runs with every other gate, and it found a real cycle (B-023).** Every
+  `/code-quality` run reported the same INFO — "no architecture rules declared" — so the dependency
+  detector was skipped on every audit. `.dependency-cruiser.cjs` now declares `no-circular` (error),
+  `not-to-dev-dep` (error) and `no-orphans` (warn), and `pnpm gates` runs it.
+
+  The first measurement was worth more than the gate: `dependency-cruiser --no-config` reported
+  "no dependency violations found" over 384 modules, which is vacuous — with no rules there is
+  nothing to violate. With a real rule it found
+  `renderer/host-config.ts → renderer/text-measure.ts → renderer/host-config.ts`.
+
+  **What is deliberately absent: folder-layering rules.** Measured, the domain graph runs both ways
+  — `layout → prompts` and `prompts → layout`, `agent → chat` and `status → agent`. A layering rule
+  would fail on the day it landed against a design nobody agreed to, and a rule waived on arrival
+  teaches everyone to waive rules. This gate catches cycles and dev-dependency leaks; it does not
+  make the layering enforced.
+
+### Fixed
+
+- **The renderer's node type no longer closes an import cycle (B-023).** `RendererNode` and
+  `RootNode` moved to `src/renderer/node.ts`, a leaf that imports nothing from its siblings;
+  `host-config.ts` re-exports them, so no import site changed and no public export moved. The cycle
+  cost nothing at runtime — `text-measure.ts` used `import type`, which TypeScript erases — but
+  dependency-cruiser reports both directions as plain imports, so keeping it would have required a
+  path exception naming the two files the rule had just caught.
+
+### Fixed
+
+- **The edge-case coverage analyzer counts what a plan declares, and finds the tests the plan names
+  (B-018).** Its ratio gates a release — below 0.80 the review returns `NEEDS_DEEPER` — and it was
+  reporting 13 cases for a plan declaring 4 (ratio 0.385) and 27 for one declaring 7 (0.222). Both
+  now report their real count and 1.0. Three defects: the same bullet extracted twice in two
+  spellings, every keyword-bearing bullet anywhere in the document counted as an edge case
+  (including Baseline Context citations and Unresolved Questions), and a matcher demanding all five
+  longest words co-occur in one file — which missed three cases whose named tests exist. The
+  analyzer now reads the `#### TDD` block that names the covering test, and the script has its first
+  test file: 14 tests, 7 mutants, 7 detected.
+
+### Added
+
 ### Changed
 
 ### Deprecated
@@ -14,6 +53,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Removed
 
 ### Fixed
+
+- **A stale `## [Unreleased]` section was sitting in the middle of this file (B-046).** It lived
+  between the 0.52.0 and 0.51.0 releases and repeated an entry already filed under 0.52.0, so the
+  file had two sections claiming to hold unreleased work. Nothing was actually unreleased and
+  nothing was undocumented — it was residue from an old promote that copied instead of moving — but
+  a reader had no way to know that without checking which heading each sat under.
+
+  The release tool matched the first heading and stopped, so the second was never seen rather than
+  skipped with a warning. It now refuses a CHANGELOG carrying more than one, naming both line
+  numbers, instead of promoting past it in silence.
 
 ### Security
 
@@ -606,18 +655,6 @@ copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a 
   key states would give the second consumer something to route around — and the objection is answered
   rather than waived: what ships is the ordering rule, with states, keys and actions as type
   parameters. Nothing in the module names an overlay, a mode or a keystroke.
-
-## [Unreleased]
-
-### Added
-
-- **`@theokit/tui/keys` — modal keypress routing (B-104 slice 2).** Layers are tried in declared
-  order, the first whose `when` holds claims the key exclusively, and the result names WHICH layer
-  claimed it. That last part is why it is worth extracting: precedence that cannot be observed cannot
-  be tested. `./terminal` deferred this with a real objection — an interface shaped by one product's
-  key states would give the second consumer something to route around — and the objection is answered
-  rather than waived: what ships is the ordering rule, with states, keys and actions as type
-  parameters. Nothing here names an overlay, a mode or a keystroke.
 
 ## [0.51.0] - 2026-08-11
 
