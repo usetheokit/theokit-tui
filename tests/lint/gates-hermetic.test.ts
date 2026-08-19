@@ -15,27 +15,27 @@ import { afterAll, describe, expect, it } from "vitest";
 // `.pytest_cache/README.md` — untracked, absent from `.prettierignore` — was in its output. A clean
 // CI checkout saw 23 files and a machine that had run pytest saw 24.
 //
-// The second test asserts the RULE (an untracked file cannot decide the gate) rather than the one
-// directory that exposed it: naming `.pytest_cache` here would pass again the moment the next
-// tool drops an unformatted artifact somewhere else.
+// This asserts the RULE (an untracked file cannot decide the gate) rather than the one directory
+// that exposed it: naming `.pytest_cache` here would pass again the moment the next tool drops an
+// unformatted artifact somewhere else.
 //
-// Both shell out to the real `prettier` binary. A reimplementation would be a second formatter to
+// THERE WAS A SECOND TEST HERE, and deleting it is the point. It re-ran `prettier --check` over
+// every tracked file to assert they are formatted — which is exactly what `pnpm format:check`
+// already does, as the FIRST link of `pnpm gates`. A test that re-runs a gate the gate already runs
+// is not a second opinion, it is the same opinion at double the cost: it took 30s idle and timed
+// out at 50s under `gates`, in a suite already load-sensitive (B-034/B-035). Parsimony rung 1
+// applied to my own code — the formatting regression is caught by `format:check`, and T1.3 wires
+// `gates` into the cycle's validation so it is caught before a release rather than at publish.
+//
+// It shells out to the real `prettier` binary. A reimplementation would be a second formatter to
 // keep in sync with the first, which is the defect one layer down (Rule 9, Rule 12).
 
 const REPO_ROOT = new URL("../..", import.meta.url).pathname;
 
-function trackedFiles(): string[] {
-  return execFileSync("git", ["ls-files"], { cwd: REPO_ROOT, encoding: "utf8" })
-    .split("\n")
-    .filter((line) =>
-      /\.(ts|tsx|js|jsx|mjs|cjs|json|md|yml|yaml|css)$/.test(line),
-    );
-}
-
-/** Runs the real formatter over an explicit file list; returns its exit code. */
-function prettierCheck(files: string[]): number {
+/** Runs the gate's own command — `pnpm format:check` — and returns its exit code. */
+function prettierCheckRepo(): number {
   try {
-    execFileSync("npx", ["prettier", "--check", ...files], {
+    execFileSync("pnpm", ["format:check"], {
       cwd: REPO_ROOT,
       encoding: "utf8",
       stdio: "pipe",
@@ -53,29 +53,17 @@ afterAll(() => {
   for (const path of scratch) rmSync(path, { recursive: true, force: true });
 });
 
-describe("gates are green and hermetic (B-051)", () => {
-  it("test_tracked_files_are_formatted", () => {
-    // Arrange — every tracked file prettier has an opinion about.
-    const files = trackedFiles();
-    expect(files.length).toBeGreaterThan(0);
-
-    // Act
-    const exitCode = prettierCheck(files);
-
-    // Assert — this is `pnpm format:check` restricted to what git actually carries.
-    expect(exitCode).toBe(0);
-  });
-
+describe("gates are hermetic (B-051)", () => {
   it("test_an_untracked_file_cannot_turn_the_gate_red", () => {
     // Arrange — a badly formatted file that git does not know about, in a directory no rule names.
     const dir = mkdtempSync(join(REPO_ROOT, "b051-scratch-"));
     scratch.push(dir);
     writeFileSync(join(dir, "unformatted.ts"), "const   x=1;;;\n\n\n", "utf8");
 
-    // Act — the hermetic form: only what git tracks.
-    const exitCode = prettierCheck(trackedFiles());
+    // Act — the real gate command, verbatim: `format:check` is `prettier --check .`.
+    const exitCode = prettierCheckRepo();
 
-    // Assert — the untracked file is invisible to the gate, so two machines agree.
+    // Assert — the untracked file is invisible to it, so two machines agree on the result.
     expect(exitCode).toBe(0);
-  });
+  }, 180_000); // the whole tree, which took 28s idle and 50s under `pnpm gates`. Measured, not guessed. // Explicit, because it exceeds the repo-wide 15s testTimeout: it runs the real formatter over
 });
