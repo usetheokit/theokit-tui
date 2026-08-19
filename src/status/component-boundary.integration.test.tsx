@@ -36,11 +36,31 @@ function expectRendered(run: Run): void {
   expect(run.stdout.trim().length).toBeGreaterThan(0);
 }
 
+// One spawn per CONFIGURATION, not per assertion. Seven tests observe four distinct states, and
+// spawning `npx tsx` seven times cost ~7s of CPU inside a suite that is already load-sensitive
+// (B-058) — measured: it pushed an unrelated contract test past its 10s wait budget. The child is
+// deterministic for a given environment, so caching its result is not sharing mutable state between
+// tests; it is not asking the same question four times (F-tests-7).
+const runs = new Map<string, Run>();
+
 function renderInChildProcess(
   opts: { wrapped: boolean; throws?: boolean; presetExit?: number } = {
     wrapped: true,
   },
 ): Run {
+  const key = `${String(opts.wrapped)}:${String(opts.throws)}:${String(opts.presetExit)}`;
+  const cached = runs.get(key);
+  if (cached) return cached;
+  const fresh = spawnFixture(opts);
+  runs.set(key, fresh);
+  return fresh;
+}
+
+function spawnFixture(opts: {
+  wrapped: boolean;
+  throws?: boolean;
+  presetExit?: number;
+}): Run {
   try {
     const stdout = execFileSync("npx", ["tsx", FIXTURE], {
       encoding: "utf8",
