@@ -15,6 +15,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- **A stale `## [Unreleased]` section was sitting in the middle of this file (B-046).** It lived
+  between the 0.52.0 and 0.51.0 releases and repeated an entry already filed under 0.52.0, so the
+  file had two sections claiming to hold unreleased work. Nothing was actually unreleased and
+  nothing was undocumented — it was residue from an old promote that copied instead of moving — but
+  a reader had no way to know that without checking which heading each sat under.
+
+  The release tool matched the first heading and stopped, so the second was never seen rather than
+  skipped with a warning. It now refuses a CHANGELOG carrying more than one, naming both line
+  numbers, instead of promoting past it in silence.
+
 ### Security
 
 ## [0.64.0] - 2026-08-18
@@ -606,18 +616,6 @@ copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a 
   key states would give the second consumer something to route around — and the objection is answered
   rather than waived: what ships is the ordering rule, with states, keys and actions as type
   parameters. Nothing in the module names an overlay, a mode or a keystroke.
-
-## [Unreleased]
-
-### Added
-
-- **`@theokit/tui/keys` — modal keypress routing (B-104 slice 2).** Layers are tried in declared
-  order, the first whose `when` holds claims the key exclusively, and the result names WHICH layer
-  claimed it. That last part is why it is worth extracting: precedence that cannot be observed cannot
-  be tested. `./terminal` deferred this with a real objection — an interface shaped by one product's
-  key states would give the second consumer something to route around — and the objection is answered
-  rather than waived: what ships is the ordering rule, with states, keys and actions as type
-  parameters. Nothing here names an overlay, a mode or a keystroke.
 
 ## [0.51.0] - 2026-08-11
 
