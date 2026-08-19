@@ -6,6 +6,7 @@ import { parseMarkdown } from "./markdown.js";
 import { BlockNode } from "./markdown-block.js";
 
 import { useTheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // M13 MarkdownText (plan m13-markdown-renderer, ADR D2): the render adapter
 // over the pure markdown-model — nodes → ink tree styled by THEME tokens
@@ -24,8 +25,11 @@ export interface MarkdownTextProps extends LayoutMarginProps {
 export function MarkdownText(props: MarkdownTextProps) {
   // Boundary validation before hooks (house F10 idiom).
   if (typeof props.text !== "string") {
-    throw new TypeError(
-      `MarkdownText: \`text\` must be a string — got ${typeof props.text}`,
+    reportGuardFailure(
+      "MarkdownText",
+      new TypeError(
+        `MarkdownText: \`text\` must be a string — got ${typeof props.text}`,
+      ),
     );
   }
   const theme = useTheoTheme();

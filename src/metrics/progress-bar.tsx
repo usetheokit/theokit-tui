@@ -4,6 +4,7 @@ import { renderFillBar } from "./fill-bar.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // ProgressBar — a determinate progress bar: a filled run + an empty run + an
 // optional `N%` label (`█████░░░░░ 50%`). The fill segment is the theme accent;
@@ -34,8 +35,11 @@ export function ProgressBar({
 }: ProgressBarProps) {
   // Boundary validation FIRST (F10 idiom).
   if (typeof percent !== "number" || !Number.isFinite(percent)) {
-    throw new TypeError(
-      `ProgressBar: percent must be a finite number — got ${String(percent)}`,
+    reportGuardFailure(
+      "ProgressBar",
+      new TypeError(
+        `ProgressBar: percent must be a finite number — got ${String(percent)}`,
+      ),
     );
   }
   const clamped = Math.max(0, Math.min(100, percent));

@@ -9,6 +9,7 @@ import { ChoiceRow } from "./choice-row.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // PermissionPrompt — the Claude Code tool-approval card:
 //
@@ -104,8 +105,11 @@ export function PermissionPrompt({
 }: PermissionPromptProps) {
   // Boundary validation FIRST (F10 idiom).
   if (typeof toolType !== "string" || toolType.trim() === "") {
-    throw new TypeError(
-      `PermissionPrompt: toolType must be a non-empty string — got ${String(toolType)}`,
+    reportGuardFailure(
+      "PermissionPrompt",
+      new TypeError(
+        `PermissionPrompt: toolType must be a non-empty string — got ${String(toolType)}`,
+      ),
     );
   }
   const theme = useTheoTheme();

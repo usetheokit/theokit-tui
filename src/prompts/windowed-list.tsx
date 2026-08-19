@@ -5,6 +5,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { windowFor } from "./select-list-model.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 /** No selection. Rendering then marks no row active. */
 const NO_SELECTION = -1;
@@ -55,8 +56,11 @@ function oneLine(text: string): string {
  */
 function assertWindow(window: number): void {
   if (typeof window !== "number" || !Number.isInteger(window) || window < 1) {
-    throw new TypeError(
-      `WindowedList: window must be a finite integer >= 1 — got ${String(window)}`,
+    reportGuardFailure(
+      "WindowedList",
+      new TypeError(
+        `WindowedList: window must be a finite integer >= 1 — got ${String(window)}`,
+      ),
     );
   }
 }
@@ -75,8 +79,11 @@ function assertWindow(window: number): void {
  */
 function assertSelected(selected: number): void {
   if (typeof selected !== "number" || !Number.isInteger(selected)) {
-    throw new TypeError(
-      `WindowedList: selected must be an integer (or ${String(NO_SELECTION)} for none) — got ${String(selected)}`,
+    reportGuardFailure(
+      "WindowedList",
+      new TypeError(
+        `WindowedList: selected must be an integer (or ${String(NO_SELECTION)} for none) — got ${String(selected)}`,
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import type { TheoTheme } from "../theme/theme.js";
 import { unionMessage } from "../agent/union-message.js";
 import { pickMargin } from "../layout/layout-props.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
@@ -109,8 +110,11 @@ export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
   // Guards MUST stay above the first hook: tests invoke this component as a
   // plain function (Ink's error boundary swallows render throws — F10).
   if (!VALID_STATUSES.includes(status)) {
-    throw new TypeError(
-      `ToolCall: invalid status "${String(status)}" — expected ${STATUS_UNION_MESSAGE}`,
+    reportGuardFailure(
+      "ToolCall",
+      new TypeError(
+        `ToolCall: invalid status "${String(status)}" — expected ${STATUS_UNION_MESSAGE}`,
+      ),
     );
   }
   const theme = useTheoTheme();

@@ -83,10 +83,20 @@ const isChangelog = (rel: string): boolean =>
 const FILE_ALLOWLIST = new Set<string>([
   // This file names Portuguese words in order to ban them.
   "tests/lint/no-ptbr.test.ts",
+  // B-027 — same reason, one file over: its fixtures QUOTE Portuguese in order to prove the
+  // [Unreleased] gate reports it. One of them is real text from the shipped 0.60.0 entry, so
+  // translating it would break the Rule-6 case it exists to pin.
+  "tests/lint/changelog-unreleased-english.test.ts",
   // B-065 — the repository CHANGELOG. Entries for a RELEASED version are immutable (Unbreakable
   // Rule 6): translating one would rewrite a record of what shipped, which is the discipline this
-  // gate exists to serve rather than to override. New entries are written in English; the gate
-  // cannot tell a released entry from a fresh one, so the file is exempt and the rule carries it.
+  // gate exists to serve rather than to override. This sweep cannot tell a released entry from a
+  // fresh one, so the whole file is exempt HERE.
+  //
+  // B-027 — the other half of the rule is enforced by `tests/lint/changelog-unreleased-english.test.ts`,
+  // which reads ONLY the `[Unreleased]` section. It used to be enforced by this comment, and this
+  // comment let seven consecutive releases ship in Portuguese (0.54.0 through 0.60.0) written by an
+  // author who had read it. A convention stated inside the exemption that disables its enforcement
+  // is a note, not a rule.
   "CHANGELOG.md",
   // B-065 — one comment QUOTES the Portuguese word it replaced, to explain why the fixture reads as
   // it does. Translating the quotation would delete the explanation and leave a comment that says
@@ -287,7 +297,12 @@ const NOT_PROSE =
  */
 const INLINE_CODE = /`[^`\n]*`/g;
 
-interface Offender {
+/**
+ * B-027 — exported so `changelog-unreleased-english.test.ts` can report the same shape. The
+ * CHANGELOG gate reuses this classifier rather than growing a second Portuguese lexicon that would
+ * drift from this one.
+ */
+export interface Offender {
   file: string;
   line: number;
   tier: "diacritic" | "lexicon";
@@ -397,7 +412,7 @@ function classifyLine(
   return undefined;
 }
 
-function scanText(rel: string, text: string): Offender[] {
+export function scanText(rel: string, text: string): Offender[] {
   const offenders: Offender[] = [];
 
   text.split("\n").forEach((line, index) => {

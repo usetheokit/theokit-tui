@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import { ChatMessage } from "./chat-message.js";
 import type { ChatRole } from "./chat-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 export interface ChatThreadMessage {
   /** Stable unique identity — React key + Static watermark anchor. */
@@ -71,14 +72,20 @@ function assertUniqueIds(messages: ChatThreadMessage[]): void {
   const seen = new Set<string>();
   for (const message of messages) {
     if (message.id === HEADER_SENTINEL_KEY) {
-      throw new TypeError(
-        `ChatThread: message id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+      reportGuardFailure(
+        "ChatThread",
+        new TypeError(
+          `ChatThread: message id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+        ),
       );
     }
     if (seen.has(message.id)) {
       // Duplicate keys silently corrupt the Static watermark + row identity —
       // fail fast at the boundary (plan ADR D7, rules/error-handling.md § 2).
-      throw new TypeError(`ChatThread: duplicate message id "${message.id}"`);
+      reportGuardFailure(
+        "ChatThread",
+        new TypeError(`ChatThread: duplicate message id "${message.id}"`),
+      );
     }
     seen.add(message.id);
   }

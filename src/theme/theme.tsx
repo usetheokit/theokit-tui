@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 
 import { unionMessage } from "../agent/union-message.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 export interface RoleTokens {
   /** Glyph prefix rendered before the message (gemini-cli idiom). */
@@ -277,8 +278,11 @@ function isPairForm(
 
 function assertBuiltinName(name: string): void {
   if (!isBuiltinName(name)) {
-    throw new TypeError(
-      `TheoTUIProvider: unknown theme "${name}" — expected ${BUILTIN_UNION_MESSAGE}`,
+    reportGuardFailure(
+      "TheoTUIProvider",
+      new TypeError(
+        `TheoTUIProvider: unknown theme "${name}" — expected ${BUILTIN_UNION_MESSAGE}`,
+      ),
     );
   }
 }
@@ -293,8 +297,11 @@ function assertPairForm(pair: {
 }): void {
   for (const key of Object.keys(pair)) {
     if (key !== "base" && key !== "override") {
-      throw new TypeError(
-        `TheoTUIProvider: unknown key "${key}" in {base, override} theme form`,
+      reportGuardFailure(
+        "TheoTUIProvider",
+        new TypeError(
+          `TheoTUIProvider: unknown key "${key}" in {base, override} theme form`,
+        ),
       );
     }
   }
@@ -305,8 +312,11 @@ function assertPairForm(pair: {
   // mergeTheme and throw the ENGINE's TypeError — breaking the EC-5 contract
   // (or silently mislabel base values as "custom" for a string).
   if (pair.override !== undefined && !isPlainObject(pair.override)) {
-    throw new TypeError(
-      `TheoTUIProvider: theme must be a built-in name or an override object — got ${Array.isArray(pair.override) ? "array" : String(pair.override)} as override`,
+    reportGuardFailure(
+      "TheoTUIProvider",
+      new TypeError(
+        `TheoTUIProvider: theme must be a built-in name or an override object — got ${Array.isArray(pair.override) ? "array" : String(pair.override)} as override`,
+      ),
     );
   }
 }
@@ -322,8 +332,11 @@ function assertThemeProp(theme: TheoThemeProp | undefined): void {
     return;
   }
   if (theme === null || typeof theme !== "object" || Array.isArray(theme)) {
-    throw new TypeError(
-      `TheoTUIProvider: theme must be a built-in name or an override object — got ${Array.isArray(theme) ? "array" : String(theme)}`,
+    reportGuardFailure(
+      "TheoTUIProvider",
+      new TypeError(
+        `TheoTUIProvider: theme must be a built-in name or an override object — got ${Array.isArray(theme) ? "array" : String(theme)}`,
+      ),
     );
   }
   if (isPairForm(theme)) {
