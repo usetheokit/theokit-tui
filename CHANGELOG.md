@@ -5,6 +5,23 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **The dead-code gate can now see a module only its own test reaches (B-024).** `pnpm lint` runs
+  `knip --production --include files`, which resolves reachability from what the package actually
+  publishes rather than from a test.
+
+  Measured on this tree: knip under its defaults does NOT report `src/renderer/kill-ring.ts` or
+  `src/renderer/undo-stack.ts` — complete, tested modules whose own headers describe a composer
+  integration that does not exist, and which nothing imports. In production mode it reports both.
+  That is the blind spot the item was filed about, and it is why `/code-quality`'s D1 returned
+  `PASS` with `score_cap: 100` on every audit while unable to answer its own question.
+
+  `examples/` and `benchmarks/` are DECLARED ENTRIES rather than ignored paths: they are unreachable
+  from `exports` by design, but a dead module imported only by a dead example must stay visible.
+  The six known-dead files are exempted one path at a time, each with a written reason and an item
+  that owns the decision — nothing was deleted to make the gate green. See `knip.README.md`.
+
 ### Changed
 
 - **The release chain writes the version into every site that carries it (B-059).** The version
