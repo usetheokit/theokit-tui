@@ -123,7 +123,10 @@ describe("adversarial: pure derivations never invent output", () => {
       const rows = composerShortcutsFor(caps as never);
       if (rows.length > 15) violations.push(`grew to ${String(rows.length)}`);
       for (const row of rows) {
-        if (typeof row.keys !== "string" || typeof row.description !== "string") {
+        if (
+          typeof row.keys !== "string" ||
+          typeof row.description !== "string"
+        ) {
           violations.push(`malformed ${JSON.stringify(row)}`);
         }
       }

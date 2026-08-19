@@ -157,7 +157,11 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   it("the_mode_row_leaves_no_dangling_separator_when_agents_is_undeclared", async () => {
     const frame = strip(
       await renderFrame(
-        <StatusFooter left={<Text>main</Text>} mode="auto-accept" affordances={{}} />,
+        <StatusFooter
+          left={<Text>main</Text>}
+          mode="auto-accept"
+          affordances={{}}
+        />,
       ),
     );
     const modeRow = frame.split("\n").find((l) => l.includes("auto-accept"));
@@ -177,7 +181,9 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   // D4 / EC-2 — `footerHintFor({})` is `""`, and `hint || DEFAULT` would restore everything.
   it("an_empty_declaration_renders_an_empty_hint_not_the_default", async () => {
     const frame = strip(
-      await renderFrame(<StatusFooter left={<Text>main</Text>} affordances={{}} />),
+      await renderFrame(
+        <StatusFooter left={<Text>main</Text>} affordances={{}} />,
+      ),
     );
     expect(frame).not.toContain("shortcuts");
     expect(frame).not.toContain("agents");

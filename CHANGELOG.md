@@ -17,6 +17,75 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
+## [0.63.0] - 2026-08-18
+
+### Changed
+
+- **The test suite is deterministic at default worker count again (B-057).** `pnpm gates` now exits
+  0 on three consecutive runs; it had been failing intermittently on a different test each time.
+  The cause was a test helper that waited for the rendered frame to STOP CHANGING — a condition
+  satisfied trivially in the window between a keystroke and the render, so it handed back a stale
+  frame and the assertion after it read one. It now waits for the reaction to be observed first.
+
+  Test infrastructure only; no consumer-visible behaviour changes. Recorded because it is what
+  makes the gate above trustworthy, and because the gate is what `prepublishOnly` runs.
+
+- **The repository's own quality gate is green again, and now means the same thing on every
+  machine (B-051).** `pnpm gates` had been red since v0.54.0 — which is also the first version that
+  never reached npm — and `format:check` is its first link, so `lint`, `typecheck`, `test` and
+  `build` had not run in any publish attempt for ten versions. 24 files were reformatted.
+
+  The larger half is that both `format:check` and `lint` walked the FILESYSTEM rather than the git
+  index, so their result depended on whatever untracked files a machine happened to have: a cache
+  directory, a stray scratch file. Both now read `git ls-files`, and both refuse an empty list
+  rather than reporting success — the first repair had left them exiting 0 outside a git repository,
+  having inspected nothing.
+
+  A regression test runs the real gate against a throwaway three-file repository: an untracked bad
+  file is ignored, a tracked bad file is caught, and no `.git` fails closed.
+
+  No consumer-visible behaviour changes. Recorded here because the gate is what `prepublishOnly`
+  runs, so this is what unblocks publishing at all.
+
+- **`SelectList` now shows HOW MANY rows are hidden, not just that some are (B-022).** The
+  overflow chrome went from a bare `▲` / `▼` to `▲ 3` / `▼ 8`, matching what `WindowedList`
+  already rendered from the identical model. Both components consume the same view object;
+  one was reading the counts and the other was reading booleans derived from those same
+  counts, so the same list under two public components told the user two different things
+  about the same state. A boolean cannot be turned back into a number, which is why the
+  counts replaced the booleans in the model in the first place — this view had kept
+  discarding them.
+
+  **API docs corrected in the same change.** `WindowedList`'s TSDoc asserted that "`SelectList`
+  renders a bare `▲` and throws away the `hiddenBefore`". That shipped: `tsup` builds declarations,
+  so the sentence reached `dist/index.d.ts` and consumers read it as hover text. It is now three
+  lines stating what the model carries and what this component renders — no version numbers, no
+  history. A package whose CHANGELOG says a divergence is fixed while its API docs say it exists has
+  told the reader two things.
+
+  A third view — the slash / mention menu inside `ChatComposer` — still renders bare arrows.
+  It is not part of this change: its `SlashMenu` type hand-re-declares the window contract
+  instead of extending `WindowView`, so the counts arrive at runtime but are absent from the
+  type. Registered as a followup rather than silently included, so that "both components
+  consume the same view object" above is not read as "every arrow in the package now carries
+  a count".
+
+  **Blast radius, measured:** `grep -rn "SelectList" modelo/TheoCode/` → **6 hits, 0
+  affected**. The single render passes 4 items and no `window`, against a default of 5, so
+  nothing is hidden and no arrow is drawn either before or after this change.
+
+  **Width cost:** none, and the guarantee is structural rather than a measurement of one case.
+  The count lands on the arrow row, and the counter row (`(7/12)`) is always wider than the
+  arrow row for every list size — so the arrow row can never be the widest line in the frame,
+  at any count. Review measured this from 10 to 100,000 items with one-character labels: the
+  arrow row grows from 3 to 7 columns while the widest line goes 9 → 10, never the arrow.
+
+  The first version of this entry claimed the weaker thing and claimed it wrongly: it said the
+  row "grows from 1 to 3 bytes" using `awk '{ print length }'`, which counts bytes, where `▼`
+  is 3 bytes and `▼ 8` is 5 — so 1 → 3 was a column count wearing a byte label. It also gave
+  a false reason ("a menu whose labels are shorter than `▼ 999` would widen"). Corrected here
+  rather than quietly dropped, because the wrong version shipped in this section.
+
 ## [0.62.0] - 2026-08-18
 
 ### Changed
@@ -61,7 +130,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   **B-031**: one invalid prop still unmounts the whole app, shows the end user a developer stack,
   and exits 0. (b025-silent-guards-2026-08-18)
 
-
 ### Changed
 
 - **The guard record is sanitised against every line-breaking code point, and a malformed `error` is
@@ -100,14 +168,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   and a present `0` is still accepted: absent stays absent, and `0` is a measurement the agent
   reported. No rendering changed. (b025-silent-guards-2026-08-18)
 
-
-
 ### Fixed
 
 - **The last two guessed budgets in the suite become measured ones (B-034).** `degrade-matrix`
   spawns `pnpm exec tsx` three times per run and budgeted 20000 ms with nothing recorded beside it;
-  one spawn measures 2621 ms at load 13, so that 7.6x margin still failed with `ETIMEDOUT` at load
-  30. Now 60000 ms, with the measurement in the code and the better fix named rather than
+  one spawn measures 2621 ms at load 13, so that 7.6x margin still failed with `ETIMEDOUT` at load 30. Now 60000 ms, with the measurement in the code and the better fix named rather than
   overlooked: pre-compiling the probe and spawning `node` would take it to ~100 ms and remove the
   sensitivity instead of budgeting for it. `typeUntil` in the composer suite carried the third copy
   of the 2000 ms bound that B-033 measured expiring on a correct frame, and now shares the one
@@ -359,7 +424,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   entao `KNOWN_TOOL_NAMES` e literal e pode divergir. O custo da divergencia e um header generico em
   uma tool; o custo da alternativa e uma aresta de dependencia invertida para sempre.
 
-
 ### Changed
 
 - **`src/` passa a ser organizado por dominio de produto, e nenhum componente exportado divide
@@ -412,7 +476,6 @@ copyright owner]`), sem titular declarado. O `NOTICE`, por sua vez, atribuía a 
   `sonar.projectKey=usetheokit_theokit-tui`, acompanhando a mudança de organização. A organização e o
   projeto correspondentes precisam existir no SonarCloud — do contrário o step de análise falha.
   (usetheokit/theokit#316)
-
 
 ### Fixed
 

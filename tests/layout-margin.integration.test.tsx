@@ -127,7 +127,11 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
     (m) => (
       <UsagePanel
         {...m}
-        usage={{ inputTokens: 12_000, outputTokens: 3_000, totalTokens: 15_000 }}
+        usage={{
+          inputTokens: 12_000,
+          outputTokens: 3_000,
+          totalTokens: 15_000,
+        }}
         contextWindow={128_000}
       />
     ),

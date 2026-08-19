@@ -14,7 +14,9 @@ const rows = (n: number): string[] =>
 describe("WindowedList", () => {
   it("centres_the_selection_and_counts_what_is_hidden", async () => {
     const plain = stripAnsi(
-      await renderFrame(<WindowedList rows={rows(20)} selected={10} window={7} />),
+      await renderFrame(
+        <WindowedList rows={rows(20)} selected={10} window={7} />,
+      ),
     );
     const lines = plain.split("\n").filter((l) => l.trim() !== "");
     // Centred, not trailing: the selection must NOT be the last visible row — that is the whole
@@ -28,7 +30,9 @@ describe("WindowedList", () => {
 
   it("shows_a_short_list_whole_with_no_hidden_counts", async () => {
     const plain = stripAnsi(
-      await renderFrame(<WindowedList rows={rows(3)} selected={1} window={7} />),
+      await renderFrame(
+        <WindowedList rows={rows(3)} selected={1} window={7} />,
+      ),
     );
     expect(plain).toContain("turn 0");
     expect(plain).toContain("turn 2");
@@ -38,7 +42,9 @@ describe("WindowedList", () => {
 
   it("clamps_to_the_head_and_reports_only_what_is_below", async () => {
     const plain = stripAnsi(
-      await renderFrame(<WindowedList rows={rows(20)} selected={0} window={5} />),
+      await renderFrame(
+        <WindowedList rows={rows(20)} selected={0} window={5} />,
+      ),
     );
     expect(plain).toContain("turn 0");
     expect(plain).not.toContain("▲");
@@ -47,7 +53,9 @@ describe("WindowedList", () => {
 
   it("clamps_to_the_tail_and_reports_only_what_is_above", async () => {
     const plain = stripAnsi(
-      await renderFrame(<WindowedList rows={rows(20)} selected={19} window={5} />),
+      await renderFrame(
+        <WindowedList rows={rows(20)} selected={19} window={5} />,
+      ),
     );
     expect(plain).toContain("turn 19");
     expect(plain).toMatch(/▲\s*15/);
@@ -70,10 +78,14 @@ describe("WindowedList", () => {
 
   it("hidden_rows_render_as_a_number_not_a_marker", async () => {
     const plain = stripAnsi(
-      await renderFrame(<WindowedList rows={rows(50)} selected={25} window={3} />),
+      await renderFrame(
+        <WindowedList rows={rows(50)} selected={25} window={3} />,
+      ),
     );
-    // The defect this component exists to avoid: `SelectList` renders a bare `▲` and throws the
-    // count away (src/prompts/select-list.tsx:192). A digit must be present next to each marker.
+    // The defect this component exists to avoid. `SelectList` used to render a bare `▲` and throw
+    // the count away; it renders the counts too now, so the citation that used to sit here no
+    // longer points at that code. The assertion is unchanged and still the right one: a digit must
+    // be present next to each marker, whatever the sibling does.
     expect(plain).toMatch(/▲\s*\d+/);
     expect(plain).toMatch(/▼\s*\d+/);
   });
@@ -82,14 +94,18 @@ describe("WindowedList", () => {
   // windowFor(20, 10, -1) reports hiddenBefore 11 + hiddenAfter 10 in a list of 20. A component
   // built straight on that would state a falsehood in numbers.
   it("rejects_a_non_positive_window_with_a_typed_error_naming_itself", () => {
-    expect(() => WindowedList({ rows: rows(20), selected: 10, window: 0 })).toThrow(
+    expect(() =>
+      WindowedList({ rows: rows(20), selected: 10, window: 0 }),
+    ).toThrow(TypeError);
+    expect(() =>
+      WindowedList({ rows: rows(20), selected: 10, window: 0 }),
+    ).toThrow("WindowedList: window must be a finite integer >= 1");
+    expect(() => WindowedList({ rows: rows(20), window: -1 })).toThrow(
       TypeError,
     );
-    expect(() => WindowedList({ rows: rows(20), selected: 10, window: 0 })).toThrow(
-      "WindowedList: window must be a finite integer >= 1",
+    expect(() => WindowedList({ rows: rows(20), window: 2.5 })).toThrow(
+      TypeError,
     );
-    expect(() => WindowedList({ rows: rows(20), window: -1 })).toThrow(TypeError);
-    expect(() => WindowedList({ rows: rows(20), window: 2.5 })).toThrow(TypeError);
   });
 
   // D5 / EC-2 — the counts are reported in ROWS, so a row that renders as two terminal lines
@@ -97,7 +113,11 @@ describe("WindowedList", () => {
   it("flattens_a_multi_line_row_to_one_line", async () => {
     const plain = stripAnsi(
       await renderFrame(
-        <WindowedList rows={["first\nsecond\tthird"]} selected={0} window={3} />,
+        <WindowedList
+          rows={["first\nsecond\tthird"]}
+          selected={0}
+          window={3}
+        />,
       ),
     );
     const body = plain.split("\n").filter((l) => l.includes("first"));
@@ -117,13 +137,17 @@ describe("WindowedList", () => {
 
   it("short_list_layout_has_no_counts", async () => {
     expect(
-      stripAnsi(await renderFrame(<WindowedList rows={rows(3)} selected={1} />)),
+      stripAnsi(
+        await renderFrame(<WindowedList rows={rows(3)} selected={1} />),
+      ),
     ).toMatchSnapshot("windowed-list-short");
   });
 
   it("clamps_a_selection_past_the_end", async () => {
     const plain = stripAnsi(
-      await renderFrame(<WindowedList rows={rows(5)} selected={99} window={7} />),
+      await renderFrame(
+        <WindowedList rows={rows(5)} selected={99} window={7} />,
+      ),
     );
     expect(plain).toContain("turn 4");
     expect(plain).not.toContain("▲");
@@ -145,7 +169,11 @@ describe("WindowedList", () => {
       WindowedList({ rows: rows(3), selected: 1.5, window: 2 }),
     ).toThrow(TypeError);
     expect(() =>
-      WindowedList({ rows: rows(3), selected: Number.POSITIVE_INFINITY, window: 2 }),
+      WindowedList({
+        rows: rows(3),
+        selected: Number.POSITIVE_INFINITY,
+        window: 2,
+      }),
     ).toThrow(TypeError);
   });
 
@@ -153,7 +181,9 @@ describe("WindowedList", () => {
     // -1 is the documented "no selection"; out-of-range integers clamp rather than throw.
     for (const selected of [-1, 0, 2, 999]) {
       const plain = stripAnsi(
-        await renderFrame(<WindowedList rows={rows(5)} selected={selected} window={3} />),
+        await renderFrame(
+          <WindowedList rows={rows(5)} selected={selected} window={3} />,
+        ),
       );
       expect(plain.trim()).not.toBe("");
     }

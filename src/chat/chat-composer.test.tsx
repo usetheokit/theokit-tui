@@ -34,17 +34,70 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 // consecutive reads mean Ink has flushed and settled. Unloaded it returns in ~2 ticks, faster than
 // the old sleep; loaded it waits as long as it needs, up to a ceiling well above the 50ms that was
 // failing. The ceiling exists so a genuinely stuck render fails the test rather than hanging it.
-const settle = async () => {
+// B-057 — extracted so the RULE can be tested against an injected frame source, with no timing
+// dependency. The behaviour here is unchanged by the extraction; T1.2 is what changes it.
+// How long to keep waiting before concluding that nothing is coming. It is NOT the correctness
+// mechanism — detecting the reaction is — and it is only ever paid by an input that legitimately
+// changes nothing (an ignored key). Measured: Ink reacts in **8-16 ms** unloaded over eight
+// keystrokes, so 200 ms is ~12x the observed latency.
+//
+// It was 400 ms, and that cost was not free: review measured this file 2.8x slower on a test that
+// types an ignored ESC (223 ms -> 621 ms), and under concurrent load that test reached 11.2 s
+// against a 15 s budget and failed one `pnpm gates` run in three. Halving the ceiling halves the
+// no-reaction penalty while keeping an order of magnitude of margin over the measured latency.
+const CEILING_MS = 200;
+
+const settleWatching = async (
+  readFrame: () => string | undefined,
+  before?: string,
+) => {
   let previous: string | undefined;
-  for (let elapsed = 0; elapsed < 400; elapsed += 10) {
+  // B-057 — the fix, and it is one boolean. Stability alone was never the condition: the frame is
+  // trivially "stable" in the window between the write and Ink's render, which is exactly when the
+  // old helper returned. A reaction must be OBSERVED first — either the frame differs from what it
+  // was before the write, or (when no baseline was captured) the caller is not waiting on one.
+  let reacted = before === undefined;
+  for (let elapsed = 0; elapsed < CEILING_MS; elapsed += 10) {
     // duration is the subject: this is a POLL INTERVAL inside a bounded condition-wait, not a
     // sleep-then-assert. It is already the idiom B-033 converts other sites TO.
     await new Promise((resolve) => setTimeout(resolve, 10));
-    const frame = lastRenderedFrame();
-    if (frame !== undefined && frame === previous) return;
+    const frame = readFrame();
+    if (!reacted && frame !== undefined && frame !== before) reacted = true;
+    if (reacted && frame !== undefined && frame === previous) return;
     previous = frame;
   }
+  // The ceiling stays, and stays a quiet return rather than a throw (ADR D3 keeps it BOUNDED; the
+  // assertion that follows is what reports the failure, with the frame it actually saw). An input
+  // that legitimately changes nothing burns it — measured as rare enough that the file got FASTER
+  // overall, 27.4s -> 23.9s, because the common case now returns as soon as the change lands.
 };
+
+// B-057, second review pass — the invariant is ORDER, and a required parameter cannot express it.
+//
+// The first fix made `before` a required argument so that `tsc` would catch a caller dropping it.
+// Review then defeated that in two lines: MOVE the capture to AFTER the write and every call site
+// silently reverts to the stale-read behaviour, passing all 57 tests AND `tsc --noEmit`, because
+// arity is all a signature pins.
+//
+// So the ordering is no longer available to get wrong: capturing, writing and settling happen
+// inside ONE function, and callers hand it the write to perform rather than performing it
+// themselves. There is no baseline parameter left to misplace.
+const settleAround = async (
+  write: () => void,
+  readFrame: () => string | undefined,
+) => {
+  const before = readFrame();
+  write();
+  await settleWatching(readFrame, before);
+};
+
+const writeThenSettle = async (
+  instance: { stdin: { write: (data: string) => void } },
+  chunk: string,
+) => settleAround(() => instance.stdin.write(chunk), lastRenderedFrame);
+
+/** Settle with no baseline — for the sites where no write precedes it, so no reaction is owed. */
+const settle = async () => settleWatching(lastRenderedFrame, undefined);
 
 /** Set by `mount`, so `settle` can watch the instance under test without threading it through. */
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
@@ -65,8 +118,7 @@ async function type(
   chunks: string[],
 ) {
   for (const chunk of chunks) {
-    instance.stdin.write(chunk);
-    await settle();
+    await writeThenSettle(instance, chunk);
   }
 }
 
@@ -223,9 +275,9 @@ describe("ChatComposer (T3.2)", () => {
     );
     await type(instance, ["h", "i"]);
     expect(() => instance.stdin.write(ENTER)).toThrow("caller boom");
+    // No baseline: the write THREW, so there is no reaction to wait for.
     await settle();
-    instance.stdin.write("!");
-    await settle();
+    await writeThenSettle(instance, "!");
     await waitForFrame(instance, "hi!");
     instance.unmount();
   });
@@ -829,7 +881,6 @@ const waitFor = async (
   });
 };
 
-
 /**
  * M54 (agent-builder backtrack) — `onChange` reports buffer text so the host can enforce a
  * composer-empty precondition (Codex `is_normal_backtrack_mode`); `initialValue` seeds the
@@ -919,5 +970,88 @@ describe("issue #59 item 3 — an unstable onChange identity does not re-fire", 
 
     expect(spy.mock.calls.length).toBe(antes);
     inst.unmount();
+  });
+});
+
+// B-057 — the fourth class of B-034's load-sensitivity tail, pinned deterministically.
+//
+// `settle` returns when two consecutive reads are identical, and TWO IDENTICAL READS ARE SATISFIED
+// TRIVIALLY BY NOTHING HAVING CHANGED YET. It cannot tell "settled after the write" from "has not
+// started reacting to the write". Its decision point is the second poll, ~20ms in; under load that
+// precedes Ink's throttled render, so it hands back a stale frame and the assertion reads it.
+//
+// The suite showed this as two `pnpm gates` runs failing on two DIFFERENT tests in this file, both
+// green in isolation. That is not a regression test — it reproduces only under load. This one
+// drives the helper through an INJECTED frame source, so it fails for the race itself, on any
+// machine, with no timing dependency at all.
+describe("settle (B-057)", () => {
+  it("test_settle_does_not_return_before_the_frame_reacts", async () => {
+    // Arrange — a source that reports the SAME frame for the first three reads (the component has
+    // not reacted yet) and only then reports the reaction.
+    const reads: string[] = [];
+    let call = 0;
+    const source = () => {
+      call += 1;
+      const frame = call <= 3 ? "before" : "after";
+      reads.push(frame);
+      return frame;
+    };
+
+    // Act — a baseline is passed, which is what `type()` does for every keystroke.
+    await settleWatching(source, "before");
+
+    // Assert — the helper must not have returned while the frame still read "before". Under the
+    // old implementation reads 2 and 3 are identical, so it returns at read 3 and every assertion
+    // after it sees the stale frame.
+    expect(reads.at(-1)).toBe("after");
+    // And promptly: without a bound here, a helper that polls to its ceiling every time passes this
+    // test while making the file 5.8x slower — measured on a mutant that deleted the early return
+    // (F-tests-3). Six reads is the reaction at 4 plus one stabilising pair.
+    expect(reads.length).toBeLessThanOrEqual(6);
+  });
+
+  it("test_the_baseline_is_captured_before_the_write_not_after", async () => {
+    // The invariant is ORDER, and neither a required parameter nor encapsulation pins it: review
+    // moved the capture two lines down and every call site reverted while 57 tests and
+    // `tsc --noEmit` stayed green (F-tests-2). Arity is all a signature can express.
+    //
+    // A test CAN express it. Give the write an immediate effect on the frame: captured BEFORE, the
+    // baseline is the old value and the reaction is detected on the first read; captured AFTER, the
+    // baseline is already the new value, no reaction is ever observed, and the helper polls to its
+    // ceiling. So the ordering shows up as promptness.
+    let frame = "before";
+    let reads = 0;
+    const readFrame = () => {
+      reads += 1;
+      return frame;
+    };
+
+    // Act — a write whose effect is already visible by the time it returns.
+    await settleAround(() => {
+      frame = "after";
+    }, readFrame);
+
+    // Assert — a handful of polls, not forty. Capturing after the write makes this 40.
+    expect(reads).toBeLessThanOrEqual(6);
+  });
+
+  it("test_settle_does_not_return_while_the_frame_is_still_changing", async () => {
+    // The OTHER half of the condition, and the first version of this block did not pin it: a mutant
+    // dropping `frame === previous` — settling on the first change rather than on stability —
+    // survived every test and made the suite FASTER, which is how a lost assertion disguises
+    // itself (F-tests-1).
+    //
+    // Arrange — a source that changes, changes AGAIN, and only then holds still. Returning at the
+    // first change would stop at "mid".
+    const frames = ["before", "mid", "after", "after", "after"];
+    let call = 0;
+    const source = () => frames[Math.min(call++, frames.length - 1)];
+
+    // Act
+    await settleWatching(source, "before");
+
+    // Assert — it waited past the intermediate frame for a stable one.
+    expect(frames[Math.min(call - 1, frames.length - 1)]).toBe("after");
+    expect(call).toBeGreaterThanOrEqual(4);
   });
 });

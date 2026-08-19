@@ -33,7 +33,11 @@ const LAYERS: readonly SurfaceLayer<SessionState>[] = [
     when: (s) => s.question !== undefined,
     render: (s) => <Text>{s.question}</Text>,
   },
-  { name: "composer", when: () => true, render: () => <Text dimColor>› _</Text> },
+  {
+    name: "composer",
+    when: () => true,
+    render: () => <Text dimColor>› _</Text>,
+  },
 ];
 
 // Trusted, nothing pending, no question — so the composer wins. The three surfaces above it are
