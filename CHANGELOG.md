@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.64.0] - 2026-08-18
+
+### Added
+
 - **`ComponentBoundary` — a component failure no longer takes the whole application, the user's
   session, and the shell's idea of success with it (B-031).** Measured against real `ink@7.1.0`: a
   component that throws from a prop guard unmounted the ENTIRE tree, printed ink's ERROR panel to
@@ -32,16 +46,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   **Nothing changes until you wrap something.** This package does not wrap its own components: a
   boundary renders a fallback, so doing it for you would change what 21 components render on
   failure — and whether to keep going after one is a policy you own, not one a library should take.
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.63.1] - 2026-08-18
 
