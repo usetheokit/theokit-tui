@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.68.0] - 2026-08-19
+
 ### Changed
 
 - **The slash and `@`-mention menus now show HOW MANY rows are hidden (B-052).** The overflow
