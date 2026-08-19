@@ -5,6 +5,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The edge-case coverage analyzer counts what a plan declares, and finds the tests the plan names
+  (B-018).** Its ratio gates a release — below 0.80 the review returns `NEEDS_DEEPER` — and it was
+  reporting 13 cases for a plan declaring 4 (ratio 0.385) and 27 for one declaring 7 (0.222). Both
+  now report their real count and 1.0. Three defects: the same bullet extracted twice in two
+  spellings, every keyword-bearing bullet anywhere in the document counted as an edge case
+  (including Baseline Context citations and Unresolved Questions), and a matcher demanding all five
+  longest words co-occur in one file — which missed three cases whose named tests exist. The
+  analyzer now reads the `#### TDD` block that names the covering test, and the script has its first
+  test file: 14 tests, 7 mutants, 7 detected.
+
 ### Added
 
 ### Changed
