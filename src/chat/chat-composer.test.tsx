@@ -484,6 +484,26 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     instance.unmount();
   });
 
+  it("the_open_menu_renders_the_hidden_count_above_and_below", async () => {
+    // B-052 — the third view over `windowFor`. `SelectList` (select-list.tsx:217,233) and
+    // `WindowedList` (windowed-list.tsx:146,157) render `\u25B2 n` / `\u25BC n` from this same
+    // model; the menus rendered a bare glyph over counts they already held. The UPPER edge is
+    // asserted here because that is the edge B-022 shipped unpinned.
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={MANY} />,
+    );
+    await type(instance, ["/"]);
+    // Row 0 of 9 in a 5-row window: four rows below, none above.
+    expect(plain(instance.lastFrame())).toMatch(/\u25BC\s*4/);
+    for (let i = 0; i < 8; i++) {
+      await type(instance, [DOWN_ARROW]);
+    }
+    const frame = plain(instance.lastFrame());
+    expect(frame).toMatch(/\u25B2\s*4/);
+    expect(frame).not.toContain("\u25BC");
+    instance.unmount();
+  });
+
   it("tab_completes_to_command_with_trailing_space", async () => {
     const instance = await mount(
       <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,

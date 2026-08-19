@@ -90,6 +90,18 @@ describe("slash-menu-model (M15 T1.1)", () => {
     expect(atTop.overflowUp).toBe(false);
   });
 
+  it("the_menu_reports_how_many_rows_are_hidden", () => {
+    // B-052 — the counts arrive via the `windowFor` spread and were unreachable through the type,
+    // which hand-re-declared the window contract instead of extending `WindowView`. U-10: a
+    // boolean cannot be turned back into a number, so the model has to report the count.
+    const menu = deriveSlashMenu("/cmd", NINE, 7, false);
+    expect(menu.hiddenBefore).toBe(3);
+    expect(menu.hiddenAfter).toBe(1);
+    const atTop = deriveSlashMenu("/cmd", NINE, 0, false);
+    expect(atTop.hiddenBefore).toBe(0);
+    expect(atTop.hiddenAfter).toBe(4);
+  });
+
   it("dismissed_reports_closed", () => {
     const menu = deriveSlashMenu("/he", CMDS, 0, true);
     expect(menu.open).toBe(false);

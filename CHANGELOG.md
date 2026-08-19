@@ -5,6 +5,25 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The slash and `@`-mention menus now show HOW MANY rows are hidden (B-052).** The overflow
+  chrome went from a bare `▲` / `▼` to `▲ 4` / `▼ 4`, finishing what B-022 started: three
+  components render the window computed by one `windowFor`, and this was the last one still
+  drawing a bare arrow over counts it already held.
+
+  The counts were never missing from the VALUE — `deriveSlashMenu` spreads `windowFor(...)`, so
+  `hiddenBefore` and `hiddenAfter` were there at runtime the whole time. What hid them was the
+  type: `SlashMenu` re-declared the window contract by hand instead of extending `WindowView`, so
+  the spread widened the value and the interface narrowed it back. It now extends `WindowView`,
+  which is why the same fix reached the `@`-mention menu for free — it shares the shape.
+
+  **Compatibility.** `SlashMenu` is module-internal: `src/chat/index.ts` does not re-export it, so
+  the added fields are invisible to the published surface and no consumer can be constructing one.
+  What DOES change for consumers is the rendered frame of `ChatComposer`, which is why this is a
+  minor and not a patch — a snapshot test over the composer's menu will see the number. Assertions
+  of the shape `toContain("▲")` are unaffected.
+
 ## [0.67.1] - 2026-08-19
 
 ### Fixed

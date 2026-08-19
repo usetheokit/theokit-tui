@@ -15,6 +15,8 @@ const CLOSED: SlashMenu = Object.freeze({
   matches: [],
   clampedIndex: 0,
   windowStart: 0,
+  hiddenBefore: 0,
+  hiddenAfter: 0,
   overflowUp: false,
   overflowDown: false,
 });

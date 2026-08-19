@@ -9,7 +9,7 @@
 // `windowFor` (select-list-model.ts) — one authoritative site for the slash +
 // mention + SelectList windows (DRY). The trigger/filter contract is unchanged.
 
-import { windowFor } from "../prompts/select-list-model.js";
+import { windowFor, type WindowView } from "../prompts/select-list-model.js";
 
 export interface SlashCommand {
   /** Command name WITHOUT the slash (e.g. "help"). */
@@ -18,20 +18,19 @@ export interface SlashCommand {
   description: string;
 }
 
-export interface SlashMenu {
+/**
+ * B-052 — the window contract is INHERITED from `WindowView`, never re-declared. It used to be
+ * copied by hand, which omitted `hiddenBefore` / `hiddenAfter`: the `windowFor` spread below
+ * widened the value and this type narrowed it back, so the renderer drew a bare arrow over counts
+ * it already held. U-10 — a boolean cannot be turned back into a number.
+ */
+export interface SlashMenu extends WindowView {
   /** True when the menu should render. */
   open: boolean;
   /** The filter token (text after `/` up to the first whitespace). */
   filter: string;
   /** Commands whose name starts with the filter, in declared order. */
   matches: SlashCommand[];
-  /** Selection index clamped into the matches range. */
-  clampedIndex: number;
-  /** First visible row of the 5-row window. */
-  windowStart: number;
-  /** Rows hidden above/below the window. */
-  overflowUp: boolean;
-  overflowDown: boolean;
   /** Sigil rendered before each name. Slash commands use `/` (the default when
    * omitted); the `@`-mention menu sets `""` since the path is already whole. */
   sigil?: string;
@@ -45,6 +44,8 @@ const CLOSED: SlashMenu = Object.freeze({
   matches: [],
   clampedIndex: 0,
   windowStart: 0,
+  hiddenBefore: 0,
+  hiddenAfter: 0,
   overflowUp: false,
   overflowDown: false,
 });
