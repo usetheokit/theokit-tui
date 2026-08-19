@@ -2,7 +2,7 @@ import cliTruncate from "cli-truncate";
 import widestLine from "widest-line";
 import wrapAnsi from "wrap-ansi";
 
-import type { RendererNode } from "./host-config.js";
+import type { RendererNode } from "./node.js";
 
 // M18 text-measure (plan m18-yoga-layout, ADR D3): the text measure func + wrap
 // modes — a faithful port of Ink's measure-text.js / wrap-text.js /
