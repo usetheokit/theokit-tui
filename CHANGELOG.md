@@ -5,6 +5,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The release chain writes the version into every site that carries it (B-059).** The version
+  lives in `package.json` and in `src/index.ts` as an exported constant, and a human kept them in
+  step. The export-surface gate catches a divergence — it did, at 0.63.0, aborting `npm publish`
+  _after_ the tag was cut and pushed, so `v0.63.0` still points at a commit whose exported constant
+  is wrong. `bump_version.py` now writes both, verifies every site before writing any of them, and
+  **names** any other tracked file carrying the old version instead of rewriting it: a version
+  string in a fixture or a documented example is not a site, and replacing it blindly is a
+  corruption no gate would catch. A non-zero exit blocks the release rather than warning.
+
 ## [0.65.0] - 2026-08-19
 
 ### Added
