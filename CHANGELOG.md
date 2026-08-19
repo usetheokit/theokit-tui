@@ -27,6 +27,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   Nothing is added to the public surface: the module is absent from `src/format/index.ts`, and the
   `exports` map has no wildcard, so no consumer can reach it. Verified against the built `dist`.
 
+  Census after: **35 files import the shared helper, and exactly one `[0-9;]*m` construct remains
+  outside it** — `tests/fixtures/helpers.test.tsx:40`, which asserts an SGR is PRESENT and is
+  therefore not a stripper. It carries a comment saying so, so the next reader does not "finish" the
+  migration by deleting an assertion.
+
   Its scope stays SGR-only on purpose, pinned by a test. Widening to the OSC families would change
   what a sanitiser of **untrusted** input removes — an OSC 8 hyperlink or an OSC 52 clipboard write
   survives it today — and that is registered as its own item rather than smuggled into a

@@ -6,12 +6,10 @@ import { SelectList } from "./select-list.js";
 import { windowFor } from "./select-list-model.js";
 import type { SelectListItem } from "./select-list-model.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // M22 T1.1 — the SelectList component driven through the itl-adapter (OUR
 // renderer + InputSource + FocusProvider). Deterministic keyboard oracle.
-
-const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
-const stripAnsi = (s: string): string => s.replace(ANSI_RE, "");
 
 const items: SelectListItem[] = [
   { value: "apple", label: "apple", description: "a fruit" },

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CodeBlock, ensureHighlighter } from "../../src/markdown/code-block.js";
 
 import { renderFrame } from "./helpers.js";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // B-020 — what `renderFrame` actually guarantees, asserted by properties a mutation can reach.
 //
@@ -34,9 +35,9 @@ import { renderFrame } from "./helpers.js";
 
 const SNIPPET = "const x = 1;";
 /** ANSI SGR — the observable difference between "read after the tick" and "read too early". */
+// KEPT DELIBERATELY (B-055): this asserts an SGR is PRESENT, so it is not a stripper and does not
+// belong in `format/ansi.ts`. It is the only `[0-9;]*m` construct left outside that module.
 const SGR_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`);
-const stripSgr = (s: string): string =>
-  s.replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "");
 
 describe("renderFrame (B-020)", () => {
   it("test_static_content_renders_deterministically", async () => {
@@ -58,7 +59,7 @@ describe("renderFrame (B-020)", () => {
 
     // The TEXT is unchanged by highlighting — only colour bytes are added, which is the invariant
     // `code-block.test.tsx` calls D8 text invariance.
-    expect(stripSgr(frame)).toContain("const x = 1;");
+    expect(stripAnsi(frame)).toContain("const x = 1;");
     // And the colour bytes ARE there, which is what a read-too-early helper loses.
     expect(SGR_RE.test(frame)).toBe(true);
   });

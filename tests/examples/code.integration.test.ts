@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, it } from "vitest";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // T3.2 wiring pillar (a): the code demo is a human-runnable caller.
 it(
@@ -23,7 +24,7 @@ it(
     );
     // Frames carry ANSI (FORCE_COLOR=1) — strip before anchoring.
     // eslint-disable-next-line no-control-regex
-    const plain = out.replace(/\u001B\[[0-9;]*m/g, "");
+    const plain = stripAnsi(out);
     expect(plain).toMatch(/^\s*\d+ \+ /m);
     expect(plain).toContain("const");
     // Highlighting actually happened (tests-13/wire-7): the example awaits

@@ -3,10 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { StatusFooter } from "./status-footer.js";
+import { stripAnsi } from "../format/ansi.js";
 
 const strip = (v: string): string =>
   // eslint-disable-next-line no-control-regex
-  v.replace(/\[[0-9;]*m/g, "");
+  stripAnsi(v);
 
 describe("StatusFooter (#45 — two-line footer)", () => {
   it("top_row_is_justified_left_and_right", async () => {

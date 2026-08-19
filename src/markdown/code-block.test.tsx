@@ -4,10 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { CodeBlock, ensureHighlighter, highlightLine } from "./code-block.js";
 import { TheoTUIProvider, defaultTheme } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 /** Compound-SGR-safe strip (M2 idiom). */
 // eslint-disable-next-line no-control-regex
-const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
 
 const SNIPPET = ["const x = 1;", "function f() {", "  return x;", "}"].join(
   "\n",

@@ -5,10 +5,10 @@ import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { ensureHighlighter } from "../markdown/code-block.js";
 import { DiffViewer } from "./diff-viewer.js";
 import { TheoTUIProvider } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 /** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
 // eslint-disable-next-line no-control-regex
-const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
 
 // PATCH_BASIC duplicate (per-file — plan EC-23; home: src/diff-model.test.ts).
 const PATCH_BASIC = [

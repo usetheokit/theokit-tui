@@ -11,6 +11,7 @@ import {
   parseShellCommand,
 } from "./chat-composer.js";
 import { TheoTUIProvider } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
 // SEPA brief: never trust prose renderings of control bytes).
@@ -409,9 +410,7 @@ const MANY = Array.from({ length: 9 }, (_, i) => ({
 }));
 
 // eslint-disable-next-line no-control-regex
-const MENU_ANSI_RE = /\u001B\[[0-9;]*m/g;
-const plain = (frame: string | undefined): string =>
-  (frame ?? "").replace(MENU_ANSI_RE, "");
+const plain = (frame: string | undefined): string => stripAnsi(frame ?? "");
 
 describe("ChatComposer slash menu (M15 T2.1)", () => {
   it("typing_slash_opens_menu_with_all_commands", async () => {

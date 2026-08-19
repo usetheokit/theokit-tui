@@ -3,10 +3,9 @@ import { describe, expect, it } from "vitest";
 import { TokenUsageChart } from "./token-usage-chart.js";
 import { TheoTUIProvider } from "../theme/theme.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
 
 const count = (haystack: string, needle: string): number =>
   haystack.split(needle).length - 1;

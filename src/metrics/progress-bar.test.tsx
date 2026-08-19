@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { ProgressBar } from "./progress-bar.js";
+import { stripAnsi } from "../format/ansi.js";
 
 const strip = (v: string): string =>
   // Full ANSI strip incl. ESC, so adjacent color runs (filled + empty) join.
   // eslint-disable-next-line no-control-regex
-  v.replace(/\[[0-9;]*m/g, "");
+  stripAnsi(v);
 
 describe("ProgressBar", () => {
   it("renders_filled_and_empty_cells_plus_the_percent_label", async () => {

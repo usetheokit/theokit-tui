@@ -17,8 +17,16 @@
 // Widening to the OSC families is a behaviour change to `markdown/code-block.tsx:184`, which
 // sanitises untrusted input, and is registered as B-078 rather than smuggled in here.
 
-/** `ESC [ <digits and semicolons> m` — the colour/style (SGR) family. */
-const SGR_RE = /\[[0-9;]*m/g;
+/**
+ * `ESC [ <digits and semicolons> m` — the colour/style (SGR) family.
+ *
+ * The escape is written as `\u001B` rather than the raw byte, because a raw `0x1B` in source is
+ * invisible to `grep` — which is precisely how four sites in this repo came to omit it and strip
+ * nothing for a whole slice without anyone noticing. `no-control-regex` fires on either spelling,
+ * so the suppression is unavoidable here and is scoped to this one line.
+ */
+// eslint-disable-next-line no-control-regex
+const SGR_RE = /\u001B\[[0-9;]*m/g;
 
 /**
  * Removes SGR escape sequences, escape byte included.

@@ -44,6 +44,7 @@ import {
   ToolResult,
   WelcomeBanner,
 } from "../src/index.js";
+import { stripAnsi } from "../src/format/ansi.js";
 
 // Universal margin contract (LayoutMarginProps). Every public visual component
 // accepts the margin family and applies it to its root layout. Oracle: passing
@@ -53,7 +54,7 @@ import {
 async function leadingBlanks(node: ReactElement): Promise<number> {
   const raw = await renderFrame(node);
   // eslint-disable-next-line no-control-regex
-  const plain = raw.replace(/\[[0-9;]*m/g, "");
+  const plain = stripAnsi(raw);
   const lines = plain.split("\n");
   let n = 0;
   while (n < lines.length && lines[n]?.trim() === "") n += 1;

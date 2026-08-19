@@ -3,14 +3,13 @@ import { describe, expect, it } from "vitest";
 
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { MarkdownText } from "./markdown-text.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // M13 T2.1 (plan m13-markdown-renderer, ADR D2): render oracles — nodes →
 // ink tree with THEME tokens (blueprint Corner 1 d/e/f). Snapshot budget
 // for the whole milestone: <= 2, both in this suite, both anchored.
 
 // eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
 
 const RICH = [
   "# Title",
