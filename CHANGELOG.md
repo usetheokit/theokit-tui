@@ -24,6 +24,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   minor and not a patch — a snapshot test over the composer's menu will see the number. Assertions
   of the shape `toContain("▲")` are unaffected.
 
+  **Two review findings were folded in before release, not filed.** The `@`-mention path was
+  pinned by nothing: zeroing only its counts survived the whole suite, because the fixture returned
+  three candidates against a five-row window, so no mention menu in any test ever overflowed. It
+  now has its own edge test. And the two frozen `CLOSED` literals — which this change had made
+  LONGER — are now one shared `CLOSED_MENU`, its window half taken from `windowFor`'s own
+  empty-list branch: the same hand-copy the interface change removed, one layer down.
+  `SlashMenu.matches` became `readonly` because that shared instance escapes to callers by
+  reference, not only by spread.
+
 ## [0.67.1] - 2026-08-19
 
 ### Fixed
