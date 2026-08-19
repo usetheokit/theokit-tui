@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
 import { PlanApproval } from "./plan-approval.js";
 import type { PlanDecision } from "../agent/agent-decision.js";
+import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
 
 // M23 T3.1 — PlanApproval over the itl-adapter. A markdown plan body (M13
 // MarkdownText) + a ChoiceRow of approve/revise; `revise` reveals a feedback
@@ -14,7 +15,7 @@ const PLAN = "# Plan\n\n1. Add the widget\n2. Wire the callback\n";
 async function waitForFrame(
   app: ItlInstance,
   substring: string,
-  timeoutMs = 2000,
+  timeoutMs = WAIT_BUDGET_MS,
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {

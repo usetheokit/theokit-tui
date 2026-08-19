@@ -2,7 +2,10 @@ import { Text } from "ink";
 import { cleanup, render } from "ink-testing-library";
 import { createElement, useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { waitFor as waitForCondition } from "../../../tests/fixtures/wait-for.js";
+import {
+  waitFor as waitForCondition,
+  WAIT_BUDGET_MS,
+} from "../../../tests/fixtures/wait-for.js";
 
 import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { createInputSource } from "../input/input-source.js";
@@ -32,7 +35,7 @@ async function waitForFocus(
   lastFrame: () => string | undefined,
   substring: string,
   present = true,
-  timeoutMs = 2000,
+  timeoutMs = WAIT_BUDGET_MS,
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
