@@ -1,6 +1,9 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
+import {
+  waitFor as waitForCondition,
+  WAIT_BUDGET_MS,
+} from "../../tests/fixtures/wait-for.js";
 
 import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
 import { FreeTextInput } from "./free-text-input.js";
@@ -13,7 +16,7 @@ import { FreeTextInput } from "./free-text-input.js";
 async function waitForFrame(
   app: ItlInstance,
   substring: string,
-  timeoutMs = 2000,
+  timeoutMs = WAIT_BUDGET_MS,
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
