@@ -13,9 +13,7 @@ vi.mock("lowlight", () => {
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { CodeBlock, ensureHighlighter } from "./code-block.js";
-
-// eslint-disable-next-line no-control-regex
-const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
+import { stripAnsi } from "../format/ansi.js";
 
 describe("CodeBlock — optional peer absent (T2.1, ADR D2)", () => {
   it("absent_module_degrades_plain_warns_once_and_resolves_undefined", async () => {

@@ -3,23 +3,26 @@ import { describe, expect, it } from "vitest";
 import { Banner } from "./banner.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // M27 T1.1 — <Banner> art path + name degrade over the ink renderFrame harness.
-const ANSI_RE = /\[[0-9;]*m/g;
-const strip = (v: string): string => v.replace(ANSI_RE, "");
 
 const ART = ["  ___", " |_ _|", "  | |", " |___|"].join("\n");
 
 describe("Banner — art path + name degrade (T1.1)", () => {
   it("renders_provided_art_verbatim", async () => {
-    const frame = strip(await renderFrame(<Banner name="Theo" art={ART} />));
+    const frame = stripAnsi(
+      await renderFrame(<Banner name="Theo" art={ART} />),
+    );
     for (const line of ART.split("\n")) {
       expect(frame).toContain(line.trimEnd());
     }
   });
 
   it("multiline_art_keeps_every_line", async () => {
-    const frame = strip(await renderFrame(<Banner name="Theo" art={ART} />));
+    const frame = stripAnsi(
+      await renderFrame(<Banner name="Theo" art={ART} />),
+    );
     // Every art line appears (no wrap/truncation collapsing rows).
     const present = ART.split("\n").filter((l) =>
       frame.includes(l.trimEnd()),
@@ -29,15 +32,15 @@ describe("Banner — art path + name degrade (T1.1)", () => {
 
   it("degrades_to_the_bold_name_when_art_is_absent", async () => {
     const frame = await renderFrame(<Banner name="Theo TUI" />);
-    expect(strip(frame)).toContain("Theo TUI");
+    expect(stripAnsi(frame)).toContain("Theo TUI");
     expect(frame).toMatch(/\[1m/); // bold SGR on the name
-    expect(strip(frame)).not.toContain("|_ _|"); // no art
+    expect(stripAnsi(frame)).not.toContain("|_ _|"); // no art
   });
 
   it("version_renders_dim_after_the_name_on_the_degrade_path", async () => {
     const frame = await renderFrame(<Banner name="Theo" version="1.2.3" />);
-    expect(strip(frame)).toContain("Theo");
-    expect(strip(frame)).toContain("v1.2.3");
+    expect(stripAnsi(frame)).toContain("Theo");
+    expect(stripAnsi(frame)).toContain("v1.2.3");
   });
 });
 
@@ -48,7 +51,7 @@ const STATUS = [
 
 describe("Banner — framed status panel + layout (T2.1)", () => {
   it("renders_each_label_value_row_in_a_bordered_box", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <Banner name="Theo" layout="banner" art={ART} status={STATUS} />,
       ),
@@ -60,7 +63,7 @@ describe("Banner — framed status panel + layout (T2.1)", () => {
   });
 
   it("banner_layout_stacks_the_art_above_the_status_panel", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <Banner name="Theo" layout="banner" art={ART} status={STATUS} />,
       ),
@@ -73,7 +76,7 @@ describe("Banner — framed status panel + layout (T2.1)", () => {
   });
 
   it("minimal_layout_omits_the_status_panel", async () => {
-    const frame = strip(
+    const frame = stripAnsi(
       await renderFrame(
         <Banner name="Theo" layout="minimal" status={STATUS} />,
       ),
@@ -89,7 +92,7 @@ describe("Banner — framed status panel + layout (T2.1)", () => {
       </TheoTUIProvider>,
     );
     // Box still present (glyph survives), but no accent color SGR bytes.
-    expect(strip(frame)).toContain("model");
+    expect(stripAnsi(frame)).toContain("model");
     expect(frame).not.toMatch(/\[3[0-9]m/); // no foreground color SGR
   });
 });

@@ -3,10 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { TurnUsage } from "../agent/messages-to-events.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { UsagePanel } from "./usage-panel.js";
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
+import { stripAnsi } from "../format/ansi.js";
 
 /** The minimum a turn always reports. Optional fields are added per test, never by default —
  *  the whole point of D2 is that absent stays absent. */

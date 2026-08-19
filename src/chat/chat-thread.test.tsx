@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import type { ChatThreadMessage } from "./chat-thread.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // Row-render spy: wrap the real ChatMessage so repaint-scope assertions can
 // count row renders without polluting the public API (plan T2.1/T2.2, D2).
@@ -166,8 +167,8 @@ describe("ChatThread (T2.1)", () => {
         ]}
       />,
     );
-    // eslint-disable-next-line no-control-regex
-    const frame = raw.replace(/\[[0-9;]*m/g, "");
+
+    const frame = stripAnsi(raw);
     const lines = frame.split("\n");
     const iFirst = lines.findIndex((l) => l.includes("first turn"));
     const iSecond = lines.findIndex((l) => l.includes("second turn"));
@@ -412,8 +413,8 @@ describe("ChatThread markdown routing (M13 T3.1)", () => {
     );
     const raw = instance.lastFrame() ?? "";
     instance.unmount();
-    // eslint-disable-next-line no-control-regex
-    const frame = raw.replace(/\u001B\[[0-9;]*m/g, "");
+
+    const frame = stripAnsi(raw);
     expect(frame).toContain("b styled");
     expect(frame).not.toContain("**b**");
     // Unflagged row keeps markers literally (default-off per message).

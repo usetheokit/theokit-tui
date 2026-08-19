@@ -25,6 +25,7 @@ import {
 } from "../../src/index.js";
 import { createRenderer } from "../../src/renderer/index.js";
 import { VirtualTerminal } from "./virtual-terminal.js";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // M20 T3.1 (plan m20-scrollback-cutover, ADR D2/D3): the DoD-2 gate. EVERY
 // shipped component is dual-rendered through Ink (the baseline) AND our renderer
@@ -34,11 +35,8 @@ import { VirtualTerminal } from "./virtual-terminal.js";
 // engine). DoD: ≥ 90% byte-identical (target 100%); every divergence is
 // documented in wiki/renderer/component-parity.md with a scoped cause.
 
-const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*m", "g");
-
 function plainLines(frame: string): string[] {
-  const lines = frame
-    .replace(ANSI, "")
+  const lines = stripAnsi(frame)
     .split("\n")
     .map((l) => l.replace(/\s+$/, ""));
   while (lines.length > 0 && lines[lines.length - 1] === "") {

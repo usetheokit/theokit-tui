@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import type { AgentEvent, AgentMessageEvent } from "./agent-event.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // Row-render spy (M1 idiom): wrap the real ChatMessage so repaint-scope
 // assertions can count message-row renders (plan T1.2, D2).
@@ -25,8 +26,6 @@ const { AgentTimeline } = await import("./agent-timeline.js");
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
-// eslint-disable-next-line no-control-regex
-const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
 
 const message = (id: string, text: string): AgentMessageEvent => ({
   id,
@@ -53,7 +52,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
       />,
     );
 
-    const frame = raw.replace(/\[[0-9;]*m/g, "");
+    const frame = stripAnsi(raw);
     const lines = frame.split("\n");
     const iFirst = lines.findIndex((l) => l.includes("first block"));
     const iSecond = lines.findIndex((l) => l.includes("second block"));

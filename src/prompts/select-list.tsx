@@ -33,6 +33,20 @@ export interface SelectListProps extends LayoutMarginProps {
   /** Blank rows between items (issue #50). Default 0 — the tight menu look. */
   gap?: number;
   autoFocus?: boolean;
+  /**
+   * Row the selection starts on. Default 0.
+   *
+   * B-054 — `initial`, not `selected`: the component keeps OWNING the selection, so a changing
+   * value is ignored after first render. A controlled pair (`selected` + `onSelectionChange`) was
+   * rejected because a caller who passes the value and forgets the handler gets inert arrows, and
+   * this is a published component.
+   *
+   * It exists because an edge-RENDERING test could only reach the last row by driving the
+   * up-arrow, which made it die whenever the key layer died: the mutants "wrap becomes clamp" and
+   * "delete the upArrow branch" had identical kill sets. `WindowedList` already takes its position
+   * as a prop, which is why its equivalent test is three lines.
+   */
+  initialSelectionIndex?: number;
 }
 
 const DEFAULT_WINDOW = 5;
@@ -106,6 +120,56 @@ function SelectRow({
   );
 }
 
+/**
+ * Reports a bad `window` at the component boundary without throwing.
+ *
+ * B-021 ADR D3: `windowFor` refuses a non-positive-integer window, but without this the message
+ * would name `windowFor` — a model function the caller never called. That is the failure
+ * `src/agent/agent-timeline.tsx:62` identified and `UsagePanel` was corrected for in B-025: an
+ * error naming a component the caller never wrote sends them looking in the wrong place.
+ *
+ * Reporting happens HERE, at the component boundary, not inside the pure model — the shape
+ * `src/metrics/usage-panel.tsx:121` already uses, and the ruling B-025 made when it declined to let
+ * `assertFiniteNonNegative` report from `src/format`.
+ *
+ * B-054 — extracted from the component body rather than inlined. Adding one optional prop took
+ * `SelectList` from a cyclomatic complexity of 10 to 11, one over the budget at
+ * `eslint.config.mjs`. The guard was already a distinct concern carrying its own comment block, so
+ * lifting it is the smallest change that does not weaken the gate. That the component sat exactly
+ * AT the ceiling is itself worth knowing.
+ */
+function guardWindow(window: number): void {
+  try {
+    assertPositiveWindow(window, "SelectList");
+  } catch (err) {
+    reportGuardFailure("SelectList", err as Error);
+  }
+}
+
+/**
+ * B-054 review (F-3) — the same treatment `window` gets, for the same reason and by the same
+ * mechanism.
+ *
+ * `initialSelectionIndex` is a PUBLISHED prop and had no guard, in the very function whose sibling
+ * prop received one in the same commit. Measured before this: `NaN` rendered zero rows and a
+ * `(NaN/12)` counter, `2.5` rendered no selection marker, and neither reached
+ * `reportGuardFailure` — the B-021 `window: 0` shape exactly, one prop over.
+ *
+ * It REPORTS AND THROWS rather than degrading to 0, which was the first attempt and was wrong:
+ * `reportGuardFailure` returns `never` by design, because "the throw is the contract 37 test files
+ * rest on" (`src/status/guard-sink.ts:44-45`). A guard that swallowed it here would be the only
+ * one in the package that does, and `rules/error-handling.md` § 3.1 keeps the throw deliberately.
+ */
+function guardInitialSelection(value: number): void {
+  if (Number.isInteger(value) && value >= 0) return;
+  reportGuardFailure(
+    "SelectList",
+    new RangeError(
+      `SelectList: initialSelectionIndex must be a non-negative integer, received ${String(value)}.`,
+    ),
+  );
+}
+
 export function SelectList({
   items,
   onSubmit,
@@ -114,25 +178,14 @@ export function SelectList({
   window = DEFAULT_WINDOW,
   gap = 0,
   autoFocus = true,
+  initialSelectionIndex = 0,
   ...margin
 }: SelectListProps) {
   // Boundary guard FIRST, before any hook (the F10 idiom), and the component names ITSELF.
-  //
-  // B-021 ADR D3: `windowFor` refuses a non-positive-integer window, but without this the message
-  // would name `windowFor` — a model function the caller never called. That is the failure
-  // `src/agent/agent-timeline.tsx:62` identified and `UsagePanel` was corrected for in B-025: an
-  // error naming a component the caller never wrote sends them looking in the wrong place.
-  try {
-    assertPositiveWindow(window, "SelectList");
-  } catch (err) {
-    // Reporting happens HERE, at the component boundary, not inside the pure model — the shape
-    // `src/metrics/usage-panel.tsx:121` already uses, and the ruling B-025 made when it declined to
-    // let `assertFiniteNonNegative` report from `src/format`. This slice put the report in the model
-    // and review caught the inversion.
-    reportGuardFailure("SelectList", err as Error);
-  }
+  guardWindow(window);
+  guardInitialSelection(initialSelectionIndex);
   const [filter, setFilter] = useState("");
-  const [selectionIndex, setSelectionIndex] = useState(0);
+  const [selectionIndex, setSelectionIndex] = useState(initialSelectionIndex);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const { isFocused } = useFocus({ autoFocus });
   const theme = useTheoTheme();

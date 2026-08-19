@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, it } from "vitest";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // Wiring smoke for the composed Claude Code scene: it exercises the two-column
 // welcome, the notices, an AgentTimeline transcript (spaced), the working
@@ -23,8 +24,8 @@ it(
     );
     // Strip ANSI: the tool header splits "Search" (bold) from "(pattern:" (dim)
     // with SGR codes between them, so assert on the plain text.
-    // eslint-disable-next-line no-control-regex
-    const plain = out.replace(/\[[0-9;]*m/g, "");
+
+    const plain = stripAnsi(out);
     expect(plain).toContain("Tips for getting started"); // welcome aside
     expect(plain).toContain("!! "); // warning notice
     expect(plain).toContain("Opus 4.8 is now available!"); // info notice

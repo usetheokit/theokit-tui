@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, it } from "vitest";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // T3.2 wiring pillar (a): the stream demo is a human-runnable caller folding
 // a scripted turn through the REAL useAgentStream hook.
@@ -30,8 +31,8 @@ it(
     expect(out.indexOf("Theo Stream")).toBeLessThan(out.indexOf("inspecting")); // streamed final message
     // M16: the per-kind tool-detail cards render their shapes (SGR codes
     // sit between gutter and sign — strip before matching).
-    // eslint-disable-next-line no-control-regex
-    const plainOut = out.replace(/\u001B\[[0-9;]*m/g, "");
+
+    const plainOut = stripAnsi(out);
     expect(plainOut).toMatch(/\d+ \+ added retry/); // diff kind
     expect(plainOut).toContain("stderr:"); // output kind envelope label
     expect(plainOut).toMatch(/hidden/); // preview cap trailer (ToolResult tail-retention)

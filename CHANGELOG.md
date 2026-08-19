@@ -5,6 +5,130 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Security
+
+- **`diff` moved from 7 to 8.0.4, past the published advisory (B-069).** `GHSA-73rr-hh4g-fpgx` /
+  `CVE-2026-24001` is a denial-of-service in jsdiff's patch PARSING, fixed in 8.0.3.
+  `@types/diff` was removed in the same change because jsdiff ships its own typings from 8 onward,
+  so keeping it would have declared types for a version we no longer install.
+
+  **This package was never exposed, and saying so is part of the entry.** The vulnerable
+  `parsePatch` / `applyPatch` have zero call sites here; the advisory itself states that "other
+  methods of the library are unaffected"; the only jsdiff call is `diffWordsWithSpace` over a
+  del/add line-text pair (`src/diff/diff-word.ts:45`); and the single route to it is behind
+  `intraLineHighlight`, whose default is `false`. Consumers who installed 0.68.0 were not at risk —
+  they were carrying an advisory that could not reach them.
+
+  What DID change for a consumer: `npm audit` on a fresh install of 0.68.0 reported 2 advisories,
+  one of them `diff`. It reports one fewer now.
+
+  **What this does not cover.** The package that actually parses an untrusted patch here is
+  `parse-diff` (`src/diff/diff.ts:1`), not jsdiff — and it has not been audited. Filed as its own
+  item rather than implied away, because an entry about a parsing DoS that leaves the real parser
+  unexamined is the more dangerous half of a half-truth.
+
+  Chose 8.0.4 rather than 9.0.0: the advisory is fixed at 8.0.3, and taking a major for a
+  low-severity issue in an unreachable path buys risk with no return.
+
+### Changed
+
+- **Four dead-code exemptions replaced by one rule (B-066).** `knip.json` listed
+  `src/search/index.ts` and the three `src/renderer/*` barrels by name; it now declares
+  `src/**/index.ts` an entry point and the list drops from seven rows to three.
+
+  The four barrels genuinely have zero importers — and under ADR 0002 that is the EXPECTED state,
+  not a defect: a barrel is the _mechanism_ of privacy, so a folder the root does not re-export has
+  nothing left to import its barrel. Two gates disagreed about it —
+  `tests/lint/structure.test.ts` mandates a barrel for every folder under `src/`, knip called that
+  same barrel unused — and the exemption list was the manual patch between them, growing one line
+  per internal domain. Deleting the four was measured and refused: it turns that test red, naming
+  those exact folders.
+
+  The gate is not weakened, and that was measured rather than asserted: a module exported from its
+  own barrel and imported by nothing is still reported. Declaring a barrel an entry makes the
+  BARREL a root, not its exports.
+
+  Also corrected: `src/search/index.ts`'s header claimed its boundary was "enforceable". Both of its
+  real consumers reach past it with a deep import, one of them from a different and public domain,
+  and no sibling domain in the tree imports another's barrel. The comment now says the boundary is
+  conventional, which is what is true.
+
+  No `dist` artifact changes; nothing published moves.
+
+### Changed
+
+- **A test wait that fails now names the 200 ms event that likely caused it (B-058, phase 1).**
+  `settleWatching` reaches a 200 ms ceiling when it observes no reaction to a write, and returned
+  quietly. That is correct for a key that legitimately changes nothing — and identical to what a
+  write the component never saw produces. The event is now recorded and appended to a failing
+  wait's message, so a timeout ten seconds downstream reports the cause instead of the symptom.
+  Passing tests print nothing.
+
+  Test-infrastructure only; no published behaviour changes.
+
+  **The write-side half is NOT fixed, and the reason is on the record — corrected once, in review.**
+  A first version of this entry claimed the mechanism could not be reproduced. That was wrong twice
+  over: the probe measured `stdin.listenerCount("data")`, and ink never listens to `data`; and it
+  put `useInput` in the root component, where ink attaches synchronously so no window exists.
+
+  Measured after the correction: when the `useInput` consumer mounts LATE — behind a state flip, the
+  shape a composer has when an overlay appears — the first write is destroyed **20 times out of 20**,
+  leaving exactly the reported `bc` after typing `a`, `b`, `c`.
+
+  So a deterministic repro of the class exists, and the fix is still not shipped: what is missing is
+  evidence that the SUITE's failures take that route, since `ChatComposer` calls its input hooks
+  unconditionally. Four earlier classes were declared closed by absence; closing this one by analogy
+  would be the same mistake better disguised. No wait budget was raised and no worker count lowered.
+
+### Added
+
+- **`SelectList` accepts an optional `initialSelectionIndex` (B-054).** Omitting it reproduces
+  today's behaviour exactly, so no caller changes.
+
+  It exists because an edge-RENDERING test could only reach the last row by driving the up-arrow,
+  which made it die whenever the key layer died. Measured: the mutants "wrap becomes clamp" and
+  "delete the up-arrow branch" had **identical kill sets of four tests** — nothing in the repo
+  distinguished a broken wrap from a dead arrow. With the prop, both mutants now kill
+  `up_arrow_wraps_to_the_last_row` and spare the rendering test, so the two report different
+  defects. `WindowedList` already took its position as a prop, which is why its equivalent test was
+  three lines.
+
+  The name says `initial` on purpose: the component keeps owning the selection, so a changing value
+  is ignored after first render. A controlled `selected` + `onSelectionChange` pair was rejected —
+  a caller who passes the value and forgets the handler gets inert arrows, and this is published.
+
+### Fixed
+
+- **Four test helpers were not stripping ANSI at all (B-055).** They spelled the pattern
+  `/\[[0-9;]*m/g` — a `/` straight into `\[`, with no escape byte. Measured against the shipped
+  `Banner`: 8 escape bytes in, 8 escape bytes out. They deleted the colour _parameters_ and left the
+  escapes, so a frame they "stripped" still failed exact equality and passed every substring
+  assertion — which is why all three files were green. `src/layout/stack.test.tsx` is the one that
+  was one colour away from failing with an unreadable diff naming the wrong cause.
+
+  The same pattern also eats plain text: `"value [1m] and [;m end"` came back as `"value ] and  end"`.
+
+### Changed
+
+- **One `stripAnsi` for the package, replacing 39 hand-rolled constructs across 35 files (B-055).**
+  They came in four spellings; three of them (``, a raw `0x1B` byte, `String.fromCharCode(27)`)
+  all denote U+001B and were equivalent, and the fourth is the defect above. The production
+  sanitiser at `markdown/code-block.tsx` now uses it too — byte-identical semantics, so nothing
+  it renders changes.
+
+  Nothing is added to the public surface: the module is absent from `src/format/index.ts`, and the
+  `exports` map has no wildcard, so no consumer can reach it. Verified against the built `dist`.
+
+  Census after: **35 files import the shared helper, and exactly one `[0-9;]*m` construct remains
+  outside it** — `tests/fixtures/helpers.test.tsx:40`, which asserts an SGR is PRESENT and is
+  therefore not a stripper. It carries a comment saying so, so the next reader does not "finish" the
+  migration by deleting an assertion.
+
+  Its scope stays SGR-only on purpose, pinned by a test. Widening to the OSC families would change
+  what a sanitiser of **untrusted** input removes — an OSC 8 hyperlink or an OSC 52 clipboard write
+  survives it today — and that is registered as its own item rather than smuggled into a
+  de-duplication.
+
 ## [0.68.0] - 2026-08-19
 
 ### Fixed

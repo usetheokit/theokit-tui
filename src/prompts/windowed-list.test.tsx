@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { WindowedList } from "./windowed-list.js";
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
+import { stripAnsi } from "../format/ansi.js";
 
 const rows = (n: number): string[] =>
   Array.from({ length: n }, (_, i) => `turn ${String(i)}`);
