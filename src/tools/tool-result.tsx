@@ -6,6 +6,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
 import type { TheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 /**
  * Input guard against pathological single payloads (gemini-cli
@@ -31,8 +32,11 @@ export function truncateLines(
   // EC-1: fail-fast typed error — slice(-(maxLines-1)) silently misbehaves
   // for maxLines <= 1 and non-integers (slice(-0) returns ALL lines).
   if (!Number.isInteger(maxLines) || maxLines < 1) {
-    throw new TypeError(
-      `truncateLines: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
+    reportGuardFailure(
+      "truncateLines",
+      new TypeError(
+        `truncateLines: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
+      ),
     );
   }
   if (lines.length <= maxLines) {
@@ -136,8 +140,11 @@ function resolveContent(props: ToolResultProps): ResolvedContent {
   );
   // EC-2: silent precedence would swallow content — fail fast instead.
   if (sources.length > 1) {
-    throw new TypeError(
-      "ToolResult: provide exactly one of children | lines | shell",
+    reportGuardFailure(
+      "ToolResult",
+      new TypeError(
+        "ToolResult: provide exactly one of children | lines | shell",
+      ),
     );
   }
   if (props.shell !== undefined) {

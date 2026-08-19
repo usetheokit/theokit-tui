@@ -4,6 +4,7 @@ import { CodeBlock } from "./code-block.js";
 import type { MarkdownNode } from "./markdown.js";
 import { Segments } from "./markdown-segments.js";
 import { Table } from "./markdown-table-view.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 function headingTone(
   level: number,
@@ -69,8 +70,11 @@ export function BlockNode({
     default: {
       // Exhaustiveness guard — a new node kind must be handled here.
       const exhaustive: never = node;
-      throw new TypeError(
-        `MarkdownText: unhandled node kind ${JSON.stringify(exhaustive)}`,
+      reportGuardFailure(
+        "MarkdownText",
+        new TypeError(
+          `MarkdownText: unhandled node kind ${JSON.stringify(exhaustive)}`,
+        ),
       );
     }
     /* v8 ignore stop */

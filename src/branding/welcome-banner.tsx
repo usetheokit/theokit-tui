@@ -7,6 +7,7 @@ import { isMotionEnabled } from "./motion.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { ArtBlock } from "./art-block.js";
 import { bannerArtWidth } from "./figlet-art.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
 // gemini-cli-style startup banner as a LEAF primitive. Color exclusively via
@@ -74,13 +75,19 @@ function assertSingleLine(
   allowEmpty: boolean,
 ): void {
   if (!allowEmpty && value.trim() === "") {
-    throw new TypeError(
-      `WelcomeBanner: \`${prop}\` must be a non-empty string — got ${JSON.stringify(value)}`,
+    reportGuardFailure(
+      "WelcomeBanner",
+      new TypeError(
+        `WelcomeBanner: \`${prop}\` must be a non-empty string — got ${JSON.stringify(value)}`,
+      ),
     );
   }
   if (value.includes("\n")) {
-    throw new TypeError(
-      `WelcomeBanner: \`${prop}\` must be single-line — got ${JSON.stringify(value)} (use \`tagline\` for multi-line copy)`,
+    reportGuardFailure(
+      "WelcomeBanner",
+      new TypeError(
+        `WelcomeBanner: \`${prop}\` must be single-line — got ${JSON.stringify(value)} (use \`tagline\` for multi-line copy)`,
+      ),
     );
   }
 }

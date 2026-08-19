@@ -5,6 +5,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
 import { assertFiniteNonNegative, formatTokens } from "../format/format.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 /** Fixed row order (codex fields ∪ gemini metrics — plan ADR D2). */
 const TOKEN_CATEGORIES = ["input", "output", "cached", "reasoning"] as const;
@@ -34,10 +35,14 @@ function collectRows(usage: TokenUsageChartProps["usage"]): ChartRow[] {
     if (value === undefined) {
       continue;
     }
-    assertFiniteNonNegative(
-      value,
-      `TokenUsageChart: usage.${category} must be a finite number >= 0`,
-    );
+    try {
+      assertFiniteNonNegative(
+        value,
+        `TokenUsageChart: usage.${category} must be a finite number >= 0`,
+      );
+    } catch (err) {
+      reportGuardFailure("TokenUsageChart", err as Error);
+    }
     rows.push({ category, value, formatted: formatTokens(value) });
   }
   return rows;
@@ -56,8 +61,11 @@ export function TokenUsageChart({
   // Boundary guards FIRST, before hooks (F10 idiom).
   const rows = collectRows(usage);
   if (!Number.isInteger(width) || width < 0) {
-    throw new TypeError(
-      `TokenUsageChart: width must be an integer >= 0 — got ${String(width)}`,
+    reportGuardFailure(
+      "TokenUsageChart",
+      new TypeError(
+        `TokenUsageChart: width must be an integer >= 0 — got ${String(width)}`,
+      ),
     );
   }
   const theme = useTheoTheme();

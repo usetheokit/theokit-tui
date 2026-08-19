@@ -17,6 +17,7 @@ import { ToolResult } from "../tools/tool-result.js";
 import { useTheoTheme } from "../theme/theme.js";
 import { unionMessage } from "./union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 
@@ -67,16 +68,22 @@ function validateMessageEvent(
   event: Extract<AgentEvent, { kind: "message" }>,
 ): void {
   if (!CHAT_ROLES.includes(event.role)) {
-    throw new TypeError(
-      `AgentTimeline: message event "${event.id}" — invalid role "${String(event.role)}" — expected ${unionMessage(CHAT_ROLES)}`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: message event "${event.id}" — invalid role "${String(event.role)}" — expected ${unionMessage(CHAT_ROLES)}`,
+      ),
     );
   }
 }
 
 function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
   if (!TOOL_CALL_STATUSES.includes(event.status)) {
-    throw new TypeError(
-      `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: tool event "${event.id}" — invalid status "${String(event.status)}" — expected ${unionMessage(TOOL_CALL_STATUSES)}`,
+      ),
     );
   }
   const bodyCount =
@@ -84,8 +91,11 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
     (event.shell !== undefined ? 1 : 0) +
     (event.diff !== undefined ? 1 : 0);
   if (bodyCount > 1) {
-    throw new TypeError(
-      `AgentTimeline: tool event "${event.id}" — provide only one of output | shell | diff`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: tool event "${event.id}" — provide only one of output | shell | diff`,
+      ),
     );
   }
   // SEPA F1: ToolResult's own maxLines guard would fire mid-render
@@ -94,8 +104,11 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
     event.maxLines !== undefined &&
     (!Number.isInteger(event.maxLines) || event.maxLines < 1)
   ) {
-    throw new TypeError(
-      `AgentTimeline: tool event "${event.id}" — maxLines must be an integer >= 1 — got ${String(event.maxLines)}`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: tool event "${event.id}" — maxLines must be an integer >= 1 — got ${String(event.maxLines)}`,
+      ),
     );
   }
 }
@@ -119,13 +132,19 @@ function validateExploredEvent(
   // `maxLines` guard (SEPA F1): without it, a missing `tools` arriving from JS blows up with
   // "Cannot read properties of undefined" instead of the contract's message.
   if (!Array.isArray(event.tools) || event.tools.length === 0) {
-    throw new TypeError(
-      `AgentTimeline: explored event "${event.id}" — tools must be a non-empty array (at least one grouped tool)`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: explored event "${event.id}" — tools must be a non-empty array (at least one grouped tool)`,
+      ),
     );
   }
   for (const tool of event.tools) {
     if (seen.has(tool.id)) {
-      throw new TypeError(`AgentTimeline: duplicate event id "${tool.id}"`);
+      reportGuardFailure(
+        "AgentTimeline",
+        new TypeError(`AgentTimeline: duplicate event id "${tool.id}"`),
+      );
     }
     seen.add(tool.id);
     validateToolEvent(tool);
@@ -141,17 +160,26 @@ function validateExploredEvent(
  */
 function validateEvent(event: AgentEvent, seen: Set<string>): void {
   if (event.id === HEADER_SENTINEL_KEY) {
-    throw new TypeError(
-      `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: event id "${HEADER_SENTINEL_KEY}" collides with the reserved header sentinel key`,
+      ),
     );
   }
   if (!isAgentEventKind(event.kind)) {
-    throw new TypeError(
-      `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: unknown event kind "${String(event.kind)}" — expected ${KIND_UNION_MESSAGE}`,
+      ),
     );
   }
   if (seen.has(event.id)) {
-    throw new TypeError(`AgentTimeline: duplicate event id "${event.id}"`);
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(`AgentTimeline: duplicate event id "${event.id}"`),
+    );
   }
   seen.add(event.id);
   if (event.kind === "message") {
@@ -391,8 +419,11 @@ function eventRow(event: AgentEvent) {
       // at the boundary (D8); kept for compile-time exhaustiveness (D3).
       /* v8 ignore next 6 */
       const exhaustive: never = event;
-      throw new TypeError(
-        `AgentTimeline: unknown event kind "${String((exhaustive as AgentEvent).kind)}" — expected ${KIND_UNION_MESSAGE}`,
+      reportGuardFailure(
+        "AgentTimeline",
+        new TypeError(
+          `AgentTimeline: unknown event kind "${String((exhaustive as AgentEvent).kind)}" — expected ${KIND_UNION_MESSAGE}`,
+        ),
       );
     }
   }

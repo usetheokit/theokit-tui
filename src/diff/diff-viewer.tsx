@@ -9,6 +9,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
 import type { TheoTheme } from "../theme/theme.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 
 const TAB_WIDTH = 4;
 
@@ -369,16 +370,22 @@ function assertValidBounds(
   contextLines: number | undefined,
 ): void {
   if (maxLines !== undefined && (!Number.isInteger(maxLines) || maxLines < 1)) {
-    throw new TypeError(
-      `DiffViewer: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
+    reportGuardFailure(
+      "DiffViewer",
+      new TypeError(
+        `DiffViewer: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
+      ),
     );
   }
   if (
     contextLines !== undefined &&
     (!Number.isInteger(contextLines) || contextLines < 0)
   ) {
-    throw new TypeError(
-      `DiffViewer: contextLines must be an integer >= 0 — got ${String(contextLines)}`,
+    reportGuardFailure(
+      "DiffViewer",
+      new TypeError(
+        `DiffViewer: contextLines must be an integer >= 0 — got ${String(contextLines)}`,
+      ),
     );
   }
 }

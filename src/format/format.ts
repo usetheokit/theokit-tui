@@ -15,6 +15,16 @@ const TOKEN_UNITS = [
  * Shared metric-input boundary guard (review arch-3 — the "finite number
  * >= 0" contract appears at every M5 boundary; one home past rule-of-3).
  * NOT re-exported from the package entry.
+ *
+ * B-028 — this helper deliberately does NOT call `reportGuardFailure`, and the reason is the
+ * record's first field. A guard record names the COMPONENT whose guard fired, so it can be grouped;
+ * this function is called from several components with different names and knows none of them.
+ * Reporting from here would either fabricate a name or take a `component` parameter every caller
+ * must pass, which is the caller reporting with extra steps.
+ *
+ * So the CALLER wraps: `try { assertFiniteNonNegative(...) } catch (err) {
+ * reportGuardFailure("ContextWindowBar", err as Error) }`. `usage-panel.tsx` was the first to do it
+ * and `context-window-bar.tsx` / `token-usage-chart.tsx` now do the same.
  */
 export function assertFiniteNonNegative(value: number, message: string): void {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
