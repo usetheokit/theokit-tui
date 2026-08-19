@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.67.0] - 2026-08-19
+
 ### Fixed
 
 - **Every render-path guard now leaves a durable record, and a new silent one cannot land (B-028).**
