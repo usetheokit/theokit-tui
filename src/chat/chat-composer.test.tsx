@@ -36,19 +36,41 @@ const tick = async () => new Promise((resolve) => setTimeout(resolve, 0));
 // failing. The ceiling exists so a genuinely stuck render fails the test rather than hanging it.
 // B-057 — extracted so the RULE can be tested against an injected frame source, with no timing
 // dependency. The behaviour here is unchanged by the extraction; T1.2 is what changes it.
-const settleWatching = async (readFrame: () => string | undefined) => {
+const settleWatching = async (
+  readFrame: () => string | undefined,
+  before?: string,
+) => {
   let previous: string | undefined;
+  // B-057 — the fix, and it is one boolean. Stability alone was never the condition: the frame is
+  // trivially "stable" in the window between the write and Ink's render, which is exactly when the
+  // old helper returned. A reaction must be OBSERVED first — either the frame differs from what it
+  // was before the write, or (when no baseline was captured) the caller is not waiting on one.
+  let reacted = before === undefined;
   for (let elapsed = 0; elapsed < 400; elapsed += 10) {
     // duration is the subject: this is a POLL INTERVAL inside a bounded condition-wait, not a
     // sleep-then-assert. It is already the idiom B-033 converts other sites TO.
     await new Promise((resolve) => setTimeout(resolve, 10));
     const frame = readFrame();
-    if (frame !== undefined && frame === previous) return;
+    if (!reacted && frame !== undefined && frame !== before) reacted = true;
+    if (reacted && frame !== undefined && frame === previous) return;
     previous = frame;
   }
+  // The ceiling stays, and stays a quiet return rather than a throw (ADR D3 keeps it BOUNDED; the
+  // assertion that follows is what reports the failure, with the frame it actually saw). An input
+  // that legitimately changes nothing burns it — measured as rare enough that the file got FASTER
+  // overall, 27.4s -> 23.9s, because the common case now returns as soon as the change lands.
 };
 
-const settle = async () => settleWatching(lastRenderedFrame);
+// B-057 — `before` is REQUIRED, and that is deliberate. Mutation found that dropping the baseline
+// in `type()` silently reverts all 20 call sites in this file to the old stale-read behaviour and
+// is killed by ZERO tests: the suite passes either way, because the difference only shows under
+// load. A test asserting "settle was called with an argument" would be testing implementation, so
+// the compiler pins it instead — `settle()` with no baseline no longer type-checks.
+//
+// `undefined` remains expressible for the two sites that genuinely have no prior frame to compare
+// against, but it must be written out, which makes it a decision rather than an omission.
+const settle = async (before: string | undefined) =>
+  settleWatching(lastRenderedFrame, before);
 
 /** Set by `mount`, so `settle` can watch the instance under test without threading it through. */
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
@@ -69,8 +91,10 @@ async function type(
   chunks: string[],
 ) {
   for (const chunk of chunks) {
+    // B-057 — capture BEFORE the write, so `settle` has something to detect a reaction against.
+    const before = instance.lastFrame();
     instance.stdin.write(chunk);
-    await settle();
+    await settle(before);
   }
 }
 
@@ -227,9 +251,12 @@ describe("ChatComposer (T3.2)", () => {
     );
     await type(instance, ["h", "i"]);
     expect(() => instance.stdin.write(ENTER)).toThrow("caller boom");
-    await settle();
+    // No baseline: the write THREW, so there is no reaction to wait for — the frame is expected to
+    // stay as it was. Written out rather than defaulted (see `settle`).
+    await settle(undefined);
+    const beforeBang = instance.lastFrame();
     instance.stdin.write("!");
-    await settle();
+    await settle(beforeBang);
     await waitForFrame(instance, "hi!");
     instance.unmount();
   });
@@ -949,8 +976,8 @@ describe("settle (B-057)", () => {
       return frame;
     };
 
-    // Act
-    await settleWatching(source);
+    // Act — a baseline is passed, which is what `type()` does for every keystroke.
+    await settleWatching(source, "before");
 
     // Assert — the helper must not have returned while the frame still read "before". Under the
     // old implementation reads 2 and 3 are identical, so it returns at read 3 and every assertion
