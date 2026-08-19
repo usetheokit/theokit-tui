@@ -17,7 +17,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Security
 
-## [0.63.0] - 2026-08-18
+## [0.63.1] - 2026-08-18
+
+### Fixed
+
+- **The exported `VERSION` constant matched the previous release, not the current one.**
+  `src/index.ts` carried `0.62.0` while `package.json` said `0.63.0` — a package that would have
+  announced itself to consumers as a version it was not. Caught by `prepublishOnly`, which runs the
+  contract test that compares the two, and which is the first time in ten versions that gate has run
+  at all.
+
+  0.63.0 was tagged and never published for exactly this reason. The tag stays as the record of a
+  release the gate stopped; it is not rewritten, and it is not republished under the same number.
+
+## [0.63.0] - 2026-08-18 [NOT PUBLISHED — see 0.63.1]
 
 ### Changed
 
