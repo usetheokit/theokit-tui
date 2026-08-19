@@ -61,16 +61,32 @@ const settleWatching = async (
   // overall, 27.4s -> 23.9s, because the common case now returns as soon as the change lands.
 };
 
-// B-057 — `before` is REQUIRED, and that is deliberate. Mutation found that dropping the baseline
-// in `type()` silently reverts all 20 call sites in this file to the old stale-read behaviour and
-// is killed by ZERO tests: the suite passes either way, because the difference only shows under
-// load. A test asserting "settle was called with an argument" would be testing implementation, so
-// the compiler pins it instead — `settle()` with no baseline no longer type-checks.
+// B-057, second review pass — the invariant is ORDER, and a required parameter cannot express it.
 //
-// `undefined` remains expressible for the two sites that genuinely have no prior frame to compare
-// against, but it must be written out, which makes it a decision rather than an omission.
-const settle = async (before: string | undefined) =>
-  settleWatching(lastRenderedFrame, before);
+// The first fix made `before` a required argument so that `tsc` would catch a caller dropping it.
+// Review then defeated that in two lines: MOVE the capture to AFTER the write and every call site
+// silently reverts to the stale-read behaviour, passing all 57 tests AND `tsc --noEmit`, because
+// arity is all a signature pins.
+//
+// So the ordering is no longer available to get wrong: capturing, writing and settling happen
+// inside ONE function, and callers hand it the write to perform rather than performing it
+// themselves. There is no baseline parameter left to misplace.
+const settleAround = async (
+  write: () => void,
+  readFrame: () => string | undefined,
+) => {
+  const before = readFrame();
+  write();
+  await settleWatching(readFrame, before);
+};
+
+const writeThenSettle = async (
+  instance: { stdin: { write: (data: string) => void } },
+  chunk: string,
+) => settleAround(() => instance.stdin.write(chunk), lastRenderedFrame);
+
+/** Settle with no baseline — for the sites where no write precedes it, so no reaction is owed. */
+const settle = async () => settleWatching(lastRenderedFrame, undefined);
 
 /** Set by `mount`, so `settle` can watch the instance under test without threading it through. */
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
@@ -91,10 +107,7 @@ async function type(
   chunks: string[],
 ) {
   for (const chunk of chunks) {
-    // B-057 — capture BEFORE the write, so `settle` has something to detect a reaction against.
-    const before = instance.lastFrame();
-    instance.stdin.write(chunk);
-    await settle(before);
+    await writeThenSettle(instance, chunk);
   }
 }
 
@@ -251,12 +264,9 @@ describe("ChatComposer (T3.2)", () => {
     );
     await type(instance, ["h", "i"]);
     expect(() => instance.stdin.write(ENTER)).toThrow("caller boom");
-    // No baseline: the write THREW, so there is no reaction to wait for — the frame is expected to
-    // stay as it was. Written out rather than defaulted (see `settle`).
-    await settle(undefined);
-    const beforeBang = instance.lastFrame();
-    instance.stdin.write("!");
-    await settle(beforeBang);
+    // No baseline: the write THREW, so there is no reaction to wait for.
+    await settle();
+    await writeThenSettle(instance, "!");
     await waitForFrame(instance, "hi!");
     instance.unmount();
   });
@@ -983,5 +993,54 @@ describe("settle (B-057)", () => {
     // old implementation reads 2 and 3 are identical, so it returns at read 3 and every assertion
     // after it sees the stale frame.
     expect(reads.at(-1)).toBe("after");
+    // And promptly: without a bound here, a helper that polls to its ceiling every time passes this
+    // test while making the file 5.8x slower — measured on a mutant that deleted the early return
+    // (F-tests-3). Six reads is the reaction at 4 plus one stabilising pair.
+    expect(reads.length).toBeLessThanOrEqual(6);
+  });
+
+  it("test_the_baseline_is_captured_before_the_write_not_after", async () => {
+    // The invariant is ORDER, and neither a required parameter nor encapsulation pins it: review
+    // moved the capture two lines down and every call site reverted while 57 tests and
+    // `tsc --noEmit` stayed green (F-tests-2). Arity is all a signature can express.
+    //
+    // A test CAN express it. Give the write an immediate effect on the frame: captured BEFORE, the
+    // baseline is the old value and the reaction is detected on the first read; captured AFTER, the
+    // baseline is already the new value, no reaction is ever observed, and the helper polls to its
+    // ceiling. So the ordering shows up as promptness.
+    let frame = "before";
+    let reads = 0;
+    const readFrame = () => {
+      reads += 1;
+      return frame;
+    };
+
+    // Act — a write whose effect is already visible by the time it returns.
+    await settleAround(() => {
+      frame = "after";
+    }, readFrame);
+
+    // Assert — a handful of polls, not forty. Capturing after the write makes this 40.
+    expect(reads).toBeLessThanOrEqual(6);
+  });
+
+  it("test_settle_does_not_return_while_the_frame_is_still_changing", async () => {
+    // The OTHER half of the condition, and the first version of this block did not pin it: a mutant
+    // dropping `frame === previous` — settling on the first change rather than on stability —
+    // survived every test and made the suite FASTER, which is how a lost assertion disguises
+    // itself (F-tests-1).
+    //
+    // Arrange — a source that changes, changes AGAIN, and only then holds still. Returning at the
+    // first change would stop at "mid".
+    const frames = ["before", "mid", "after", "after", "after"];
+    let call = 0;
+    const source = () => frames[Math.min(call++, frames.length - 1)];
+
+    // Act
+    await settleWatching(source, "before");
+
+    // Assert — it waited past the intermediate frame for a stable one.
+    expect(frames[Math.min(call - 1, frames.length - 1)]).toBe("after");
+    expect(call).toBeGreaterThanOrEqual(4);
   });
 });
