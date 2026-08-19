@@ -1,5 +1,9 @@
 import { windowFor } from "../prompts/select-list-model.js";
-import { SLASH_MENU_WINDOW, type SlashMenu } from "./slash-menu.js";
+import {
+  CLOSED_MENU,
+  SLASH_MENU_WINDOW,
+  type SlashMenu,
+} from "./slash-menu.js";
 
 // M21 mention-menu (plan m21-premium-capabilities T4.1, Feature C / ADR C2/C3):
 // the `@`-file-mention menu — a SIBLING of the `/`-command menu, sharing the
@@ -8,16 +12,6 @@ import { SLASH_MENU_WINDOW, type SlashMenu } from "./slash-menu.js";
 // mentions) and its candidates are FUZZY-ranked file paths supplied by the async
 // file-search provider. This model is pure: the caller fetches + ranks the paths
 // and passes them in; the model finds the token, windows, and clamps.
-
-const CLOSED: SlashMenu = Object.freeze({
-  open: false,
-  filter: "",
-  matches: [],
-  clampedIndex: 0,
-  windowStart: 0,
-  overflowUp: false,
-  overflowDown: false,
-});
 
 export interface MentionToken {
   /** Offset of the `@`. */
@@ -68,7 +62,7 @@ export function deriveMentionMenu(
 ): SlashMenu {
   const token = findMentionToken(text, cursor);
   if (!token || candidates.length === 0) {
-    return { ...CLOSED, filter: token?.query ?? "" };
+    return { ...CLOSED_MENU, filter: token?.query ?? "" };
   }
   const matches = candidates.map((path) => ({ name: path, description: "" }));
   return {

@@ -9,7 +9,7 @@
 // `windowFor` (select-list-model.ts) — one authoritative site for the slash +
 // mention + SelectList windows (DRY). The trigger/filter contract is unchanged.
 
-import { windowFor } from "../prompts/select-list-model.js";
+import { windowFor, type WindowView } from "../prompts/select-list-model.js";
 
 export interface SlashCommand {
   /** Command name WITHOUT the slash (e.g. "help"). */
@@ -18,20 +18,20 @@ export interface SlashCommand {
   description: string;
 }
 
-export interface SlashMenu {
+/**
+ * B-052 — the window contract is INHERITED from `WindowView`, never re-declared. It used to be
+ * copied by hand, which omitted `hiddenBefore` / `hiddenAfter`: the `windowFor` spread below
+ * widened the value and this type narrowed it back, so the renderer drew a bare arrow over counts
+ * it already held. U-10 — a boolean cannot be turned back into a number.
+ */
+export interface SlashMenu extends WindowView {
   /** True when the menu should render. */
   open: boolean;
   /** The filter token (text after `/` up to the first whitespace). */
   filter: string;
-  /** Commands whose name starts with the filter, in declared order. */
-  matches: SlashCommand[];
-  /** Selection index clamped into the matches range. */
-  clampedIndex: number;
-  /** First visible row of the 5-row window. */
-  windowStart: number;
-  /** Rows hidden above/below the window. */
-  overflowUp: boolean;
-  overflowDown: boolean;
+  /** Commands whose name starts with the filter, in declared order. `readonly` because
+   * `CLOSED_MENU` is a shared frozen instance that escapes to callers by reference. */
+  matches: readonly SlashCommand[];
   /** Sigil rendered before each name. Slash commands use `/` (the default when
    * omitted); the `@`-mention menu sets `""` since the path is already whole. */
   sigil?: string;
@@ -39,14 +39,29 @@ export interface SlashMenu {
 
 export const SLASH_MENU_WINDOW = 5;
 
-const CLOSED: SlashMenu = Object.freeze({
+/**
+ * The closed menu, shared by BOTH menus that use this shape (`mention-menu.ts` imports it).
+ *
+ * B-052 review — the window half is taken from `windowFor`'s own empty-list branch instead of
+ * being written out again. Two frozen literals used to hand-copy those six fields, and adding the
+ * counts made each copy LONGER: the same duplication the interface change removed, one layer down.
+ * Deliberately module-internal — `src/chat/index.ts` does not re-export it, so this adds nothing
+ * to the published surface.
+ *
+ * Frozen SHALLOW, and `matches` is frozen too because this object escapes to callers by reference
+ * at `deriveSlashMenu`'s early return, not only by spread.
+ *
+ * **No `: SlashMenu` annotation, deliberately.** `Object.freeze` returns `Readonly<T>`; annotating
+ * the binding discards it, so only the fields declared `readonly` on the interface stay protected
+ * and the other eight typecheck as writable while throwing at runtime — a data-dependent failure
+ * (B-052 review, F-arch-4). Inferring the type keeps every field read-only at compile time, and
+ * `tsc --noEmit` was measured clean at every existing use site: assignment, spread and return.
+ */
+export const CLOSED_MENU = Object.freeze({
   open: false,
   filter: "",
-  matches: [],
-  clampedIndex: 0,
-  windowStart: 0,
-  overflowUp: false,
-  overflowDown: false,
+  matches: Object.freeze([]),
+  ...windowFor(0, 0, SLASH_MENU_WINDOW),
 });
 
 /**
@@ -66,7 +81,7 @@ export function deriveSlashMenu(
   // submit into a completion. The filter is still reported for the latch.
   const multiline = text.includes("\n");
   if (!firstLine.startsWith("/") || commands.length === 0) {
-    return CLOSED;
+    return CLOSED_MENU;
   }
   // codex token contract: first whitespace-delimited token after the
   // slash (leading spaces trimmed) — `/clear something` filters "clear".
@@ -81,7 +96,7 @@ export function deriveSlashMenu(
   // setting about what an agent may do to a disk (TheoCode B-089).
   const argumentStarted = afterSlash.length > filter.length;
   if (dismissed || multiline || argumentStarted || matches.length === 0) {
-    return { ...CLOSED, filter };
+    return { ...CLOSED_MENU, filter };
   }
   // Window/clamp/overflow via the shared M15 trailing-window (M22 DRY collapse).
   return {

@@ -90,6 +90,42 @@ describe("slash-menu-model (M15 T1.1)", () => {
     expect(atTop.overflowUp).toBe(false);
   });
 
+  it("the_menu_reports_how_many_rows_are_hidden", () => {
+    // B-052 — the counts arrive via the `windowFor` spread and were unreachable through the type,
+    // which hand-re-declared the window contract instead of extending `WindowView`. U-10: a
+    // boolean cannot be turned back into a number, so the model has to report the count.
+    const menu = deriveSlashMenu("/cmd", NINE, 7, false);
+    expect(menu.hiddenBefore).toBe(3);
+    expect(menu.hiddenAfter).toBe(1);
+    const atTop = deriveSlashMenu("/cmd", NINE, 0, false);
+    expect(atTop.hiddenBefore).toBe(0);
+    expect(atTop.hiddenAfter).toBe(4);
+  });
+
+  it("the_closed_menu_cannot_be_mutated_through_the_reference_it_hands_out", () => {
+    // B-052 review (F-tests-7 / F-wire-8) — `deriveSlashMenu` returns the SHARED `CLOSED_MENU` BY
+    // REFERENCE at its early return, and one instance now serves both this menu and the
+    // `@`-mention menu. The compile-time half is enforced by inference (`Object.freeze` returns
+    // `Readonly<T>`, and the binding carries no annotation to discard it). This pins the RUNTIME
+    // half: removing `Object.freeze` was measured to survive the entire suite.
+    // The BY-REFERENCE path is `slash-menu.ts:83` — text that is not a slash menu at all.
+    // `/zz` (no matches) takes the SPREAD path at `:92`, which correctly hands back a fresh
+    // mutable object; measured, and the distinction is the point of this test.
+    const closed = deriveSlashMenu("hello", CMDS, 0, false);
+    expect(closed.open).toBe(false);
+    expect(closed).toBe(deriveSlashMenu("world", CMDS, 0, false)); // same instance, shared
+    expect(() => {
+      (closed as { open: boolean }).open = true;
+    }).toThrow(TypeError);
+    expect(() => {
+      (closed.matches as SlashCommand[]).push({ name: "x", description: "" });
+    }).toThrow(TypeError);
+    // The spread path is a different contract: a fresh, mutable copy each time.
+    const spread = deriveSlashMenu("/zz", CMDS, 0, false);
+    expect(spread).not.toBe(closed);
+    expect(spread.open).toBe(false);
+  });
+
   it("dismissed_reports_closed", () => {
     const menu = deriveSlashMenu("/he", CMDS, 0, true);
     expect(menu.open).toBe(false);
