@@ -2,10 +2,13 @@ import { Box, Text, render } from "ink";
 import { createElement } from "react";
 import type React from "react";
 
-import { ComponentBoundary } from "../component-boundary.js";
+import { ComponentBoundary } from "../../src/status/component-boundary.js";
 
-// B-031 — the app the subprocess test renders, kept as a real source file so `tsc` type-checks it
-// with the rest of the package. A string built inside a test would drift from the API it exercises.
+// B-031 — the app the integration test renders, kept as a real source file so `tsc` type-checks it
+// with the rest of the package. It lives in `tests/fixtures/` because that is where this repo keeps
+// shared test material (B-033 put `wait-for.ts` here); the first version sat in `src/status/fixtures/`
+// and the repo's own structure test rejected it — a folder with no `index.ts` has no declared
+// surface, so siblings can reach past it into private files. A string built inside a test would drift from the API it exercises.
 //
 // Three siblings. Two environment switches, because one fixture has to measure three states and
 // review found the third missing:

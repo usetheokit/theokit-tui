@@ -12,9 +12,12 @@ import { describe, expect, it } from "vitest";
 //
 // The exit code cannot be observed in-process at all: it is a property of process teardown. So
 // these drive a REAL `render()` in a child process and assert on what that process leaves behind.
+//
+// Named `.integration.` and not `.subprocess.`: `integration` and `e2e` are the only qualifiers this
+// repo registers (ADR 0003), and its own structure test caught the invented third one.
 
 const FIXTURE = fileURLToPath(
-  new URL("./fixtures/boundary-app.tsx", import.meta.url),
+  new URL("../../tests/fixtures/boundary-app.tsx", import.meta.url),
 );
 
 interface Run {
