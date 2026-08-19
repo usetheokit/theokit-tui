@@ -5,6 +5,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The guard sink's lost-record count is now verified against the real dependency, not a stub
+  (B-040).** `GuardSink.write` returns `boolean` because `installStderrGuard` returns `false` when
+  its append fails — and every test of that path injected a stub written by the same author as the
+  code under test, so the integration the design rests on was asserted nowhere. B-025 declared this
+  exact failure scenario (an unwritable log directory) and never exercised it.
+
+  The new integration test installs the REAL guard on a read-only directory, which
+  `installStderrGuard` already treats as a supported state, so no mocking is needed. It asserts both
+  halves: the counter rises AND the guard's own error object reaches the caller unchanged. Four
+  mutants, four detected — including one that rethrows a NEW error, which a `toThrow` assertion
+  would have passed.
+
 ## [0.67.0] - 2026-08-19
 
 ### Fixed
