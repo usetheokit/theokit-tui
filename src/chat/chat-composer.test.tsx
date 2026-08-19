@@ -739,6 +739,31 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     instance.unmount();
   });
 
+  it("the_mention_menu_renders_the_hidden_count_like_the_slash_menu", async () => {
+    // B-052 review (F-wire-1) — the CHANGELOG says the `@` menu got the counts "for free" because
+    // it shares `SlashMenu`. Structurally true, and until this test it was UNPINNED: zeroing only
+    // the mention menu's counts at composer-footer.tsx:27 survived all 1650 tests, because
+    // `fakeSearch` returns three candidates against a five-row window, so no mention menu in the
+    // suite ever overflowed. A claim nothing can falsify is not a covered path.
+    const manyFiles = Array.from({ length: 9 }, (_, i) => `src/deep${i}.ts`);
+    const wideSearch = async (query: string): Promise<string[]> =>
+      manyFiles.filter((p) => p.includes(query));
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} fileSearch={wideSearch} />,
+    );
+    await type(instance, ["@", "d", "e"]);
+    await waitForFrame(instance, "src/deep0.ts");
+    // Row 0 of 9 in a 5-row window: four below, none above.
+    expect(plain(instance.lastFrame())).toMatch(/\u25BC\s*4/);
+    for (let i = 0; i < 8; i++) {
+      await type(instance, [DOWN_ARROW]);
+    }
+    const frame = plain(instance.lastFrame());
+    expect(frame).toMatch(/\u25B2\s*4/);
+    expect(frame).not.toContain("\u25BC");
+    instance.unmount();
+  });
+
   it("slash_command_menu_still_works_unchanged", async () => {
     // ADR-C3 regression guard: the M15 `/` menu is untouched by the @ addition.
     const instance = await mount(

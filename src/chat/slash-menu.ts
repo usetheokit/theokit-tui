@@ -29,8 +29,9 @@ export interface SlashMenu extends WindowView {
   open: boolean;
   /** The filter token (text after `/` up to the first whitespace). */
   filter: string;
-  /** Commands whose name starts with the filter, in declared order. */
-  matches: SlashCommand[];
+  /** Commands whose name starts with the filter, in declared order. `readonly` because
+   * `CLOSED_MENU` is a shared frozen instance that escapes to callers by reference. */
+  matches: readonly SlashCommand[];
   /** Sigil rendered before each name. Slash commands use `/` (the default when
    * omitted); the `@`-mention menu sets `""` since the path is already whole. */
   sigil?: string;
@@ -38,16 +39,23 @@ export interface SlashMenu extends WindowView {
 
 export const SLASH_MENU_WINDOW = 5;
 
-const CLOSED: SlashMenu = Object.freeze({
+/**
+ * The closed menu, shared by BOTH menus that use this shape (`mention-menu.ts` imports it).
+ *
+ * B-052 review — the window half is taken from `windowFor`'s own empty-list branch instead of
+ * being written out again. Two frozen literals used to hand-copy those six fields, and adding the
+ * counts made each copy LONGER: the same duplication the interface change removed, one layer down.
+ * Deliberately module-internal — `src/chat/index.ts` does not re-export it, so this adds nothing
+ * to the published surface.
+ *
+ * Frozen SHALLOW, and `matches` is frozen too because this object escapes to callers by reference
+ * at `deriveSlashMenu`'s early return, not only by spread.
+ */
+export const CLOSED_MENU: SlashMenu = Object.freeze({
   open: false,
   filter: "",
-  matches: [],
-  clampedIndex: 0,
-  windowStart: 0,
-  hiddenBefore: 0,
-  hiddenAfter: 0,
-  overflowUp: false,
-  overflowDown: false,
+  matches: Object.freeze([]),
+  ...windowFor(0, 0, SLASH_MENU_WINDOW),
 });
 
 /**
@@ -67,7 +75,7 @@ export function deriveSlashMenu(
   // submit into a completion. The filter is still reported for the latch.
   const multiline = text.includes("\n");
   if (!firstLine.startsWith("/") || commands.length === 0) {
-    return CLOSED;
+    return CLOSED_MENU;
   }
   // codex token contract: first whitespace-delimited token after the
   // slash (leading spaces trimmed) — `/clear something` filters "clear".
@@ -82,7 +90,7 @@ export function deriveSlashMenu(
   // setting about what an agent may do to a disk (TheoCode B-089).
   const argumentStarted = afterSlash.length > filter.length;
   if (dismissed || multiline || argumentStarted || matches.length === 0) {
-    return { ...CLOSED, filter };
+    return { ...CLOSED_MENU, filter };
   }
   // Window/clamp/overflow via the shared M15 trailing-window (M22 DRY collapse).
   return {
