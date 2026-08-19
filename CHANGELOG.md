@@ -7,6 +7,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- **The coverage report is now readable by the validation gate (B-048).** `vitest.config.ts`
+  declared a coverage block with no `reporter`, so the default set shipped — `text`, `html`,
+  `clover`, `json` — and none of those is a filename the Squad gate looks for. It reported *"the
+  threshold was NOT verified"* on every validation run, and a WARN does not block.
+
+  **This adds no safety, and saying so is the point.** The config declares thresholds of 90 on all
+  four metrics and CI runs `pnpm test:coverage`, which fails the job when one is missed — so
+  coverage has been enforced all along, at a stricter floor than the gate's 80. Measured while
+  fixing this: statements 98.51%, branches 95.23%, functions 93.42%, lines 98.51%. What changes is
+  that a gate stops emitting a warning nobody could act on.
+
+  The reporter list is written out in full rather than reduced to what the gate wants: `reporter`
+  replaces vitest's defaults, so the shorter fix would have silently deleted the HTML report people
+  open locally. Both halves are pinned by a contract test whose detection power was verified by
+  mutation.
+
+### Fixed
+
 - **The guard sink's lost-record count is now verified against the real dependency, not a stub
   (B-040).** `GuardSink.write` returns `boolean` because `installStderrGuard` returns `false` when
   its append fails — and every test of that path injected a stub written by the same author as the
