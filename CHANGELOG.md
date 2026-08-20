@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.70.0] - 2026-08-19
+
 ### Changed
 
 - **The disclosure affordance is now `▸` / `▾`, not `▶` / `▼` (B-053).** `▼` had come to mean three
