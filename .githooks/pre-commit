@@ -2,6 +2,7 @@
 # Git pre-commit hook.
 #
 #   GATE 1. Secret scanning — TruffleHog over the staged content.
+#   GATE 2. Formatting of the STAGED FILES ONLY (B-083).
 #
 # Lint, typecheck and tests are deliberately not run here. They are cheap in CI and a
 # slow pre-commit is a pre-commit people learn to bypass with --no-verify, which costs
@@ -9,9 +10,46 @@
 # CI can only catch a credential after it is already written to the history, and from
 # that moment the only real remedy is rotating it at the provider. This hook is the
 # last point where a leak is still free to fix.
+#
+# GATE 2 EARNS ITS PLACE THE SAME WAY, and it exists because two items disagreed and both
+# were right.
+#
+#   B-051 measured that `prettier --check .` walked the filesystem, so its result depended
+#   on whatever untracked files a machine carried — 23 dirty files on a clean CI checkout
+#   against 24 on a developer's. The gate reads `git ls-files` for that reason, and a test
+#   pins it: replacing that with `--others --cached` reintroduces exactly what it excludes.
+#
+#   B-083 measured the cost of that: an index-scoped gate never sees the file the slice just
+#   added, which is usually the only one worth checking. Its live instance was this repo's own
+#   CI going red on a new `scripts/gate-scope.mjs` that `pnpm format:check` had passed locally.
+#
+# Both hold, because they are about DIFFERENT MOMENTS. `format:check` answers "is the
+# repository formatted", and must be reproducible across machines. This answers "is what I am
+# about to commit formatted", and the staged set IS the index — hermetic by construction, and
+# it contains the new file because `git add` is what puts it there.
+#
+# Cost measured before adding it: ~1.4s over ten files, and the last five commits here touched
+# 0, 0, 3, 4 and 6. That is the budget the comment above is protecting.
 
 set -e
 
 ROOT="$(git rev-parse --show-toplevel)"
 
 "$ROOT/.githooks/secret-scan.sh"
+
+# `--diff-filter=ACM` skips deletions and renames-away: a path that is gone cannot be checked,
+# and prettier would exit non-zero on the missing file rather than on a formatting problem.
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+if [ -n "$STAGED" ]; then
+  # `--ignore-unknown` so a staged .png or .lock is skipped rather than failing the commit.
+  if ! printf '%s\n' "$STAGED" | xargs -r npx prettier --check --ignore-unknown; then
+    echo "" >&2
+    echo "pre-commit: the staged files above are not formatted." >&2
+    echo "  Run: pnpm format" >&2
+    echo "" >&2
+    echo "This checks the STAGED SET, not the tree — B-083. \`pnpm format:check\` reads the" >&2
+    echo "index and is reproducible across machines (B-051); it cannot see a file until it" >&2
+    echo "is staged, which is the moment this hook runs." >&2
+    exit 1
+  fi
+fi
