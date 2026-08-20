@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.74.0] - 2026-08-20
+
 ### Removed
 
 - **`WindowView.overflowUp` and `WindowView.overflowDown` (B-076).** Both were derived fields —
