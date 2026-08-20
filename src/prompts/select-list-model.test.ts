@@ -24,8 +24,6 @@ describe("windowFor (M22 T1.1) — the M15 trailing window", () => {
       // U-10 — these two used to live in the comment above, because the shape could not carry them.
       hiddenBefore: 3,
       hiddenAfter: 2,
-      overflowUp: true,
-      overflowDown: true,
     });
   });
 
@@ -35,8 +33,6 @@ describe("windowFor (M22 T1.1) — the M15 trailing window", () => {
       windowStart: 0, // 3 items < 5-window → no scroll
       hiddenBefore: 0,
       hiddenAfter: 0,
-      overflowUp: false,
-      overflowDown: false,
     });
   });
 
@@ -46,8 +42,6 @@ describe("windowFor (M22 T1.1) — the M15 trailing window", () => {
       windowStart: 0,
       hiddenBefore: 0,
       hiddenAfter: 0,
-      overflowUp: false,
-      overflowDown: false,
     });
   });
 });
@@ -154,13 +148,17 @@ describe("U-10 — WindowView reports the hidden counts", () => {
     expect(view.hiddenAfter).toBe(0);
   });
 
-  it("the_booleans_still_agree_with_the_counts", () => {
-    // Anti-vacuity floor: the existing contract must survive being derived from the new fields.
-    const view = windowFor(20, 10, 5);
-
-    expect(view.overflowUp).toBe(view.hiddenBefore > 0);
-    expect(view.overflowDown).toBe(view.hiddenAfter > 0);
-  });
+  // B-076 — `the_booleans_still_agree_with_the_counts` lived here and is DELETED rather than
+  // rewritten, because its subject no longer exists.
+  //
+  // It asserted `view.overflowUp === view.hiddenBefore > 0`: an equivalence between a field and
+  // its own derivation. With the boolean removed, the only honest rewrite would be
+  // `hiddenBefore > 0 === hiddenBefore > 0`, which is a tautology — form 1 of the false-oracle
+  // taxonomy, and worse than no test.
+  //
+  // The equivalence it protected is not lost: it is written on `hiddenBefore` in
+  // `select-list-model.ts` as the migration note, which is where a caller looking for the removed
+  // boolean will actually read it.
 });
 
 // ---------------------------------------------------------------------------
