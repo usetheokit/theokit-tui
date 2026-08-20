@@ -5,6 +5,46 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Security
+
+- **`setTerminalTitle` and `osc8Link` now refuse caller values carrying control bytes (B-086).**
+  Both interpolated their arguments verbatim into an OSC sequence, so a `BEL` or an `ESC \` in a
+  title, URL or link text **terminated the sequence early and let what followed run as a new
+  command**. Demonstrated: a title of `ok` plus a payload emitted the title sequence followed by a
+  complete OSC 52 clipboard write.
+
+  This is CVE-2026-47090's shape — an OSC 8 emitter interpolating caller values without encoding
+  them. The values that reach these functions in practice are chosen by consumers, which is why a
+  comment saying "sanitize upstream if untrusted" was never a control: the review that would catch
+  a bad call happens outside this repository.
+
+  **What is refused, precisely**, since "control bytes" is not a specification: the whole of C0
+  (`U+0000-U+001F`) and C1 (`U+007F-U+009F`), tested as a CHARACTER PREDICATE rather than by
+  matching a sequence. A matcher cannot see a lone `ESC` with no terminator — the branch where
+  `less` failed in CVE-2022-46663, whose one-line fix reads _"End OSC8 hyperlink on invalid
+  embedded escape sequence"_. Values without such a byte emit byte-identically to before, so a
+  correct caller sees no change at all.
+
+  **They now throw rather than strip**, and that is deliberate: the caller chose the value, so a
+  control byte is a defect in their code, not hostile data from outside — silently repairing it
+  would hide their bug and ship a title that is not the one they wrote. Well-formed values emit
+  byte-identically to before.
+
+  **What an incorrect caller sees now, stated in both directions rather than only the flattering
+  one.** On a TTY they got a broken terminal and now get an exception. **Off a TTY they got a
+  silent no-op and now also get an exception** — `setTerminalTitle` writes nothing there, and
+  `osc8Link` returns the text verbatim, so neither was visibly wrong before. The validation runs
+  ahead of both gates on purpose: off-TTY is where tests and CI run, so that is where a caller's
+  bug should surface, and `osc8Link` hands the unvalidated string back rather than discarding it.
+
+### Changed
+
+- **`setTerminalTitle` and `osc8Link` reject inputs they previously accepted (B-086).** Recorded
+  separately from the security note above because it is the part that can break a working caller:
+  any value carrying a C0 or C1 control byte now raises `RangeError` instead of being emitted. That
+  is a behaviour change on two published functions, which is why this release is a minor rather
+  than the patch its section headings would otherwise derive.
+
 ## [0.71.0] - 2026-08-20
 
 ### Security
