@@ -1,4 +1,6 @@
 import { createElement } from "react";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
+import { render as inkRender } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
@@ -15,6 +17,12 @@ const ITEMS: TodoItem[] = [
   { id: "b", label: "wire up", status: "active" },
   { id: "c", label: "test", status: "pending" },
 ];
+
+/** `ESC [ 30m` .. `ESC [ 37m` — the eight basic foreground colours (B-087). */
+const SGR_COLOURS = Array.from(
+  { length: 8 },
+  (_, n) => `\u001B[3${String(n)}m`,
+);
 
 describe("TodoList (M24 T1.2)", () => {
   it("renders_items_with_status_glyphs", async () => {
@@ -109,21 +117,56 @@ describe("TodoList (M24 T1.2)", () => {
     app.unmount();
   });
 
-  it("glyphs_survive_a_monochrome_theme_ladder", async () => {
-    // Under no-color the accent is stripped, but ☐/◐/☑ are glyph-distinct so the
-    // status is still legible (M6 degrade-as-data — the glyph carries the signal).
-    const app = render(
-      createElement(TheoTUIProvider, {
-        theme: themes["no-color"],
-        children: createElement(TodoList, { items: ITEMS }),
-      }),
-    );
-    await app.flush();
-    const frame = app.lastFrame();
-    expect(frame).toContain("☑ scaffold");
-    expect(frame).toContain("◐ wire up");
-    expect(frame).toContain("☐ test");
-    app.unmount();
+  it("the_glyphs_carry_the_status_once_the_monochrome_theme_drops_the_colour", async () => {
+    // B-087 — rendered through the itl-adapter and asserted plain text. MEASURED: with
+    // `TheoTUIProvider` mutated to ignore its `theme` prop entirely, this and its three siblings
+    // stayed GREEN (65 passed). The adapter reads xterm's `translateToString`, so COLOUR NEVER
+    // REACHES THAT FRAME and the assertion was satisfied by the renderer rather than by the theme.
+    //
+    // Renders through ink now, and asserts the PAIR. One frame proves nothing on its own: absence
+    // of colour under `no-color` is equally true of a theme system that was deleted.
+    const frameFor = async (theme: unknown): Promise<string> => {
+      const app = inkRender(
+        createElement(TheoTUIProvider, {
+          theme: theme as never,
+          children: createElement(TodoList, { items: ITEMS }),
+        }),
+      );
+      await waitForCondition(
+        () => (app.lastFrame() ?? "").includes("scaffold"),
+        {
+          describe: "the todo list to render its first item",
+        },
+      );
+      const frame = app.lastFrame() ?? "";
+      app.unmount();
+      return frame;
+    };
+
+    const dark = await frameFor(themes.dark);
+    const mono = await frameFor(themes["no-color"]);
+
+    // MEASURED, and sharper than expected: under `dark` only the GLYPH is coloured
+    // (`\u001B[36m◐\u001B[39m`), never the label. So the monochrome frame is the one where
+    // glyph and label sit adjacent, and asserting that adjacency in BOTH would have been wrong.
+    expect(dark).toContain("\u001B[36m◐\u001B[39m wire up");
+    expect(mono).toContain("◐ wire up");
+
+    // The glyphs carry the status in both — the degrade-as-data property this test is named for.
+    for (const frame of [dark, mono]) {
+      expect(frame).toContain("☑ scaffold");
+      expect(frame).toContain("☐ test");
+      expect(frame).toContain("◐");
+    }
+
+    // And colour is the only thing that differs, which is what makes the line above mean anything.
+    // A colour SGR is `ESC [ 3n m`. Probed as a substring set rather than a RegExp literal: an
+    // escape byte inside a RegExp trips `no-control-regex`, and the disable comment would be a
+    // suppression where a plainer expression does the same job.
+    const hasColour = (frame: string): boolean =>
+      SGR_COLOURS.some((code) => frame.includes(code));
+    expect(hasColour(mono)).toBe(false);
+    expect(hasColour(dark)).toBe(true);
   });
 });
 
