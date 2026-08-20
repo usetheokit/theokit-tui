@@ -336,10 +336,29 @@ describe("public API integration (M6 T3.2 — theme matrix)", () => {
     const { ensureHighlighter } =
       await import("../../src/markdown/code-block.js");
     await ensureHighlighter();
-    const frame = await renderFrame(scene("light"));
-    // Anchor-then-snapshot hard convention: the light accent (blue → [34m)
-    // must be present BEFORE the layout snapshot can absorb it.
-    expect(frame).toContain("[34m");
+    // B-097 — the wait is on the HIGHLIGHTED bytes, and the anchor asserts the same thing.
+    //
+    // This failed once on CI's `coverage` step and nowhere else. `renderFrame` waited a single
+    // macrotask, which is a fixed DURATION; `CodeBlock` renders plain and re-renders highlighted
+    // once `ensureHighlighter()`'s state update flushes. Under coverage instrumentation on a shared
+    // runner that flush did not fit in one tick, so the captured frame carried PLAIN code and the
+    // snapshot — recorded highlighted — mismatched. The diff showed two visually identical lines,
+    // because everything that differed was an escape byte.
+    //
+    // The old anchor was `toContain("[34m")` and it could not catch this: `\x1b[34m` is also the
+    // progress bar's blue (`\x1b[34m███…`, two rows up in the recorded snapshot), so it passes on a
+    // frame whose code is entirely unhighlighted. It asserted a colour the scene has anyway.
+    //
+    // `\x1b[34mconst\x1b[39m` is the byte sequence the pre-highlight frame CANNOT have.
+    const HIGHLIGHTED_KEYWORD = "\u001B[34mconst\u001B[39m";
+    const frame = await renderFrame(scene("light"), {
+      predicate: (f) => f.includes(HIGHLIGHTED_KEYWORD),
+      describe:
+        "the code block to re-render HIGHLIGHTED after ensureHighlighter() flushed",
+    });
+    // Kept even though the wait guarantees it: if the wait is ever weakened, this fails on the
+    // anchor naming what is missing, rather than on a snapshot diff of invisible bytes.
+    expect(frame).toContain(HIGHLIGHTED_KEYWORD);
     const plain = stripAnsi(frame);
     expect(plain).toContain("theme matrix scene");
     expect(plain).toContain("75% left");
