@@ -80,14 +80,17 @@ describe("slash-menu-model (M15 T1.1)", () => {
     const menu = deriveSlashMenu("/cmd", NINE, 7, false);
     expect(menu.matches).toHaveLength(9);
     expect(menu.windowStart).toBe(3); // keeps row 7 visible in a 5-window
-    expect(menu.overflowUp).toBe(true);
-    expect(menu.overflowDown).toBe(true); // row 8 still below
+    // B-076 — was `overflowUp/Down`, now the counts those booleans were derived from. Asserting
+    // the NUMBER is strictly stronger: `toBe(true)` passed for 1 hidden row and for 40, so a
+    // windowing regression that changed how many rows hid could not fail it.
+    expect(menu.hiddenBefore).toBe(3);
+    expect(menu.hiddenAfter).toBe(1); // row 8 still below
     const atEnd = deriveSlashMenu("/cmd", NINE, 8, false);
     expect(atEnd.windowStart).toBe(4);
-    expect(atEnd.overflowDown).toBe(false);
+    expect(atEnd.hiddenAfter).toBe(0);
     const atTop = deriveSlashMenu("/cmd", NINE, 0, false);
     expect(atTop.windowStart).toBe(0);
-    expect(atTop.overflowUp).toBe(false);
+    expect(atTop.hiddenBefore).toBe(0);
   });
 
   it("the_menu_reports_how_many_rows_are_hidden", () => {

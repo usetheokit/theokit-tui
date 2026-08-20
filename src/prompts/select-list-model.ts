@@ -21,12 +21,20 @@ export interface SelectListItem {
 export interface WindowView {
   clampedIndex: number;
   windowStart: number;
-  /** U-10 — how many rows sit above the window. `overflowUp` is `hiddenBefore > 0`. */
+  /**
+   * U-10 — how many rows sit above the window.
+   *
+   * B-076 removed the companion `overflowUp: boolean`, and the line it replaced is kept here
+   * because it IS the migration: **`overflowUp` was `hiddenBefore > 0`**. A caller that wants the
+   * boolean writes that expression; nothing has to be recomputed or recovered.
+   *
+   * The pair existed because U-10 replaced two booleans with numbers — a boolean cannot be turned
+   * back into a number — and then kept the booleans beside them. Two predicates for one fact, and
+   * `slash-menu-list.tsx` had already written down the decision not to read both.
+   */
   hiddenBefore: number;
-  /** U-10 — how many rows sit below the window. `overflowDown` is `hiddenAfter > 0`. */
+  /** U-10 — how many rows sit below the window. `overflowDown` was `hiddenAfter > 0` (B-076). */
   hiddenAfter: number;
-  overflowUp: boolean;
-  overflowDown: boolean;
 }
 
 /**
@@ -99,8 +107,6 @@ export function windowFor(
       windowStart: 0,
       hiddenBefore: 0,
       hiddenAfter: 0,
-      overflowUp: false,
-      overflowDown: false,
     };
   }
   const clampedIndex = Math.min(Math.max(selectionIndex, 0), count - 1);
@@ -122,8 +128,6 @@ export function windowFor(
     windowStart,
     hiddenBefore,
     hiddenAfter,
-    overflowUp: hiddenBefore > 0,
-    overflowDown: hiddenAfter > 0,
   };
 }
 

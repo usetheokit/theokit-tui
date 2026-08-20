@@ -69,7 +69,8 @@ describe("deriveMentionMenu (M21 T4.1)", () => {
     const candidates = Array.from({ length: 10 }, (_, i) => `f${i}.ts`);
     const menu = deriveMentionMenu("@f", 2, candidates, 99);
     expect(menu.clampedIndex).toBe(9);
-    expect(menu.overflowUp).toBe(true);
+    // B-076 — the count, not the boolean it was derived from.
+    expect(menu.hiddenBefore).toBeGreaterThan(0);
   });
 });
 
