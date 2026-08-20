@@ -62,8 +62,8 @@
     "example:showcase": "tsx examples/scenes/showcase.tsx",
     "example:renderer": "tsx examples/renderer/renderer-skeleton.tsx",
     "example:all": "tsx examples/scenes/all-components.tsx",
-    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm build",
-    "prepublishOnly": "pnpm gates && pnpm build",
+    "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm build && pnpm test",
+    "prepublishOnly": "pnpm gates",
     "example:claude-code": "tsx examples/scenes/claude-code-scene.tsx",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
