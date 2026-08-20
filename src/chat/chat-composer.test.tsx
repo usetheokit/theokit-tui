@@ -848,7 +848,13 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     //
     // Still not an exact row: pinning one path would fail the day the tree grows a file, for a
     // reason that has nothing to do with mentions.
-    await waitForFrame(instance, "(1/");
+    //
+    // B-072 review (F2) — waits on THIS query's frame, not on any counter. `waitForFrame(…, "(1/")`
+    // matched the frame belonging to the keystroke `"s"`, whose first hit is
+    // `sonar-project.properties`; the assertion then read a frame produced by a different query than
+    // the one it describes. A wait that can settle on the wrong frame makes any failure
+    // unattributable.
+    await waitForFrame(instance, "src/");
     const frame = plain(instance.lastFrame());
     expect(frame).toMatch(/\(1\/\d+\)/); // a counter means candidates arrived
     expect(frame).toContain("❯ "); // and one of them is selected

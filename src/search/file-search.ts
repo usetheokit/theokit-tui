@@ -69,24 +69,6 @@ export const nodeFileSystem: FileSystemLike = {
   },
 };
 
-/**
- * Collects cwd-relative file paths, LEVEL BY LEVEL.
- *
- * B-072 — this was depth-first, and that is what made `@pack` miss `package.json`. It recursed into
- * a directory the instant it met one, so a root-level file was hostage to every subtree whose name
- * sorted before it: measured on this repo, the capped walk read six directories — `.`,
- * `benchmarks`, `benchmarks/baselines`, `examples`, `examples/components`, `examples/renderer` —
- * and never opened `package.json`, `src/`, `tests/` or `wiki/`.
- *
- * Breadth-first makes DEPTH decide who survives the cap instead of alphabetical luck, which is the
- * property a human typing a query actually expects: the shallow file they are thinking of comes
- * first. Raising the cap alone does NOT fix it — measured at depth-first with a 1000 cap, an
- * umbrella-sized tree still answered `@pack` with a `coverage/lcov-report/*.html`.
- *
- * The cap still applies BEFORE ranking, deliberately. Ranking everything means walking everything,
- * and `searchFiles` runs once per keystroke with no debounce and no cache: measured, a full walk is
- * 8.4 ms here, 221 ms across the umbrella, and 2.1 SECONDS over `~/Projetos`.
- */
 interface WalkNode {
   dir: string;
   prefix: string;
@@ -135,6 +117,24 @@ async function drainDir(
   }
 }
 
+/**
+ * Collects cwd-relative file paths, LEVEL BY LEVEL.
+ *
+ * B-072 — this was depth-first, and that is what made `@pack` miss `package.json`. It recursed into
+ * a directory the instant it met one, so a root-level file was hostage to every subtree whose name
+ * sorted before it: measured on this repo, the capped walk read six directories — `.`,
+ * `benchmarks`, `benchmarks/baselines`, `examples`, `examples/components`, `examples/renderer` —
+ * and never opened `package.json`, `src/`, `tests/` or `wiki/`.
+ *
+ * Breadth-first makes DEPTH decide who survives the cap instead of alphabetical luck, which is the
+ * property a human typing a query actually expects: the shallow file they are thinking of comes
+ * first. Raising the cap alone does NOT fix it — measured at depth-first with a 1000 cap, an
+ * umbrella-sized tree still answered `@pack` with a `coverage/lcov-report/*.html`.
+ *
+ * The cap still applies BEFORE ranking, deliberately. Ranking everything means walking everything,
+ * and `searchFiles` runs once per keystroke with no debounce and no cache: measured, a full walk is
+ * 8.4 ms here, 221 ms across the umbrella, and 2.1 SECONDS over `~/Projetos`.
+ */
 async function walk(
   fs: FileSystemLike,
   ig: Ignore,

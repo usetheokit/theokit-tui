@@ -257,7 +257,15 @@ describe("B-072 — a root-level file is not hostage to subtrees that sort befor
       "/repo/zzz": dir("last.ts"),
     });
 
-    const hits = await searchFiles("pack", { cwd: CWD, fs });
+    // `maxResults: 50` is LOAD-BEARING, and leaving it out was a real defect in the first version
+    // of this test. The fixture's 60 files were sized against the OLD hard-coded cap of 50 — and
+    // the same commit raised that cap to 1000, so the fixture sat 16x BELOW it, the cap was never
+    // reached, and traversal order stopped mattering. The test passed against the unfixed
+    // depth-first walk: its name was false and its detection power was zero.
+    //
+    // Caught by the review criterion "where did the expected value come from?" — here the expected
+    // value was fine and the FIXTURE SIZE was the thing quietly coupled to a literal that moved.
+    const hits = await searchFiles("pack", { cwd: CWD, fs, maxResults: 50 });
 
     expect(hits).toContain("package.json");
   });

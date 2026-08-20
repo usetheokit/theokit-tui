@@ -17,9 +17,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   or `wiki/`. Breadth-first makes DEPTH decide who survives the cap instead of alphabetical luck,
   which is what someone typing a query expects.
 
-  The default cap also rose from 50 to 1000. Raising it alone would not have fixed anything —
-  measured depth-first at 1000, an umbrella-sized tree still answered `@pack` with a
-  `coverage/lcov-report/*.html` file.
+  The default cap also rose from 50 to 1000. **On a small tree that alone is enough** — measured
+  depth-first at 1000, this repository does answer `@pack` with `package.json`. It stops being
+  enough as the tree grows: at the same cap, a 21-repository tree answers with a
+  `coverage/lcov-report/*.html` file, because depth-first still spends the budget on whatever sorts
+  first. Breadth-first is what makes the result independent of tree size.
 
   The cap still applies before ranking, deliberately: ranking everything means walking everything,
   and this runs once per keystroke with no debounce. Measured, a full walk is 8.4 ms here, 221 ms
