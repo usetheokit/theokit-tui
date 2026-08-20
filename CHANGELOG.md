@@ -5,6 +5,26 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`ComposerCapabilities.mentions` documented a predicate the composer does not use (B-071).** Its
+  TSDoc said "a mention provider is passed and can return results", so a truthful consumer omitted
+  `mentions` when it passed no `fileSearch` — and lost the `@` row from its own help for a feature
+  that works.
+
+  Measured: `chat-composer.tsx:303` reads `fileSearch = defaultFileSearch`, a `.gitignore`-aware cwd
+  walk. Driven with no provider at all, typing `@src` returns **16 live candidates**. The real gate
+  is `mention-menu.ts:64` — the predicate is _"the provider in effect returned results"_, never
+  _"a provider was passed"_. `mentions` is the one field of four whose absence under-advertises.
+
+  **The comment was corrected, not the code, and that was a decision.** Dropping the default would
+  compile everywhere and pass all three existing mention tests — they inject a provider — while
+  silently deleting a working feature from every consumer that never passed the prop. Set `mentions`
+  whenever the composer is mounted, unless you passed `fileSearch: () => []` to switch it off.
+
+  The default path is now pinned by a test; it was asserted by nothing, and the mutant that removes
+  the default provider kills it.
+
 ## [0.69.0] - 2026-08-19
 
 ### Security
