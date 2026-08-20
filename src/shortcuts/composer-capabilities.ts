@@ -4,10 +4,26 @@ import { DEFAULT_COMPOSER_SHORTCUTS } from "./keyboard-help.js";
 /**
  * Which OPTIONAL composer features an app actually wired.
  *
- * Every field is a prop `ChatComposer` gates its handler on, measured rather than assumed:
- * `!` needs `onShellCommand` (`src/chat/chat-composer.tsx:447`), `?` needs `onHelpToggle` (`:495`),
- * `/` needs a non-empty `commands` (`:300`), and `@` needs the mention provider, whose own
- * docstring says returning `[]` disables mentions (`:70`).
+ * Three of the four fields are a prop `ChatComposer` gates its handler on: `!` needs
+ * `onShellCommand` (`src/chat/chat-composer.tsx:447`), `?` needs `onHelpToggle` (`:495`), `/` needs
+ * a non-empty `commands` (`:300`). Those three default to OFF, so absent really does mean not
+ * wired.
+ *
+ * **`mentions` is the odd one out, and B-071 corrected this comment rather than the code.** The
+ * previous text said `@` "needs the mention provider" — measured, it does not.
+ * `chat-composer.tsx:303` reads `fileSearch = defaultFileSearch`, so a consumer that passes NO
+ * provider still gets a working `@` menu: driven through `ink-testing-library` with no `fileSearch`,
+ * typing `@src` returned SIXTEEN live candidates. The real gate is `mention-menu.ts:64` —
+ * `if (!token || candidates.length === 0)` — so the predicate is *"the provider in effect returned
+ * results"*, never *"a provider was passed"*.
+ *
+ * Which makes `mentions` the ONE field whose absence under-advertises a feature that works. A
+ * truthful consumer, reading this comment, omits it and loses the `@` row from its own help.
+ *
+ * The code was NOT changed to match the comment, and that was a decision. Dropping the default
+ * would compile everywhere, pass all three mention tests (they inject a provider), and silently
+ * delete a working feature from every consumer that never passed the prop. The doc was wrong about
+ * the code; the code was not wrong about the product.
  *
  * Absent means NOT wired. That direction is deliberate: a list that advertises by default is how
  * the same product promised a shell it could not run, a help panel that did nothing, and an agents
@@ -20,7 +36,14 @@ export interface ComposerCapabilities {
   help?: boolean;
   /** A non-empty `commands` list is passed. */
   commands?: boolean;
-  /** A mention provider is passed and can return results. */
+  /**
+   * The `@` menu is advertised.
+   *
+   * Unlike its three siblings this is NOT "a prop was passed": `fileSearch` defaults to a
+   * `.gitignore`-aware cwd walk (`chat-composer.tsx:71,303`), so `@` works without one. Set it
+   * whenever the composer is mounted, unless you passed `fileSearch: () => []` to switch mentions
+   * off deliberately (`chat-composer.tsx:72`).
+   */
   mentions?: boolean;
 }
 

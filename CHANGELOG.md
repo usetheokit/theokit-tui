@@ -5,6 +5,68 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.70.0] - 2026-08-19
+
+### Changed
+
+- **The disclosure affordance is now `▸` / `▾`, not `▶` / `▼` (B-053).** `▼` had come to mean three
+  unrelated things in one package: "expand this section" (`CollapsibleBlock`), "there is more output
+  behind this" (`ExpandableOutput`), and "N rows are hidden below the window" (the three list views).
+
+  B-022 and B-052 made the third meaning numeric everywhere, which turned a theoretical collision
+  into a measured one: a single frame renders `▼ 8` from a collapsible block whose summary happens
+  to be a number and `▼ 4` from an overflowing menu, four lines apart — identical in shape,
+  unrelated in meaning.
+
+  The distinction is **weight, not direction**, because direction is already load-bearing on both
+  sides: disclosure toggles down/right, overflow shows up and down at once. Small triangles are
+  disclosure, large triangles are overflow. One glyph, one meaning.
+
+  Demonstrated rather than asserted, which is what the item asked for: a test renders both in one
+  frame and checks that `▾ 8` and `▲ 8` are no longer the same shape.
+
+  **This changes rendered output of two published components.** A consumer asserting on `▶` or `▼`
+  from `CollapsibleBlock` or `ExpandableOutput` will need to update; assertions on the list views'
+  overflow markers are untouched.
+
+### Changed
+
+- **The thirty spawn budgets are measured, and the measurement is why they stay (B-067).** The
+  standing comment said they were unmeasured and that measuring them was a followup, which invited
+  the same investigation repeatedly. Measured on a machine already under load — a pessimistic
+  sample — the tightest is 2.9x with 19.7 seconds of headroom, and all fifteen example tests pass.
+
+  The number with a failure history turned out not to be in this population: it is the 2000 ms
+  budget already hunted across three earlier items and fenced by this same lint. The thirty
+  inherited the suspicion, not the defect.
+
+  Corrected in review, and the correction is the interesting half. The first version of this entry
+  said a CI-side measurement was needed and that nobody had one. Both were wrong: it is one
+  `gh run view --log` away, and CI is 2-3x **faster** than a loaded developer machine, on the full
+  suite. Measured there, the tightest margin is 6.6x rather than 2.9x. The decision not to tighten
+  stands and stands more strongly — but it now rests on numbers instead of on an obstacle that did
+  not exist.
+
+### Fixed
+
+- **`ComposerCapabilities.mentions` documented a predicate the composer does not use (B-071).** Its
+  TSDoc said "a mention provider is passed and can return results", so a truthful consumer omitted
+  `mentions` when it passed no `fileSearch` — and lost the `@` row from its own help for a feature
+  that works.
+
+  Measured: `chat-composer.tsx:303` reads `fileSearch = defaultFileSearch`, a `.gitignore`-aware cwd
+  walk. Driven with no provider at all, typing `@src` returns **16 live candidates**. The real gate
+  is `mention-menu.ts:64` — the predicate is _"the provider in effect returned results"_, never
+  _"a provider was passed"_. `mentions` is the one field of four whose absence under-advertises.
+
+  **The comment was corrected, not the code, and that was a decision.** Dropping the default would
+  compile everywhere and pass all three existing mention tests — they inject a provider — while
+  silently deleting a working feature from every consumer that never passed the prop. Set `mentions`
+  whenever the composer is mounted, unless you passed `fileSearch: () => []` to switch it off.
+
+  The default path is now pinned by a test; it was asserted by nothing, and the mutant that removes
+  the default provider kills it.
+
 ## [0.69.0] - 2026-08-19
 
 ### Security

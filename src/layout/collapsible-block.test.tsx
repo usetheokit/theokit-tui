@@ -1,7 +1,11 @@
-import { Text } from "ink";
+import { Box, Text } from "ink";
 import { describe, expect, it } from "vitest";
 
+import { createElement } from "react";
+
 import { render } from "../../tests/renderer/itl-adapter.js";
+import { WindowedList } from "../prompts/windowed-list.js";
+import { stripAnsi } from "../format/ansi.js";
 import { CollapsibleBlock } from "./collapsible-block.js";
 import { ThinkingBlock } from "./thinking-block.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
@@ -19,7 +23,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
     );
     await app.flush();
     const frame = app.lastFrame();
-    expect(frame).toContain("▶"); // collapsed affordance
+    expect(frame).toContain("▸"); // collapsed affordance (B-053: disclosure pair)
     expect(frame).toContain("summary line");
     expect(frame).not.toContain("the hidden body");
     app.unmount();
@@ -32,7 +36,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
       </CollapsibleBlock>,
     );
     await app.flush();
-    expect(app.lastFrame()).toContain("▼");
+    expect(app.lastFrame()).toContain("▾");
     expect(app.lastFrame()).toContain("the body");
     app.unmount();
   });
@@ -47,7 +51,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
     app.stdin.write(" "); // space → expand
     await app.flush();
     expect(app.lastFrame()).toContain("body-xyz");
-    expect(app.lastFrame()).toContain("▼");
+    expect(app.lastFrame()).toContain("▾");
     app.unmount();
   });
 
@@ -119,7 +123,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
       </TheoTUIProvider>,
     );
     await app.flush();
-    expect(app.lastFrame()).toContain("▶");
+    expect(app.lastFrame()).toContain("▸");
     app.unmount();
   });
 
@@ -164,5 +168,44 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
     await app.flush();
     expect(app.lastFrame()).toContain("v2");
     app.unmount();
+  });
+});
+
+const rows = (n: number): string[] =>
+  Array.from({ length: n }, (_, i) => `row-${String(i)}`);
+
+describe("B-053 — the disclosure pair is distinguishable from window overflow", () => {
+  it("a_numeric_summary_no_longer_looks_like_a_hidden_row_count", async () => {
+    // The item's DoD asks for a DEMONSTRATED frame, not an assertion. This renders the exact
+    // collision it describes: a CollapsibleBlock whose summary happens to be a number, beside a
+    // windowed list reporting hidden rows. Before B-053 both printed `▼ <number>`.
+    const app = render(
+      createElement(
+        Box,
+        { flexDirection: "column" },
+        createElement(CollapsibleBlock, {
+          summary: "8",
+          expanded: true,
+          autoFocus: false,
+          children: createElement(Text, null, "body"),
+        }),
+        createElement(WindowedList, {
+          rows: rows(20),
+          selected: 10,
+          window: 5,
+        }),
+      ),
+    );
+    await app.flush();
+    const frame = stripAnsi(app.lastFrame() ?? "");
+    app.unmount();
+
+    // Both are present in ONE frame — that is the collision, reproduced.
+    expect(frame).toContain("▾ 8"); // disclosure, small triangle
+    expect(frame).toMatch(/▲ \d+/); // overflow, large triangles
+    expect(frame).toMatch(/▼ \d+/);
+
+    // And the disclosure glyph is not the overflow glyph, which is the whole point.
+    expect(frame).not.toContain("▼ 8");
   });
 });

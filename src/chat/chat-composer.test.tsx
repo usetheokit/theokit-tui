@@ -832,6 +832,27 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     instance.unmount();
   });
 
+  it("the_mention_menu_works_with_no_fileSearch_prop_at_all", async () => {
+    // B-071 — the DEFAULT path, which nothing pinned: all three mention tests above inject a
+    // provider, so the one behaviour a consumer gets for free was asserted by nothing.
+    //
+    // `chat-composer.tsx:303` reads `fileSearch = defaultFileSearch`, a .gitignore-aware cwd walk.
+    // So `@` works without the prop — which is why `composer-capabilities.ts` documenting `mentions`
+    // as "a provider is passed" made a truthful consumer under-advertise a working feature.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} />);
+    await type(instance, ["@", "s", "r", "c"]);
+    // Assert the MENU IS POPULATED, not which paths rank first. Measured: the default walk returns
+    // 16 candidates for "src" and fuzzy-ranks `benchmarks/*` above `src/*`, because
+    // `file-search.ts:75,88` cap the TRAVERSAL at 50 results before ranking runs. That ordering is
+    // a separate finding and not what this test is for — asserting a specific path here would pin
+    // the ranking and fail for the wrong reason the day the tree grows a file.
+    await waitForFrame(instance, "(1/");
+    const frame = plain(instance.lastFrame());
+    expect(frame).toMatch(/\(1\/\d+\)/); // a counter means candidates arrived
+    expect(frame).toContain("❯ "); // and one of them is selected
+    instance.unmount();
+  });
+
   it("slash_command_menu_still_works_unchanged", async () => {
     // ADR-C3 regression guard: the M15 `/` menu is untouched by the @ addition.
     const instance = await mount(
