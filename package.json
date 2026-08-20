@@ -65,7 +65,9 @@
     "gates": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm build && pnpm test",
     "prepublishOnly": "pnpm gates",
     "example:claude-code": "tsx examples/scenes/claude-code-scene.tsx",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "version": "node scripts/sync-version.mjs && git add src/index.ts",
+    "sync-version": "node scripts/sync-version.mjs"
   },
   "peerDependencies": {
     "figlet": "^1.7.0",

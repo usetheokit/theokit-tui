@@ -9,7 +9,8 @@
     "examples/**/*.ts",
     "benchmarks/**/*.ts",
     "benchmarks/**/*.tsx",
-    "src/**/index.ts"
+    "src/**/index.ts",
+    "scripts/sync-version.mjs"
   ],
   "ignore": [
     "tests/**",

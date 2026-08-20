@@ -48,4 +48,17 @@ export default tseslint.config(
       },
     },
   },
+  // B-095 — repository tooling under `scripts/` runs in Node, not in the terminal the library
+  // targets. Scoped to that directory on purpose: `process` and `console` being undefined is the
+  // CORRECT answer everywhere else, and widening the globals repo-wide to admit one script would
+  // retire that check for the whole source tree.
+  {
+    files: ["scripts/**/*.mjs", "scripts/**/*.js"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+      },
+    },
+  },
 );
