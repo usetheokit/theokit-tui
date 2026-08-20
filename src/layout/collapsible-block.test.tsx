@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+import { render as inkRender } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
 import { createElement } from "react";
@@ -114,17 +115,46 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
     app.unmount();
   });
 
-  it("affordance_survives_a_monochrome_theme", async () => {
-    const app = render(
-      <TheoTUIProvider theme={themes["no-color"]}>
-        <CollapsibleBlock summary={<Text>s</Text>}>
-          <Text>b</Text>
-        </CollapsibleBlock>
-      </TheoTUIProvider>,
-    );
-    await app.flush();
-    expect(app.lastFrame()).toContain("▸");
-    app.unmount();
+  it("the_affordance_renders_BYTE_IDENTICALLY_under_every_theme", () => {
+    // B-087 — and this one did not end where its three siblings did, which is the honest part.
+    //
+    // It was `affordance_survives_a_monochrome_theme`, rendered through the itl-adapter, asserting
+    // `toContain("▸")`. MEASURED: with `TheoTUIProvider` mutated to ignore its `theme` prop
+    // entirely, it stayed GREEN — as did the other three, because the adapter reads xterm's
+    // `translateToString` and colour never reaches that frame.
+    //
+    // The other three were fixed by rendering through ink, where the colour exists. HERE THAT DOES
+    // NOT WORK, and the reason is the finding: measured through ink, `CollapsibleBlock` emits
+    //
+    //     dark      "▸ s"
+    //     no-color  "▸ s"
+    //
+    // BYTE-IDENTICAL. The component colours nothing, so no theme can change its output and NO TEST
+    // OF THIS COMPONENT CAN DETECT A BROKEN THEME SYSTEM. A test named "survives a monochrome
+    // theme" was unfalsifiable by construction — not because of the renderer, but because there was
+    // never anything to survive.
+    //
+    // So it asserts what is actually true and IS falsifiable: the output does not vary with the
+    // theme. If someone later colours the affordance, this fails and they have to decide
+    // deliberately rather than by accident.
+    //
+    // STATED PLAINLY: this does NOT die under the theme-ignoring mutant, and it cannot. Claiming
+    // otherwise would be the manufactured detector this whole item exists to remove.
+    const frameFor = (theme: unknown): string => {
+      const app = inkRender(
+        <TheoTUIProvider theme={theme as never}>
+          <CollapsibleBlock summary={<Text>s</Text>}>
+            <Text>b</Text>
+          </CollapsibleBlock>
+        </TheoTUIProvider>,
+      );
+      const frame = app.lastFrame() ?? "";
+      app.unmount();
+      return frame;
+    };
+
+    expect(frameFor(themes["no-color"])).toBe(frameFor(themes.dark));
+    expect(frameFor(themes["no-color"])).toContain("▸");
   });
 
   it("thinking_block_preset_shows_the_sparkle_glyph_and_summary", async () => {

@@ -2,10 +2,12 @@ import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
+import { render as inkRender } from "ink-testing-library";
+
 import { render } from "../../tests/renderer/itl-adapter.js";
 import { ChoiceRow } from "./choice-row.js";
 import { DEFAULT_APPROVAL_CHOICES } from "../agent/agent-decision.js";
-import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { TheoTUIProvider, themes, type TheoThemeProp } from "../theme/theme.js";
 
 // M23 T1.1 — the ChoiceRow component over the itl-adapter (OUR renderer/input/
 // focus). A horizontal fixed choice bar: ❯ marks the active choice, ←/→ move,
@@ -123,19 +125,48 @@ describe("ChoiceRow component (M23 T1.1)", () => {
     app.unmount();
   });
 
-  it("marker_survives_a_monochrome_theme_degrade_ladder", async () => {
-    const app = render(
-      createElement(TheoTUIProvider, {
-        theme: themes["no-color"],
-        children: createElement(ChoiceRow, {
-          choices: CHOICES,
-          onCommit: () => {},
+  it("the_monochrome_theme_actually_drops_the_colour_the_dark_theme_adds", async () => {
+    // B-087 — this rendered through the itl-adapter and asserted `toContain("\u276f Allow once")`.
+    //
+    // MEASURED: with `TheoTUIProvider` mutated to ignore its `theme` prop entirely, that version
+    // and its three siblings stayed GREEN — 65 passed. A test named for a monochrome behaviour
+    // could not fail when the theme system was switched off, because the adapter reads xterm's
+    // `translateToString` and COLOUR NEVER REACHES THAT FRAME. The assertion was satisfied by the
+    // renderer, not by the theme.
+    //
+    // So it renders through ink, where colour survives, and asserts the PAIR rather than one side.
+    // One frame alone proves nothing: absence of colour under `no-color` is equally true of a theme
+    // system that was deleted. The two together are what pin the behaviour.
+    const lineFor = async (theme: TheoThemeProp): Promise<string> => {
+      const app = inkRender(
+        createElement(TheoTUIProvider, {
+          theme,
+          children: createElement(ChoiceRow, {
+            choices: CHOICES,
+            onCommit: () => {},
+          }),
         }),
-      }),
-    );
-    await app.flush();
-    expect(app.lastFrame()).toContain("❯ Allow once");
-    app.unmount();
+      );
+      await waitForCondition(
+        () => (app.lastFrame() ?? "").includes("Allow once"),
+        { describe: "the choice row to render its first choice" },
+      );
+      const line =
+        (app.lastFrame() ?? "")
+          .split("\n")
+          .find((l) => l.includes("Allow once")) ?? "";
+      app.unmount();
+      return line;
+    };
+
+    const dark = await lineFor(themes.dark);
+    const mono = await lineFor(themes["no-color"]);
+
+    // The marker and the label survive; the COLOUR around them is what the monochrome theme drops.
+    expect(mono).toContain("\u276f Allow once");
+    expect(mono).not.toContain("\u001B[36m");
+    expect(dark).toContain("\u001B[36m");
+    expect(dark).toContain("\u276f Allow once");
   });
 
   it("re_clamps_the_active_index_when_choices_shrink", async () => {
