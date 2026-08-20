@@ -33,10 +33,21 @@
  * in this population — it is the 2000 above, already hunted across B-020/B-033/B-034 and fenced by
  * this very lint. The thirty inherited the SUSPICION, not the defect.
  *
- * What this measurement CANNOT support is tightening them: it was taken on a developer machine, and
- * the CI legs run on hosted runners with lower single-core performance and slower disk. A 2.9x
- * margin here is not a 2.9x margin there. Right-sizing would need a CI-side measurement, and
- * nobody has one.
+ * B-067 review (F-1) — the paragraph that used to sit here said a CI-side measurement was needed
+ * and that "nobody has one". Both halves were wrong, and being wrong HERE is the failure this
+ * comment exists to prevent: it told the next reader the question was closed by impossibility.
+ *
+ * It is one command: `gh run view <id> -R usetheokit/theokit-tui --log`. And the direction was
+ * backwards — CI is 2-3x FASTER than a loaded developer machine, on the full suite, i.e. the LESS
+ * favourable contention condition. Measured on run 32315975309:
+ *
+ *   node 22.x   showcase 6865 ms = 6.6x    chat 3512 ms = 8.5x    agent 1578 ms = 19.0x
+ *   node 24.x   showcase 5654 ms = 8.0x    chat 2393 ms = 12.5x   agent 1209 ms = 24.8x
+ *
+ * So the tightest margin anywhere is 6.6x, against 2.9x locally. The decision not to tighten stands
+ * and stands more strongly than before — 30 files of churn against a population with six to
+ * twenty-four times its headroom — but it now rests on the numbers rather than on an obstacle that
+ * did not exist.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";

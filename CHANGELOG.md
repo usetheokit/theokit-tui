@@ -38,8 +38,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   budget already hunted across three earlier items and fenced by this same lint. The thirty
   inherited the suspicion, not the defect.
 
-  Recorded with its limit: the measurement was taken on a developer machine and cannot support
-  TIGHTENING them, because CI runners are slower on both cores and disk.
+  Corrected in review, and the correction is the interesting half. The first version of this entry
+  said a CI-side measurement was needed and that nobody had one. Both were wrong: it is one
+  `gh run view --log` away, and CI is 2-3x **faster** than a loaded developer machine, on the full
+  suite. Measured there, the tightest margin is 6.6x rather than 2.9x. The decision not to tighten
+  stands and stands more strongly — but it now rests on numbers instead of on an obstacle that did
+  not exist.
 
 ### Fixed
 
