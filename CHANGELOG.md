@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.70.1] - 2026-08-20
+
 ### Fixed
 
 - **`@`-mention search walks breadth-first, so a root-level file is no longer hostage to the
