@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.75.0] - 2026-08-20
+
 ### Removed
 
 - **`src/renderer/kill-ring.ts` and `src/renderer/undo-stack.ts` (B-065).** Neither was ever
