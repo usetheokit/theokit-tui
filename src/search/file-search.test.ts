@@ -242,3 +242,48 @@ describe("searchFiles — @ path navigation", () => {
     expect(dotted).toEqual(["~/.ansible/", "~/.bashrc"]);
   });
 });
+
+describe("B-072 — a root-level file is not hostage to subtrees that sort before it", () => {
+  it("finds_a_root_file_behind_a_subtree_larger_than_the_cap", async () => {
+    // The defect, reproduced as the item filed it. `walk` was depth-first and recursed into a
+    // directory the instant it met one, so `package.json` was never reached once `aaa-src/` — which
+    // sorts before it — had filled the cap. Measured on the real tree, the capped walk read six
+    // directories and never opened `package.json`, `src/`, `tests/` or `wiki/`.
+    const fs = fakeFs({
+      "/repo": [subdir("aaa-src"), ...dir("package.json"), subdir("zzz")],
+      "/repo/aaa-src": dir(
+        ...Array.from({ length: 60 }, (_, i) => `f${String(i)}.ts`),
+      ),
+      "/repo/zzz": dir("last.ts"),
+    });
+
+    // `maxResults: 50` is LOAD-BEARING, and leaving it out was a real defect in the first version
+    // of this test. The fixture's 60 files were sized against the OLD hard-coded cap of 50 — and
+    // the same commit raised that cap to 1000, so the fixture sat 16x BELOW it, the cap was never
+    // reached, and traversal order stopped mattering. The test passed against the unfixed
+    // depth-first walk: its name was false and its detection power was zero.
+    //
+    // Caught by the review criterion "where did the expected value come from?" — here the expected
+    // value was fine and the FIXTURE SIZE was the thing quietly coupled to a literal that moved.
+    const hits = await searchFiles("pack", { cwd: CWD, fs, maxResults: 50 });
+
+    expect(hits).toContain("package.json");
+  });
+
+  it("reaches_shallow_files_before_deep_ones", async () => {
+    // The ordering property BFS buys, stated as behaviour rather than as an implementation note:
+    // DEPTH decides who survives the cap, not alphabetical luck.
+    const fs = fakeFs({
+      "/repo": [subdir("aaa"), ...dir("shallow.ts")],
+      "/repo/aaa": [subdir("deep")],
+      "/repo/aaa/deep": [subdir("deeper")],
+      "/repo/aaa/deep/deeper": dir(
+        ...Array.from({ length: 30 }, (_, i) => `f${String(i)}.ts`),
+      ),
+    });
+
+    const hits = await searchFiles("", { cwd: CWD, fs, maxResults: 5 });
+
+    expect(hits).toContain("shallow.ts");
+  });
+});

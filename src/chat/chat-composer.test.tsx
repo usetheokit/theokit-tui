@@ -841,15 +841,24 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     // as "a provider is passed" made a truthful consumer under-advertise a working feature.
     const instance = await mount(<ChatComposer onSubmit={() => {}} />);
     await type(instance, ["@", "s", "r", "c"]);
-    // Assert the MENU IS POPULATED, not which paths rank first. Measured: the default walk returns
-    // 16 candidates for "src" and fuzzy-ranks `benchmarks/*` above `src/*`, because
-    // `file-search.ts:75,88` cap the TRAVERSAL at 50 results before ranking runs. That ordering is
-    // a separate finding and not what this test is for — asserting a specific path here would pin
-    // the ranking and fail for the wrong reason the day the tree grows a file.
-    await waitForFrame(instance, "(1/");
+    // B-072 STRENGTHENED this. It used to assert only that the menu was POPULATED, because the
+    // depth-first walk capped at 50 BEFORE ranking and put `benchmarks/*` above `src/*` — a test
+    // written around a defect. With the breadth-first walk the obvious match ranks first (measured:
+    // `src/index.ts` first of 303), so the assertion can say what it means.
+    //
+    // Still not an exact row: pinning one path would fail the day the tree grows a file, for a
+    // reason that has nothing to do with mentions.
+    //
+    // B-072 review (F2) — waits on THIS query's frame, not on any counter. `waitForFrame(…, "(1/")`
+    // matched the frame belonging to the keystroke `"s"`, whose first hit is
+    // `sonar-project.properties`; the assertion then read a frame produced by a different query than
+    // the one it describes. A wait that can settle on the wrong frame makes any failure
+    // unattributable.
+    await waitForFrame(instance, "src/");
     const frame = plain(instance.lastFrame());
     expect(frame).toMatch(/\(1\/\d+\)/); // a counter means candidates arrived
     expect(frame).toContain("❯ "); // and one of them is selected
+    expect(frame).toMatch(/❯ src\//); // and it is the obvious match, not alphabetical luck
     instance.unmount();
   });
 
