@@ -21,6 +21,29 @@ export interface SurfaceLayer<S> {
    * swallowing it here would hide it (`.claude/rules/error-handling.md` § 2).
    */
   readonly when: (state: S) => boolean;
+  // MEASURED 2026-08-20 (B-074), recorded here because the finding is about THIS signature and
+  // this file is the only place it travels to.
+  //
+  // `boolean` — not a type predicate — so whatever `when` proves about the state is discarded
+  // before `render` sees it. In this repository that costs nothing: the only example whose
+  // `render` touches a field its `when` checked is `<Text>{s.question}</Text>`, and JSX tolerates
+  // `undefined`. Measured against the one real consumer, it costs a cast:
+  //
+  //     when:   (p) => p.pendingApproval !== undefined,
+  //     render: (p) => <ApprovalCard approval={p.pendingApproval as PendingApproval} … />
+  //
+  // That `as` is the shape `status/guard-sink.ts` already argues against — a reachability claim
+  // with the argument left out — except the argument is not missing here. It is written THREE
+  // LINES ABOVE, in the `when` that just proved it, and the type throws it away in between.
+  //
+  // The lesson is about where to look, not about the fix: judged from inside this repository the
+  // feature has zero demand and reads as gold-plating. **The repository is not the sample; it is
+  // the easiest case.** A library feature justified by its own examples is justified by nothing —
+  // the examples are written by the people who already know the shape.
+  //
+  // Not changed yet: a narrowing form costs callers an explicit type-argument pair, and
+  // `src/keys/layer-router.ts:40` carries the same signature, so any design has two sites to
+  // satisfy or must say why it covers one.
   /** What this layer draws. Called ONLY through {@link SelectedSurface.render}, never during selection. */
   readonly render: (state: S) => ReactNode;
 }

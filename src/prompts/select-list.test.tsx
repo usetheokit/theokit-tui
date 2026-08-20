@@ -1,4 +1,6 @@
 import { createElement } from "react";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
+import { render as inkRender } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
@@ -16,6 +18,12 @@ const items: SelectListItem[] = [
   { value: "apricot", label: "apricot", description: "" },
   { value: "banana", label: "banana", description: "" },
 ];
+
+/** `ESC [ 30m` .. `ESC [ 37m` — the eight basic foreground colours (B-087). */
+const SGR_COLOURS = Array.from(
+  { length: 8 },
+  (_, n) => `\u001B[3${String(n)}m`,
+);
 
 describe("SelectList component (M22 T1.1)", () => {
   it("renders_items_with_the_active_marker_and_counter", async () => {
@@ -142,18 +150,44 @@ describe("SelectList component (M22 T1.1)", () => {
     app.unmount();
   });
 
-  it("marker_survives_a_monochrome_theme_degrade_ladder", async () => {
-    // Under a no-color theme the accent color is stripped, but the ❯ glyph
-    // (the affordance) still marks the active row (M6 degrade-as-data).
-    const app = render(
-      createElement(TheoTUIProvider, {
-        theme: themes["no-color"],
-        children: createElement(SelectList, { items, onSubmit: () => {} }),
-      }),
-    );
-    await app.flush();
-    expect(app.lastFrame()).toContain("❯ apple");
-    app.unmount();
+  it("the_monochrome_theme_drops_the_accent_the_dark_theme_adds_around_the_marker", async () => {
+    // B-087 — rendered through the itl-adapter and asserted plain text. MEASURED: with
+    // `TheoTUIProvider` mutated to ignore its `theme` prop entirely, this and its three siblings
+    // stayed GREEN (65 passed). The adapter reads xterm's `translateToString`, so COLOUR NEVER
+    // REACHES THAT FRAME and the assertion was satisfied by the renderer rather than by the theme.
+    //
+    // Renders through ink now, and asserts the PAIR. One frame proves nothing on its own: absence
+    // of colour under `no-color` is equally true of a theme system that was deleted.
+    const lineFor = async (theme: unknown): Promise<string> => {
+      const app = inkRender(
+        createElement(TheoTUIProvider, {
+          theme: theme as never,
+          children: createElement(SelectList, { items, onSubmit: () => {} }),
+        }),
+      );
+      await waitForCondition(() => (app.lastFrame() ?? "").includes("apple"), {
+        describe: "the select list to render its first item",
+      });
+      const line =
+        (app.lastFrame() ?? "").split("\n").find((l) => l.includes("apple")) ??
+        "";
+      app.unmount();
+      return line;
+    };
+
+    const dark = await lineFor(themes.dark);
+    const mono = await lineFor(themes["no-color"]);
+
+    // The affordance survives (M6 degrade-as-data); the colour around it is what is dropped.
+    expect(mono).toContain("❯ apple");
+    expect(dark).toContain("❯ apple");
+    // A colour SGR is `ESC [ 3n m`. Probed as a substring set rather than a RegExp literal: an
+    // escape byte inside a RegExp trips `no-control-regex`, and the disable comment would be a
+    // suppression where a plainer expression does the same job.
+    const hasColour = (frame: string): boolean =>
+      SGR_COLOURS.some((code) => frame.includes(code));
+    expect(hasColour(mono)).toBe(false);
+    expect(hasColour(dark)).toBe(true);
   });
 
   it("multi_select_toggles_with_space_and_submits_the_set", async () => {

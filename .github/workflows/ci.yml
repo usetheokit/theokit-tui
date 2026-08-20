@@ -50,6 +50,28 @@ jobs:
       - name: build
         run: pnpm build
 
+      # B-079 — the duplicate is DELIBERATE, and this comment is the reason recorded where the
+      # duplication is, because the next person to notice the cost will be reading this file.
+      #
+      # `test` and `coverage` execute the same 1700+ assertions, twice per matrix leg, four times
+      # per push. An item was filed to remove `test` as redundant. It was refuted by its own
+      # acceptance criterion, which asked whether instrumentation changes the timing profile enough
+      # to matter for a suite already measured to be timing-sensitive (B-058).
+      #
+      # It does. Measured 2026-08-20 on the 0.72.0 release-to-main PR: this job went red in the
+      # `coverage` step ONLY, with `test` green in the same job on the same commit. The defect was
+      # real (B-097): a test waited one macrotask for an async re-render, and under coverage
+      # instrumentation that flush did not fit in the tick.
+      #
+      #     pnpm test           37456ms  41987ms
+      #     pnpm test:coverage  50861ms  43860ms
+      #
+      # Overlapping ranges — not "coverage is slower by X", but the weaker and sufficient claim
+      # that the two have DIFFERENT timing distributions. A timing-sensitive suite run under two
+      # distributions is two experiments, not one repeated twice.
+      #
+      # So removing `test` would remove a distinct experiment, not a redundant one. If the ~301s
+      # median ever has to come down, cut it somewhere that is not buying a second timing profile.
       - name: test
         run: pnpm test
 

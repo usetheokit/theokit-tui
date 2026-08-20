@@ -5,6 +5,25 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.74.0] - 2026-08-20
+
+### Removed
+
+- **`WindowView.overflowUp` and `WindowView.overflowDown` (B-076).** Both were derived fields —
+  `overflowUp` was `hiddenBefore > 0` and `overflowDown` was `hiddenAfter > 0` — carried beside the
+  counts they came from. Two predicates for one fact.
+
+  **If you read them, write the expression instead:** `view.hiddenBefore > 0`. Nothing has to be
+  recomputed or recovered; the equivalence is now a comment on `hiddenBefore` itself, which is
+  where someone looking for the removed field will land.
+
+  This reaches `SlashMenu` too, which extends `WindowView`.
+
+  **A breaking change to a published type, and a minor under 0.x.** Recorded that way rather than
+  as a tidy-up: no reader was measured in this repository or in the one known consumer — which
+  cites the booleans in comments while explaining that it renders the counts — but consumers this
+  package cannot see are exactly the ones a removal reaches.
+
 ## [0.73.0] - 2026-08-20
 
 ### Changed
