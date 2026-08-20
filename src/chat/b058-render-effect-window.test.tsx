@@ -23,7 +23,19 @@ const CURSOR = "\u001B[7m";
 const hasCursor = (f: string) => f.includes(CURSOR) || f.includes("▏");
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-const ATTEMPTS = 60;
+// TWENTY, NOT SIXTY, AND THE REASON IS A MEASUREMENT ABOUT THIS FILE.
+//
+// The hazard was characterised at 60 mounts per arm — 60/60 lost against 0/60 — and that number
+// then stayed in a permanent suite, where it made these the two SLOWEST tests in the repository:
+// 23.6s and 9.1s, against 10.6s for the next slowest. Measured in run 3 of B-058's own DoD check,
+// which asked for exactly this list so "the next class is visible rather than discovered by the
+// run after". The next class was me.
+//
+// The separation is 100% against 0%, so 20 attempts distinguishes the arms as decisively as 60
+// and costs a third of the wall clock. What 60 bought was confidence in the CHARACTERISATION,
+// and that is recorded in the commit and the item; it is not something the suite has to re-earn
+// on every run.
+const ATTEMPTS = 20;
 
 /** Spin until `ready` holds, or until `limit` macrotasks have passed. Reports whether it held. */
 const spinUntil = async (
