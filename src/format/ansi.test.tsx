@@ -70,6 +70,19 @@ describe("sanitizeUntrusted (B-078)", () => {
   // pass of this function is doing the work. Measured: with the control backstop deleted, all six
   // of those end-to-end tests still passed. Here each pass is asserted separately, so a regression
   // names which one broke.
+  //
+  // DETECTION POWER, MEASURED — and written HERE rather than only in a commit message, because a
+  // commit message is not read by the person editing this file, and `BACKLOG.md` is gitignored so
+  // evidence living only there does not survive the machine. Delete one `.replace(...)` from
+  // `sanitizeUntrusted` and re-run THIS file:
+  //
+  //   .replace(CONTROL_RE, "") removed  -> 2 failed | 10 passed
+  //   .replace(OSC_RE, "")     removed  -> 2 failed | 10 passed
+  //   .replace(CSI_RE, "")     removed  -> 1 failed |  11 passed
+  //   nothing removed                   -> 12 passed
+  //
+  // Each pass has its own kill set, which is the property that makes this file worth having. The
+  // end-to-end layer gives 0 failed for the first of those three.
 
   it("removes_an_osc_string_terminated_either_way", () => {
     expect(sanitizeUntrusted(`${ESC}]8;;https://evil${ESC}\\x`)).toBe("x");

@@ -265,6 +265,14 @@ describe("B-072 — a root-level file is not hostage to subtrees that sort befor
     //
     // Caught by the review criterion "where did the expected value come from?" — here the expected
     // value was fine and the FIXTURE SIZE was the thing quietly coupled to a literal that moved.
+    //
+    // DETECTION POWER, MEASURED, and recorded here rather than only in a commit message: restore
+    // the depth-first `walk` from before B-072 and re-run this file.
+    //
+    //   depth-first walk restored, cap 1000 -> BOTH B-072 tests fail
+    //   without the `maxResults: 50` below  -> this test PASSES against that same broken walk
+    //
+    // The second line is why the argument is here at all.
     const hits = await searchFiles("pack", { cwd: CWD, fs, maxResults: 50 });
 
     expect(hits).toContain("package.json");
