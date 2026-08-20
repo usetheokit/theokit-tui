@@ -147,6 +147,24 @@ const settleWatching = async (
   // clock the 200 ms poll actually consumed under 4x oversubscription, which write it was. So the
   // record now carries them. A defect that appears in roughly one run in five is one you get a
   // handful of chances a day to observe, and each unrecorded field is a chance spent.
+  // B-068, bullet 3 — MEASURED, and the answer is the reassuring one.
+  //
+  // The item asked whether any test passes only because a wait gave up in silence. A green run
+  // (63/63) was instrumented to name every test that reaches this line. Seven do, and every one
+  // of them asserts an ABSENCE of change:
+  //
+  //     2x unfocused_composer_ignores_input
+  //     1x whitespace_only_enter_is_noop
+  //     1x single_line_mode_ignores_ctrl_j
+  //     1x single_line_mode / bare_escape_without_menu_keeps_composer_focused_and_typing_lands
+  //     1x question_mark_on_an_empty_buffer_toggles_help_and_is_not_typed
+  //     1x a_failing_wait_names_the_no_reaction_settle_that_preceded_it  (forces one on purpose)
+  //
+  // None would pass differently had the wait waited longer: there was never going to be a
+  // reaction. That is why the ceiling is a quiet return rather than a throw (B-057 ADR D3) —
+  // throwing would turn these six correct tests red on every run, systematically.
+  //
+  // What it must NOT be is invisible, and that is what this line fixes rather than the ceiling.
   if (!reacted) recordNoReaction(readFrame(), startedAt);
 };
 
@@ -228,21 +246,26 @@ async function mount(
   await tick();
 
   if (expectFocus) {
-    // WHAT THIS WAIT HAS BEEN MEASURED TO DO, which is less than the commit that added it claimed.
+    // THE CURSOR IS A PROXY FOR STATE, NOT FOR SUBSCRIPTION — which is why the yield below is
+    // load-bearing and this wait alone was not.
     //
-    // Instrumented to log every mount where the indicator was ABSENT here — i.e. every mount where
-    // this wait has real work — the count was 0 of 63 at idle, 0 of 63 at load 20, and 0 of 63 at
-    // load 44-46, the band where B-058's failures were originally seen. It has never been observed
-    // to wait.
+    // ink registers `useInput`'s handler inside a `useEffect` keyed on `isActive`
+    // (`ink/build/hooks/use-input.js`). So when focus lands the order is:
     //
-    // So it is a GUARD, not a demonstrated fix, and B-058 stays `triaged` for that reason. It is
-    // kept because it costs one frame read and because the condition it tests is the exactly
-    // correct one: `useInput` runs with `{ isActive: isFocused }`, so a keystroke arriving before
-    // focus IS dropped by design. What is unproven is that this ever happened.
+    //     isFocused=true -> RENDER (the cursor appears) -> commit -> effects -> on('input')
     //
-    // Absence over 63 mounts is weak evidence against a defect that appears in about one run in
-    // five — this note is here so the claim and its evidence sit in the same place, not to argue
-    // the mechanism is impossible.
+    // `ink-testing-library`'s `stdin.write` is SYNCHRONOUS: it emits 'data' to whoever is
+    // listening at that instant. Between the render and the effect, the frame shows the cursor
+    // and nobody is listening, so a write there is dropped with focus visibly present.
+    //
+    // MEASURED, and it is not a race — it is deterministic. 60 mounts per arm:
+    //
+    //     write at the first cursor frame      60/60 LOST
+    //     write one macrotask later             0/60 lost
+    //
+    // Pinned by `b058-render-effect-window.test.tsx`. That is the run-9 frame explained: the
+    // recorded frame contained the focus indicator because focus HAD landed — the subscription
+    // had not.
     await waitForCondition(
       () => hasFocusIndicator(instance.lastFrame() ?? ""),
       {
@@ -250,6 +273,15 @@ async function mount(
           "the composer to take focus (the cursor indicator to appear) — until it does, `useInput` is inactive and every keystroke is dropped",
       },
     );
+
+    // The yield that closes the window. It is an ORDERING guarantee, not a duration: React
+    // schedules passive effects on a MessageChannel task, and a MessageChannel task always drains
+    // before a `setTimeout` callback in Node. So this is not a fixed wait hoping to be long
+    // enough — the thing being waited for cannot still be pending when it resumes.
+    //
+    // That distinction is the whole of B-058. Every earlier attempt substituted a DURATION for an
+    // EVENT; this substitutes an event that happens-after.
+    await tick();
   }
   return instance;
 }
