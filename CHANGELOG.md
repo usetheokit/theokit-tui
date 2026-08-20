@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.72.0] - 2026-08-20
+
 ### Security
 
 - **`setTerminalTitle` and `osc8Link` now refuse caller values carrying control bytes (B-086).**
