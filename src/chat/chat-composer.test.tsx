@@ -72,6 +72,42 @@ beforeEach(() => {
   noReactionSettles.length = 0;
 });
 
+/**
+ * Does this frame show the composer's cursor — i.e. has it taken focus?
+ *
+ * TWO FORMS, and assuming one was my second mistake here. `input-row.tsx:62` computes
+ * `noColorMarker = monochrome && isFocused`, so a monochrome theme renders the marker `▏` where a
+ * coloured one renders the inverse-video cell. Ten tests timed out on a composer that WAS focused,
+ * under a no-color theme, because the predicate only knew the coloured form.
+ *
+ * Measured across the three mounts that differ:
+ *
+ *     default          "…> …\u001B[7m \u001B[27m"
+ *     placeholder      "…> …\u001B[7m \u001B[27m\u001B[2mType a message\u001B[22m"   (same cell)
+ *     autoFocus=false  "…> …"                                                      (neither)
+ */
+const hasFocusIndicator = (frame: string): boolean =>
+  frame.includes("\u001B[7m") || frame.includes("▏");
+
+// The record is its own function, and not only because the poll loop crossed a complexity ceiling
+// when this grew. The loop answers "has the frame reacted yet"; this answers "what will the next
+// occurrence need". They change for different reasons — the second grew twice in a day while the
+// first did not move — and reading either is easier without the other in the way.
+//
+const recordNoReaction = (rawFrame: string | undefined, startedAt: number) => {
+  const frame = rawFrame ?? "";
+  noReactionSettles.push(
+    [
+      `no reaction within ${String(CEILING_MS)}ms`,
+      `focused=${String(hasFocusIndicator(frame))}`,
+      // The poll is 20 iterations of a 10ms timer. Under load the wall clock it consumes is the
+      // number that says whether 200ms of BUDGET was ever 200ms of TIME.
+      `elapsedMs=${String(Math.round(performance.now() - startedAt))}`,
+      `frame stayed ${JSON.stringify(frame)}`,
+    ].join("; "),
+  );
+};
+
 const settleWatching = async (
   readFrame: () => string | undefined,
   before?: string,
@@ -111,19 +147,7 @@ const settleWatching = async (
   // clock the 200 ms poll actually consumed under 4x oversubscription, which write it was. So the
   // record now carries them. A defect that appears in roughly one run in five is one you get a
   // handful of chances a day to observe, and each unrecorded field is a chance spent.
-  if (!reacted) {
-    const frame = readFrame() ?? "";
-    noReactionSettles.push(
-      [
-        `no reaction within ${String(CEILING_MS)}ms`,
-        `focused=${String(frame.includes("\u001B[7m") || frame.includes("▏"))}`,
-        // The poll is 20 iterations of a 10ms timer. Under load the wall clock it consumes is the
-        // number that says whether 200ms of BUDGET was ever 200ms of TIME.
-        `elapsedMs=${String(Math.round(performance.now() - startedAt))}`,
-        `frame stayed ${JSON.stringify(frame)}`,
-      ].join("; "),
-    );
-  }
+  if (!reacted) recordNoReaction(readFrame(), startedAt);
 };
 
 // B-057, second review pass — the invariant is ORDER, and a required parameter cannot express it.
@@ -156,23 +180,6 @@ const settle = async () => settleWatching(lastRenderedFrame, undefined);
 /** Set by `mount`, so `settle` can watch the instance under test without threading it through. */
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
 const lastRenderedFrame = () => currentInstance?.lastFrame();
-
-/**
- * Does this frame show the composer's cursor — i.e. has it taken focus?
- *
- * TWO FORMS, and assuming one was my second mistake here. `input-row.tsx:62` computes
- * `noColorMarker = monochrome && isFocused`, so a monochrome theme renders the marker `▏` where a
- * coloured one renders the inverse-video cell. Ten tests timed out on a composer that WAS focused,
- * under a no-color theme, because the predicate only knew the coloured form.
- *
- * Measured across the three mounts that differ:
- *
- *     default          "…> …\u001B[7m \u001B[27m"
- *     placeholder      "…> …\u001B[7m \u001B[27m\u001B[2mType a message\u001B[22m"   (same cell)
- *     autoFocus=false  "…> …"                                                      (neither)
- */
-const hasFocusIndicator = (frame: string): boolean =>
-  frame.includes("\u001B[7m") || frame.includes("▏");
 
 // SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write immediately after
 // render() is silently dropped. Always settle after mount.
