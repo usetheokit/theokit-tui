@@ -5,6 +5,55 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.71.0] - 2026-08-20
+
+### Security
+
+- **An untrusted code block can no longer put a control sequence on your terminal (B-078).**
+  `CodeBlock` sanitised its input with the SGR-only stripper, so an OSC 8 hyperlink reached the
+  rendered frame **byte-for-byte**: a model's output could make arbitrary text clickable and, via
+  OSC 52, silently overwrite the clipboard.
+
+  Clipboard write is on by default on five of nine terminals surveyed from their own source —
+  Windows Terminal, kitty, alacritty, WezTerm, Ghostty. It is off on iTerm2 and xterm, and not
+  implemented in VTE. Clipboard **read** is not the threat: no terminal in that set permits it
+  unprompted.
+
+  The fix is a separate sanitiser rather than a wider `stripAnsi`, because the two have different
+  responsibilities: one removes colour from output this library authored, the other removes
+  everything from content it was handed and cannot vouch for. Its last pass is a stateless control
+  filter, and that is what carries the safety property — a structural matcher for `OSC … terminator`
+  cannot match a sequence that never terminates, which is precisely the shape of CVE-2022-46663.
+
+  Tabs, newlines and carriage returns survive, so code blocks still render as code.
+
+### Fixed
+
+- **`@`-mention search walks breadth-first, so a root-level file is no longer hostage to the
+  subtrees that sort before it (B-072).** Typing `@pack` in a directory containing `package.json`
+  used to return **nothing**.
+
+  The walk was depth-first and recursed into a directory the instant it met one, while the result
+  cap applies BEFORE ranking — so the cap decided which paths the ranker ever saw. Measured on this
+  repository, the capped walk read six directories and never opened `package.json`, `src/`, `tests/`
+  or `wiki/`. Breadth-first makes DEPTH decide who survives the cap instead of alphabetical luck,
+  which is what someone typing a query expects.
+
+  The default cap also rose from 50 to 1000. **On a small tree that alone is enough** — measured
+  depth-first at 1000, this repository does answer `@pack` with `package.json`. It stops being
+  enough as the tree grows: at the same cap, a 21-repository tree answers with a
+  `coverage/lcov-report/*.html` file, because depth-first still spends the budget on whatever sorts
+  first. Breadth-first is what makes the result independent of tree size.
+
+  The cap still applies before ranking, deliberately: ranking everything means walking everything,
+  and this runs once per keystroke with no debounce. Measured, a full walk is 8.4 ms here, 221 ms
+  across a 21-repo tree, and 2.1 seconds over a 150 000-file one. With the fix, `@pack` answers
+  correctly in 3.7 / 5.9 / 12.6 ms on those same three trees.
+
+  One consequence worth naming: B-071's test had been weakened to assert only that the menu was
+  populated, because the ranking could not be relied on. It now asserts the obvious match ranks
+  first — a test written around a defect, un-written.
+
 ## [0.70.0] - 2026-08-19
 
 ### Changed
