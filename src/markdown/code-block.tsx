@@ -7,6 +7,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
 import type { CodeTokens } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
 
 // Minimal structural types for lowlight's hast output — the real package
@@ -29,10 +30,6 @@ interface HighlighterLike {
 }
 
 const TAB_WIDTH = 4;
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsiInput = (value: string): string => value.replace(ANSI_RE, "");
 
 // hljs class → theme.code bucket (M6 T2.2 — colors live in the theme; the
 // class→bucket mapping is render-side knowledge and stays module-local,
@@ -179,12 +176,17 @@ export function highlightLine(
   }
 }
 
-/** Sanitize (ANSI strip, tab expand) + split; trailing newline is no row. */
+/**
+ * Sanitize (ANSI strip, tab expand) + split; trailing newline is no row.
+ *
+ * B-055 — the strip is the package's one `stripAnsi`, replacing a local copy that was
+ * byte-identical to it. Its scope is SGR only, which is what the local copy did too, so this
+ * change is behaviour-preserving. That scope is also a known gap for UNTRUSTED input — an OSC 8
+ * hyperlink or an OSC 52 clipboard write survives it — registered as B-078 rather than widened
+ * inside a de-duplication.
+ */
 function toCodeLines(code: string): string[] {
-  const sanitized = stripAnsiInput(code).replaceAll(
-    "\t",
-    " ".repeat(TAB_WIDTH),
-  );
+  const sanitized = stripAnsi(code).replaceAll("\t", " ".repeat(TAB_WIDTH));
   if (sanitized === "") {
     return [];
   }

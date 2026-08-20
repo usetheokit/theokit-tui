@@ -21,6 +21,7 @@ import { Output } from "../../src/renderer/output/output-grid.js";
 import { renderNodeToOutput } from "../../src/renderer/output/render-node.js";
 import Yoga from "yoga-layout";
 import { VirtualTerminal } from "./virtual-terminal.js";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // M18 T3.1 (plan m18-yoga-layout, ADR D5): the parity gate. Each corpus scene is
 // rendered through Ink (the baseline) AND our renderer, and the PLAIN-TEXT
@@ -30,12 +31,9 @@ import { VirtualTerminal } from "./virtual-terminal.js";
 // wiki/renderer/layout-parity.md. This is the M18 exit gate against the
 // existing corpus.
 
-const ANSI = new RegExp(String.fromCharCode(27) + "\\[[0-9;]*m", "g");
-
 /** Plain, trimmed, trailing-blank-stripped lines from an ANSI frame. */
 function plainLines(frame: string): string[] {
-  const lines = frame
-    .replace(ANSI, "")
+  const lines = stripAnsi(frame)
     .split("\n")
     .map((l) => l.replace(/\s+$/, ""));
   while (lines.length > 0 && lines[lines.length - 1] === "") {

@@ -4,14 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { AppStatusBar } from "./app-status-bar.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // M14 T1.2 (plan m14-status-bar, ADR D1): the slot row oracles — order,
 // separator emission between PRESENT slots only, width priority, degrade.
 // Snapshot budget for the milestone: <= 2, both here, both anchored.
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
 
 function renderBar(element: React.ReactElement): string {
   const instance = render(element);

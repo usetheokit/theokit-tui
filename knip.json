@@ -8,15 +8,12 @@
     "examples/**/*.tsx",
     "examples/**/*.ts",
     "benchmarks/**/*.ts",
-    "benchmarks/**/*.tsx"
+    "benchmarks/**/*.tsx",
+    "src/**/index.ts"
   ],
   "ignore": [
     "tests/**",
     "src/renderer/kill-ring.ts",
-    "src/renderer/undo-stack.ts",
-    "src/search/index.ts",
-    "src/renderer/hooks/index.ts",
-    "src/renderer/input/index.ts",
-    "src/renderer/output/index.ts"
+    "src/renderer/undo-stack.ts"
   ]
 }

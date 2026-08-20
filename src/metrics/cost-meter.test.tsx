@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CostMeter } from "./cost-meter.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
+import { stripAnsi } from "../format/ansi.js";
 
 // T2.3 (plan m5-metrics-surface, ADRs D2/D3): honest cost display.
 describe("CostMeter", () => {

@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, it } from "vitest";
+import { stripAnsi } from "../../src/format/ansi.js";
 
 // Showcase smoke: the all-primitives example plays its scripted turn and
 // exits cleanly when piped (ink7 single-final-frame contract) — one assert
@@ -21,8 +22,8 @@ it(
         },
       },
     );
-    // eslint-disable-next-line no-control-regex
-    const plain = out.replace(/\u001B\[[0-9;]*m/g, "");
+
+    const plain = stripAnsi(out);
     // Banner (static path in pipes) — printed exactly once.
     expect(plain).toContain("Theo TUI Showcase");
     expect(plain.split("Theo TUI Showcase").length - 1).toBe(1);

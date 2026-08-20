@@ -6,10 +6,7 @@ import {
   readTurnUsage,
   type UIMessageLike,
 } from "../agent/messages-to-events.js";
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\[[0-9;]*m/g;
-const stripAnsi = (v: string): string => v.replace(ANSI_RE, "");
+import { stripAnsi } from "../format/ansi.js";
 
 /**
  * Reproduces the EXACT footer wiring the scaffolded `tui/App.tsx` uses (create-theokit templates): read

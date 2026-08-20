@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { ChatMessage } from "./chat-message.js";
 import { TheoTUIProvider } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 describe("ChatMessage (T2.1)", () => {
   it("renders_user_message_with_glyph_prefix", async () => {
@@ -31,8 +32,8 @@ describe("ChatMessage (T2.1)", () => {
     const frame = await renderFrame(
       <ChatMessage role="assistant">reply</ChatMessage>,
     );
-    // eslint-disable-next-line no-control-regex
-    const plain = frame.replace(/\u001B\[[0-9;]*m/g, "");
+
+    const plain = stripAnsi(frame);
     expect(plain).toContain("⏺  reply");
   });
 

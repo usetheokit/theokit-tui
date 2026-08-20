@@ -6,12 +6,10 @@ import { SelectList } from "./select-list.js";
 import { windowFor } from "./select-list-model.js";
 import type { SelectListItem } from "./select-list-model.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // M22 T1.1 — the SelectList component driven through the itl-adapter (OUR
 // renderer + InputSource + FocusProvider). Deterministic keyboard oracle.
-
-const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
-const stripAnsi = (s: string): string => s.replace(ANSI_RE, "");
 
 const items: SelectListItem[] = [
   { value: "apple", label: "apple", description: "a fruit" },
@@ -392,23 +390,49 @@ describe("SelectList hidden-row counts (B-022)", () => {
       expect(countStartingWith(frame, "▼")).toBe(1);
     });
 
+    it("a_bad_initial_selection_reports_and_throws_like_a_bad_window", async () => {
+      // B-054 review (F-3) — the guard `window` already had, for the prop this slice added.
+      // Measured before it existed: NaN rendered zero rows and a `(NaN/12)` counter, and 2.5
+      // rendered no selection marker, with nothing reported. The B-021 `window: 0` shape, one prop
+      // over.
+      //
+      // It throws rather than degrading, because that is this package's contract:
+      // `reportGuardFailure` returns `never` and 37 test files rest on it.
+      // Called as a FUNCTION, not through `render` — the shape `window: 0` already uses at :209,
+      // because the guard runs before any hook and throws synchronously there.
+      for (const bad of [Number.NaN, 2.5, -1]) {
+        expect(() =>
+          SelectList({
+            items: many,
+            window: 4,
+            initialSelectionIndex: bad,
+            onSubmit: () => undefined,
+          }),
+        ).toThrow(/initialSelectionIndex must be a non-negative integer/);
+      }
+    });
+
     it("test_the_last_row_hides_everything_above_and_nothing_below", async () => {
       // Arrange
       const app = render(
         createElement(SelectList, {
           items: many,
           window: 4,
+          initialSelectionIndex: 11,
           onSubmit: () => {},
         }),
       );
       await app.flush();
 
-      // Act — one step up wraps to the end of the list.
-      app.stdin.write("\u001B[A");
-      await app.flush();
       const frame = app.lastFrame() ?? "";
       app.unmount();
 
+      // B-054 — this arrives at the last row by PROP, not by up-arrow wrap-around. Measured before
+      // the change: the two mutants "wrap becomes clamp" and "delete the upArrow branch" had
+      // IDENTICAL kill sets of four tests, so this rendering assertion died whenever the key layer
+      // did and could not fail for rendering reasons alone. `up_arrow_wraps_to_the_last_row` (:47)
+      // keeps that key-layer coverage; this test no longer duplicates it.
+      //
       // Assert — the mirror of the very first test in this block. Together the two pin the rule
       // rather than one example: eight hidden above here, eight hidden BELOW there, and the arrow
       // that carries the count changes with the edge.

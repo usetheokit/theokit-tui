@@ -9,13 +9,12 @@ import { preloadHighlighter } from "../markdown/code-block.js";
 import { ToolCall, formatArgs, formatToolName } from "./tool-call.js";
 import { ToolCallCard } from "./tool-call-card.js";
 import { TheoTUIProvider } from "../theme/theme.js";
+import { stripAnsi } from "../format/ansi.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
 const DOTS_FRAME_0 = "⠋";
 
 /** Compound-SGR-safe strip (SEPA phase-1 F7). */
-// eslint-disable-next-line no-control-regex
-const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
 
 describe("formatArgs (M26 name(args) header)", () => {
   it("formats_a_present_summary_in_parens", () => {
@@ -401,10 +400,7 @@ describe("ToolCall — toolStatus tokens (M6 T2.1)", () => {
 // bodies — pure composition of DiffViewer/ToolResult/CodeBlock inside the
 // card's indent slot. Snapshot budget for the milestone: <= 3, all here.
 
-// eslint-disable-next-line no-control-regex
-const M16_ANSI_RE = /\u001B\[[0-9;]*m/g;
-const m16plain = (frame: string | undefined): string =>
-  (frame ?? "").replace(M16_ANSI_RE, "");
+const m16plain = (frame: string | undefined): string => stripAnsi(frame ?? "");
 
 const VALID_PATCH = [
   "--- a/basic.ts",

@@ -36,9 +36,7 @@ import {
 import type { AgentStreamEvent } from "../../src/index.js";
 // (M1↔M2 composition asserted below — review wire-4.)
 import { renderFrame } from "../fixtures/helpers.js";
-
-// eslint-disable-next-line no-control-regex
-const stripAnsi = (s: string): string => s.replace(/\u001B\[[0-9;]*m/g, "");
+import { stripAnsi } from "../../src/format/ansi.js";
 
 describe("public API integration (T2.2)", () => {
   it("public_entry_composes_provider_and_message_for_both_roles", async () => {

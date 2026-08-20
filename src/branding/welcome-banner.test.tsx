@@ -6,14 +6,11 @@ import { describe, expect, it } from "vitest";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { WelcomeBanner } from "./welcome-banner.js";
 import type { WelcomeBannerProps } from "./welcome-banner.js";
+import { stripAnsi } from "../format/ansi.js";
 
 // T1.1 (plan m9-welcome-banner, ADRs D1-D5): the banner unit suite — house
 // static-component shape (boundary pairs, width sweep, batched snapshots,
 // typed negatives, token assert) per blueprint Corner 1.
-
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001B\[[0-9;]*m/g;
-const stripAnsi = (value: string): string => value.replace(ANSI_RE, "");
 
 const nonEmptyLines = (frame: string): string[] =>
   stripAnsi(frame)
