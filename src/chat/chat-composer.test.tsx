@@ -12,6 +12,7 @@ import {
 } from "./chat-composer.js";
 import { TheoTUIProvider } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { searchFiles } from "../search/file-search.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
 // SEPA brief: never trust prose renderings of control bytes).
@@ -849,12 +850,30 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     // Still not an exact row: pinning one path would fail the day the tree grows a file, for a
     // reason that has nothing to do with mentions.
     //
-    // B-072 review (F2) — waits on THIS query's frame, not on any counter. `waitForFrame(…, "(1/")`
-    // matched the frame belonging to the keystroke `"s"`, whose first hit is
-    // `sonar-project.properties`; the assertion then read a frame produced by a different query than
-    // the one it describes. A wait that can settle on the wrong frame makes any failure
-    // unattributable.
-    await waitForFrame(instance, "src/");
+    // B-093 — THE SECOND FIX OF THE SAME DEFECT, and the reason the first one did not take.
+    //
+    // B-072's review moved this wait from `"(1/"` to `"src/"` because `"(1/"` settled on the frame
+    // for the keystroke `"s"`. Measured 2026-08-20, `"src/"` settles on that SAME frame: the result
+    // set for `"s"` is 400 paths and CONTAINS `src/…`, so the substring cannot tell the two apart.
+    // It passed locally and failed on CI at `1 failed | 1684 passed`, which is what an ordering
+    // race looks like when the two machines differ in speed rather than in behaviour.
+    //
+    //   Q=s    TOTAL=400  TOP="sonar-project.properties"  contains "src/" -> true
+    //   Q=sr   TOTAL=367  TOP="src/index.ts"
+    //   Q=src  TOTAL=304  TOP="src/index.ts"
+    //
+    // The component is NOT at fault — `useMentionMenuState` aborts the superseded search and checks
+    // `signal.aborted` before setting state, so the menu correctly keeps showing the last completed
+    // result set while a newer one is in flight. That is the behaviour; the test was reading it as
+    // if it were the answer.
+    //
+    // So the wait now keys on something an intermediate frame CANNOT satisfy: the SIZE of this
+    // query's result set, taken from the same function the component calls. Deterministic rather
+    // than time-based, and independent of how many files the tree happens to hold. It is not
+    // circular with the assertion — the count identifies WHICH frame, the assertion checks HOW that
+    // frame is RANKED, which is the property under test.
+    const expected = await searchFiles("src", { cwd: process.cwd() });
+    await waitForFrame(instance, `(1/${String(expected.length)})`);
     const frame = plain(instance.lastFrame());
     expect(frame).toMatch(/\(1\/\d+\)/); // a counter means candidates arrived
     expect(frame).toContain("❯ "); // and one of them is selected
