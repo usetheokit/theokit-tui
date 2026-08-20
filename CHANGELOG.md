@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.73.0] - 2026-08-20
+
 ### Changed
 
 - **`createFrameBudget` no longer accepts a negative `frameBudgetMs`, and `-1` in particular now
