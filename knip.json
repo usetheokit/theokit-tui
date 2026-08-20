@@ -11,7 +11,8 @@
     "benchmarks/**/*.tsx",
     "src/**/index.ts",
     "scripts/sync-version.mjs",
-    "scripts/gate-scope.mjs"
+    "scripts/gate-scope.mjs",
+    "scripts/*.test.mjs"
   ],
   "ignore": ["tests/**"],
   "include": ["files"]
