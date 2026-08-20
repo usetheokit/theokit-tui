@@ -55,6 +55,45 @@ const counters = {
   },
 };
 
+/**
+ * B-102 — source files this gate's INPUT never contained.
+ *
+ * The scope line answers "how much did it inspect" (B-084). It cannot answer "of what". Measured
+ * twice on 2026-08-20: `pnpm lint` printed "354 files inspected", exited 0, and CI went red on a
+ * file that was on disk and not in the index. `lint` builds its list from `git ls-files`, so an
+ * unstaged file is not in it — correct, reproducible (B-051), and invisible.
+ *
+ * The extensions are DERIVED from the list handed in rather than configured, so this and the npm
+ * script's globs can never disagree. A second definition of "source file" is B-055 starting over.
+ *
+ * Reports; never fails (ADR D1). A file nobody staged is not part of the repository, and a gate
+ * that is red during ordinary work is a gate people learn to route around.
+ *
+ * Any git failure returns [] — in a tarball checkout there is no repository, and a diagnostic that
+ * breaks a passing build because its own instrument is missing has made things worse.
+ */
+function unInspectedSourceFiles(inspected) {
+  const extensions = new Set(
+    inspected
+      .map((f) => f.slice(f.lastIndexOf(".")))
+      .filter((e) => e.length > 1 && e.startsWith(".")),
+  );
+  if (extensions.size === 0) return [];
+
+  const listed = spawnSync(
+    "git",
+    ["ls-files", "--others", "--exclude-standard"],
+    { encoding: "utf8", shell: false },
+  );
+  if (listed.error || listed.status !== 0) return [];
+
+  const handed = new Set(inspected);
+  return listed.stdout
+    .split("\n")
+    .filter((f) => f !== "" && !handed.has(f))
+    .filter((f) => extensions.has(f.slice(f.lastIndexOf("."))));
+}
+
 const result = spawnSync(command[0], command.slice(1), {
   encoding: "utf8",
   shell: false,
@@ -96,3 +135,15 @@ if (count === 0) {
 }
 
 console.log(`${label}: ${String(count)} files inspected`);
+
+// The gap, stated only when there is one. In the steady state this prints nothing.
+const missed = unInspectedSourceFiles(command.slice(command.indexOf("--") + 1));
+if (missed.length > 0) {
+  const shown = missed.slice(0, 5).join(", ");
+  const rest =
+    missed.length > 5 ? `, and ${String(missed.length - 5)} more` : "";
+  console.log(
+    `${label}: ${String(missed.length)} untracked source file(s) NOT inspected — ` +
+      `${shown}${rest}. This gate reads the index; stage them to have them checked.`,
+  );
+}

@@ -5,6 +5,22 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.76.1] - 2026-08-20
+
+### Changed
+
+- **The lint gate now names the source files it did NOT inspect (B-102).**
+
+  `pnpm lint` reads `git ls-files`, so a file on disk and not yet staged is not in its input — it
+  then reports "354 files inspected" and exits 0, a count that is honest about the wrong set. Two
+  CI failures in one day were exactly that.
+
+  It reports rather than fails: a file nobody staged is not part of the repository, and a gate
+  that is red during ordinary work is a gate people route around. **This is a diagnostic — no
+  published behaviour changes and no build fails that did not fail before.**
+
+  Affects contributors running the gates locally, not consumers of the package.
+
 ## [0.76.0] - 2026-08-20
 
 ### Added
