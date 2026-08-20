@@ -39,6 +39,14 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   ahead of both gates on purpose: off-TTY is where tests and CI run, so that is where a caller's
   bug should surface, and `osc8Link` hands the unvalidated string back rather than discarding it.
 
+### Fixed
+
+- **The exported `VERSION` constant reports `0.72.0` (B-095).** It is maintained separately from
+  `package.json` and lagged behind it during this cut until the export-surface contract test caught
+  the disagreement. Nothing shipped wrong — the mismatch never left the release branch — and it is
+  recorded here because `VERSION` is `@public`: comparing it is how a consumer confirms they are
+  running a build that carries the OSC refusal below, rather than inferring it from a lockfile.
+
 ### Changed
 
 - **`setTerminalTitle` and `osc8Link` reject inputs they previously accepted (B-086).** Recorded
