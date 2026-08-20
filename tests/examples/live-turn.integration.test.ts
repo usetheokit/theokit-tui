@@ -34,7 +34,7 @@ describe("examples/scenes/live-turn.tsx (T5.1)", () => {
       expect(out).toContain("3 subagents");
       expect(out).toContain("1 of 3");
       // CollapsibleBlock / ThinkingBlock affordance (collapsed).
-      expect(out).toContain("▶");
+      expect(out).toContain("▸");
       expect(out).toContain("Thinking");
       // Toast.
       expect(out).toContain("build finished");

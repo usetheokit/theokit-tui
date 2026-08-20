@@ -57,8 +57,9 @@ export function ExpandableOutput({
       {open ? expanded : collapsed}
       <Text dimColor>
         {open
-          ? "▼ (ctrl+r to collapse)"
-          : `▶ … ${hiddenCount} more (ctrl+r to expand)`}
+          ? // B-053 — the disclosure pair is `▾`/`▸`; `▲`/`▼` belong to window overflow.
+            "▾ (ctrl+r to collapse)"
+          : `▸ … ${hiddenCount} more (ctrl+r to expand)`}
       </Text>
     </Box>
   );

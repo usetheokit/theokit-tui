@@ -16,7 +16,7 @@ import { useInput } from "../renderer/input/use-input.js";
 // each block owns only its own state (the M15/M23 declarative rule).
 
 export interface CollapsibleBlockProps extends LayoutMarginProps {
-  /** The always-visible summary line (after the ▶/▼ affordance). */
+  /** The always-visible summary line (after the `▸`/`▾` disclosure affordance — B-053). */
   summary: ReactNode;
   /** The body shown only when expanded. */
   children: ReactNode;
@@ -53,10 +53,22 @@ export function CollapsibleBlock({
     { isActive: isFocused },
   );
 
+  // B-053 — SMALL triangles for disclosure, large ones for overflow.
+  //
+  // `▼` used to mean three unrelated things in this package: "expand this section", "there is more
+  // output behind this", and "N rows are hidden below the window". B-022 and B-052 made the third
+  // meaning numeric across all three list views, which made the collision concrete rather than
+  // theoretical: measured at HEAD, one frame renders `▼ 8` from a CollapsibleBlock whose summary
+  // happens to be a number, and `▼ 4` from an overflowing menu, four lines apart — identical in
+  // shape, unrelated in meaning.
+  //
+  // The distinction is weight, not direction, because direction is already load-bearing on both
+  // sides: disclosure toggles down/right, overflow shows up/down simultaneously. `▾`/`▸` are the
+  // disclosure pair; `▲`/`▼` are the overflow pair. One glyph, one meaning.
   return (
     <Box flexDirection="column" {...margin}>
       <Text>
-        {shown ? "▼" : "▶"} {summary}
+        {shown ? "▾" : "▸"} {summary}
       </Text>
       {shown ? children : null}
     </Box>
