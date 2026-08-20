@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.69.0] - 2026-08-19
+
 ### Security
 
 - **`diff` moved from 7 to 8.0.4, past the published advisory (B-069).** `GHSA-73rr-hh4g-fpgx` /
