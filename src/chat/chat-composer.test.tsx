@@ -76,6 +76,7 @@ const settleWatching = async (
   readFrame: () => string | undefined,
   before?: string,
 ) => {
+  const startedAt = performance.now();
   let previous: string | undefined;
   // B-057 — the fix, and it is one boolean. Stability alone was never the condition: the frame is
   // trivially "stable" in the window between the write and Ink's render, which is exactly when the
@@ -97,9 +98,30 @@ const settleWatching = async (
   // overall, 27.4s -> 23.9s, because the common case now returns as soon as the change lands.
   //
   // B-058 — quiet, not silent. The event is recorded so a later failure can name it.
+  //
+  // WHAT IT RECORDS GREW, and the reason is that the last version cost a whole investigation.
+  //
+  // A no-reaction settle used to say only "the frame stayed X". Measured at load 46, run 9 of ten:
+  // the `h` of "hi" vanished and the recorded frame was
+  // `"\u001b[36m> \u001b[39m\u001b[7m \u001b[27m"` — which CONTAINS the focus indicator. That
+  // single fact refuted the mechanism I had just committed (that the composer was not yet focused),
+  // and it was only visible because the frame bytes happened to be in the record.
+  //
+  // Everything else about that moment was gone: whether the write reached a listener, how much wall
+  // clock the 200 ms poll actually consumed under 4x oversubscription, which write it was. So the
+  // record now carries them. A defect that appears in roughly one run in five is one you get a
+  // handful of chances a day to observe, and each unrecorded field is a chance spent.
   if (!reacted) {
+    const frame = readFrame() ?? "";
     noReactionSettles.push(
-      `no reaction within ${String(CEILING_MS)}ms; frame stayed ${JSON.stringify(readFrame() ?? "")}`,
+      [
+        `no reaction within ${String(CEILING_MS)}ms`,
+        `focused=${String(frame.includes("\u001B[7m") || frame.includes("▏"))}`,
+        // The poll is 20 iterations of a 10ms timer. Under load the wall clock it consumes is the
+        // number that says whether 200ms of BUDGET was ever 200ms of TIME.
+        `elapsedMs=${String(Math.round(performance.now() - startedAt))}`,
+        `frame stayed ${JSON.stringify(frame)}`,
+      ].join("; "),
     );
   }
 };
@@ -637,6 +659,21 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     expect(message).toContain("B-058");
     expect(message).toContain("no reaction observed");
     expect(message).toMatch(/settle\(s\) reached the 200ms ceiling/);
+
+    // THE FIELDS ARE PART OF THE CONTRACT, not decoration, and they are asserted because their
+    // absence is what cost an investigation.
+    //
+    // At load 46, run 9 of ten, the `h` of "hi" vanished and the record said only "the frame stayed
+    // X". X happened to contain the focus indicator, which refuted the mechanism that had just been
+    // committed — and that was luck: nothing had asked for focus to be recorded. Everything else
+    // about the moment was gone.
+    //
+    // `focused` distinguishes "the composer was not listening yet" from "it was listening and the
+    // write still vanished" — the two have different causes and only one was ever ruled out.
+    // `elapsedMs` says whether the 200ms BUDGET was ever 200ms of TIME: the poll is 20 iterations
+    // of a 10ms timer, and under 4x oversubscription a scheduler owes nobody that.
+    expect(message).toMatch(/focused=(true|false)/);
+    expect(message).toMatch(/elapsedMs=\d+/);
   });
 
   it("tab_completes_to_command_with_trailing_space", async () => {
