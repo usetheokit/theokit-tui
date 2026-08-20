@@ -72,10 +72,47 @@ beforeEach(() => {
   noReactionSettles.length = 0;
 });
 
+/**
+ * Does this frame show the composer's cursor — i.e. has it taken focus?
+ *
+ * TWO FORMS, and assuming one was my second mistake here. `input-row.tsx:62` computes
+ * `noColorMarker = monochrome && isFocused`, so a monochrome theme renders the marker `▏` where a
+ * coloured one renders the inverse-video cell. Ten tests timed out on a composer that WAS focused,
+ * under a no-color theme, because the predicate only knew the coloured form.
+ *
+ * Measured across the three mounts that differ:
+ *
+ *     default          "…> …\u001B[7m \u001B[27m"
+ *     placeholder      "…> …\u001B[7m \u001B[27m\u001B[2mType a message\u001B[22m"   (same cell)
+ *     autoFocus=false  "…> …"                                                      (neither)
+ */
+const hasFocusIndicator = (frame: string): boolean =>
+  frame.includes("\u001B[7m") || frame.includes("▏");
+
+// The record is its own function, and not only because the poll loop crossed a complexity ceiling
+// when this grew. The loop answers "has the frame reacted yet"; this answers "what will the next
+// occurrence need". They change for different reasons — the second grew twice in a day while the
+// first did not move — and reading either is easier without the other in the way.
+//
+const recordNoReaction = (rawFrame: string | undefined, startedAt: number) => {
+  const frame = rawFrame ?? "";
+  noReactionSettles.push(
+    [
+      `no reaction within ${String(CEILING_MS)}ms`,
+      `focused=${String(hasFocusIndicator(frame))}`,
+      // The poll is 20 iterations of a 10ms timer. Under load the wall clock it consumes is the
+      // number that says whether 200ms of BUDGET was ever 200ms of TIME.
+      `elapsedMs=${String(Math.round(performance.now() - startedAt))}`,
+      `frame stayed ${JSON.stringify(frame)}`,
+    ].join("; "),
+  );
+};
+
 const settleWatching = async (
   readFrame: () => string | undefined,
   before?: string,
 ) => {
+  const startedAt = performance.now();
   let previous: string | undefined;
   // B-057 — the fix, and it is one boolean. Stability alone was never the condition: the frame is
   // trivially "stable" in the window between the write and Ink's render, which is exactly when the
@@ -97,11 +134,20 @@ const settleWatching = async (
   // overall, 27.4s -> 23.9s, because the common case now returns as soon as the change lands.
   //
   // B-058 — quiet, not silent. The event is recorded so a later failure can name it.
-  if (!reacted) {
-    noReactionSettles.push(
-      `no reaction within ${String(CEILING_MS)}ms; frame stayed ${JSON.stringify(readFrame() ?? "")}`,
-    );
-  }
+  //
+  // WHAT IT RECORDS GREW, and the reason is that the last version cost a whole investigation.
+  //
+  // A no-reaction settle used to say only "the frame stayed X". Measured at load 46, run 9 of ten:
+  // the `h` of "hi" vanished and the recorded frame was
+  // `"\u001b[36m> \u001b[39m\u001b[7m \u001b[27m"` — which CONTAINS the focus indicator. That
+  // single fact refuted the mechanism I had just committed (that the composer was not yet focused),
+  // and it was only visible because the frame bytes happened to be in the record.
+  //
+  // Everything else about that moment was gone: whether the write reached a listener, how much wall
+  // clock the 200 ms poll actually consumed under 4x oversubscription, which write it was. So the
+  // record now carries them. A defect that appears in roughly one run in five is one you get a
+  // handful of chances a day to observe, and each unrecorded field is a chance spent.
+  if (!reacted) recordNoReaction(readFrame(), startedAt);
 };
 
 // B-057, second review pass — the invariant is ORDER, and a required parameter cannot express it.
@@ -135,13 +181,76 @@ const settle = async () => settleWatching(lastRenderedFrame, undefined);
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
 const lastRenderedFrame = () => currentInstance?.lastFrame();
 
-// SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write
-// immediately after render() is silently dropped. Always settle after mount.
-async function mount(ui: Parameters<typeof render>[0]) {
+// SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write immediately after
+// render() is silently dropped. Always settle after mount.
+//
+// B-058 — THIS WAITED TWO FIXED TICKS, which is a duration standing in for an event, and it is the
+// same defect B-093 and B-097 fixed one layer up. The write is not lost in the stream: `useInput`
+// runs with `{ isActive: isFocused }` (`chat-composer.tsx:535`), so a key that arrives before the
+// focus effect flushes is IGNORED BY DESIGN — the component behaves correctly and the test loses a
+// keystroke.
+//
+// Measured under load: the suite failed with `waitFor: timed out ... waiting for the frame to
+// contain "hi" — last frame: > i`. The `h` is missing entirely, and the B-058 diagnostic names the
+// cause it could not previously attribute: "no reaction within 200ms; frame stayed <empty
+// composer>" on the FIRST settle.
+//
+// So it now waits for the CONDITION. `input-row.tsx:38` renders `<Text inverse={focused}>`, and its
+// comment at :75 says the cursor cell exists "only while focused; blurred composers render plain
+// text" — which makes the inverse-video cell an exact observation of focus rather than a proxy for
+// it. Measured: absent at t0, present at t1.
+async function mount(
+  ui: Parameters<typeof render>[0],
+  /**
+   * Set `false` for a composer that must NOT take focus — `autoFocus={false}`.
+   *
+   * Measured, because the first version of this helper waited unconditionally and turned 43 of 63
+   * tests red: an unfocused composer renders `"\u001B[36m> \u001B[39m"` with no cursor cell, ever,
+   * so the wait could only ever time out. The placeholder variant was the case I expected to
+   * differ and does NOT — it renders the SAME cell followed by the dim text:
+   *
+   *     default          "…> …\u001B[7m \u001B[27m"
+   *     placeholder      "…> …\u001B[7m \u001B[27m\u001B[2mType a message\u001B[22m"
+   *     autoFocus=false  "…> …"
+   */
+  expectFocus = true,
+) {
   const instance = render(ui);
   currentInstance = instance;
+
+  // The two ticks STAY, and removing them was my first mistake here. `waitForCondition` checks
+  // before it waits — "an already-satisfied condition must not cost an interval" — so replacing
+  // the ticks with it made `mount` sometimes await NOTHING, which is FEWER than before. 28 tests
+  // failed with the spy never called: focus was fine, and the other mount effects had not run.
+  //
+  // The focus wait is an ADDITION to the ticks, not a replacement for them.
   await tick();
   await tick();
+
+  if (expectFocus) {
+    // WHAT THIS WAIT HAS BEEN MEASURED TO DO, which is less than the commit that added it claimed.
+    //
+    // Instrumented to log every mount where the indicator was ABSENT here — i.e. every mount where
+    // this wait has real work — the count was 0 of 63 at idle, 0 of 63 at load 20, and 0 of 63 at
+    // load 44-46, the band where B-058's failures were originally seen. It has never been observed
+    // to wait.
+    //
+    // So it is a GUARD, not a demonstrated fix, and B-058 stays `triaged` for that reason. It is
+    // kept because it costs one frame read and because the condition it tests is the exactly
+    // correct one: `useInput` runs with `{ isActive: isFocused }`, so a keystroke arriving before
+    // focus IS dropped by design. What is unproven is that this ever happened.
+    //
+    // Absence over 63 mounts is weak evidence against a defect that appears in about one run in
+    // five — this note is here so the claim and its evidence sit in the same place, not to argue
+    // the mechanism is impossible.
+    await waitForCondition(
+      () => hasFocusIndicator(instance.lastFrame() ?? ""),
+      {
+        describe:
+          "the composer to take focus (the cursor indicator to appear) — until it does, `useInput` is inactive and every keystroke is dropped",
+      },
+    );
+  }
   return instance;
 }
 
@@ -289,6 +398,7 @@ describe("ChatComposer (T3.2)", () => {
     const onSubmit = vi.fn();
     const instance = await mount(
       <ChatComposer onSubmit={onSubmit} autoFocus={false} />,
+      false,
     );
     await type(instance, ["abc", ENTER]);
     expect(onSubmit).not.toHaveBeenCalled();
@@ -571,6 +681,21 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     expect(message).toContain("B-058");
     expect(message).toContain("no reaction observed");
     expect(message).toMatch(/settle\(s\) reached the 200ms ceiling/);
+
+    // THE FIELDS ARE PART OF THE CONTRACT, not decoration, and they are asserted because their
+    // absence is what cost an investigation.
+    //
+    // At load 46, run 9 of ten, the `h` of "hi" vanished and the record said only "the frame stayed
+    // X". X happened to contain the focus indicator, which refuted the mechanism that had just been
+    // committed — and that was luck: nothing had asked for focus to be recorded. Everything else
+    // about the moment was gone.
+    //
+    // `focused` distinguishes "the composer was not listening yet" from "it was listening and the
+    // write still vanished" — the two have different causes and only one was ever ruled out.
+    // `elapsedMs` says whether the 200ms BUDGET was ever 200ms of TIME: the poll is 20 iterations
+    // of a 10ms timer, and under 4x oversubscription a scheduler owes nobody that.
+    expect(message).toMatch(/focused=(true|false)/);
+    expect(message).toMatch(/elapsedMs=\d+/);
   });
 
   it("tab_completes_to_command_with_trailing_space", async () => {
