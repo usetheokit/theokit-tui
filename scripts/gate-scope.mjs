@@ -44,7 +44,8 @@ if (label === undefined || command.length === 0) {
 /** How each gate's own output reveals what it looked at. Counting, never guessing. */
 const counters = {
   typecheck: (stdout) =>
-    stdout.split("\n").filter((l) => l !== "" && !l.includes("node_modules")).length,
+    stdout.split("\n").filter((l) => l !== "" && !l.includes("node_modules"))
+      .length,
   lint: (stdout) => {
     try {
       return JSON.parse(stdout).length;
@@ -60,7 +61,9 @@ const result = spawnSync(command[0], command.slice(1), {
 });
 
 if (result.error) {
-  console.error(`gate-scope: ${label}: could not run ${command[0]}: ${result.error.message}`);
+  console.error(
+    `gate-scope: ${label}: could not run ${command[0]}: ${result.error.message}`,
+  );
   process.exit(2);
 }
 
@@ -77,7 +80,9 @@ if (status !== 0) {
 
 const count = (counters[label] ?? (() => null))(result.stdout);
 if (count === null) {
-  console.error(`gate-scope: ${label}: passed, but its output could not be counted`);
+  console.error(
+    `gate-scope: ${label}: passed, but its output could not be counted`,
+  );
   process.exit(2);
 }
 
