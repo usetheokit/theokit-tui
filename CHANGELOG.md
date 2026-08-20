@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.76.0] - 2026-08-20
+
 ### Added
 
 - **`narrowingLayer` — a `SurfaceLayer` whose `when` narrows the state for `render` (B-074).**
