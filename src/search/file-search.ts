@@ -37,7 +37,14 @@ export interface SearchOptions {
 }
 
 const DEFAULT_SKIP = new Set([".git", "node_modules"]);
-const DEFAULT_MAX_RESULTS = 50;
+/**
+ * B-072 — 50 until 2026-08-20. Fifty is a fine number for a MENU and a bad one for a WALK: the
+ * cap applies before ranking, so it decides which paths the ranker ever sees. Measured with the
+ * breadth-first walk, 1000 answers `@pack` correctly in 3.7 ms here, 5.9 ms across the umbrella and
+ * 12.6 ms over a 150k-file tree — while a full uncapped walk of that last tree is 2.1 seconds, and
+ * `searchFiles` runs once per keystroke with no debounce.
+ */
+const DEFAULT_MAX_RESULTS = 1000;
 
 /** Hidden entries (name starts with `.`) are excluded by default — the file
  * picker convention (Claude Code parity): the cwd walk never descends into them,
@@ -62,6 +69,72 @@ export const nodeFileSystem: FileSystemLike = {
   },
 };
 
+/**
+ * Collects cwd-relative file paths, LEVEL BY LEVEL.
+ *
+ * B-072 — this was depth-first, and that is what made `@pack` miss `package.json`. It recursed into
+ * a directory the instant it met one, so a root-level file was hostage to every subtree whose name
+ * sorted before it: measured on this repo, the capped walk read six directories — `.`,
+ * `benchmarks`, `benchmarks/baselines`, `examples`, `examples/components`, `examples/renderer` —
+ * and never opened `package.json`, `src/`, `tests/` or `wiki/`.
+ *
+ * Breadth-first makes DEPTH decide who survives the cap instead of alphabetical luck, which is the
+ * property a human typing a query actually expects: the shallow file they are thinking of comes
+ * first. Raising the cap alone does NOT fix it — measured at depth-first with a 1000 cap, an
+ * umbrella-sized tree still answered `@pack` with a `coverage/lcov-report/*.html`.
+ *
+ * The cap still applies BEFORE ranking, deliberately. Ranking everything means walking everything,
+ * and `searchFiles` runs once per keystroke with no debounce and no cache: measured, a full walk is
+ * 8.4 ms here, 221 ms across the umbrella, and 2.1 SECONDS over `~/Projetos`.
+ */
+interface WalkNode {
+  dir: string;
+  prefix: string;
+  depth: number;
+}
+
+/**
+ * Drains one directory: files land in `results`, subdirectories are QUEUED into `next` rather than
+ * descended into. Queuing instead of recursing is the entire B-072 fix.
+ *
+ * Extracted from `walk` because that function reached a cyclomatic complexity of 13 against a
+ * budget of 10 — and because "what happens to one directory" is a cohesive thing to name.
+ */
+async function drainDir(
+  fs: FileSystemLike,
+  ig: Ignore,
+  node: WalkNode,
+  results: string[],
+  next: WalkNode[],
+  maxResults: number,
+): Promise<void> {
+  let entries: DirEntryLike[];
+  try {
+    entries = await fs.readDir(node.dir);
+  } catch {
+    return; // unreadable dir -> skip, never throw
+  }
+
+  for (const entry of entries) {
+    if (results.length >= maxResults) {
+      return;
+    }
+    const rel = includedRelPath(entry, ig, node.prefix);
+    if (rel === null) {
+      continue;
+    }
+    if (entry.isDirectory) {
+      next.push({
+        dir: join(node.dir, entry.name),
+        prefix: rel,
+        depth: node.depth + 1,
+      });
+    } else {
+      results.push(rel);
+    }
+  }
+}
+
 async function walk(
   fs: FileSystemLike,
   ig: Ignore,
@@ -72,40 +145,21 @@ async function walk(
   options: Required<Pick<SearchOptions, "maxResults" | "maxDepth">>,
   signal?: AbortSignal,
 ): Promise<void> {
-  if (depth > options.maxDepth || results.length >= options.maxResults) {
-    return;
-  }
-  if (signal?.aborted) {
-    return;
-  }
-  let entries: DirEntryLike[];
-  try {
-    entries = await fs.readDir(dir);
-  } catch {
-    return; // unreadable dir → skip, never throw
-  }
-  for (const entry of entries) {
-    if (results.length >= options.maxResults) {
-      return;
+  let frontier: WalkNode[] = [{ dir, prefix, depth }];
+
+  while (frontier.length > 0 && results.length < options.maxResults) {
+    const next: WalkNode[] = [];
+
+    for (const node of frontier) {
+      if (signal?.aborted || results.length >= options.maxResults) {
+        return;
+      }
+      if (node.depth <= options.maxDepth) {
+        await drainDir(fs, ig, node, results, next, options.maxResults);
+      }
     }
-    const rel = includedRelPath(entry, ig, prefix);
-    if (rel === null) {
-      continue;
-    }
-    if (entry.isDirectory) {
-      await walk(
-        fs,
-        ig,
-        join(dir, entry.name),
-        rel,
-        depth + 1,
-        results,
-        options,
-        signal,
-      );
-    } else {
-      results.push(rel);
-    }
+
+    frontier = next;
   }
 }
 
