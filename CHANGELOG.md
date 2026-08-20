@@ -19,9 +19,23 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
   **They now throw rather than strip**, and that is deliberate: the caller chose the value, so a
   control byte is a defect in their code, not hostile data from outside — silently repairing it
-  would hide their bug and ship a title that is not the one they wrote. An incorrect caller gets an
-  exception where it previously got a broken terminal. Well-formed values emit byte-identically to
-  before.
+  would hide their bug and ship a title that is not the one they wrote. Well-formed values emit
+  byte-identically to before.
+
+  **What an incorrect caller sees now, stated in both directions rather than only the flattering
+  one.** On a TTY they got a broken terminal and now get an exception. **Off a TTY they got a
+  silent no-op and now also get an exception** — `setTerminalTitle` writes nothing there, and
+  `osc8Link` returns the text verbatim, so neither was visibly wrong before. The validation runs
+  ahead of both gates on purpose: off-TTY is where tests and CI run, so that is where a caller's
+  bug should surface, and `osc8Link` hands the unvalidated string back rather than discarding it.
+
+### Changed
+
+- **`setTerminalTitle` and `osc8Link` reject inputs they previously accepted (B-086).** Recorded
+  separately from the security note above because it is the part that can break a working caller:
+  any value carrying a C0 or C1 control byte now raises `RangeError` instead of being emitted. That
+  is a behaviour change on two published functions, which is why this release is a minor rather
+  than the patch its section headings would otherwise derive.
 
 ## [0.71.0] - 2026-08-20
 

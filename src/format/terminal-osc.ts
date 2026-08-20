@@ -8,7 +8,9 @@ import { hasControlBytes } from "./ansi.js";
 // a multiplexer stream). `title`/`url`/`text` are REFUSED when they carry a control
 // byte (B-086): such a byte terminates the OSC and lets what follows run as a new
 // command. The note that used to sit here said to sanitize upstream, which was a
-// comment standing in for a control on a function with zero in-repo callers.
+// comment standing in for a control on functions whose real callers are consumers this repo
+// cannot see. (The examples under `examples/` do call them — with clean literals — so the
+// premise "zero in-repo callers" was wrong; the conclusion was not.)
 
 /** A stdout-like sink: `write` + the TTY flag (injectable for tests). */
 export interface OscSink {
@@ -20,11 +22,6 @@ const underMultiplexer = (env: NodeJS.ProcessEnv): boolean =>
   env["TMUX"] !== undefined ||
   env["STY"] !== undefined ||
   env["ZELLIJ"] !== undefined;
-
-/** Set the terminal window/tab title (OSC 0). A no-op on a non-TTY sink. Unlike
- * `osc8Link`, this does NOT gate on a multiplexer: tmux/screen pass OSC-0 title
- * sequences through to the outer terminal, so gating would break title-passthrough
- * (whereas OSC-8 hyperlinks are not reliably forwarded — hence the asymmetry). */
 
 /**
  * Refuses a caller value that could close the OSC and open a new one.
@@ -51,6 +48,19 @@ function refuseControlBytes(value: string, argument: string): void {
   );
 }
 
+/**
+ * Set the terminal window/tab title (OSC 0).
+ *
+ * A no-op on a non-TTY sink — but it still REFUSES a `title` carrying a control byte first, so an
+ * off-TTY call that would have written nothing now throws (B-086). That ordering is deliberate:
+ * off-TTY is where tests and CI run, so it surfaces a caller's bug before a real terminal sees it.
+ *
+ * Unlike `osc8Link`, this does NOT gate on a multiplexer: tmux/screen pass OSC-0 title sequences
+ * through to the outer terminal, so gating would break title-passthrough (whereas OSC-8 hyperlinks
+ * are not reliably forwarded — hence the asymmetry).
+ *
+ * @throws RangeError via `reportGuardFailure` when `title` contains a C0/C1 control byte.
+ */
 export function setTerminalTitle(
   title: string,
   out: OscSink = process.stdout,

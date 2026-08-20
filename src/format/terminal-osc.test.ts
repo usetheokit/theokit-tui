@@ -88,11 +88,19 @@ describe("terminal-osc — a caller value cannot open a second sequence (B-086)"
   // not a corrupted string, a second command. Clipboard write is on by default on five of nine
   // terminals read from their own source. This is CVE-2026-47090's shape in our own code.
   //
-  // DETECTION POWER, MEASURED, written here rather than only in a commit message: replace the
-  // `hasControlBytes` predicate with `() => false` and re-run this file.
+  // DETECTION POWER, MEASURED, written here rather than only in a commit message. Re-measure when
+  // this file changes — the numbers below were stale within one slice, which is the standing cost
+  // of recording them here instead of somewhere that travels with the code by itself.
   //
-  //   predicate disabled -> 5 failed | 10 passed
-  //   restored           -> 15 passed
+  //   hasControlBytes -> () => false            8 failed | 10 passed (18)
+  //   restored                                 18 passed
+  //
+  // Three MORE mutants, each added because a reviewer found the suite could not kill it. They are
+  // listed with what they break, so a future reader can re-run them rather than trust this comment:
+  //
+  //   refuseControlBytes moved BELOW osc8Link's supportsHyperlinks gate     1 failed
+  //   RangeError -> Error                                                   1 failed
+  //   range narrowed to BEL+ESC only (drops the rest of C0, and all of C1)  1 failed
   //
   // Assertions are on emitted BYTES, never `toContain`: B-055 records that a substring assertion is
   // exactly what let four broken strippers pass for a whole slice.
@@ -141,8 +149,10 @@ describe("terminal-osc — a caller value cannot open a second sequence (B-086)"
     //
     // That is the point rather than a side effect: the off-TTY path is where tests and CI run, so
     // validating there is what surfaces a caller's bug BEFORE it reaches a real terminal. The cost
-    // is real and is named in the CHANGELOG — a consumer piping output gets an exception where it
-    // previously got a silent no-op.
+    // is real and is stated in this test rather than by pointing at the CHANGELOG: a consumer
+    // piping output gets an exception where it previously got a SILENT NO-OP, which is a harsher
+    // change than the on-TTY case where they were already getting a broken terminal. Naming the
+    // gentler half only would be the flattering description rather than the true one.
     const out = {
       isTTY: false,
       write: (): void => undefined,
@@ -172,6 +182,51 @@ describe("terminal-osc — a caller value cannot open a second sequence (B-086)"
       }).not.toThrow();
     }
     expect(out.writes).toHaveLength(5);
+  });
+
+  it("osc8Link_refuses_before_the_hyperlink_gate_too", () => {
+    // B-086 review (M-B, HIGH) — the ordering gap nobody pinned, and it matters MORE here than in
+    // `setTerminalTitle`. Off-TTY that function writes nothing, so a late check would merely be
+    // pointless; `osc8Link` off-TTY RETURNS `text` VERBATIM TO THE CALLER, so a check placed after
+    // `supportsHyperlinks` would hand the unvalidated string straight back.
+    //
+    // Measured before this test existed: moving the check below the gate left all 15 tests green.
+    for (const out of [{ isTTY: false }, { isTTY: true }]) {
+      for (const env of [ENV, { ...ENV, TMUX: "1" } as NodeJS.ProcessEnv]) {
+        expect(() => {
+          osc8Link("click", `https://ok${BEL}`, env, out);
+        }).toThrow(/control/i);
+        expect(() => {
+          osc8Link(`click${BEL}`, "https://ok", env, out);
+        }).toThrow(/control/i);
+      }
+    }
+  });
+
+  it("the_refusal_is_a_RangeError_not_a_bare_Error", () => {
+    // B-086 review (M-C) — `/control/i` matched the MESSAGE, so widening the thrown type to `Error`
+    // left all 15 green. The type is part of the contract: a caller distinguishing a programming
+    // error from an I/O failure needs it, and `rules/error-handling.md` § 2 asks for typed errors
+    // rather than a generic throw.
+    const out = fakeOut();
+
+    expect(() => {
+      setTerminalTitle(`bad${BEL}`, out);
+    }).toThrow(RangeError);
+  });
+
+  it("the_refused_range_is_all_of_C0_and_C1_not_just_BEL_and_ESC", () => {
+    // B-086 review (M-D) — narrowing the predicate to only BEL and ESC left all 15 green, because
+    // every hostile fixture above happens to use one of those two. The 8-bit forms are the ones
+    // that matter: U+009D IS an OSC introducer and U+009B a CSI introducer, so a predicate blind to
+    // them is blind to an alternative spelling of the same attack.
+    const out = fakeOut();
+
+    for (const code of [0x9d, 0x9b, 0x00, 0x1f, 0x7f, 0x0a]) {
+      expect(() => {
+        setTerminalTitle(`ok${String.fromCharCode(code)}`, out);
+      }).toThrow(/control/i);
+    }
   });
 
   it("well_formed_values_emit_exactly_what_they_did_before", () => {
