@@ -25,24 +25,40 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 const ATTEMPTS = 60;
 
-async function runArm(waitAMacrotaskAfterCursor: boolean): Promise<number> {
-  let lost = 0;
-  for (let i = 0; i < ATTEMPTS; i++) {
-    const inst = render(
-      <TheoTUIProvider>
-        <ChatComposer onSubmit={() => {}} />
-      </TheoTUIProvider>,
-    );
-    // Spin until the frame shows the cursor — the signal `mount` currently trusts.
-    for (let n = 0; n < 400 && !hasCursor(inst.lastFrame() ?? ""); n++)
-      await tick();
+/** Spin until `ready` holds, or until `limit` macrotasks have passed. Reports whether it held. */
+const spinUntil = async (
+  ready: () => boolean,
+  limit: number,
+): Promise<boolean> => {
+  for (let n = 0; n < limit && !ready(); n++) await tick();
+  return ready();
+};
+
+/** One attempt: mount, wait for the cursor, write, and report whether the write survived. */
+async function attemptOnce(
+  waitAMacrotaskAfterCursor: boolean,
+): Promise<boolean> {
+  const inst = render(
+    <TheoTUIProvider>
+      <ChatComposer onSubmit={() => {}} />
+    </TheoTUIProvider>,
+  );
+  try {
+    // Spin until the frame shows the cursor — the signal `mount` trusts.
+    await spinUntil(() => hasCursor(inst.lastFrame() ?? ""), 400);
     if (waitAMacrotaskAfterCursor) await tick();
 
     inst.stdin.write("z");
-    for (let n = 0; n < 200 && !(inst.lastFrame() ?? "").includes("z"); n++)
-      await tick();
-    if (!(inst.lastFrame() ?? "").includes("z")) lost++;
+    return await spinUntil(() => (inst.lastFrame() ?? "").includes("z"), 200);
+  } finally {
     inst.unmount();
+  }
+}
+
+async function runArm(waitAMacrotaskAfterCursor: boolean): Promise<number> {
+  let lost = 0;
+  for (let i = 0; i < ATTEMPTS; i++) {
+    if (!(await attemptOnce(waitAMacrotaskAfterCursor))) lost++;
   }
   return lost;
 }
