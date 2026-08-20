@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.72.0] - 2026-08-20
+
 ### Security
 
 - **`setTerminalTitle` and `osc8Link` now refuse caller values carrying control bytes (B-086).**
@@ -36,6 +38,14 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `osc8Link` returns the text verbatim, so neither was visibly wrong before. The validation runs
   ahead of both gates on purpose: off-TTY is where tests and CI run, so that is where a caller's
   bug should surface, and `osc8Link` hands the unvalidated string back rather than discarding it.
+
+### Fixed
+
+- **The exported `VERSION` constant reports `0.72.0` (B-095).** It is maintained separately from
+  `package.json` and lagged behind it during this cut until the export-surface contract test caught
+  the disagreement. Nothing shipped wrong — the mismatch never left the release branch — and it is
+  recorded here because `VERSION` is `@public`: comparing it is how a consumer confirms they are
+  running a build that carries the OSC refusal below, rather than inferring it from a lockfile.
 
 ### Changed
 
