@@ -11,6 +11,17 @@ import { hasControlBytes } from "./ansi.js";
 // comment standing in for a control on functions whose real callers are consumers this repo
 // cannot see. (The examples under `examples/` do call them — with clean literals — so the
 // premise "zero in-repo callers" was wrong; the conclusion was not.)
+//
+// That near-miss is worth one more line, because the general rule is NOT "check your claims".
+// A claim stronger than its argument needs goes unchecked PRECISELY BECAUSE it is doing no work
+// — nobody audits a premise the conclusion does not rest on. Here it cost nothing: four callers
+// instead of zero, and the fix stood. A sibling repo hit the identical defect in a claim that
+// justified DELETING a test, and there the same wrong premise would have removed the only
+// coverage of a whole surface.
+//
+// Nothing in the shape of the claim tells you which of the two you have. So the line to hold is
+// narrower and checkable: VERIFY BEFORE YOU REMOVE. A premise that only supports keeping
+// something can be wrong and survive; one that justifies a deletion cannot.
 
 /** A stdout-like sink: `write` + the TTY flag (injectable for tests). */
 export interface OscSink {
