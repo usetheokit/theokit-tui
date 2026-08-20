@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createFrameBudget } from "./frame-budget.js";
 
@@ -107,6 +107,121 @@ describe("the budget is opt-in", () => {
     const budget = createFrameBudget({ frameBudgetMs: 0, now: () => clock });
     budget.shouldPaintNow();
     clock = 0;
+    expect(budget.shouldPaintNow()).toBe(true);
+  });
+});
+
+/**
+ * B-075 — the negative cases the nine tests above never had.
+ *
+ * Measured before the guard existed, with a clock the test owned and four calls 100 ms apart:
+ *
+ *   frameBudgetMs=NaN       shouldPaintNow=[false, false, false, false]
+ *   frameBudgetMs=Infinity  shouldPaintNow=[true, false, false, false]
+ *   frameBudgetMs=-1        shouldPaintNow=[true, true, true, true]
+ *
+ * `NaN` never painted AT ALL, not merely after the first paint: `NaN <= 0` is false and
+ * `Infinity >= NaN` is false, so even the first frame was refused. Through the public hook the
+ * shape was worse than a freeze — `useCoalesced` with `windowMs: NaN` rendered the literal string
+ * "undefined", computed ZERO times, and re-rendered 6-7 times over 12 ticks against a control's 2,
+ * because `msUntilNextFrame` returned 0 and the timer rescheduled itself.
+ *
+ * `-1` was silently identical to `0`, which is a documented value meaning "throttling off"
+ * — see `frame-budget.ts` line 26. Refusing it is a BREAKING change for a caller who spelled
+ * "off" that way, taken deliberately in ADR D3 of `b075-frame-budget-validation-plan.md`.
+ */
+
+/**
+ * Guard records this file's tests produced, captured instead of printed — the shape
+ * `usage-panel.test.tsx` lines 28-44 established. Capturing rather than silencing is the point:
+ * the record is half the contract, and without asserting on it the suite cannot tell
+ * a reporting guard from a plain throw.
+ */
+let guardRecords: string[] = [];
+let realStderrWrite: typeof process.stderr.write;
+
+beforeEach(() => {
+  guardRecords = [];
+  realStderrWrite = process.stderr.write;
+  process.stderr.write = ((chunk: unknown): boolean => {
+    const text = String(chunk);
+    if (text.startsWith("[theokit/tui]")) {
+      guardRecords.push(text);
+      return true;
+    }
+    return realStderrWrite.call(process.stderr, text as never);
+  }) as typeof process.stderr.write;
+});
+
+afterEach(() => {
+  process.stderr.write = realStderrWrite;
+});
+
+describe("an invalid budget is refused at construction", () => {
+  it("test_a_NaN_budget_is_refused_at_construction", () => {
+    // The worst input measured: not a frozen last frame, but a surface that never paints once.
+    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(
+      TypeError,
+    );
+    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(
+      "createFrameBudget: frameBudgetMs must be a finite number >= 0 — got NaN",
+    );
+  });
+
+  it("test_an_infinite_budget_is_refused_at_construction", () => {
+    expect(() =>
+      createFrameBudget({ frameBudgetMs: Number.POSITIVE_INFINITY }),
+    ).toThrow(TypeError);
+    expect(() =>
+      createFrameBudget({ frameBudgetMs: Number.POSITIVE_INFINITY }),
+    ).toThrow(
+      "createFrameBudget: frameBudgetMs must be a finite number >= 0 — got Infinity",
+    );
+  });
+
+  it("test_a_negative_budget_is_refused_rather_than_silently_meaning_zero", () => {
+    // ADR D3 — the one input with a plausible dependant. `-1` behaved exactly like `0` today,
+    // so a caller who wrote it meaning "off" had working software. Two spellings of one intent,
+    // one of them undocumented and pinned by nothing, is the ambiguity a boundary guard is for.
+    expect(() => createFrameBudget({ frameBudgetMs: -1 })).toThrow(TypeError);
+    expect(() => createFrameBudget({ frameBudgetMs: -1 })).toThrow(
+      "createFrameBudget: frameBudgetMs must be a finite number >= 0 — got -1",
+    );
+  });
+
+  it("test_the_refusal_leaves_a_durable_record", () => {
+    // The other half of `rules/error-handling.md` § 3.1, and the half a `toThrow` cannot see.
+    // Mutation-measured below: downgrading `reportGuardFailure` to a bare `throw` fails THIS
+    // test and only this test.
+    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(
+      TypeError,
+    );
+    expect(guardRecords.join("")).toContain("createFrameBudget: frameBudgetMs");
+  });
+});
+
+describe("the accepted edges of the range stay accepted", () => {
+  // These two are GREEN before the guard and green after, deliberately: they are regression pins,
+  // not RED tests. What they guard against is substitution — `assertPositiveWindow`
+  // (`select-list-model.ts` line 64) is the house helper closest to hand, reads as the more
+  // rigorous of the two, and requires a POSITIVE INTEGER. Swapping it in would compile, satisfy
+  // every negative case above, and silently break both values below. `0` is documented as
+  // "disables throttling" and is what `use-coalesced.ts` line 60 passes on every render under a
+  // screen reader, so that substitution would break accessibility and call itself a guard.
+  it("test_a_zero_budget_is_still_accepted_because_zero_means_off", () => {
+    const budget = createFrameBudget({ frameBudgetMs: 0, now: () => 0 });
+    expect(budget.shouldPaintNow()).toBe(true);
+    expect(budget.msUntilNextFrame()).toBe(0);
+  });
+
+  it("test_a_fractional_budget_is_still_accepted", () => {
+    let clock = 0;
+    const budget = createFrameBudget({ frameBudgetMs: 2.5, now: () => clock });
+    expect(budget.shouldPaintNow()).toBe(true);
+    clock = 1;
+    expect(budget.msUntilNextFrame()).toBe(1.5);
+    expect(budget.shouldPaintNow()).toBe(false);
+    clock = 2.5;
     expect(budget.shouldPaintNow()).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 import { Text } from "ink";
 import { cleanup, render } from "ink-testing-library";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { useCoalesced } from "./use-coalesced.js";
@@ -174,5 +174,53 @@ describe("useCoalesced", () => {
       describe: "the coalesced frame to show the last value",
     });
     expect(app.lastFrame()).toContain("last");
+  });
+});
+
+/**
+ * B-075 — the hook and the primitive cannot disagree, because there is only ONE rule.
+ *
+ * `use-coalesced.ts` gains no guard of its own (ADR D5): it forwards `windowMs` into
+ * `createFrameBudget`, and that constructor is where the check lives. Asserting the RECORD rather
+ * than the throw is deliberate — `ink-testing-library` resolves with an empty frame instead of
+ * rejecting, so a `toThrow` here would describe the harness, not production.
+ *
+ * Measured before the guard: this input rendered the literal string "undefined", computed zero
+ * times, and re-rendered 6-7 times over 12 ticks against a control's 2.
+ */
+describe("the hook inherits the primitive guard", () => {
+  let guardRecords: string[] = [];
+  let realStderrWrite: typeof process.stderr.write;
+
+  beforeEach(() => {
+    guardRecords = [];
+    realStderrWrite = process.stderr.write;
+    process.stderr.write = ((chunk: unknown): boolean => {
+      const text = String(chunk);
+      if (text.startsWith("[theokit/tui]")) {
+        guardRecords.push(text);
+        return true;
+      }
+      return realStderrWrite.call(process.stderr, text as never);
+    }) as typeof process.stderr.write;
+  });
+
+  afterEach(() => {
+    process.stderr.write = realStderrWrite;
+  });
+
+  it("test_the_hook_reaches_the_primitives_guard", async () => {
+    const clock = fakeClock();
+    render(
+      <Probe
+        compute={() => "v"}
+        value={1}
+        windowMs={Number.NaN}
+        now={clock.now}
+      />,
+    );
+    await tick();
+    expect(guardRecords.join("")).toContain("createFrameBudget: frameBudgetMs");
+    expect(guardRecords.join("")).toContain("got NaN");
   });
 });
