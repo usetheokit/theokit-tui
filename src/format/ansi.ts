@@ -85,3 +85,20 @@ const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
 export function sanitizeUntrusted(value: string): string {
   return value.replace(OSC_RE, "").replace(CSI_RE, "").replace(CONTROL_RE, "");
 }
+
+/**
+ * True when `value` carries any C0 or C1 control byte, tabs and newlines included.
+ *
+ * B-086 — the predicate half of {@link sanitizeUntrusted}'s character class, exported so there is
+ * ONE definition of "control byte" in this package rather than two. B-055 exists because 39 copies
+ * of one ANSI pattern drifted into three spellings, one of them wrong; a second definition here
+ * would be that defect starting over.
+ *
+ * Stricter than `sanitizeUntrusted`'s removal set on purpose: that function KEEPS `\t`, `\n` and
+ * `\r` because a code block needs them, while an OSC payload does not — a tab or a newline in a
+ * window title is meaningless, and either can act as a separator in some parsers.
+ */
+export function hasControlBytes(value: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  return /[\u0000-\u001F\u007F-\u009F]/.test(value);
+}

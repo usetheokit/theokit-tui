@@ -5,6 +5,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Security
+
+- **`setTerminalTitle` and `osc8Link` now refuse caller values carrying control bytes (B-086).**
+  Both interpolated their arguments verbatim into an OSC sequence, so a `BEL` or an `ESC \` in a
+  title, URL or link text **terminated the sequence early and let what followed run as a new
+  command**. Demonstrated: a title of `ok` plus a payload emitted the title sequence followed by a
+  complete OSC 52 clipboard write.
+
+  This is CVE-2026-47090's shape — an OSC 8 emitter interpolating caller values without encoding
+  them. Neither function has any caller inside this repository; they exist for consumers, which is
+  why a comment saying "sanitize upstream if untrusted" was not a control.
+
+  **They now throw rather than strip**, and that is deliberate: the caller chose the value, so a
+  control byte is a defect in their code, not hostile data from outside — silently repairing it
+  would hide their bug and ship a title that is not the one they wrote. An incorrect caller gets an
+  exception where it previously got a broken terminal. Well-formed values emit byte-identically to
+  before.
+
 ## [0.71.0] - 2026-08-20
 
 ### Security
