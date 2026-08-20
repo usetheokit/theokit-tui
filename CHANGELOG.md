@@ -5,6 +5,32 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **`narrowingLayer` — a `SurfaceLayer` whose `when` narrows the state for `render` (B-074).**
+
+  ```ts
+  narrowingLayer<AppState, WithApproval>({
+    name: "approval",
+    when: (s): s is WithApproval => s.pendingApproval !== undefined,
+    render: (s) => <ApprovalCard approval={s.pendingApproval} />,  // no cast
+  });
+  ```
+
+  `SurfaceLayer.when` returns `boolean`, so whatever it proves is discarded before `render` sees
+  it and the caller re-asserts it by hand — measured in a real consumer as
+  `approval={p.pendingApproval as PendingApproval}`, three lines below the `when` that proved it.
+
+  **Purely additive.** `SurfaceLayer` is unchanged, every existing layer keeps compiling, and a
+  narrowing layer is assignable to `SurfaceLayer<S>` so both kinds mix in one array.
+
+  **The cost, stated:** inference does not carry through the factory, so both type arguments are
+  explicit — `narrowingLayer<AppState, WithApproval>`. One type-argument pair against the guard,
+  the re-assertion and the unreachable branch it replaces.
+
+  Not applied to `KeyLayer` (`src/keys/layer-router.ts`), whose `when` returns actions rather than
+  feeding a `render` — there is no narrowing to carry there.
+
 ## [0.75.0] - 2026-08-20
 
 ### Removed

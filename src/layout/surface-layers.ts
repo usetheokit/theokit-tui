@@ -48,6 +48,65 @@ export interface SurfaceLayer<S> {
   readonly render: (state: S) => ReactNode;
 }
 
+/**
+ * A layer whose `when` is a TYPE PREDICATE, so `render` receives the narrowed state (B-074).
+ *
+ * ## Why this is additive rather than a change to `SurfaceLayer`
+ *
+ * Two other shapes were measured first and both fail:
+ *
+ * - A defaulted second type parameter with a union `when` breaks on `strictFunctionTypes`
+ *   contravariance for a heterogeneous array. Switching `render` to method shorthand compiles it —
+ *   and opens a bivariance hole where a layer with a plain-boolean `when` and a narrowed `render`
+ *   type-checks, so `selectSurface` would pass the WIDE state into it. That trades a visible
+ *   compile error for an invisible runtime violation.
+ * - Making `when` predicate-only breaks 11 existing call sites across `examples/` and `tests/`.
+ *
+ * So `SurfaceLayer` is untouched, existing layers keep compiling, and this is the opt-in form.
+ *
+ * ## The one `as`, and why it is here rather than in every consumer
+ *
+ * `render: (state as T)` is a cast, and this repository argues against casts —
+ * `status/guard-sink.ts` records that an `as` is a reachability claim with the argument left out.
+ * The argument is not left out here: `when` returned true one line earlier, which is exactly what
+ * `state is T` means, and that is locally verifiable at this call site and nowhere else.
+ *
+ * Without this, the cast does not disappear — it MOVES to every consumer, written by people who
+ * cannot see the line that discharges it. Measured in the one real consumer:
+ *
+ *     when:   (p) => p.pendingApproval !== undefined,
+ *     render: (p) => <ApprovalCard approval={p.pendingApproval as PendingApproval} … />
+ *
+ * One cast in the library, discharged where the proof is, instead of one per layer written where
+ * the proof is three lines away and invisible to the type system.
+ *
+ * ## The honest ergonomic cost
+ *
+ * Inference does not carry: `S` cannot be deduced from a lone type-predicate parameter, so callers
+ * write `narrowingLayer<AppState, NonChat>({ … })` — one explicit type-argument pair. Measured
+ * against the three constructs the consumer writes today (a named guard applied on both sides plus
+ * an unreachable `null` branch), that is a net reduction and not a free one.
+ *
+ * `src/keys/layer-router.ts:40` carries the same `when: (state: S) => boolean` signature and is
+ * NOT covered here. Its `when` returns actions rather than feeding a `render`, so the narrowing has
+ * no consumer there — stated so the omission reads as a decision rather than an oversight.
+ *
+ * @public
+ */
+export function narrowingLayer<S, T extends S>(layer: {
+  readonly name: string;
+  readonly when: (state: S) => state is T;
+  readonly render: (state: T) => ReactNode;
+}): SurfaceLayer<S> {
+  return {
+    name: layer.name,
+    when: layer.when,
+    // Discharged by the predicate the caller was FORCED to supply: `selectSurface` calls `render`
+    // only for the layer whose `when` returned true, and `when` returning true IS `state is T`.
+    render: (state: S): ReactNode => layer.render(state as T),
+  };
+}
+
 /** @public */
 export interface SelectedSurface {
   /** The layer that claimed the surface, or `null` when none did. */

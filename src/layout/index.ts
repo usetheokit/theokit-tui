@@ -40,6 +40,6 @@ export type { ThinkingBlockProps } from "./thinking-block.js";
 // `routeThroughLayers` (`@theokit/tui/keys`), which it deliberately does not live beside: that
 // subpath promises to be React-free so a consumer routing keys in a test does not pull in file
 // handles, and this one returns nodes.
-export { selectSurface } from "./surface-layers.js";
+export { narrowingLayer, selectSurface } from "./surface-layers.js";
 
 export type { SelectedSurface, SurfaceLayer } from "./surface-layers.js";
