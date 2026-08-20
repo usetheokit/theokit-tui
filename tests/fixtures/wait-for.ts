@@ -31,6 +31,26 @@
  * On a loaded machine this may take longer than the fixed sleep it replaces — it waits until the
  * condition actually holds. On an idle machine it is FASTER, because it stops at the first success
  * instead of always paying the full duration.
+ *
+ * ## Reading a failure this produces — a PROCEDURE, not advice
+ *
+ * When a suite run goes red, **redirect the whole output to a file and filter the copy**:
+ *
+ *     pnpm test > /tmp/run.log 2>&1; grep -E 'FAIL |AssertionError' /tmp/run.log
+ *
+ * Not `pnpm test | grep …`. The difference is not style. A red run is the ONLY moment the
+ * diagnostic exists, and a filter is written for the case you expect — which is the green one. By
+ * the time the output turns interesting, the filter has already thrown it away.
+ *
+ * Written here as the shape a command takes the FIRST time, because it failed three times in one
+ * session as a thing to remember: two full-suite reds (11 files, then 2 of 10 under load) reached
+ * a summary line and nothing else, and the second happened SIX HOURS AFTER the lesson was written
+ * down and agreed to. A rule that fails repeatedly for the person who wrote it is not missing
+ * knowledge; it is missing procedure.
+ *
+ * The asymmetry is what makes it unconditional: on a green run capturing to a file costs nothing;
+ * on a red one, not having captured costs the entire run. There is no case where skipping it pays,
+ * which means the decision should never be made case by case.
  */
 
 /** @internal */
