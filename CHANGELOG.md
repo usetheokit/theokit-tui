@@ -5,6 +5,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The thirty spawn budgets are measured, and the measurement is why they stay (B-067).** The
+  standing comment said they were unmeasured and that measuring them was a followup, which invited
+  the same investigation repeatedly. Measured on a machine already under load — a pessimistic
+  sample — the tightest is 2.9x with 19.7 seconds of headroom, and all fifteen example tests pass.
+
+  The number with a failure history turned out not to be in this population: it is the 2000 ms
+  budget already hunted across three earlier items and fenced by this same lint. The thirty
+  inherited the suspicion, not the defect.
+
+  Recorded with its limit: the measurement was taken on a developer machine and cannot support
+  TIGHTENING them, because CI runners are slower on both cores and disk.
+
 ### Fixed
 
 - **`ComposerCapabilities.mentions` documented a predicate the composer does not use (B-071).** Its

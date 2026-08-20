@@ -17,10 +17,26 @@
  * a numeric literal. A sixth copy under a different parameter name is out of its reach.
  *
  * THE SPAWN BUDGETS, declared rather than silently kept: 30 occurrences of `timeout: 30000` across
- * 17 files, almost all in `tests/examples/*`, each on a test that spawns `pnpm exec tsx`. They are
- * NOT measured. They are not failing either, and changing 30 files on the hypothesis that the
- * degrade matrix's 2621 ms figure transfers is the over-reach B-034's scope section refused.
- * Measuring them is a followup. The count below is asserted so a 31st cannot appear silently.
+ * 17 files, almost all in `tests/examples/*`, each on a test that spawns `pnpm exec tsx`. Changing
+ * 30 files on the hypothesis that the degrade matrix's 2621 ms figure transfers is the over-reach
+ * B-034's scope section refused. The count below is asserted so a 31st cannot appear silently.
+ *
+ * B-067 — THEY ARE MEASURED NOW, and the measurement is why they stay. `vitest run tests/examples/`
+ * on a machine already carrying concurrent load (a pessimistic sample, not a quiet one), all 15
+ * passing:
+ *
+ *   showcase    13197 ms / 45000 = 3.4x     chat        10281 ms / 30000 = 2.9x
+ *   claude-code 10168 ms / 30000 = 3.0x     live-agent   9831 ms / 30000 = 3.1x
+ *   banner       8134 ms / 30000 = 3.7x     tools        4894 ms / 30000 = 6.1x
+ *
+ * The tightest is 2.9x with 19.7 seconds of headroom. And the number with a failure history is NOT
+ * in this population — it is the 2000 above, already hunted across B-020/B-033/B-034 and fenced by
+ * this very lint. The thirty inherited the SUSPICION, not the defect.
+ *
+ * What this measurement CANNOT support is tightening them: it was taken on a developer machine, and
+ * the CI legs run on hosted runners with lower single-core performance and slower disk. A 2.9x
+ * margin here is not a 2.9x margin there. Right-sizing would need a CI-side measurement, and
+ * nobody has one.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
