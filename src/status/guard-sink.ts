@@ -44,6 +44,32 @@
  * Reporting is ADDITIVE. The throw is the contract 37 test files rest on, so the return type is
  * `never`: "and still throws" is structural rather than something 21 call sites must remember.
  *
+ * ---
+ *
+ * **"The types already forbid it" is never, on its own, a reason to delete a boundary check.**
+ *
+ * Written here because this is the module a future simplification pass reaches first, and because
+ * the argument is genuinely persuasive when it arrives: the compiler really does reject the call,
+ * the only internal caller really does pass a literal, and both facts are true and verifiable.
+ *
+ * They are also insufficient, for one reason: a type proves the value is UNDECLARABLE in
+ * TypeScript, not that it never ARRIVES. A JavaScript caller, a config file parsed from JSON, an
+ * `as` cast, a `satisfies` that widens, or a test constructing a fixture by a type it declares
+ * itself — each supplies the value the compiler said could not exist. Runtime boundary validation
+ * exists precisely for the values the type system cannot stop.
+ *
+ * This module already lives by that rule: `reportGuardFailure` validates `error instanceof Error`
+ * though its parameter is typed `Error`, and the reason is recorded at that check — an unvalidated
+ * `error` once made `.message` throw from outside the try, producing no record and replacing the
+ * guard's diagnostic with a TypeError about the reporter. The type had not changed. The value had.
+ *
+ * The rule generalises to the whole `assert*` / `reportGuardFailure` family (B-021, B-025, B-028,
+ * B-054). Before removing any of them, the question is not "can this be declared?" but "can this
+ * arrive?" — and the answer is found by looking at callers, not at signatures.
+ *
+ * Adopted from a measured revert in a sibling repository, where a guard was removed on exactly
+ * these two true-but-insufficient arguments and had to be restored.
+ *
  * It does NOT deduplicate: a guard firing every render is a repeating problem and one collapsed
  * line hides it.
  *
