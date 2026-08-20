@@ -10,7 +10,8 @@
     "benchmarks/**/*.ts",
     "benchmarks/**/*.tsx",
     "src/**/index.ts",
-    "scripts/sync-version.mjs"
+    "scripts/sync-version.mjs",
+    "scripts/gate-scope.mjs"
   ],
   "ignore": [
     "tests/**",
