@@ -91,8 +91,8 @@ describe("terminal-osc — a caller value cannot open a second sequence (B-086)"
   // DETECTION POWER, MEASURED, written here rather than only in a commit message: replace the
   // `hasControlBytes` predicate with `() => false` and re-run this file.
   //
-  //   predicate disabled -> 4 failed | 9 passed
-  //   restored           -> 13 passed
+  //   predicate disabled -> 5 failed | 10 passed
+  //   restored           -> 15 passed
   //
   // Assertions are on emitted BYTES, never `toContain`: B-055 records that a substring assertion is
   // exactly what let four broken strippers pass for a whole slice.
@@ -133,6 +133,45 @@ describe("terminal-osc — a caller value cannot open a second sequence (B-086)"
       setTerminalTitle(`ok${ESC}`, out);
     }).toThrow(/control/i);
     expect(out.writes).toHaveLength(0);
+  });
+
+  it("refuses_off_tty_too_where_the_call_is_otherwise_a_noop", () => {
+    // ORDER IS A DECISION, pinned here rather than left implicit. `refuseControlBytes` runs BEFORE
+    // the TTY gate, so a call that would have written nothing now throws.
+    //
+    // That is the point rather than a side effect: the off-TTY path is where tests and CI run, so
+    // validating there is what surfaces a caller's bug BEFORE it reaches a real terminal. The cost
+    // is real and is named in the CHANGELOG — a consumer piping output gets an exception where it
+    // previously got a silent no-op.
+    const out = {
+      isTTY: false,
+      write: (): void => undefined,
+      writes: [] as string[],
+    };
+
+    expect(() => {
+      setTerminalTitle(`bad${BEL}`, out);
+    }).toThrow(/control/i);
+  });
+
+  it("does_not_refuse_ordinary_text", () => {
+    // The other half of a validator's contract, and the half that is usually missing: what it must
+    // NOT reject. Measured — accents, CJK, emoji and long strings all pass, so the range is
+    // control bytes and not "anything unusual".
+    const out = fakeOut();
+
+    for (const title of [
+      "theo — src/índex.ts",
+      "テスト · 日本語",
+      "deploy ✅ 3/4",
+      "café ☕ — build",
+      "a".repeat(200),
+    ]) {
+      expect(() => {
+        setTerminalTitle(title, out);
+      }).not.toThrow();
+    }
+    expect(out.writes).toHaveLength(5);
   });
 
   it("well_formed_values_emit_exactly_what_they_did_before", () => {
