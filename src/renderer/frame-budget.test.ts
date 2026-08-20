@@ -157,6 +157,34 @@ afterEach(() => {
   process.stderr.write = realStderrWrite;
 });
 
+/**
+ * Detection power, measured by mutation rather than asserted. Three mutants, applied by hand one at
+ * a time, each run as `pnpm exec vitest run src/renderer/frame-budget.test.ts` on 2026-08-20.
+ *
+ * A guard whose removal kills zero tests is a false oracle, and this suite already had a documented
+ * case of exactly that: `usage-panel.test.tsx` records a `reportGuardFailure` replaced by a plain
+ * `throw` leaving 190 tests green.
+ *
+ *   M1  the whole try/catch deleted        -> 4 failed | 11 passed
+ *   M2  reportGuardFailure -> throw err    -> 1 failed | 14 passed
+ *   M3  assertFiniteNonNegative -> assertPositiveWindow
+ *                                          -> 7 failed |  8 passed
+ *
+ * M2 is the one worth reading twice. Under it the four `toThrow` cases stay GREEN and only
+ * `test_the_refusal_leaves_a_durable_record` goes red — same defect, same run, one instrument sees
+ * it and four do not. That is why the record is asserted and not merely produced. Across the other
+ * two files M2 also reddens `use-coalesced.test.tsx` `test_the_hook_reaches_the_primitives_guard`
+ * and `tests/lint/guard-sink-per-domain.test.ts` `renderer`: 2 failed | 17 passed.
+ *
+ * M3 is the substitution ADR D1 exists to prevent, and its 7 include a HONEST correction to this
+ * file's own claim: `test_a_zero_budget_never_defers` — which predates B-075 — also catches it. So
+ * `test_a_zero_budget_is_still_accepted_because_zero_means_off` adds a named reason, not new
+ * detection. `test_a_fractional_budget_is_still_accepted` adds detection: nothing in the tree
+ * covered `2.5` before it. Under M3, `use-coalesced.test.tsx` reports 3 failed | 4 passed, and two
+ * of those three are `screen_reader_mode_passes_every_update_through` and
+ * `a_zero_window_never_coalesces` — so "the wrong helper breaks accessibility" is measured here,
+ * not argued.
+ */
 describe("an invalid budget is refused at construction", () => {
   it("test_a_NaN_budget_is_refused_at_construction", () => {
     // The worst input measured: not a frozen last frame, but a surface that never paints once.
