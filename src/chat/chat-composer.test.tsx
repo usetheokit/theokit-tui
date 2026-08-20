@@ -147,6 +147,24 @@ const settleWatching = async (
   // clock the 200 ms poll actually consumed under 4x oversubscription, which write it was. So the
   // record now carries them. A defect that appears in roughly one run in five is one you get a
   // handful of chances a day to observe, and each unrecorded field is a chance spent.
+  // B-068, bullet 3 — MEASURED, and the answer is the reassuring one.
+  //
+  // The item asked whether any test passes only because a wait gave up in silence. A green run
+  // (63/63) was instrumented to name every test that reaches this line. Seven do, and every one
+  // of them asserts an ABSENCE of change:
+  //
+  //     2x unfocused_composer_ignores_input
+  //     1x whitespace_only_enter_is_noop
+  //     1x single_line_mode_ignores_ctrl_j
+  //     1x single_line_mode / bare_escape_without_menu_keeps_composer_focused_and_typing_lands
+  //     1x question_mark_on_an_empty_buffer_toggles_help_and_is_not_typed
+  //     1x a_failing_wait_names_the_no_reaction_settle_that_preceded_it  (forces one on purpose)
+  //
+  // None would pass differently had the wait waited longer: there was never going to be a
+  // reaction. That is why the ceiling is a quiet return rather than a throw (B-057 ADR D3) —
+  // throwing would turn these six correct tests red on every run, systematically.
+  //
+  // What it must NOT be is invisible, and that is what this line fixes rather than the ceiling.
   if (!reacted) recordNoReaction(readFrame(), startedAt);
 };
 
