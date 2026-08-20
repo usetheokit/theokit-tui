@@ -22,6 +22,7 @@ import { DiffViewer } from "../../src/diff/diff-viewer.js";
 import { CodeBlock } from "../../src/markdown/code-block.js";
 import { ProgressBar } from "../../src/metrics/progress-bar.js";
 import { WindowedList } from "../../src/prompts/windowed-list.js";
+import { createFrameBudget } from "../../src/renderer/frame-budget.js";
 import { Notice } from "../../src/status/notice.js";
 import { TodoList } from "../../src/status/todo-list.js";
 import { TheoTUIProvider } from "../../src/theme/theme.js";
@@ -131,6 +132,15 @@ describe("the guard sink is reached in every domain", () => {
   it("tools", () => {
     expectRecorded("ToolCall", () =>
       ToolCall({ name: "x", status: "not-a-status" as never }),
+    );
+  });
+
+  it("renderer", () => {
+    // B-075 — the first guard in this domain. `createFrameBudget` is a factory rather than a
+    // component, so it is called directly; the F10 idiom that makes components reachable as
+    // plain functions is unnecessary here.
+    expectRecorded("createFrameBudget", () =>
+      createFrameBudget({ frameBudgetMs: Number.NaN }),
     );
   });
 });
