@@ -135,13 +135,78 @@ const settle = async () => settleWatching(lastRenderedFrame, undefined);
 let currentInstance: { lastFrame: () => string | undefined } | undefined;
 const lastRenderedFrame = () => currentInstance?.lastFrame();
 
-// SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write
-// immediately after render() is silently dropped. Always settle after mount.
-async function mount(ui: Parameters<typeof render>[0]) {
+/**
+ * Does this frame show the composer's cursor — i.e. has it taken focus?
+ *
+ * TWO FORMS, and assuming one was my second mistake here. `input-row.tsx:62` computes
+ * `noColorMarker = monochrome && isFocused`, so a monochrome theme renders the marker `▏` where a
+ * coloured one renders the inverse-video cell. Ten tests timed out on a composer that WAS focused,
+ * under a no-color theme, because the predicate only knew the coloured form.
+ *
+ * Measured across the three mounts that differ:
+ *
+ *     default          "…> …\u001B[7m \u001B[27m"
+ *     placeholder      "…> …\u001B[7m \u001B[27m\u001B[2mType a message\u001B[22m"   (same cell)
+ *     autoFocus=false  "…> …"                                                      (neither)
+ */
+const hasFocusIndicator = (frame: string): boolean =>
+  frame.includes("\u001B[7m") || frame.includes("▏");
+
+// SEPA brief (MAJOR): useFocus assigns focus in mount EFFECTS — a write immediately after
+// render() is silently dropped. Always settle after mount.
+//
+// B-058 — THIS WAITED TWO FIXED TICKS, which is a duration standing in for an event, and it is the
+// same defect B-093 and B-097 fixed one layer up. The write is not lost in the stream: `useInput`
+// runs with `{ isActive: isFocused }` (`chat-composer.tsx:535`), so a key that arrives before the
+// focus effect flushes is IGNORED BY DESIGN — the component behaves correctly and the test loses a
+// keystroke.
+//
+// Measured under load: the suite failed with `waitFor: timed out ... waiting for the frame to
+// contain "hi" — last frame: > i`. The `h` is missing entirely, and the B-058 diagnostic names the
+// cause it could not previously attribute: "no reaction within 200ms; frame stayed <empty
+// composer>" on the FIRST settle.
+//
+// So it now waits for the CONDITION. `input-row.tsx:38` renders `<Text inverse={focused}>`, and its
+// comment at :75 says the cursor cell exists "only while focused; blurred composers render plain
+// text" — which makes the inverse-video cell an exact observation of focus rather than a proxy for
+// it. Measured: absent at t0, present at t1.
+async function mount(
+  ui: Parameters<typeof render>[0],
+  /**
+   * Set `false` for a composer that must NOT take focus — `autoFocus={false}`.
+   *
+   * Measured, because the first version of this helper waited unconditionally and turned 43 of 63
+   * tests red: an unfocused composer renders `"\u001B[36m> \u001B[39m"` with no cursor cell, ever,
+   * so the wait could only ever time out. The placeholder variant was the case I expected to
+   * differ and does NOT — it renders the SAME cell followed by the dim text:
+   *
+   *     default          "…> …\u001B[7m \u001B[27m"
+   *     placeholder      "…> …\u001B[7m \u001B[27m\u001B[2mType a message\u001B[22m"
+   *     autoFocus=false  "…> …"
+   */
+  expectFocus = true,
+) {
   const instance = render(ui);
   currentInstance = instance;
+
+  // The two ticks STAY, and removing them was my first mistake here. `waitForCondition` checks
+  // before it waits — "an already-satisfied condition must not cost an interval" — so replacing
+  // the ticks with it made `mount` sometimes await NOTHING, which is FEWER than before. 28 tests
+  // failed with the spy never called: focus was fine, and the other mount effects had not run.
+  //
+  // The focus wait is an ADDITION to the ticks, not a replacement for them.
   await tick();
   await tick();
+
+  if (expectFocus) {
+    await waitForCondition(
+      () => hasFocusIndicator(instance.lastFrame() ?? ""),
+      {
+        describe:
+          "the composer to take focus (the cursor indicator to appear) — until it does, `useInput` is inactive and every keystroke is dropped",
+      },
+    );
+  }
   return instance;
 }
 
@@ -289,6 +354,7 @@ describe("ChatComposer (T3.2)", () => {
     const onSubmit = vi.fn();
     const instance = await mount(
       <ChatComposer onSubmit={onSubmit} autoFocus={false} />,
+      false,
     );
     await type(instance, ["abc", ENTER]);
     expect(onSubmit).not.toHaveBeenCalled();
