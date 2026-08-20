@@ -14,8 +14,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   complete OSC 52 clipboard write.
 
   This is CVE-2026-47090's shape — an OSC 8 emitter interpolating caller values without encoding
-  them. Neither function has any caller inside this repository; they exist for consumers, which is
-  why a comment saying "sanitize upstream if untrusted" was not a control.
+  them. The values that reach these functions in practice are chosen by consumers, which is why a
+  comment saying "sanitize upstream if untrusted" was never a control: the review that would catch
+  a bad call happens outside this repository.
+
+  **What is refused, precisely**, since "control bytes" is not a specification: the whole of C0
+  (`U+0000-U+001F`) and C1 (`U+007F-U+009F`), tested as a CHARACTER PREDICATE rather than by
+  matching a sequence. A matcher cannot see a lone `ESC` with no terminator — the branch where
+  `less` failed in CVE-2022-46663, whose one-line fix reads _"End OSC8 hyperlink on invalid
+  embedded escape sequence"_. Values without such a byte emit byte-identically to before, so a
+  correct caller sees no change at all.
 
   **They now throw rather than strip**, and that is deliberate: the caller chose the value, so a
   control byte is a defect in their code, not hostile data from outside — silently repairing it
