@@ -22,7 +22,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     expect(frame).toContain("first 3 lines");
     expect(frame).toContain("39 more");
     expect(frame).toContain("ctrl+r to expand");
-    expect(frame).toContain("▶"); // collapsed affordance
+    expect(frame).toContain("▸"); // collapsed affordance (B-053: disclosure pair)
     expect(frame).not.toContain("all 42 lines");
     app.unmount();
   });
@@ -63,7 +63,7 @@ describe("ExpandableOutput (M25 T3.1)", () => {
     app.stdin.write("\x12"); // Ctrl+R
     await app.flush();
     expect(app.lastFrame()).toContain("the full body here");
-    expect(app.lastFrame()).toContain("▼"); // expanded affordance
+    expect(app.lastFrame()).toContain("▾"); // expanded affordance
     app.unmount();
   });
 

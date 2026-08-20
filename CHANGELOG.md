@@ -7,6 +7,28 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- **The disclosure affordance is now `▸` / `▾`, not `▶` / `▼` (B-053).** `▼` had come to mean three
+  unrelated things in one package: "expand this section" (`CollapsibleBlock`), "there is more output
+  behind this" (`ExpandableOutput`), and "N rows are hidden below the window" (the three list views).
+
+  B-022 and B-052 made the third meaning numeric everywhere, which turned a theoretical collision
+  into a measured one: a single frame renders `▼ 8` from a collapsible block whose summary happens
+  to be a number and `▼ 4` from an overflowing menu, four lines apart — identical in shape,
+  unrelated in meaning.
+
+  The distinction is **weight, not direction**, because direction is already load-bearing on both
+  sides: disclosure toggles down/right, overflow shows up and down at once. Small triangles are
+  disclosure, large triangles are overflow. One glyph, one meaning.
+
+  Demonstrated rather than asserted, which is what the item asked for: a test renders both in one
+  frame and checks that `▾ 8` and `▲ 8` are no longer the same shape.
+
+  **This changes rendered output of two published components.** A consumer asserting on `▶` or `▼`
+  from `CollapsibleBlock` or `ExpandableOutput` will need to update; assertions on the list views'
+  overflow markers are untouched.
+
+### Changed
+
 - **The thirty spawn budgets are measured, and the measurement is why they stay (B-067).** The
   standing comment said they were unmeasured and that measuring them was a followup, which invited
   the same investigation repeatedly. Measured on a machine already under load — a pessimistic
