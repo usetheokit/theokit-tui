@@ -5,6 +5,26 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Security
+
+- **An untrusted code block can no longer put a control sequence on your terminal (B-078).**
+  `CodeBlock` sanitised its input with the SGR-only stripper, so an OSC 8 hyperlink reached the
+  rendered frame **byte-for-byte**: a model's output could make arbitrary text clickable and, via
+  OSC 52, silently overwrite the clipboard.
+
+  Clipboard write is on by default on five of nine terminals surveyed from their own source —
+  Windows Terminal, kitty, alacritty, WezTerm, Ghostty. It is off on iTerm2 and xterm, and not
+  implemented in VTE. Clipboard **read** is not the threat: no terminal in that set permits it
+  unprompted.
+
+  The fix is a separate sanitiser rather than a wider `stripAnsi`, because the two have different
+  responsibilities: one removes colour from output this library authored, the other removes
+  everything from content it was handed and cannot vouch for. Its last pass is a stateless control
+  filter, and that is what carries the safety property — a structural matcher for `OSC … terminator`
+  cannot match a sequence that never terminates, which is precisely the shape of CVE-2022-46663.
+
+  Tabs, newlines and carriage returns survive, so code blocks still render as code.
+
 ## [0.70.1] - 2026-08-20
 
 ### Fixed

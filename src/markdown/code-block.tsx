@@ -7,7 +7,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
 import type { CodeTokens } from "../theme/theme.js";
-import { stripAnsi } from "../format/ansi.js";
+import { sanitizeUntrusted } from "../format/ansi.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
 
 // Minimal structural types for lowlight's hast output — the real package
@@ -186,7 +186,10 @@ export function highlightLine(
  * inside a de-duplication.
  */
 function toCodeLines(code: string): string[] {
-  const sanitized = stripAnsi(code).replaceAll("\t", " ".repeat(TAB_WIDTH));
+  const sanitized = sanitizeUntrusted(code).replaceAll(
+    "\t",
+    " ".repeat(TAB_WIDTH),
+  );
   if (sanitized === "") {
     return [];
   }
