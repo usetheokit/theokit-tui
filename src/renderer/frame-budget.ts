@@ -22,8 +22,22 @@
  * the call site and only one is correct.
  */
 
+import { assertFiniteNonNegative } from "../format/format.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
+
 export interface FrameBudgetOptions {
-  /** Minimum ms between paints. `0` disables throttling — today's behaviour, exactly. */
+  /**
+   * Minimum ms between paints. Finite and >= 0.
+   *
+   * `0` disables throttling — today's behaviour, exactly — and it is the ONLY spelling of that
+   * intent. `-1` used to be a silent synonym for it and is now refused (B-075, ADR D3): two
+   * spellings of one intent, one of them undocumented and pinned by nothing, is precisely what a
+   * boundary guard exists to remove.
+   *
+   * Fractions are honoured, so this is deliberately NOT `assertPositiveWindow`'s positive-integer
+   * contract — that helper is the wrong half of the house pair here, and would reject both `0` and
+   * `2.5`.
+   */
   readonly frameBudgetMs: number;
   /** Monotonic clock. Injected for tests; defaults to `performance.now`. */
   readonly now?: () => number;
@@ -37,6 +51,38 @@ export interface FrameBudget {
 }
 
 export function createFrameBudget(options: FrameBudgetOptions): FrameBudget {
+  // B-075 — validated at CONSTRUCTION, not inside `shouldPaintNow`. A check on the paint path
+  // would fire every frame, which under `.claude/rules/error-handling.md` § 3.1's never-deduplicate
+  // rule floods the log, and it would name a paint rather than the call the caller actually wrote.
+  //
+  // The house shape (`context-window-bar.tsx:46-54`): the pure predicate throws, and the CALLER
+  // reports — `assertFiniteNonNegative` is shared by components that know their own names and it
+  // knows none of them, so it deliberately does no reporting of its own.
+  //
+  // Unlike `select-list-model.ts:55-60`, which declined this same import, this module is not a
+  // pure model: it is a published factory on `@theokit/tui/renderer` that knows its own name, and
+  // it has no component boundary above it — `use-coalesced.ts:67` calls it from a ref initialiser.
+  // Throwing bare here would leave the failure with no durable record anywhere.
+  try {
+    assertFiniteNonNegative(
+      options.frameBudgetMs,
+      "createFrameBudget: frameBudgetMs must be a finite number >= 0",
+    );
+  } catch (err) {
+    // NARROWED, not cast. `reportGuardFailure` validates `error instanceof Error` even though its
+    // parameter is TYPED `Error`, and `guard-sink.ts:202-208` records why: an unvalidated value
+    // made `error.message` throw from outside the guarded region, replacing the guard's diagnostic
+    // with a TypeError about the reporter and leaving no record at all.
+    //
+    // `err as Error` is the assertion that cannot happen — and an `as` is exactly the shape that
+    // rule warns about: a reachability claim with the argument left out. `assertFiniteNonNegative`
+    // throws a TypeError today, so the cast is true today; the wrap costs one expression and stays
+    // true if it ever stops being.
+    reportGuardFailure(
+      "createFrameBudget",
+      err instanceof Error ? err : new TypeError(String(err)),
+    );
+  }
   const now = options.now ?? ((): number => performance.now());
   const budgetMs = options.frameBudgetMs;
   let lastPaintAt: number | undefined;

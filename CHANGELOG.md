@@ -5,6 +5,40 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.73.0] - 2026-08-20
+
+### Changed
+
+- **`createFrameBudget` no longer accepts a negative `frameBudgetMs`, and `-1` in particular now
+  throws (B-075).** It used to be silently identical to `0`, the documented "disables throttling"
+  value, so a caller who spelled "off" that way had working code. That is the one input in this
+  change with a plausible dependant, and it is why this is a minor rather than a patch: under 0.x a
+  breaking change is a minor bump.
+
+  If you passed `-1` meaning "no throttling", pass `0`. It is the documented spelling and it is
+  unchanged.
+
+  Reaches you through `@theokit/tui/renderer` and, indirectly, through `useCoalesced`'s `windowMs`
+  on the root entry.
+
+### Fixed
+
+- **A `NaN` or `Infinity` frame budget stopped the UI instead of reporting anything (B-075).**
+  `createFrameBudget` read `frameBudgetMs` straight through with no validation, and two values broke
+  it in different ways with no error either time.
+
+  With `Infinity` the surface painted once and then never again. With `NaN` it was worse than a
+  freeze: `NaN <= 0` is false and `Infinity >= NaN` is false, so **not one** paint was ever allowed.
+  Measured through `useCoalesced` with `windowMs: NaN`, the derived value was computed zero times,
+  the terminal rendered the literal string `undefined`, and the zero-millisecond timer rescheduled
+  itself — 6 to 7 renders over 12 ticks against a healthy budget's 2. A wrong value on screen, a
+  re-render loop, and no diagnostic anywhere.
+
+  An invalid budget is now refused at construction with a `TypeError` naming the value, and leaves a
+  durable `[theokit/tui]` record before it throws — so the failure is at the call the caller wrote,
+  not at some later paint. `0` and fractional budgets such as `2.5` are unaffected and stay
+  accepted.
+
 ## [0.72.0] - 2026-08-20
 
 ### Security
