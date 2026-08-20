@@ -13,10 +13,6 @@
     "scripts/sync-version.mjs",
     "scripts/gate-scope.mjs"
   ],
-  "ignore": [
-    "tests/**",
-    "src/renderer/kill-ring.ts",
-    "src/renderer/undo-stack.ts"
-  ],
+  "ignore": ["tests/**"],
   "include": ["files"]
 }
