@@ -13,6 +13,22 @@ import { CodeBlock } from "./code-block.js";
 //
 // Byte assertions, not `toContain`, deliberately: B-055's first test records that a substring
 // assertion is exactly what let four broken strippers pass for a whole slice.
+//
+// WHAT THIS FILE PROVES, AND WHAT IT DOES NOT — measured, and written here because the first
+// version of it claimed more than it could deliver. With `sanitizeUntrusted` reduced to
+// `return value;` — the exact pre-B-078 vulnerable state:
+//
+//   this file            -> 1 failed | 5 passed
+//   src/format/ansi.test -> 5 failed | 7 passed
+//
+// Only `osc8_wiring_...` discriminates here. The other five stay green because `ink` and
+// `@alcalzone/ansi-tokenize` remove those inputs BELOW us, with no contribution from our code —
+// so at this layer they are regression guards on a third-party behaviour, not evidence that the
+// sanitiser works. Their names now say so.
+//
+// The sanitiser's own detection power lives in `src/format/ansi.test.tsx`, where each of its three
+// passes has its own kill set (backstop 2, OSC 2, CSI 1). Deleting the backstop here leaves all
+// six green, which is precisely why the unit layer exists.
 
 const ESC = "";
 const BEL = "";
@@ -49,7 +65,11 @@ const frameOf = async (code: string): Promise<string> => {
 };
 
 describe("CodeBlock — untrusted escape sequences (B-078)", () => {
-  it("osc8_hyperlink_does_not_reach_the_frame", async () => {
+  it("osc8_wiring_the_sanitiser_is_actually_called_by_code_block", async () => {
+    // THE test in this file with detection power: it is the only one that fails when
+    // `sanitizeUntrusted` is reduced to `return value;`. Its job is to prove the sanitiser is WIRED
+    // INTO `CodeBlock` at all — the property no unit test of the function can establish.
+    //
     // Measured before the fix: the frame was BYTE-FOR-BYTE identical to this input, for the
     // ST-terminated and the BEL-terminated form alike. OSC 8 makes attacker text clickable, and
     // CVE-2023-46321 / CVE-2023-46322 (both CVSS 9.8) are what a hostile URI scheme does next.
@@ -60,7 +80,7 @@ describe("CodeBlock — untrusted escape sequences (B-078)", () => {
     expect(escapeCount(await frameOf(bel))).toBe(0);
   });
 
-  it("osc52_clipboard_write_does_not_reach_the_frame", async () => {
+  it("regression_guard_osc52_write_is_absent_from_the_frame_by_any_means", async () => {
     // This passes TODAY, and for the wrong reason: `ink@7.1.0` deliberately preserves every OSC
     // token, and OSC 52 only dies one layer below in `@alcalzone/ansi-tokenize`, which misparses it.
     // That is an undocumented dependency bug and `ink` is a caret range — so this test exists to
@@ -73,7 +93,7 @@ describe("CodeBlock — untrusted escape sequences (B-078)", () => {
     expect(escapeCount(await frameOf(payload))).toBe(0);
   });
 
-  it("osc52_clipboard_read_does_not_reach_the_frame", async () => {
+  it("regression_guard_osc52_read_is_absent_from_the_frame_by_any_means", async () => {
     // The interrogation form. No terminal in the surveyed set answers it unprompted, so this is
     // defence in depth rather than the live threat — recorded as such instead of overstated.
     const payload = `${ESC}]52;c;?${BEL}`;
@@ -81,12 +101,16 @@ describe("CodeBlock — untrusted escape sequences (B-078)", () => {
     expect(escapeCount(await frameOf(payload))).toBe(0);
   });
 
-  it("a_lone_escape_byte_is_removed", async () => {
-    // The NEGATIVE case (`rules/testing.md` § 4.1), and the one that decides the design. A
-    // structural matcher for `OSC ... terminator` does not match an OSC that never terminates, so
-    // something else has to. This is the shape of CVE-2022-46663 in `less`, whose one-line fix is
-    // "End OSC8 hyperlink on invalid embedded escape sequence": an emitter or a filter is only as
-    // safe as its ERROR handling.
+  it("regression_guard_a_truncated_osc_is_absent_from_the_frame_by_any_means", async () => {
+    // The negative case (`rules/testing.md` § 4.1) — but NOT the test that decides the design,
+    // which is what the first version of this comment claimed. Measured: this stays green with the
+    // control backstop deleted, because ink removes the truncated form on its own. The claim it
+    // was making belongs to `disarms_a_truncated_osc_that_no_matcher_can_match` in
+    // `src/format/ansi.test.tsx`, where deleting the backstop turns it red.
+    //
+    // The design argument stands and is recorded there: a structural matcher for
+    // `OSC ... terminator` cannot match an OSC that never terminates — the shape of CVE-2022-46663
+    // in `less`. An emitter or a filter is only as safe as its ERROR handling.
     const truncated = `${ESC}]8;;`;
 
     expect(escapeCount(await frameOf(truncated))).toBe(0);
