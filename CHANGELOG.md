@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.71.0] - 2026-08-20
+
 ### Security
 
 - **An untrusted code block can no longer put a control sequence on your terminal (B-078).**
@@ -24,8 +26,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   cannot match a sequence that never terminates, which is precisely the shape of CVE-2022-46663.
 
   Tabs, newlines and carriage returns survive, so code blocks still render as code.
-
-## [0.70.1] - 2026-08-20
 
 ### Fixed
 
