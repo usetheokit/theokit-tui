@@ -5,6 +5,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Removed
+
+- **`src/renderer/kill-ring.ts` and `src/renderer/undo-stack.ts` (B-065).** Neither was ever
+  imported by anything. They are module-internal — absent from `src/index.ts` and
+  `src/renderer/index.ts` — so nothing a consumer can reach changes, and this entry exists for the
+  record rather than as a migration note.
+
 ## [0.74.0] - 2026-08-20
 
 ### Removed
