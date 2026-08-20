@@ -228,6 +228,21 @@ async function mount(
   await tick();
 
   if (expectFocus) {
+    // WHAT THIS WAIT HAS BEEN MEASURED TO DO, which is less than the commit that added it claimed.
+    //
+    // Instrumented to log every mount where the indicator was ABSENT here — i.e. every mount where
+    // this wait has real work — the count was 0 of 63 at idle, 0 of 63 at load 20, and 0 of 63 at
+    // load 44-46, the band where B-058's failures were originally seen. It has never been observed
+    // to wait.
+    //
+    // So it is a GUARD, not a demonstrated fix, and B-058 stays `triaged` for that reason. It is
+    // kept because it costs one frame read and because the condition it tests is the exactly
+    // correct one: `useInput` runs with `{ isActive: isFocused }`, so a keystroke arriving before
+    // focus IS dropped by design. What is unproven is that this ever happened.
+    //
+    // Absence over 63 mounts is weak evidence against a defect that appears in about one run in
+    // five — this note is here so the claim and its evidence sit in the same place, not to argue
+    // the mechanism is impossible.
     await waitForCondition(
       () => hasFocusIndicator(instance.lastFrame() ?? ""),
       {
