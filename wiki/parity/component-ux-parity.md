@@ -3,14 +3,14 @@ type: Design Decision
 title: M26 — component UX parity with the Claude Code look
 description: The tool cards adopt the Claude Code idiom (● status bullet, name(args) header, ⎿ result tree); the other four agent surfaces are recorded as honest no-change decisions, with the no-color accessibility trade-off stated.
 tags: [parity, ux, theme, tool-cards, accessibility, m26]
-resource: "file:src/tool-call.tsx"
+resource: "file:packages/tui/src/tools/tool-call.tsx"
 sources:
   - id: component-parity
     resource: "git:9fd7eb1:docs/component-parity.md"
   - id: tool-call-src
-    resource: "file:src/tool-call.tsx"
+    resource: "file:packages/tui/src/tools/tool-call.tsx"
   - id: theme-src
-    resource: "file:src/theme.tsx"
+    resource: "file:packages/tui/src/theme/theme.tsx"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06
