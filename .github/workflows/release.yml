@@ -1,0 +1,142 @@
+name: Release
+
+# Until this file existed, `@theokit/tui` was published by hand from a developer
+# machine. That is why the tree carries 0.77.0 while the registry serves 0.76.1:
+# a version was bumped and the publish never happened, and nothing in the
+# repository could report the gap. A publish from a laptop also has no provenance
+# — a consumer has no way to check that the tarball came from this source at this
+# commit rather than from whoever held the credential.
+#
+# A RELEASE IS A DELIBERATE ACT, so the trigger is a pushed tag rather than a merge.
+# Publishing on every merge makes the registry a side effect of code review, and the
+# first time that is wrong it is already public — npm's unpublish window is 72 hours
+# and the version number stays burned either way.
+#
+# AUTHENTICATION IS OIDC, NOT A TOKEN. `@theokit/tui` carries a Trusted Publisher
+# connection on npmjs.com naming this repository and THIS FILE. npm mints a
+# short-lived credential scoped to that package; it cannot be exported or replayed.
+# Renaming this file, or publishing from another workflow, breaks the trust and the
+# publish is rejected — that is the point of it.
+on:
+  push:
+    tags: ['v*']
+  # Lets a release be rehearsed end to end without touching the registry.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run every gate and pack the tarball, but do not publish'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  # The gate is repeated here rather than assumed: a tag can be cut from any commit,
+  # including one that never passed CI.
+  verify:
+    name: gates (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: ['22.12', '22']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The never-weaken guard diffs against a base SHA, which a shallow clone hides.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        # No `version:` — `packageManager` in package.json is the single authority.
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning]
+        with:
+          node-version: ${{ matrix.node-version }}
+          # This job holds no publishing credential — no `id-token: write`, no registry
+          # config — so a restored cache reaches a gate, not the registry. The publish
+          # job below runs with no cache at all, which is where it matters.
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - name: Gates (format, naming, lint, typecheck, depcruise, build, test)
+        run: pnpm gates
+
+  publish:
+    name: publish @theokit/tui
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # create the GitHub Release
+      id-token: write # the OIDC token npm exchanges for permission to publish
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Publishing goes through `pnpm publish`; nothing here pushes with git.
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning]
+        with:
+          # No dependency cache in the job that publishes: a cache entry written by a
+          # pull-request run is restorable here, and this is the one job whose output
+          # reaches the registry under the org's name.
+          node-version-file: '.nvmrc'
+          # NO `registry-url`. It looks harmless and is not: setup-node writes
+          # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into an npmrc
+          # UNCONDITIONALLY and points NPM_CONFIG_USERCONFIG at it, then exports
+          # NODE_AUTH_TOKEN only if the caller supplied one — which, under OIDC, nobody
+          # does. The job would publish with a config declaring a credential that does
+          # not exist. registry.npmjs.org is already the default, and
+          # `publishConfig.access: public` in the manifest already covers the scope.
+
+      # THE STEP WITHOUT WHICH THE OIDC CONFIGURATION IS CORRECT AND USELESS. setup-node
+      # ships whatever npm the Node release bundles, and Node 22 bundles npm 10.9.7. OIDC
+      # needs npm >= 11.5.1: an older npm does not know what to do with `id-token: write`,
+      # looks for a credential, finds none, and the registry answers `E404 Not Found - PUT`.
+      #
+      # Pinned exactly, and NOT to 12.x: npm 12 rejects the `--no-git-checks` flag pnpm
+      # passes through with EUNKNOWNCONFIG. 11.9.0 is the newest npm that clears the OIDC
+      # floor and still tolerates the publish flags — the same pin theokit-di landed on
+      # after measuring both failures.
+      - name: Install an npm that speaks OIDC (>= 11.5.1) but tolerates pnpm's publish flags
+        run: npm install -g npm@11.9.0 # zizmor: ignore[adhoc-packages] — bootstrapping npm itself; no lockfile can cover it
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # A tag and a manifest that disagree publish one version under another's name, and
+      # the registry keeps whichever number won. Checked before anything is uploaded.
+      - name: The tag and the manifest must agree
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="$(node -p "require('./packages/tui/package.json').version")"
+          if [ "${GITHUB_EVENT_NAME}" = 'workflow_dispatch' ]; then
+            echo "manual run — version in tree is $manifest"
+          else
+            tag="${GITHUB_REF_NAME#v}"
+            if [ "$tag" != "$manifest" ]; then
+              echo "::error::tag v$tag does not match packages/tui/package.json $manifest."
+              exit 1
+            fi
+            echo "tag and manifest agree on $manifest"
+          fi
+
+      - name: Publish
+        # `--provenance` is redundant under trusted publishing, which attaches the
+        # attestation on its own, and `publishConfig.provenance: true` in the manifest
+        # says the same thing beside the package it describes. It is passed here so a
+        # publish that somehow falls back to a token still signs.
+        run: |
+          if [ "${{ inputs.dry_run }}" = 'true' ]; then
+            pnpm --filter @theokit/tui publish --dry-run --no-git-checks --access public
+          else
+            pnpm --filter @theokit/tui publish --no-git-checks --access public
+          fi
