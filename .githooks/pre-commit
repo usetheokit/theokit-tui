@@ -38,11 +38,15 @@ ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/.githooks/secret-scan.sh"
 
 # `--diff-filter=ACM` skips deletions and renames-away: a path that is gone cannot be checked,
-# and prettier would exit non-zero on the missing file rather than on a formatting problem.
+# and the formatter would exit non-zero on the missing file rather than on a formatting problem.
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
 if [ -n "$STAGED" ]; then
-  # `--ignore-unknown` so a staged .png or .lock is skipped rather than failing the commit.
-  if ! printf '%s\n' "$STAGED" | xargs -r npx prettier --check --ignore-unknown; then
+  # The binary directly, NEVER `npx` — B-109 measured that `npx biome` invoked outside the project
+  # exits 0 having inspected nothing, while the same binary exits 123. A hook that cannot fail is
+  # the B-084 shape this file exists to avoid.
+  # `--files-ignore-unknown` so a staged .png or .lock is skipped rather than failing the commit.
+  if ! printf '%s\n' "$STAGED" |
+    xargs -r "$ROOT/node_modules/.bin/biome" format --files-ignore-unknown=true --; then
     echo "" >&2
     echo "pre-commit: the staged files above are not formatted." >&2
     echo "  Run: pnpm format" >&2

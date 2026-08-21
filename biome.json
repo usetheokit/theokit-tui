@@ -1,0 +1,104 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**/*.{ts,tsx,js,mjs,cjs,jsx,json,jsonc}",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/coverage",
+      "!**/__snapshots__",
+      "!.claude",
+      "!wiki",
+      "!docs",
+      "!.benchmarks",
+      "!.hypothesis",
+      "!.pytest_cache"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": {
+        "useImportType": "error",
+        "useExportType": "error",
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noControlCharactersInRegex": "off",
+        "noArrayIndexKey": "off"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "warn"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 25
+          }
+        }
+      },
+      "a11y": {
+        "recommended": false
+      }
+    }
+  },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.bench.ts", "tests/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noChildrenProp": "off"
+          },
+          "suspicious": {
+            "noExportsInTest": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["examples/**", "benchmarks/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off",
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
+}
