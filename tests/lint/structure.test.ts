@@ -61,6 +61,19 @@ function walk(root: string): { dirs: string[]; files: Entry[] } {
 const tree = walk(SRC);
 const sourceFiles = tree.files.filter((f) => SOURCE.test(f.name));
 
+// B-109 — tests moved out of `src/` and into `tests/`, which silently emptied the input of every
+// rule below that reasons about TEST FILES. Measured at the time of the move: a file named
+// `bogus.nonsense.test.tsx` under `tests/` passed the qualifier rule, because the walk never went
+// there. A gate whose input became empty reports the same PASS as a gate that checked everything
+// (B-084), so the naming rules now walk BOTH trees.
+//
+// The domain rules above deliberately do NOT: `tests/` has no barrels, is not organised by product
+// domain, and its folder sizes mirror src's by construction.
+const TESTS = join(REPO, "tests");
+const testTree = walk(TESTS);
+const allNamedFiles = [...sourceFiles, ...testTree.files.filter((f) => SOURCE.test(f.name))];
+const allDirs = [...tree.dirs, ...testTree.dirs];
+
 describe("src/ is organised by domain (ADR 0001)", () => {
   it("no_source_file_sits_directly_under_src_except_the_barrel", () => {
     const loose = sourceFiles
@@ -99,14 +112,14 @@ describe("src/ is organised by domain (ADR 0001)", () => {
 
 describe("naming is one convention, everywhere (ADR 0003)", () => {
   it("directories_are_kebab_case", () => {
-    const bad = tree.dirs
+    const bad = allDirs
       .map((d) => relative(REPO, d))
       .filter((d) => !KEBAB.test(d.slice(d.lastIndexOf("/") + 1)));
     expect(bad).toEqual([]);
   });
 
   it("file_stems_are_kebab_case", () => {
-    const bad = sourceFiles
+    const bad = allNamedFiles
       .filter((f) => !KEBAB.test(f.name.split(".")[0] as string))
       .map((f) => join(relative(REPO, f.dir), f.name));
     expect(bad).toEqual([]);
@@ -118,7 +131,7 @@ describe("naming is one convention, everywhere (ADR 0003)", () => {
     // escaped into the filename, and each new one splits the suite a little
     // further with no rule saying where a reader should look.
     const bad: string[] = [];
-    for (const f of sourceFiles) {
+    for (const f of allNamedFiles) {
       const match = /^[a-z0-9-]+\.([a-z0-9-]+)\.test\.tsx?$/.exec(f.name);
       if (match && !ALLOWED_TEST_QUALIFIERS.has(match[1] as string)) {
         bad.push(join(relative(REPO, f.dir), f.name));

@@ -46,7 +46,11 @@ module.exports = {
         "component in the package on day one. The rule was wrong, not the code — the fix is here " +
         "and not in 46 per-file exceptions.",
       severity: "error",
-      from: { path: "^src", pathNot: "\\.(test|bench)\\.(ts|tsx)$" },
+      // B-109 — the `pathNot` exemption for `*.test.*` / `*.bench.*` is GONE because those
+      // files are gone from `src/`: tests live under `tests/` now. `src/` is production code
+      // with no exceptions, which is strictly stronger than what this rule could enforce
+      // while a test could sit beside the module it tested and be waved through.
+      from: { path: "^src" },
       to: { dependencyTypes: ["npm-dev"], dependencyTypesNot: ["npm-peer"] },
     },
     {

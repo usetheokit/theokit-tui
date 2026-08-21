@@ -57,6 +57,31 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `pnpm lint` reports **355 files inspected** — the same count ESLint reported, which is the
   evidence the swap did not narrow the gate's view.
 
+- **Tests move out of `src/` and into `tests/`, mirroring the ecosystem layout (B-109).**
+
+  129 files (110 tests, 19 snapshot files) moved with `git mv`, so the history follows them.
+  `theokit-sdk` keeps 878 tests under `packages/*/tests` and zero co-located; this package had a
+  hybrid of 110 in `src/` and 57 in `tests/`. It is now one answer to "where does a test live".
+
+  `src/` is production code with no exceptions, and that turned out to be worth more than the
+  tidiness: `.dependency-cruiser.cjs`'s dev-dependency rule carried an exemption for
+  `*.test.*` / `*.bench.*` inside `src/`, and the exemption is now **deleted** rather than
+  configured — there is nothing left in `src/` for it to excuse.
+
+  **Two gates went quietly blind in the move, and both are fixed:**
+
+  - `depcruise src` fell from **283 modules / 1128 dependencies to 162 / 610** — it kept reporting
+    a clean pass over 57% of what it used to see. It now cruises `src tests` and reports
+    **339 / 1346**, which is *more* than before the move: the tests that already lived in `tests/`
+    had never been cruised at all.
+  - `tests/lint/structure.test.ts` walked only `src/`, so its test-file naming rules had an empty
+    input. Measured: a file named `bogus.nonsense.test.tsx` under `tests/` passed the qualifier
+    rule. The naming rules now walk both trees; the domain rules (barrels, folder budgets) still
+    walk only `src/`, because `tests/` has no barrels by design.
+
+  Coverage is unaffected — vitest already excluded test files from `coverage.include: ["src/**"]`
+  (verified: 0 of 142 reported files were tests, total 98.59%).
+
 ## [0.76.1] - 2026-08-20
 
 ### Changed
