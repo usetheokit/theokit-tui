@@ -30,11 +30,12 @@ describe("package publish contract (M8 T1.1)", () => {
 
   it("react_peer_range_is_honest", () => {
     // M10: ink7 requires react >=19.2.0 exactly (blueprint Corner 2) —
-    // the peer mirrors that floor; engines follow ink7 (node >=22).
+    // the peer mirrors that floor. engines is stricter than ink7's `>=22`: the
+    // organisation's floor is 22.12.0, which is also the version CI exercises.
     const peers = (pkg as unknown as { peerDependencies: Record<string, string> }).peerDependencies;
     expect(peers.react).toBe("^19.2.0");
     const engines = (pkg as unknown as { engines: Record<string, string> }).engines;
-    expect(engines.node).toBe(">=22");
+    expect(engines.node).toBe(">=22.12.0");
   });
 
   it("publint_reports_zero_errors", { timeout: 60000 }, () => {
