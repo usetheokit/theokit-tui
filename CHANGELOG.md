@@ -21,6 +21,19 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- **A documentation-only commit was impossible, and the wiki's citations had gone dead (B-109).**
+
+  Two defects the layout change introduced, both found while promoting it:
+
+  - The pre-commit formatter gate rejected any commit whose staged set is only Markdown. Prettier
+    formatted `.md`; Biome does not, and reports an empty input set as an error rather than a
+    no-op — so the hook refused the commit naming files it does not govern. The empty case is now
+    reported, not silenced, and the gate was re-verified against all three cases (malformed `.ts`
+    blocks; `.md`-only passes; mixed set still checks the `.ts`).
+  - The OKF knowledge bundle cites the code holding each fact. **13 of 21** citations resolved
+    before this session, **1 of 21** after the move, **21 of 21** now. Every rewrite was checked
+    against the filesystem; none was guessed.
+
 - **The repository adopts the ecosystem's shared conventions (B-109).**
 
   `theokit-sdk` is the reference layout for the Theo framework, and this package diverged from it
