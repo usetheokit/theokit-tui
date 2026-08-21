@@ -5,6 +5,26 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **The repository adopts the ecosystem's shared conventions (B-109).**
+
+  `theokit-sdk` is the reference layout for the Theo framework, and this package diverged from it
+  on four axes. This lands the three that are cheap and reversible:
+
+  - `.ls-lint.yml` — kebab-case file naming, wired into `pnpm gates` as `validate:naming`. The
+    tree already satisfied it: **0 of 307** source files needed renaming, so the rule pins a
+    convention that was being followed by habit with nothing enforcing it. Verified falsifiable —
+    a file named `Bad_Name.ts` fails the gate.
+  - `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.editorconfig`, `.nvmrc` — the
+    community and editor files every other repo in the framework carries. `CONTRIBUTING` inherits
+    the SDK's _structure_, not its prose: its 452 lines are lessons measured in that repository
+    and would be false here.
+  - `assets/banner.svg` — same palette, typography and frame as the SDK banner, with a terminal
+    motif in place of the orbital one, now at the top of the README.
+
+  Affects contributors, not consumers. **No published behaviour changes.**
+
 ## [0.76.1] - 2026-08-20
 
 ### Changed
