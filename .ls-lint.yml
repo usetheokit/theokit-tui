@@ -1,0 +1,33 @@
+# File-naming convention, shared with the rest of the Theo ecosystem
+# (`theokit-sdk/.ls-lint.yml`) — now with the SAME paths, since this repo is a
+# workspace too. kebab-case, lowercase, no underscores.
+ls:
+  packages/*/src:
+    .ts: regex:^[a-z][a-z0-9-]*$
+    .tsx: regex:^[a-z][a-z0-9-]*$
+  packages/*/src/**:
+    .ts: regex:^[a-z][a-z0-9-]*$
+    .tsx: regex:^[a-z][a-z0-9-]*$
+  packages/*/tests:
+    .ts: regex:^[a-z][a-z0-9-]*$
+    .tsx: regex:^[a-z][a-z0-9-]*$
+  packages/*/tests/**:
+    .ts: regex:^[a-z][a-z0-9-]*$
+    .tsx: regex:^[a-z][a-z0-9-]*$
+  packages/*/scripts:
+    .mjs: regex:^[a-z][a-z0-9-]*$
+
+ignore:
+  - node_modules
+  - dist
+  - coverage
+  - .git
+  - .claude
+  - .githooks
+  - .benchmarks
+  - .hypothesis
+  - .pytest_cache
+  - examples
+  - benchmarks
+  - wiki
+  - docs

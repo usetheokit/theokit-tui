@@ -5,6 +5,142 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.77.0] - 2026-08-21
+
+### Added
+
+- **The repository adopts the ecosystem's shared conventions (B-109).**
+
+  `theokit-sdk` is the reference layout for the Theo framework, and this package diverged from it
+  on four axes. This lands the three that are cheap and reversible:
+
+  - `.ls-lint.yml` — kebab-case file naming, wired into `pnpm gates` as `validate:naming`. The
+    tree already satisfied it: **0 of 307** source files needed renaming, so the rule pins a
+    convention that was being followed by habit with nothing enforcing it. Verified falsifiable —
+    a file named `Bad_Name.ts` fails the gate.
+  - `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.editorconfig`, `.nvmrc` — the
+    community and editor files every other repo in the framework carries. `CONTRIBUTING` inherits
+    the SDK's _structure_, not its prose: its 452 lines are lessons measured in that repository
+    and would be false here.
+  - `assets/banner.svg` — same palette, typography and frame as the SDK banner, with a terminal
+    motif in place of the orbital one, now at the top of the README.
+
+  Affects contributors, not consumers. **No published behaviour changes.**
+
+- **Biome replaces ESLint + Prettier (B-109).** One tool, the ecosystem's config, `pnpm check` /
+  `pnpm check:fix` as in `theokit-sdk`.
+
+  312 files were reformatted (Biome's `lineWidth: 100` against Prettier's 80) and 1706 tests stayed
+  green through it. Four rule groups diverge from the SDK's config, each for a measured reason
+  rather than convenience:
+
+  | Rule | Here | Why |
+  |---|---|---|
+  | `a11y/*` | off | Biome's a11y rules target the DOM. There is none. 39 of them fired on `role="user"` — the `ChatMessage` domain prop, not an ARIA attribute. Terminal accessibility here is `NO_COLOR` / `TERM=dumb` / screen-reader mode, and the degrade matrix already proves it. |
+  | `suspicious/noControlCharactersInRegex` | off | A terminal library matches `\x1b`. The ESLint config it replaces was already disabling this rule case by case — 13 of the 18 `eslint-disable` comments in the tree were this exact rule. |
+  | `suspicious/noArrayIndexKey` | off | The lists are frame rows. Row 3 is row 3; they are replaced by position, never reordered. |
+  | `complexity/noExcessiveCognitiveComplexity` | 25, not 10 | 36 functions exceed 10 (max 25, median 14). Set to what the tree passes today, so it blocks regression instead of being waived on day one — the doctrine `.dependency-cruiser.cjs` already states. |
+
+  **Two defects were found by doing this, both real:**
+
+  - **`npx` made a gate pass having inspected nothing.** `npx biome format` run outside the project
+    exits **0 silently**; the same binary invoked directly exits 123. The hermetic gate test (B-051)
+    caught it. Every gate now calls the binary, never `npx` — this is the B-084 failure shape, one
+    layer down.
+  - **Biome's "unsafe" autofix broke an example.** `useExhaustiveDependencies` added `[stream, exit]`
+    to a mount-once effect whose `stream` is re-created every render; `examples/scenes/chat.tsx` died
+    with `Maximum update depth exceeded` before printing a token. The dependency list is empty on
+    purpose and now says so.
+
+  Five suppressions remain, each one line with the reason above it: two TypeScript conflicts
+  (`useOptionalChain` returns `boolean | undefined` under `strict` — TS2322), the canonical global
+  `RegExp.exec` loop, and two mount-once effects.
+
+  `pnpm lint` reports **355 files inspected** — the same count ESLint reported, which is the
+  evidence the swap did not narrow the gate's view.
+
+- **Tests move out of `src/` and into `tests/`, mirroring the ecosystem layout (B-109).**
+
+  129 files (110 tests, 19 snapshot files) moved with `git mv`, so the history follows them.
+  `theokit-sdk` keeps 878 tests under `packages/*/tests` and zero co-located; this package had a
+  hybrid of 110 in `src/` and 57 in `tests/`. It is now one answer to "where does a test live".
+
+  `src/` is production code with no exceptions, and that turned out to be worth more than the
+  tidiness: `.dependency-cruiser.cjs`'s dev-dependency rule carried an exemption for
+  `*.test.*` / `*.bench.*` inside `src/`, and the exemption is now **deleted** rather than
+  configured — there is nothing left in `src/` for it to excuse.
+
+  **Two gates went quietly blind in the move, and both are fixed:**
+
+  - `depcruise src` fell from **283 modules / 1128 dependencies to 162 / 610** — it kept reporting
+    a clean pass over 57% of what it used to see. It now cruises `src tests` and reports
+    **339 / 1346**, which is *more* than before the move: the tests that already lived in `tests/`
+    had never been cruised at all.
+  - `tests/lint/structure.test.ts` walked only `src/`, so its test-file naming rules had an empty
+    input. Measured: a file named `bogus.nonsense.test.tsx` under `tests/` passed the qualifier
+    rule. The naming rules now walk both trees; the domain rules (barrels, folder budgets) still
+    walk only `src/`, because `tests/` has no barrels by design.
+
+  Coverage is unaffected — vitest already excluded test files from `coverage.include: ["src/**"]`
+  (verified: 0 of 142 reported files were tests, total 98.59%).
+
+- **The repository becomes a pnpm workspace, matching the ecosystem layout (B-109).**
+
+  The package moved to `packages/tui/`; `pnpm-workspace.yaml`, `turbo.json`, `biome.json`,
+  `.ls-lint.yml`, `.dependency-cruiser.cjs` and `.npmrc` sit at the root, exactly where
+  `theokit-sdk` keeps them. CI is unchanged — it calls `pnpm <script>` at the root, and the root
+  now delegates through turbo.
+
+  **The published package is unaffected**: same name, same version, same four entry points, same
+  `files: ["dist"]`. `publint` reports "All good!" and the packed tarball carries the same
+  artifacts.
+
+  **`.npmrc` had to go to the ROOT, and that is not cosmetic.** pnpm resolves the tree from the
+  workspace root, so a package-local `.npmrc` is never read during install. While it sat inside
+  the package, `auto-install-peers` reverted to its default, `figlet` was installed, and
+  `figlet-art.test.ts → returns_null_when_figlet_is_absent` went red — the exact failure the README
+  warns about. The lockfile had to be regenerated to drop the peer it recorded.
+
+  **Four gates broke on the way and each is fixed rather than relaxed:** `depcruise` could not find
+  the tsconfig from the root (TS5083, then TS18003) and now runs with its cwd inside the package;
+  the root `lint` could not see files outside the packages (`.dependency-cruiser.cjs` was the only
+  one, and one invisible file is how the next ten arrive); `validate:naming` reported **0 files
+  checked** under a `git ls-files` pathspec that matched nothing — a green gate that inspected
+  nothing, caught by the same B-084 discipline that motivated it; and four repo-level contract
+  tests were reading `wiki/`, `.github/` and the gate scripts through the package's relative path.
+
+  **Deliberately NOT adopted: changesets.** `theokit-sdk` generates per-package changelogs with
+  them and has no root `CHANGELOG.md`. `rules/cycle-release.md` derives the next version from this
+  file's `[Unreleased]` section and cuts one semver tag. Adopting changesets would replace the
+  release process, not the layout — that needs an ADR, not a refactor.
+
+- **The never-weaken test guard had stopped guarding, and now says how much it checks (B-109).**
+
+  `never-weaken migration guard (M10 D2)` compares the `it(` count of every changed test file
+  against a base commit, so a refactor cannot quietly delete assertions. It resolves the base
+  version by a hard-coded historical path — which two layout changes have since invalidated.
+
+  Measured: **14 of 171** files were still being compared before this workspace migration (the
+  domain split in `78a333a` had already broken most of them), and **0 of 158** after it. The guard
+  was green in both states.
+
+  It now tries the pre-package and pre-domain paths as well, bringing the comparison set to
+  **27 of 158**, and — following B-084 — asserts that the set has not collapsed instead of
+  reporting a pass over nothing. The floor is 20 rather than 1, because a guard comparing a single
+  file passes just as happily as one comparing none.
+
 ## [0.76.1] - 2026-08-20
 
 ### Changed
