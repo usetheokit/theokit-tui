@@ -7,6 +7,25 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `Release`, a tag-driven publish for `@theokit/tui`. There was no release workflow: publishing
+  happened by hand, which is why the tree carries 0.77.0 while the registry serves 0.76.1, and why
+  no published version carries a provenance attestation (#153)
+- `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#153)
+
+### Changed
+
+- The CI matrix runs Node 22.12 and the latest 22.x, was 22.x and 24.x. Testing 24 while never
+  testing the floor `engines` declares covers the wrong end (#153)
+- `engines.node` is `>=22.12.0`, was `>=22`, matching the rest of the published packages (#153)
+- Node pinned to 22.12.0 and pnpm to 10.34.1, resolved from `.nvmrc` and `packageManager` (#153)
+
+### Security
+
+- Every GitHub Action is pinned to a commit SHA rather than a movable tag (#153)
+- The publish authenticates with npm trusted publishing over OIDC; no long-lived token exists (#153)
+
+### Added
+
 - **A documentation-only commit was impossible, and the wiki's citations had gone dead (B-109).**
 
   Two defects the layout change introduced, both found while promoting it:
