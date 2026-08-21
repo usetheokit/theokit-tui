@@ -3,13 +3,13 @@ type: Parity Report
 title: M17 — renderer walking skeleton, byte-parity vs Ink
 description: The first renderer milestone — parity is exact on plain column/row text, every wider layout behaviour is deferred to M18 with a per-row verdict, and the byte-cost case for the own engine is measured.
 tags: [renderer, parity, milestone, m17]
-resource: "file:src/renderer/renderer.test.tsx"
+resource: "file:packages/tui/tests/renderer/renderer.test.tsx"
 sources:
   - id: m17-report
     resource: "git:9fd7eb1:docs/renderer/m17-parity-report.md"
     last_modified: 2026-07-08
   - id: baseline
-    resource: "file:benchmarks/baselines/renderer-skeleton-baseline.json"
+    resource: "file:packages/tui/benchmarks/baselines/renderer-skeleton-baseline.json"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06

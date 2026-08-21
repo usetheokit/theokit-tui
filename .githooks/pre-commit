@@ -45,8 +45,31 @@ if [ -n "$STAGED" ]; then
   # exits 0 having inspected nothing, while the same binary exits 123. A hook that cannot fail is
   # the B-084 shape this file exists to avoid.
   # `--files-ignore-unknown` so a staged .png or .lock is skipped rather than failing the commit.
-  if ! printf '%s\n' "$STAGED" |
-    xargs -r "$ROOT/node_modules/.bin/biome" format --files-ignore-unknown=true --; then
+  #
+  # B-109 — Biome does NOT format Markdown, which Prettier did. A commit touching ONLY .md (a wiki
+  # correction, a CHANGELOG-only edit) leaves Biome with nothing to process, and it reports that as
+  # an ERROR, not as a no-op. Under the old wording every documentation-only commit was rejected
+  # with "the staged files above are not formatted" — about files this formatter does not govern.
+  #
+  # The empty case is reported rather than silenced. A gate that passes because it looked at
+  # nothing is the B-084 defect; a gate that passes because nothing in the set is ITS to check is a
+  # different thing, and the difference has to be visible in the log to stay honest.
+  # `set -e` is on (line 34), so the failing pipeline would abort the hook before the empty-set
+  # case below could be examined. The status is captured on the failure branch rather than with
+  # `|| true`, which would swallow it: `FORMAT_STATUS=$?` after `|| true` reads the status of
+  # `true` and is therefore ALWAYS 0 — a hook that can no longer fail, which is the exact defect
+  # the comment above warns about.
+  FORMAT_STATUS=0
+  FORMAT_OUT=$(printf '%s\n' "$STAGED" |
+    xargs -r "$ROOT/node_modules/.bin/biome" format --files-ignore-unknown=true -- 2>&1) ||
+    FORMAT_STATUS=$?
+  if [ $FORMAT_STATUS -ne 0 ] &&
+    printf '%s' "$FORMAT_OUT" | grep -q "No files were processed"; then
+    echo "pre-commit: no staged file is formatted by biome (markdown, yaml, images) — nothing to check."
+    FORMAT_STATUS=0
+  fi
+  if [ $FORMAT_STATUS -ne 0 ]; then
+    printf '%s\n' "$FORMAT_OUT" >&2
     echo "" >&2
     echo "pre-commit: the staged files above are not formatted." >&2
     echo "  Run: pnpm format" >&2

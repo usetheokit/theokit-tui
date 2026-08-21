@@ -3,13 +3,13 @@ type: Parity Report
 title: M18 — Yoga layout parity vs Ink
 description: Real Yoga layout lands and every M17 deferral closes — 14 of 14 scenes byte-identical to Ink, plus a separate SGR byte-parity check on the coloured cell grid.
 tags: [renderer, parity, layout, yoga, milestone, m18]
-resource: "file:tests/renderer/parity-corpus.test.tsx"
+resource: "file:packages/tui/tests/renderer/parity-corpus.test.tsx"
 sources:
   - id: m18-report
     resource: "git:9fd7eb1:docs/renderer/m18-parity-report.md"
     last_modified: 2026-07-08
   - id: baseline
-    resource: "file:benchmarks/baselines/renderer-layout-baseline.json"
+    resource: "file:packages/tui/benchmarks/baselines/renderer-layout-baseline.json"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06

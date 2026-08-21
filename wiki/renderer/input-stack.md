@@ -3,13 +3,13 @@ type: Milestone Report
 title: M19 — renderer input stack, compat and EC-5 closure
 description: The renderer's input half — raw stdin through a ported two-stage parser to the 12-field Key, Ink-compatible hooks, a remappable emacs keymap and kitty handshake awareness, proven on a real PTY.
 tags: [renderer, input, keyboard, pty, milestone, m19]
-resource: "file:src/renderer/input/"
+resource: "file:packages/tui/src/renderer/input/"
 sources:
   - id: m19-report
     resource: "git:9fd7eb1:docs/renderer/m19-input-report.md"
     last_modified: 2026-07-08
   - id: composer
-    resource: "file:src/chat-composer.tsx"
+    resource: "file:packages/tui/src/chat/chat-composer.tsx"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06

@@ -3,14 +3,14 @@ type: Test Fixture Set
 title: Benchmark baselines
 description: The 13 pinned baseline JSON files under benchmarks/baselines/ — which bench writes each, which contract test guards it, and the stack-provenance rule that keeps a number from outliving the stack that produced it.
 tags: [benchmark, fixtures, tests, provenance]
-resource: "file:benchmarks/baselines/"
+resource: "file:packages/tui/benchmarks/baselines/"
 sources:
   - id: provenance-test
-    resource: "file:tests/bench-stack-provenance.test.ts"
+    resource: "file:packages/tui/tests/benchmarks/stack-provenance.test.ts"
   - id: baseline-test
-    resource: "file:tests/bench-baseline.test.ts"
+    resource: "file:packages/tui/tests/benchmarks/baseline.test.ts"
   - id: banner-test
-    resource: "file:tests/bench-banner-baseline.test.ts"
+    resource: "file:packages/tui/tests/benchmarks/banner-baseline.test.ts"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06
