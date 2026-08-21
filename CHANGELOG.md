@@ -112,6 +112,21 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   file's `[Unreleased]` section and cuts one semver tag. Adopting changesets would replace the
   release process, not the layout — that needs an ADR, not a refactor.
 
+- **The never-weaken test guard had stopped guarding, and now says how much it checks (B-109).**
+
+  `never-weaken migration guard (M10 D2)` compares the `it(` count of every changed test file
+  against a base commit, so a refactor cannot quietly delete assertions. It resolves the base
+  version by a hard-coded historical path — which two layout changes have since invalidated.
+
+  Measured: **14 of 171** files were still being compared before this workspace migration (the
+  domain split in `78a333a` had already broken most of them), and **0 of 158** after it. The guard
+  was green in both states.
+
+  It now tries the pre-package and pre-domain paths as well, bringing the comparison set to
+  **27 of 158**, and — following B-084 — asserts that the set has not collapsed instead of
+  reporting a pass over nothing. The floor is 20 rather than 1, because a guard comparing a single
+  file passes just as happily as one comparing none.
+
 ## [0.76.1] - 2026-08-20
 
 ### Changed

@@ -162,19 +162,49 @@ function indexCurrentTestsByBasename(): Map<string, string> {
 /** `it(` count for `path` as of the base commit, or null when the file simply
  * did not exist then. Any OTHER git failure (bad revision, shallow clone)
  * propagates — a guard that silently skips is not a guard. */
-function itCountAtBase(path: string): number | null {
-  try {
-    return countIts(
-      execFileSync("git", ["show", `${M10_BASE}:${path}`], {
-        encoding: "utf8",
-        stdio: ["pipe", "pipe", "pipe"],
-      }),
-    );
-  } catch (thrown) {
-    const msg = String((thrown as { stderr?: unknown }).stderr ?? thrown);
-    if (/exists on disk, but not in|does not exist in/.test(msg)) return null;
-    throw thrown;
+/**
+ * Where today's path lived at the base commit. Two layout changes sit between them (B-109), and
+ * a hard-coded historical path survives neither:
+ *
+ *   1. the package moved under `packages/tui/`
+ *   2. co-located tests moved from `src/<domain>/` to `tests/<domain>/`
+ *
+ * So `packages/tui/tests/chat/chat-thread.test.tsx` may be `tests/chat/chat-thread.test.tsx` OR
+ * `src/chat/chat-thread.test.tsx` at the base, and only trying both finds it. Order matters only
+ * for speed — the two never both exist, since a file lived in exactly one place.
+ */
+function basePathCandidates(path: string): string[] {
+  const withoutPackage = path.replace(/^packages\/[^/]+\//, "");
+  const basename = withoutPackage.slice(withoutPackage.lastIndexOf("/") + 1);
+  const candidates = [withoutPackage];
+  if (withoutPackage.startsWith("tests/")) {
+    candidates.push(`src/${withoutPackage.slice("tests/".length)}`);
   }
+  // Before ADR 0001 (78a333a) `src/` was FLAT — 147 files in one directory. A file that is
+  // `tests/chat/chat-thread.test.tsx` today was `src/chat-thread.test.tsx` at the base, so the
+  // domain folder has to be dropped as well as the package prefix. Measured: this candidate is
+  // what takes the comparison set from 14 (the count before this repo became a workspace, already
+  // degraded by the domain split) to 27.
+  candidates.push(`src/${basename}`, `tests/${basename}`);
+  return [...new Set(candidates)];
+}
+
+function itCountAtBase(path: string): number | null {
+  for (const candidate of basePathCandidates(path)) {
+    try {
+      return countIts(
+        execFileSync("git", ["show", `${M10_BASE}:${candidate}`], {
+          encoding: "utf8",
+          stdio: ["pipe", "pipe", "pipe"],
+        }),
+      );
+    } catch (thrown) {
+      const msg = String((thrown as { stderr?: unknown }).stderr ?? thrown);
+      if (/exists on disk, but not in|does not exist in/.test(msg)) continue;
+      throw thrown;
+    }
+  }
+  return null;
 }
 
 /** Where a base-commit test file lives today: same basename, an explicit
@@ -194,9 +224,11 @@ describe("never-weaken migration guard (M10 D2)", () => {
         encoding: "utf8",
       }),
     );
+    let compared = 0;
     for (const path of changed) {
       const before = itCountAtBase(path);
       if (before === null) continue; // new since the base — nothing to weaken
+      compared += 1;
       const current = currentPathFor(path, byBase);
       // Absent from the tree = deleted, which IS a weakening. Report it as a
       // count of zero so the assertion says so, instead of crashing on ENOENT.
@@ -206,6 +238,20 @@ describe("never-weaken migration guard (M10 D2)", () => {
       const label = current && current !== path ? `${path} -> ${current}` : path;
       expect(after, label).toBeGreaterThanOrEqual(before);
     }
+
+    // B-109 — the guard must state what it compared, and a comparison set of ZERO is a failure
+    // rather than a pass (B-084). Measured when this repo became a workspace: every path in the
+    // diff became `packages/tui/...`, none of which resolves at the base commit, so all 158 files
+    // hit the `continue` above and this guard silently protected nothing while staying green.
+    //
+    // The floor is 20, not 1: the guard passed at 1 while protecting essentially nothing, and a
+    // threshold of "more than zero" would have accepted that. 27 resolve today; 20 leaves room
+    // for legitimate deletions without letting the set quietly collapse again.
+    expect(
+      compared,
+      "the guard's comparison set collapsed — paths stopped resolving at the base commit, " +
+        "which is what a layout change does to a hard-coded historical path",
+    ).toBeGreaterThanOrEqual(20);
   });
 });
 
