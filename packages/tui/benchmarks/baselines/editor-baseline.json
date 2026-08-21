@@ -1,28 +1,40 @@
 {
   "benchmark": "editor",
-  "date": "2026-08-21T11:54:39.719Z",
+  "date": "2026-07-08T21:53:57.300Z",
   "node_version": "v22.22.2",
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
     "cores": 12
   },
-  "load_1min_at_start": 3.95,
+  "load_1min_at_start": 2.94,
   "workload": {
     "keystrokes": 218
   },
   "protocol": {
     "warmup_runs": 1,
-    "measured_runs": 1
+    "measured_runs": 5
   },
   "runs": [
     {
-      "us_per_op": 2.482
+      "us_per_op": 8.25
+    },
+    {
+      "us_per_op": 2.778
+    },
+    {
+      "us_per_op": 2.701
+    },
+    {
+      "us_per_op": 2.509
+    },
+    {
+      "us_per_op": 2.679
     }
   ],
   "aggregate": {
     "us_per_op": {
-      "mean": 2.482,
-      "std_dev": 0
+      "mean": 3.783,
+      "std_dev": 2.235
     }
   },
   "methodology": "The pure editor reducer over a realistic editing burst (type a paragraph, word-navigate, kill-forward, yank, yank-pop, undo). Microseconds per op, mean ± std_dev over 5 runs."

@@ -1,6 +1,6 @@
 {
   "benchmark": "comparative",
-  "date": "2026-08-21T11:54:36.875Z",
+  "date": "2026-07-08T21:02:43.869Z",
   "node_version": "v22.22.2",
   "stack": {
     "ink": "7.1.0",
@@ -14,31 +14,47 @@
   "color_env": {
     "FORCE_COLOR": "1"
   },
-  "load_1min_at_start": 4.12,
+  "load_1min_at_start": 2.8,
   "workload": {
     "messages": 30,
     "update_frames": 40
   },
   "protocol": {
     "warmup_runs": 1,
-    "measured_runs": 1
+    "measured_runs": 5
   },
   "modes": [
     {
       "mode": "v4",
       "runs": [
         {
-          "mean_ms_per_frame": 2.849,
-          "bytes_written": 1319
+          "mean_ms_per_frame": 3.095,
+          "bytes_written": 1063
+        },
+        {
+          "mean_ms_per_frame": 2.074,
+          "bytes_written": 1063
+        },
+        {
+          "mean_ms_per_frame": 1.615,
+          "bytes_written": 1063
+        },
+        {
+          "mean_ms_per_frame": 2.519,
+          "bytes_written": 1063
+        },
+        {
+          "mean_ms_per_frame": 3.363,
+          "bytes_written": 1063
         }
       ],
       "aggregate": {
         "mean_ms_per_frame": {
-          "mean": 2.849,
-          "std_dev": 0
+          "mean": 2.533,
+          "std_dev": 0.642
         },
         "bytes_written": {
-          "mean": 1319,
+          "mean": 1063,
           "std_dev": 0
         }
       }
@@ -47,17 +63,33 @@
       "mode": "ink",
       "runs": [
         {
-          "mean_ms_per_frame": 3.299,
-          "bytes_written": 1199
+          "mean_ms_per_frame": 3.607,
+          "bytes_written": 21840
+        },
+        {
+          "mean_ms_per_frame": 2.504,
+          "bytes_written": 21840
+        },
+        {
+          "mean_ms_per_frame": 2.233,
+          "bytes_written": 21840
+        },
+        {
+          "mean_ms_per_frame": 2.329,
+          "bytes_written": 21840
+        },
+        {
+          "mean_ms_per_frame": 2.224,
+          "bytes_written": 21840
         }
       ],
       "aggregate": {
         "mean_ms_per_frame": {
-          "mean": 3.299,
-          "std_dev": 0
+          "mean": 2.579,
+          "std_dev": 0.524
         },
         "bytes_written": {
-          "mean": 1199,
+          "mean": 21840,
           "std_dev": 0
         }
       }
