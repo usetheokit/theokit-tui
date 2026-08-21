@@ -2,19 +2,11 @@ import { Text } from "ink";
 import { render } from "ink-testing-library";
 import type { ReactElement } from "react";
 import { act } from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { TheoTUIProvider, themes } from "../theme/theme.js";
-import { WelcomeBanner } from "./welcome-banner.js";
 import type { WelcomeBannerProps } from "./welcome-banner.js";
+import { WelcomeBanner } from "./welcome-banner.js";
 
 // M12 T1.1 (plan m12-animated-banner, ADRs D1-D2): the animated-reveal
 // oracle suite. Fake timers (the gemini useSnowfall precedent proves ink +
@@ -72,13 +64,10 @@ describe("WelcomeBanner animated reveal (M12)", () => {
   // React requires an explicit opt-in for act() outside react-dom test
   // environments (ink has no test renderer preset).
   beforeAll(() => {
-    (
-      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-    ).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   });
   afterAll(() => {
-    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-      .IS_REACT_ACT_ENVIRONMENT;
+    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT;
   });
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -99,10 +88,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
   it("reveal_converges_to_static_bytes", () => {
     // Oracle b: gate open, advance past the full script — byte-equal.
     vi.useFakeTimers();
-    const animated = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const animated = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     act(() => {
       vi.advanceTimersByTime(PHASES * TICK + TICK);
     });
@@ -116,10 +102,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
   it("mid_reveal_frame_differs_from_final", () => {
     // Oracle c: an intermediate phase withholds content the final has.
     vi.useFakeTimers();
-    const instance = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     act(() => {
       vi.advanceTimersByTime(3 * TICK);
     });
@@ -140,10 +123,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     // static path, not merely "hints present").
     vi.useFakeTimers();
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "1");
-    const instance = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     expect(instance.lastFrame()).toContain("h1 hint row");
     expect(vi.getTimerCount()).toBe(0);
     const staticRender = render(<WelcomeBanner {...REVEAL_PROPS} />);
@@ -155,10 +135,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
   it("below_min_dims_renders_static_immediately", () => {
     // Oracle e (codex skip-below-breakpoint shape): rows below MIN.
     vi.useFakeTimers();
-    const instance = mountGated(
-      { isTTY: true, rows: 10 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 10 }, { ...REVEAL_PROPS, animated: true });
     expect(instance.lastFrame()).toContain("h1 hint row");
     expect(vi.getTimerCount()).toBe(0);
     const staticRender = render(<WelcomeBanner {...REVEAL_PROPS} />);
@@ -187,9 +164,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     const instance = mountGated(
       { isTTY: true, rows: 30 },
       { ...REVEAL_PROPS, animated: true },
-      (banner) => (
-        <TheoTUIProvider theme={themes["no-color"]}>{banner}</TheoTUIProvider>
-      ),
+      (banner) => <TheoTUIProvider theme={themes["no-color"]}>{banner}</TheoTUIProvider>,
     );
     expect(instance.lastFrame()).toContain("h1 hint row");
     expect(instance.lastFrame()).toContain("┌"); // single border — monochrome
@@ -202,10 +177,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     // has height 0) — the name row renders a space placeholder so the box
     // is born at its 3-line minimum and never layout-shifts on tick 1.
     vi.useFakeTimers();
-    const instance = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     const mountFrame = instance.lastFrame() ?? "";
     expect(mountFrame.split("\n")).toHaveLength(3);
     expect(mountFrame).toContain("│");
@@ -218,10 +190,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     // act() advisories from itl's non-act render are environment noise,
     // not the teardown contract).
     vi.useFakeTimers();
-    const instance = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     act(() => {
       vi.advanceTimersByTime(2 * TICK);
     });
@@ -239,10 +208,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
     // M12 T2.1: the ONE new snapshot — a deterministic mid-reveal frame
     // (fake timers make phase 4 exact), anchored by the partial name.
     vi.useFakeTimers();
-    const instance = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     act(() => {
       vi.advanceTimersByTime(4 * TICK);
     });
@@ -257,10 +223,7 @@ describe("WelcomeBanner animated reveal (M12)", () => {
   it("gate_is_evaluated_once_dims_shrink_mid_reveal", () => {
     // Oracle g (D2 pin): dims shrinking mid-reveal do NOT abort the run.
     vi.useFakeTimers();
-    const instance = mountGated(
-      { isTTY: true, rows: 30 },
-      { ...REVEAL_PROPS, animated: true },
-    );
+    const instance = mountGated({ isTTY: true, rows: 30 }, { ...REVEAL_PROPS, animated: true });
     act(() => {
       vi.advanceTimersByTime(3 * TICK);
     });

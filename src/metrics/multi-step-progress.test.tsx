@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
-import { MultiStepProgress } from "./multi-step-progress.js";
 import type { TodoItem } from "../status/todo-list.js";
+import { MultiStepProgress } from "./multi-step-progress.js";
 
 // M24 T2.1 — MultiStepProgress over the itl-adapter. Reuses the TodoList row
 // (DRY) + an n-of-m header; a `current` step gives a "step i of m" counter; a
@@ -28,9 +28,7 @@ describe("MultiStepProgress (M24 T2.1)", () => {
   });
 
   it("current_shows_a_step_i_of_m_counter", async () => {
-    const app = render(
-      createElement(MultiStepProgress, { steps: STEPS, current: 1 }),
-    );
+    const app = render(createElement(MultiStepProgress, { steps: STEPS, current: 1 }));
     await app.flush();
     expect(app.lastFrame()).toContain("step 2 of 4"); // current index 1 → step 2
     app.unmount();
@@ -52,9 +50,7 @@ describe("MultiStepProgress (M24 T2.1)", () => {
   });
 
   it("current_out_of_range_does_not_crash", async () => {
-    const app = render(
-      createElement(MultiStepProgress, { steps: STEPS, current: 99 }),
-    );
+    const app = render(createElement(MultiStepProgress, { steps: STEPS, current: 99 }));
     await app.flush();
     // Clamped to the last step; no NaN / out-of-range render.
     expect(app.lastFrame()).toContain("step 4 of 4");

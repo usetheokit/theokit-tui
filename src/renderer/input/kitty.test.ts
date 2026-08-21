@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { KITTY_DISABLE, KITTY_ENABLE, detectKittyActive } from "./kitty.js";
+import { detectKittyActive, KITTY_DISABLE, KITTY_ENABLE } from "./kitty.js";
 
 // M19 T3.1 (plan m19-input-stack, ADR D5): kitty keyboard protocol —
 // handshake + AWARENESS only (full CSI-u decode is M21). Enable pushes the

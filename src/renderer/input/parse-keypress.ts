@@ -16,11 +16,9 @@ export interface Keypress {
 // The ESC byte is injected via fromCharCode so no control char appears as a
 // regex literal in source (eslint no-control-regex flags even `\xNN` escapes).
 const ESC = String.fromCharCode(27);
-const metaKeyCodeRe = new RegExp("^(?:" + ESC + ")([a-zA-Z0-9])$");
+const metaKeyCodeRe = new RegExp(`^(?:${ESC})([a-zA-Z0-9])$`);
 const fnKeyRe = new RegExp(
-  "^(?:" +
-    ESC +
-    "+)(O|N|\\[|\\[\\[)(?:(\\d+)(?:;(\\d+))?([~^$])|(?:1;)?(\\d+)?([a-zA-Z]))",
+  `^(?:${ESC}+)(O|N|\\[|\\[\\[)(?:(\\d+)(?:;(\\d+))?([~^$])|(?:1;)?(\\d+)?([a-zA-Z]))`,
 );
 
 // The xterm/vt/rxvt escape-code → key-name table (Ink's, verbatim).
@@ -116,19 +114,7 @@ const shiftKeyCodes = [
   "[8$",
   "[Z",
 ];
-const ctrlKeyCodes = [
-  "Oa",
-  "Ob",
-  "Oc",
-  "Od",
-  "Oe",
-  "[2^",
-  "[3^",
-  "[5^",
-  "[6^",
-  "[7^",
-  "[8^",
-];
+const ctrlKeyCodes = ["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"];
 const isShiftKey = (code: string): boolean => shiftKeyCodes.includes(code);
 const isCtrlKey = (code: string): boolean => ctrlKeyCodes.includes(code);
 

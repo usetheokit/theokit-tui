@@ -243,10 +243,7 @@ describe("one exported component per module (ADR 0002)", () => {
             .map((c) => c.name)
             .join(", ")}`,
       );
-    expect(
-      offenders,
-      "two exported components are two modules wearing one filename",
-    ).toEqual([]);
+    expect(offenders, "two exported components are two modules wearing one filename").toEqual([]);
   });
 
   it("no_inline_component_outgrows_the_extraction_budget", () => {

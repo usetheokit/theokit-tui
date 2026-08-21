@@ -1,8 +1,6 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-
-import { ChoiceRow, InkInputProvider } from "../src/index.js";
-import { DEFAULT_APPROVAL_CHOICES } from "../src/index.js";
+import { ChoiceRow, DEFAULT_APPROVAL_CHOICES, InkInputProvider } from "../src/index.js";
 
 // #41 regression: the interactive components (ChoiceRow / SelectList / Pager /
 // FreeTextInput and the decision prompts) consume the custom V4 renderer's
@@ -18,10 +16,7 @@ describe("InkInputProvider (bridge — #41)", () => {
     const committed: string[] = [];
     const app = render(
       <InkInputProvider>
-        <ChoiceRow
-          choices={[...DEFAULT_APPROVAL_CHOICES]}
-          onCommit={(v) => committed.push(v)}
-        />
+        <ChoiceRow choices={[...DEFAULT_APPROVAL_CHOICES]} onCommit={(v) => committed.push(v)} />
       </InkInputProvider>,
     );
     // Let autoFocus register with the FocusProvider before driving input.
@@ -38,10 +33,7 @@ describe("InkInputProvider (bridge — #41)", () => {
     const committed: string[] = [];
     const app = render(
       <InkInputProvider>
-        <ChoiceRow
-          choices={[...DEFAULT_APPROVAL_CHOICES]}
-          onCommit={(v) => committed.push(v)}
-        />
+        <ChoiceRow choices={[...DEFAULT_APPROVAL_CHOICES]} onCommit={(v) => committed.push(v)} />
       </InkInputProvider>,
     );
     await tick();
@@ -59,10 +51,7 @@ describe("InkInputProvider (bridge — #41)", () => {
     // custom useInput no-ops, so the key never reaches onCommit.
     const committed: string[] = [];
     const app = render(
-      <ChoiceRow
-        choices={[...DEFAULT_APPROVAL_CHOICES]}
-        onCommit={(v) => committed.push(v)}
-      />,
+      <ChoiceRow choices={[...DEFAULT_APPROVAL_CHOICES]} onCommit={(v) => committed.push(v)} />,
     );
     await tick();
     await tick();

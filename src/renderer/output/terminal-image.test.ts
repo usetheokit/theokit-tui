@@ -26,14 +26,14 @@ describe("kitty encoder (M21 T1.1)", () => {
       rows: 3,
       moveCursor: false,
     });
-    expect(out.startsWith(ESC + "_G")).toBe(true);
+    expect(out.startsWith(`${ESC}_G`)).toBe(true);
     expect(out).toContain("a=T");
     expect(out).toContain("f=100");
     expect(out).toContain("q=2");
     expect(out).toContain("C=1"); // moveCursor:false
     expect(out).toContain("c=10");
     expect(out).toContain("r=3");
-    expect(out.endsWith(ESC + "\\")).toBe(true);
+    expect(out.endsWith(`${ESC}\\`)).toBe(true);
     expect(out).toContain(";QUJD");
   });
 
@@ -43,15 +43,15 @@ describe("kitty encoder (M21 T1.1)", () => {
     expect(out).toContain("m=1"); // first/middle chunks
     expect(out).toContain("m=0"); // last chunk
     // Two chunks (5000 = 4096 + 904).
-    expect(out.split(ESC + "_G").length - 1).toBe(2);
+    expect(out.split(`${ESC}_G`).length - 1).toBe(2);
   });
 
   it("emits_a_middle_chunk_for_payloads_over_two_chunks", () => {
     const out = encodeKitty("A".repeat(9000), { imageId: 7 }); // 3 chunks
     expect(out).toContain("i=7"); // imageId param
-    expect(out.split(ESC + "_G").length - 1).toBe(3);
+    expect(out.split(`${ESC}_G`).length - 1).toBe(3);
     // The middle chunk is `m=1` with NO leading params.
-    expect(out).toContain(ESC + "_Gm=1;");
+    expect(out).toContain(`${ESC}_Gm=1;`);
   });
 });
 
@@ -62,13 +62,13 @@ describe("iterm2 encoder (M21 T1.1)", () => {
       height: "auto",
       name: "pic.png",
     });
-    expect(out.startsWith(ESC + "]1337;File=")).toBe(true);
+    expect(out.startsWith(`${ESC}]1337;File=`)).toBe(true);
     expect(out).toContain("inline=1");
     expect(out).toContain("width=10");
     expect(out).toContain("height=auto");
     // name is base64-encoded.
     expect(out).toContain(`name=${Buffer.from("pic.png").toString("base64")}`);
-    expect(out.endsWith(":QUJD" + String.fromCharCode(7))).toBe(true);
+    expect(out.endsWith(`:QUJD${String.fromCharCode(7)}`)).toBe(true);
   });
 });
 
@@ -143,13 +143,9 @@ describe("capability matrix (M21 T1.1) — env injected", () => {
   });
 
   it("forces_null_under_multiplexers_and_unsupported_terminals", () => {
-    expect(
-      detectImageProtocol({ TMUX: "/tmp/tmux", KITTY_WINDOW_ID: "1" }),
-    ).toBeNull();
+    expect(detectImageProtocol({ TMUX: "/tmp/tmux", KITTY_WINDOW_ID: "1" })).toBeNull();
     expect(detectImageProtocol({ TERM: "screen-256color" })).toBeNull();
-    expect(
-      detectImageProtocol({ ZELLIJ: "0", KITTY_WINDOW_ID: "1" }),
-    ).toBeNull();
+    expect(detectImageProtocol({ ZELLIJ: "0", KITTY_WINDOW_ID: "1" })).toBeNull();
     expect(detectImageProtocol({ TERM_PROGRAM: "vscode" })).toBeNull();
     expect(detectImageProtocol({})).toBeNull(); // unknown → conservative
   });
@@ -179,12 +175,10 @@ describe("more magic-byte parsers (M21 T1.1)", () => {
     ]);
     // pad so the loop bound (length-9) is satisfied.
     const padded = Buffer.concat([buf, Buffer.alloc(10)]);
-    expect(getImageDimensions(padded.toString("base64"), "image/jpeg")).toEqual(
-      {
-        widthPx: 640,
-        heightPx: 480,
-      },
-    );
+    expect(getImageDimensions(padded.toString("base64"), "image/jpeg")).toEqual({
+      widthPx: 640,
+      heightPx: 480,
+    });
   });
 
   it("extracts_gif_dimensions", () => {
@@ -302,8 +296,8 @@ describe("more capability branches (M21 T1.1)", () => {
 
 describe("image fallback (M21 T1.1)", () => {
   it("renders_a_text_fallback_for_unsupported_terminals", () => {
-    expect(
-      imageFallback("image/png", { widthPx: 800, heightPx: 600 }, "pic.png"),
-    ).toBe("[Image: pic.png [image/png] 800x600]");
+    expect(imageFallback("image/png", { widthPx: 800, heightPx: 600 }, "pic.png")).toBe(
+      "[Image: pic.png [image/png] 800x600]",
+    );
   });
 });

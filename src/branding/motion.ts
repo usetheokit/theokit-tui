@@ -12,9 +12,5 @@ export function isMotionEnabled(
   stdout: { isTTY?: boolean } | undefined,
   monochrome: boolean,
 ): boolean {
-  return (
-    (env["THEOKIT_TUI_NO_MOTION"] ?? "") === "" &&
-    stdout?.isTTY === true &&
-    !monochrome
-  );
+  return (env.THEOKIT_TUI_NO_MOTION ?? "") === "" && stdout?.isTTY === true && !monochrome;
 }

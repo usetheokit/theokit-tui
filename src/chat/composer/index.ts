@@ -8,9 +8,9 @@
 // and live inside it. ADR 0002 asks for extraction when a component is reused,
 // tested independently, or outgrows its file — not reflexively.
 
-export { cursorSlices } from "./cursor-slices.js";
-export type { CursorSlices } from "./cursor-slices.js";
 export { ComposerFooter } from "./composer-footer.js";
 export { ComposerFrame } from "./composer-frame.js";
+export type { CursorSlices } from "./cursor-slices.js";
+export { cursorSlices } from "./cursor-slices.js";
 export { InputRow } from "./input-row.js";
 export { SlashMenuList } from "./slash-menu-list.js";

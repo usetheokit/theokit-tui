@@ -21,17 +21,10 @@ export interface CostMeterProps extends LayoutMarginProps {
  * Honest cost display: `cost ~$1.23`; a nonzero sub-cent cost renders
  * `<$0.01`, never `$0.00`. No bar, no thresholds (no budget semantics at M5).
  */
-export function CostMeter({
-  costUsd,
-  approx = true,
-  ...margin
-}: CostMeterProps) {
+export function CostMeter({ costUsd, approx = true, ...margin }: CostMeterProps) {
   // Boundary guard FIRST (F10 idiom) — the component names itself in the
   // error; formatCost re-validates at its own boundary (single shared guard).
-  assertFiniteNonNegative(
-    costUsd,
-    "CostMeter: costUsd must be a finite number >= 0",
-  );
+  assertFiniteNonNegative(costUsd, "CostMeter: costUsd must be a finite number >= 0");
   return (
     <Box {...margin}>
       <Text dimColor>cost </Text>

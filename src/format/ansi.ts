@@ -25,7 +25,6 @@
  * nothing for a whole slice without anyone noticing. `no-control-regex` fires on either spelling,
  * so the suppression is unavoidable here and is scoped to this one line.
  */
-// eslint-disable-next-line no-control-regex
 const SGR_RE = /\u001B\[[0-9;]*m/g;
 
 /**
@@ -43,11 +42,9 @@ export function stripAnsi(value: string): string {
  *
  * Non-greedy so a payload carrying two OSC strings does not collapse into one match.
  */
-// eslint-disable-next-line no-control-regex
 const OSC_RE = /\u001B\][\s\S]*?(?:\u0007|\u001B\\)/g;
 
 /** `ESC [ … <final byte>` — the CSI family, whatever the final byte is. */
-// eslint-disable-next-line no-control-regex
 const CSI_RE = /\u001B\[[0-?]*[ -/]*[@-~]/g;
 
 /**
@@ -63,7 +60,6 @@ const CSI_RE = /\u001B\[[0-?]*[ -/]*[@-~]/g;
  * them would corrupt every code block rather than protect one. U+0080-U+009F go too: the 8-bit C1
  * forms are an alternative spelling of the same sequences, and `U+009D` is 8-bit OSC.
  */
-// eslint-disable-next-line no-control-regex
 const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
 
 /**
@@ -99,6 +95,5 @@ export function sanitizeUntrusted(value: string): string {
  * window title is meaningless, and either can act as a separator in some parsers.
  */
 export function hasControlBytes(value: string): boolean {
-  // eslint-disable-next-line no-control-regex
   return /[\u0000-\u001F\u007F-\u009F]/.test(value);
 }

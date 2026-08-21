@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { render } from "ink-testing-library";
 
 import { ChatComposer, TheoTUIProvider } from "../src/index.js";
-import { fmt, frameSampler, round, stats, stackVersions } from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats } from "./sampling.js";
 
 // M15 chat-composer benchmark (plan T3.1, ADR D4): typing with the menu
 // open recomputes filter+window per keystroke — a per-frame path (M9 flip
@@ -24,8 +24,7 @@ const MEASURED_RUNS = 5;
 const smoke = process.argv.includes("--smoke");
 const loadAtStart = loadavg()[0] ?? -1;
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 const COMMANDS = Array.from({ length: N_COMMANDS }, (_, i) => ({
   name: `command-${i}`,
@@ -47,10 +46,7 @@ type Mode = "menu" | "plain";
 async function runOnce(mode: Mode): Promise<RunMetrics> {
   const instance = render(
     <TheoTUIProvider>
-      <ChatComposer
-        onSubmit={() => {}}
-        {...(mode === "menu" ? { commands: COMMANDS } : {})}
-      />
+      <ChatComposer onSubmit={() => {}} {...(mode === "menu" ? { commands: COMMANDS } : {})} />
     </TheoTUIProvider>,
   );
   // 100 ms mount settle: a cold-start 10 ms window silently DROPPED the
@@ -89,7 +85,7 @@ const results: { mode: Mode; runs: RunMetrics[] }[] = [];
 for (const mode of MODES) {
   for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
-    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+    console.log(`${fmt(`${mode} warmup`, w)}  (discarded)`);
   }
   const runs: RunMetrics[] = [];
   for (let i = 0; i < measured; i++) {
@@ -121,7 +117,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     load_1min_at_start: round(loadAtStart),
     workload: {
       keystrokes: KEYSTROKES,
@@ -151,6 +147,6 @@ if (!smoke) {
     "composer-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
   console.log("baseline written: benchmarks/baselines/composer-baseline.json");
 }

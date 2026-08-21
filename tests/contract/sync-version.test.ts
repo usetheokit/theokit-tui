@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,9 +16,7 @@ import { describe, expect, it } from "vitest";
  * Runs against a throwaway tree rather than the repository, so a failure cannot rewrite
  * `src/index.ts` under the suite that is reading it.
  */
-const SCRIPT = fileURLToPath(
-  new URL("../../scripts/sync-version.mjs", import.meta.url),
-);
+const SCRIPT = fileURLToPath(new URL("../../scripts/sync-version.mjs", import.meta.url));
 
 function sandbox(manifestVersion: string, entryVersion: string | null): string {
   const dir = mkdtempSync(join(tmpdir(), "sync-version-"));

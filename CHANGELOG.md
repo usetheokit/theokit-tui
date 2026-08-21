@@ -25,6 +25,38 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
   Affects contributors, not consumers. **No published behaviour changes.**
 
+- **Biome replaces ESLint + Prettier (B-109).** One tool, the ecosystem's config, `pnpm check` /
+  `pnpm check:fix` as in `theokit-sdk`.
+
+  312 files were reformatted (Biome's `lineWidth: 100` against Prettier's 80) and 1706 tests stayed
+  green through it. Four rule groups diverge from the SDK's config, each for a measured reason
+  rather than convenience:
+
+  | Rule | Here | Why |
+  |---|---|---|
+  | `a11y/*` | off | Biome's a11y rules target the DOM. There is none. 39 of them fired on `role="user"` — the `ChatMessage` domain prop, not an ARIA attribute. Terminal accessibility here is `NO_COLOR` / `TERM=dumb` / screen-reader mode, and the degrade matrix already proves it. |
+  | `suspicious/noControlCharactersInRegex` | off | A terminal library matches `\x1b`. The ESLint config it replaces was already disabling this rule case by case — 13 of the 18 `eslint-disable` comments in the tree were this exact rule. |
+  | `suspicious/noArrayIndexKey` | off | The lists are frame rows. Row 3 is row 3; they are replaced by position, never reordered. |
+  | `complexity/noExcessiveCognitiveComplexity` | 25, not 10 | 36 functions exceed 10 (max 25, median 14). Set to what the tree passes today, so it blocks regression instead of being waived on day one — the doctrine `.dependency-cruiser.cjs` already states. |
+
+  **Two defects were found by doing this, both real:**
+
+  - **`npx` made a gate pass having inspected nothing.** `npx biome format` run outside the project
+    exits **0 silently**; the same binary invoked directly exits 123. The hermetic gate test (B-051)
+    caught it. Every gate now calls the binary, never `npx` — this is the B-084 failure shape, one
+    layer down.
+  - **Biome's "unsafe" autofix broke an example.** `useExhaustiveDependencies` added `[stream, exit]`
+    to a mount-once effect whose `stream` is re-created every render; `examples/scenes/chat.tsx` died
+    with `Maximum update depth exceeded` before printing a token. The dependency list is empty on
+    purpose and now says so.
+
+  Five suppressions remain, each one line with the reason above it: two TypeScript conflicts
+  (`useOptionalChain` returns `boolean | undefined` under `strict` — TS2322), the canonical global
+  `RegExp.exec` loop, and two mount-once effects.
+
+  `pnpm lint` reports **355 files inspected** — the same count ESLint reported, which is the
+  evidence the swap did not narrow the gate's view.
+
 ## [0.76.1] - 2026-08-20
 
 ### Changed

@@ -1,6 +1,6 @@
 import { Box, render, useApp } from "ink";
 import { useEffect, useRef, useState } from "react";
-
+import type { ChatThreadMessage } from "../../src/index.js";
 import {
   AgentStreaming,
   AppStatusBar,
@@ -10,11 +10,10 @@ import {
   CostMeter,
   TheoTUIProvider,
   ToolCallCard,
+  useTurnElapsed,
   VERSION,
   WelcomeBanner,
-  useTurnElapsed,
 } from "../../src/index.js";
-import type { ChatThreadMessage } from "../../src/index.js";
 
 // SHOWCASE — every shipped primitive in ONE scripted agent turn
 // (M0–M16): animated WelcomeBanner in the ChatThread header slot,
@@ -54,9 +53,7 @@ const initialMessages: ChatThreadMessage[] = [
 ];
 
 const REPLY_TOKENS =
-  "Reproduced the flake, patched the backoff and re-ran the suite — all green.".split(
-    " ",
-  );
+  "Reproduced the flake, patched the backoff and re-ran the suite — all green.".split(" ");
 
 type Stage = "thinking" | "tools" | "typing" | "done";
 
@@ -90,10 +87,7 @@ function Demo() {
     later(2100, () => {
       setStage("typing");
       const id = makeId();
-      setMessages((current) => [
-        ...current,
-        { id, role: "assistant", content: "" },
-      ]);
+      setMessages((current) => [...current, { id, role: "assistant", content: "" }]);
       REPLY_TOKENS.forEach((_, index) => {
         later(120 * (index + 1), () => {
           setMessages((current) => {
@@ -201,9 +195,7 @@ function Demo() {
           <Box marginTop={1}>
             <AgentStreaming
               thought={
-                stage === "thinking"
-                  ? "inspecting the failing retry test"
-                  : "writing the summary"
+                stage === "thinking" ? "inspecting the failing retry test" : "writing the summary"
               }
               elapsedSeconds={elapsed}
               showCancelHint
@@ -211,11 +203,7 @@ function Demo() {
           </Box>
         )}
         <Box flexDirection="column" marginTop={1}>
-          <ContextWindowBar
-            usedTokens={23_400}
-            limitTokens={128_000}
-            width={60}
-          />
+          <ContextWindowBar usedTokens={23_400} limitTokens={128_000} width={60} />
           <CostMeter costUsd={0.0842} />
         </Box>
         <AppStatusBar
@@ -236,10 +224,7 @@ function Demo() {
             hint="esc dismisses · Alt+Enter newline · @ browses files (try @~/) · Ctrl+C quits"
             bordered
             onSubmit={(text) => {
-              setMessages((current) => [
-                ...current,
-                { id: makeId(), role: "user", content: text },
-              ]);
+              setMessages((current) => [...current, { id: makeId(), role: "user", content: text }]);
             }}
           />
         )}

@@ -36,7 +36,7 @@ async function settle(term: VirtualTerminal): Promise<void> {
 describe("output-grid writeRaw (M21 T2.1)", () => {
   it("emits_a_raw_line_verbatim_without_remeasuring", () => {
     const out = new Output({ width: 10, height: 3 });
-    const seq = ESC + "_Ga=T,f=100;QUJD" + ESC + "\\";
+    const seq = `${ESC}_Ga=T,f=100;QUJD${ESC}\\`;
     out.writeRaw(0, seq);
     const { output } = out.get();
     const lines = output.split("\n");
@@ -60,7 +60,7 @@ describe("Image component (M21 T2.1)", () => {
       }),
     );
     await settle(term);
-    expect(term.writeStream()).toContain(ESC + "_G");
+    expect(term.writeStream()).toContain(`${ESC}_G`);
     r.unmount();
   });
 
@@ -77,7 +77,7 @@ describe("Image component (M21 T2.1)", () => {
     );
     await settle(term);
     const stream = term.writeStream();
-    expect(stream).toContain(ESC + "]1337;File=");
+    expect(stream).toContain(`${ESC}]1337;File=`);
     expect(stream).toContain("inline=1");
     r.unmount();
   });
@@ -121,7 +121,7 @@ describe("Image component (M21 T2.1)", () => {
     r.render(createElement(App, { top: "2", bottom: "2" })); // span crosses image
     await settle(term);
     // The kitty escape hit the wire exactly once (first render only).
-    expect(term.writeStream().split(ESC + "_G").length - 1).toBe(1);
+    expect(term.writeStream().split(`${ESC}_G`).length - 1).toBe(1);
     r.unmount();
   });
 

@@ -1,14 +1,15 @@
 import { Box, render, Text } from "ink";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import {
   AgentStreaming,
   AgentTimeline,
-  AppStatusBar,
   ApprovalPrompt,
+  AppStatusBar,
   Banner,
   ChatComposer,
   ChatThread,
+  type ChatThreadMessage,
   ChoiceRow,
   CodeBlock,
   CollapsibleBlock,
@@ -22,10 +23,12 @@ import {
   PlanApproval,
   QuestionPrompt,
   SelectList,
+  type SelectListItem,
   setTerminalTitle,
   TheoTUIProvider,
   ThinkingBlock,
   Toast,
+  type TodoItem,
   TodoList,
   TokenUsageChart,
   ToolCall,
@@ -33,14 +36,10 @@ import {
   ToolResult,
   VERSION,
   WelcomeBanner,
-  type ChatThreadMessage,
-  type SelectListItem,
-  type TodoItem,
 } from "../../src/index.js";
 import { FocusProvider } from "../../src/renderer/hooks/use-focus.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
-import { InputContext } from "../../src/renderer/input/use-input.js";
-import { useInput } from "../../src/renderer/input/use-input.js";
+import { InputContext, useInput } from "../../src/renderer/input/use-input.js";
 
 // GALLERY — every @theokit/tui component in a paginated demo (n/→ next, p/←
 // prev, q quit). Interactive components render with autoFocus={false} so the
@@ -120,11 +119,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
     title: "1/7 · Chat & agent",
     body: (
       <Box flexDirection="column" gap={1}>
-        <WelcomeBanner
-          name="Theo TUI"
-          version={VERSION}
-          tagline="every component, one gallery"
-        />
+        <WelcomeBanner name="Theo TUI" version={VERSION} tagline="every component, one gallery" />
         <Text dimColor>Banner (ASCII-art logo + framed status — M27):</Text>
         <Banner
           name="Theo TUI"
@@ -143,11 +138,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
           ]}
         />
         <ChatThread messages={THREAD} />
-        <AgentStreaming
-          thought="planning the demo"
-          elapsedSeconds={3}
-          showCancelHint
-        />
+        <AgentStreaming thought="planning the demo" elapsedSeconds={3} showCancelHint />
         <AgentTimeline
           events={[
             { id: "t1", kind: "thinking", text: "inspecting the surface" },
@@ -213,11 +204,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
     title: "4/7 · Metrics & status",
     body: (
       <Box flexDirection="column" gap={1}>
-        <ContextWindowBar
-          usedTokens={23_400}
-          limitTokens={128_000}
-          width={60}
-        />
+        <ContextWindowBar usedTokens={23_400} limitTokens={128_000} width={60} />
         <TokenUsageChart usage={{ input: 1800, output: 640 }} />
         <CostMeter costUsd={0.0842} />
         <AppStatusBar
@@ -237,13 +224,8 @@ const PAGES: { title: string; body: ReactNode }[] = [
         <TodoList items={TODOS} />
         <Text dimColor>MultiStepProgress (subagent lanes):</Text>
         <MultiStepProgress steps={STEPS} groupLabel="3 subagents" />
-        <ThinkingBlock>
-          The reasoning body renders **markdown** when expanded.
-        </ThinkingBlock>
-        <CollapsibleBlock
-          summary={<Text>tool output (space/enter)</Text>}
-          autoFocus={false}
-        >
+        <ThinkingBlock>The reasoning body renders **markdown** when expanded.</ThinkingBlock>
+        <CollapsibleBlock summary={<Text>tool output (space/enter)</Text>} autoFocus={false}>
           <Text dimColor>… expanded body …</Text>
         </CollapsibleBlock>
         <Toast
@@ -260,11 +242,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
     body: (
       <Box flexDirection="column" gap={1}>
         <Text dimColor>ApprovalPrompt (composes a DiffViewer preview):</Text>
-        <ApprovalPrompt
-          title="Apply this edit?"
-          onDecision={() => {}}
-          autoFocus={false}
-        >
+        <ApprovalPrompt title="Apply this edit?" onDecision={() => {}} autoFocus={false}>
           <DiffViewer patch={PATCH} />
         </ApprovalPrompt>
         <Text dimColor>QuestionPrompt (SelectList + free text):</Text>
@@ -283,11 +261,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
           autoFocus={false}
         />
         <Text dimColor>FreeTextInput (single-line prompt):</Text>
-        <FreeTextInput
-          label="Commit message:"
-          onSubmit={() => {}}
-          autoFocus={false}
-        />
+        <FreeTextInput label="Commit message:" onSubmit={() => {}} autoFocus={false} />
       </Box>
     ),
   },
@@ -307,9 +281,7 @@ const PAGES: { title: string; body: ReactNode }[] = [
           onCommit={() => {}}
           autoFocus={false}
         />
-        <Text dimColor>
-          ChatComposer (the input box — /commands, @files, history, kill-ring):
-        </Text>
+        <Text dimColor>ChatComposer (the input box — /commands, @files, history, kill-ring):</Text>
         <ChatComposer
           placeholder="Type a message ('/' commands · '@' files · Enter sends · Alt+Enter newline)"
           commands={[
@@ -323,15 +295,11 @@ const PAGES: { title: string; body: ReactNode }[] = [
           autoFocus={false}
         />
         <Text dimColor>
-          Pager: a full-screen scroll viewport (pushed via useOverlay in real
-          apps).
+          Pager: a full-screen scroll viewport (pushed via useOverlay in real apps).
         </Text>
+        <Text dimColor>Image: kitty/iTerm2 inline images with a [Image: …] text fallback.</Text>
         <Text dimColor>
-          Image: kitty/iTerm2 inline images with a [Image: …] text fallback.
-        </Text>
-        <Text dimColor>
-          notify() / setTerminalTitle() / osc8Link(): OSC helpers (title set on
-          mount).
+          notify() / setTerminalTitle() / osc8Link(): OSC helpers (title set on mount).
         </Text>
       </Box>
     ),
@@ -357,8 +325,7 @@ function Gallery() {
         <Page title={current.title}>{current.body}</Page>
         <Box marginTop={1}>
           <Text dimColor>
-            [{page + 1}/{total}] n/→ next · p/← prev · q quit — @theokit/tui v
-            {VERSION}
+            [{page + 1}/{total}] n/→ next · p/← prev · q quit — @theokit/tui v{VERSION}
           </Text>
         </Box>
       </Box>
@@ -367,9 +334,7 @@ function Gallery() {
 }
 
 // Wire OUR input + focus (the composition root an app owns).
-const source = createInputSource(process.stdin as never, (d) =>
-  process.stdout.write(d),
-);
+const source = createInputSource(process.stdin as never, (d) => process.stdout.write(d));
 source.start();
 setTerminalTitle("Theo TUI — component gallery");
 

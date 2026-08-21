@@ -1,16 +1,11 @@
 import { Box, Text, useStdout } from "ink";
-
-import {
-  assertFiniteNonNegative,
-  formatElapsed,
-  formatTokens,
-} from "../format/format.js";
+import { isMotionEnabled } from "../branding/motion.js";
+import { useSparkle } from "../branding/sparkle.js";
+import { assertFiniteNonNegative, formatElapsed, formatTokens } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { isMotionEnabled } from "../branding/motion.js";
-import { ProgressBar } from "./progress-bar.js";
-import { useSparkle } from "../branding/sparkle.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import { ProgressBar } from "./progress-bar.js";
 
 // ProgressActivity — a determinate task with the Claude Code compaction look:
 //
@@ -67,8 +62,7 @@ export function ProgressActivity({
   ...margin
 }: ProgressActivityProps) {
   // Boundary validation FIRST (F10 idiom).
-  const elapsed =
-    elapsedSeconds !== undefined ? formatElapsed(elapsedSeconds) : undefined;
+  const elapsed = elapsedSeconds !== undefined ? formatElapsed(elapsedSeconds) : undefined;
   if (tokens !== undefined) {
     assertFiniteNonNegative(tokens, "ProgressActivity: tokens must be >= 0");
   }
@@ -81,9 +75,7 @@ export function ProgressActivity({
     <Box flexDirection="column" {...pickMargin(margin)}>
       <Box>
         <Box minWidth={2} flexShrink={0}>
-          <Text {...(mono ? {} : { color: theme.toolStatus.running.color })}>
-            {sparkle}
-          </Text>
+          <Text {...(mono ? {} : { color: theme.toolStatus.running.color })}>{sparkle}</Text>
         </Box>
         <Text wrap="truncate-end">{label.replace(/\r?\n/g, " ")}</Text>
         <Text dimColor wrap="truncate-end">

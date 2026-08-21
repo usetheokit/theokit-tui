@@ -1,15 +1,12 @@
 import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 
-import type {
-  ApprovalChoice,
-  ApprovalDecision,
-} from "../agent/agent-decision.js";
-import { ChoiceRow } from "./choice-row.js";
+import type { ApprovalChoice, ApprovalDecision } from "../agent/agent-decision.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import { ChoiceRow } from "./choice-row.js";
 
 // PermissionPrompt — the Claude Code tool-approval card:
 //
@@ -75,13 +72,7 @@ function CommandBlock({
 }
 
 /** The optional permission-rule note + hint; renders nothing when both absent. */
-function NoteBlock({
-  ruleNote,
-  hint,
-}: {
-  ruleNote: string | undefined;
-  hint: string | undefined;
-}) {
+function NoteBlock({ ruleNote, hint }: { ruleNote: string | undefined; hint: string | undefined }) {
   if (ruleNote === undefined && hint === undefined) return null;
   return (
     <Box flexDirection="column" marginTop={1}>

@@ -64,12 +64,8 @@ describe("renderFillBar", () => {
     for (const ratio of [0.004, 0.42, 0.996]) {
       const label = formatPercent(ratio);
       const cells = renderFillBar(ratio, 10).filledCells;
-      expect(label === "0%", `ratio ${ratio} empty-agreement`).toBe(
-        cells === 0,
-      );
-      expect(label === "100%", `ratio ${ratio} full-agreement`).toBe(
-        cells === 10,
-      );
+      expect(label === "0%", `ratio ${ratio} empty-agreement`).toBe(cells === 0);
+      expect(label === "100%", `ratio ${ratio} full-agreement`).toBe(cells === 10);
     }
   });
 
@@ -114,16 +110,10 @@ describe("renderFillBar", () => {
   it("glyph_options_reject_non_single_char", () => {
     // EC-4: multi-char / surrogate glyphs break the cells⇔columns invariant.
     for (const bad of ["", "ab", "🟩"]) {
-      expect(() => renderFillBar(0.5, 10, { fullChar: bad })).toThrow(
-        TypeError,
-      );
-      expect(() => renderFillBar(0.5, 10, { emptyChar: bad })).toThrow(
-        TypeError,
-      );
+      expect(() => renderFillBar(0.5, 10, { fullChar: bad })).toThrow(TypeError);
+      expect(() => renderFillBar(0.5, 10, { emptyChar: bad })).toThrow(TypeError);
     }
-    expect(() => renderFillBar(0.5, 10, { fullChar: "ab" })).toThrow(
-      "must be a single character",
-    );
+    expect(() => renderFillBar(0.5, 10, { fullChar: "ab" })).toThrow("must be a single character");
   });
 
   it("fill_bar_throws_on_non_finite_ratio", () => {

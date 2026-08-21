@@ -28,10 +28,7 @@ describe("benchmark baseline (T3.1)", () => {
   it("benchmark_baseline_json_exists_with_statistical_protocol", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/chat-message-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/chat-message-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as BenchBaseline;
@@ -46,33 +43,18 @@ describe("benchmark baseline (T3.1)", () => {
       expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
     }
     expect(Number.isFinite(baseline.aggregate.frames_mean)).toBe(true);
-    expect(Number.isFinite(baseline.aggregate.mean_ms_per_frame.mean)).toBe(
-      true,
-    );
-    expect(Number.isFinite(baseline.aggregate.mean_ms_per_frame.std_dev)).toBe(
-      true,
-    );
-    expect(Number.isFinite(baseline.aggregate.peak_ms_per_frame.mean)).toBe(
-      true,
-    );
-    expect(Number.isFinite(baseline.aggregate.peak_ms_per_frame.std_dev)).toBe(
-      true,
-    );
+    expect(Number.isFinite(baseline.aggregate.mean_ms_per_frame.mean)).toBe(true);
+    expect(Number.isFinite(baseline.aggregate.mean_ms_per_frame.std_dev)).toBe(true);
+    expect(Number.isFinite(baseline.aggregate.peak_ms_per_frame.mean)).toBe(true);
+    expect(Number.isFinite(baseline.aggregate.peak_ms_per_frame.std_dev)).toBe(true);
 
     // Self-consistency (review F-dom-2): the aggregate must be derivable
     // from the runs — a finite-but-impossible hand-edit stays red.
     const runMeans = baseline.runs.map((r) => r.mean_ms_per_frame);
-    const recomputedMean =
-      runMeans.reduce((a, b) => a + b, 0) / runMeans.length;
-    expect(
-      Math.abs(recomputedMean - baseline.aggregate.mean_ms_per_frame.mean),
-    ).toBeLessThan(0.01);
-    expect(baseline.aggregate.mean_ms_per_frame.std_dev).toBeGreaterThanOrEqual(
-      0,
-    );
-    expect(baseline.aggregate.peak_ms_per_frame.std_dev).toBeGreaterThanOrEqual(
-      0,
-    );
+    const recomputedMean = runMeans.reduce((a, b) => a + b, 0) / runMeans.length;
+    expect(Math.abs(recomputedMean - baseline.aggregate.mean_ms_per_frame.mean)).toBeLessThan(0.01);
+    expect(baseline.aggregate.mean_ms_per_frame.std_dev).toBeGreaterThanOrEqual(0);
+    expect(baseline.aggregate.peak_ms_per_frame.std_dev).toBeGreaterThanOrEqual(0);
 
     expect(baseline.methodology.length > 0).toBe(true);
     expect(baseline.node_version.length > 0).toBe(true);
@@ -111,10 +93,7 @@ describe("benchmark baseline M1 (T4.1)", () => {
   it("m1_thread_baseline_exists_with_mode_matrix", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/chat-thread-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/chat-thread-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as M1Baseline;
@@ -137,18 +116,12 @@ describe("benchmark baseline M1 (T4.1)", () => {
         expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
         expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
       }
-      for (const metric of [
-        "mean_ms_per_frame",
-        "peak_ms_per_frame",
-      ] as const) {
+      for (const metric of ["mean_ms_per_frame", "peak_ms_per_frame"] as const) {
         expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
         expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
         expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
-        const recomputed =
-          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
-        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
-          0.01,
-        );
+        const recomputed = mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(0.01);
       }
     }
     expect(baseline.workload.messages).toBeGreaterThan(0);
@@ -187,10 +160,7 @@ describe("benchmark baseline M2 (T3.2)", () => {
   it("m2_tool_cards_baseline_exists_with_protocol", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/tool-cards-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/tool-cards-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as M2Baseline;
@@ -214,11 +184,8 @@ describe("benchmark baseline M2 (T3.2)", () => {
       expect(Number.isFinite(baseline.aggregate[metric].mean)).toBe(true);
       expect(Number.isFinite(baseline.aggregate[metric].std_dev)).toBe(true);
       expect(baseline.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
-      const recomputed =
-        baseline.runs.reduce((a, r) => a + r[metric], 0) / baseline.runs.length;
-      expect(
-        Math.abs(recomputed - baseline.aggregate[metric].mean),
-      ).toBeLessThan(0.01);
+      const recomputed = baseline.runs.reduce((a, r) => a + r[metric], 0) / baseline.runs.length;
+      expect(Math.abs(recomputed - baseline.aggregate[metric].mean)).toBeLessThan(0.01);
     }
 
     expect(baseline.workload.messages).toBeGreaterThan(0);
@@ -227,11 +194,8 @@ describe("benchmark baseline M2 (T3.2)", () => {
     expect(baseline.workload.long_output_lines).toBeGreaterThan(0);
     expect(baseline.workload.max_lines).toBeGreaterThan(0);
     // frames_mean recompute (review wire-5) — a hand-edit stays red.
-    const recomputedFrames =
-      baseline.runs.reduce((a, r) => a + r.frames, 0) / baseline.runs.length;
-    expect(
-      Math.abs(recomputedFrames - baseline.aggregate.frames_mean),
-    ).toBeLessThan(0.01);
+    const recomputedFrames = baseline.runs.reduce((a, r) => a + r.frames, 0) / baseline.runs.length;
+    expect(Math.abs(recomputedFrames - baseline.aggregate.frames_mean)).toBeLessThan(0.01);
     expect(baseline.methodology.length > 0).toBe(true);
   });
 });
@@ -258,18 +222,12 @@ describe("benchmark baseline M3 (T3.2)", () => {
   it("m3_agent_timeline_baseline_exists_with_mode_matrix", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/agent-timeline-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/agent-timeline-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as M3Baseline;
 
-    expect(baseline.modes.map((m) => m.mode).sort()).toEqual([
-      "bounded",
-      "unbounded",
-    ]);
+    expect(baseline.modes.map((m) => m.mode).sort()).toEqual(["bounded", "unbounded"]);
     expect(baseline.protocol.warmup_runs).toBeGreaterThanOrEqual(1);
     expect(baseline.color_env.FORCE_COLOR).toBe("1");
     expect(baseline.node_version.length > 0).toBe(true);
@@ -282,25 +240,16 @@ describe("benchmark baseline M3 (T3.2)", () => {
         expect(Number.isFinite(run.mean_ms_per_frame)).toBe(true);
         expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
       }
-      const recomputedFrames =
-        mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
+      const recomputedFrames = mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
       expect(Number.isFinite(mode.aggregate.frames_mean)).toBe(true);
-      expect(
-        Math.abs(recomputedFrames - mode.aggregate.frames_mean),
-      ).toBeLessThan(0.01);
-      for (const metric of [
-        "mean_ms_per_frame",
-        "peak_ms_per_frame",
-      ] as const) {
+      expect(Math.abs(recomputedFrames - mode.aggregate.frames_mean)).toBeLessThan(0.01);
+      for (const metric of ["mean_ms_per_frame", "peak_ms_per_frame"] as const) {
         expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
         // M1 parity (tests-2): Infinity is >= 0 — pin finiteness too.
         expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
         expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
-        const recomputed =
-          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
-        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
-          0.01,
-        );
+        const recomputed = mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(0.01);
       }
     }
     expect(baseline.workload.events).toBeGreaterThan(0);
@@ -317,9 +266,7 @@ describe("benchmark baseline M3 (T3.2)", () => {
     for (const share of Object.values(baseline.workload.event_mix)) {
       expect(share).toBeGreaterThan(0);
     }
-    expect(
-      Object.values(baseline.workload.event_mix).reduce((a, b) => a + b, 0),
-    ).toBeCloseTo(1, 5);
+    expect(Object.values(baseline.workload.event_mix).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 5);
     // The heterogeneous-heights metric MUST be named (plan D7).
     expect(baseline.methodology).toContain("peak_ms_per_frame");
   });
@@ -347,18 +294,12 @@ describe("benchmark baseline M4 (T3.2)", () => {
   it("m4_diff_viewer_baseline_exists_with_mode_matrix", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/diff-viewer-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/diff-viewer-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as M4Baseline;
 
-    expect(baseline.modes.map((m) => m.mode).sort()).toEqual([
-      "full",
-      "windowed",
-    ]);
+    expect(baseline.modes.map((m) => m.mode).sort()).toEqual(["full", "windowed"]);
     expect(baseline.protocol.measured_runs).toBeGreaterThanOrEqual(3);
     expect(baseline.protocol.warmup_runs).toBeGreaterThanOrEqual(1);
     expect(baseline.color_env.FORCE_COLOR).toBe("1");
@@ -372,23 +313,14 @@ describe("benchmark baseline M4 (T3.2)", () => {
         expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
       }
       expect(Number.isFinite(mode.aggregate.frames_mean)).toBe(true);
-      const recomputedFrames =
-        mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
-      expect(
-        Math.abs(recomputedFrames - mode.aggregate.frames_mean),
-      ).toBeLessThan(0.01);
-      for (const metric of [
-        "mean_ms_per_frame",
-        "peak_ms_per_frame",
-      ] as const) {
+      const recomputedFrames = mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
+      expect(Math.abs(recomputedFrames - mode.aggregate.frames_mean)).toBeLessThan(0.01);
+      for (const metric of ["mean_ms_per_frame", "peak_ms_per_frame"] as const) {
         expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
         expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
         expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
-        const recomputed =
-          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
-        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
-          0.01,
-        );
+        const recomputed = mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(0.01);
       }
     }
     expect(baseline.workload.mount_hunks).toBeGreaterThan(0);
@@ -397,9 +329,7 @@ describe("benchmark baseline M4 (T3.2)", () => {
     expect(baseline.workload.context_lines_per_hunk).toBeGreaterThan(0);
     expect(baseline.workload.wide_line_chars).toBeGreaterThan(0);
     // The windowing descriptor the 12x claim hinges on (dom-testing-1).
-    expect(baseline.workload.windowed).toMatch(
-      /maxLines \d+ \+ contextLines \d+/,
-    );
+    expect(baseline.workload.windowed).toMatch(/maxLines \d+ \+ contextLines \d+/);
     expect(baseline.methodology).toContain("peak_ms_per_frame");
   });
 });
@@ -424,18 +354,12 @@ describe("benchmark baseline M5 (T3.2)", () => {
   it("m5_metrics_baseline_exists_with_mode_matrix", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/metrics-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/metrics-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as M5Baseline;
 
-    expect(baseline.modes.map((m) => m.mode).sort()).toEqual([
-      "with-metrics",
-      "without-metrics",
-    ]);
+    expect(baseline.modes.map((m) => m.mode).sort()).toEqual(["with-metrics", "without-metrics"]);
     expect(baseline.protocol.measured_runs).toBeGreaterThanOrEqual(3);
     expect(baseline.protocol.warmup_runs).toBeGreaterThanOrEqual(1);
     expect(baseline.color_env.FORCE_COLOR).toBe("1");
@@ -449,23 +373,14 @@ describe("benchmark baseline M5 (T3.2)", () => {
         expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
       }
       expect(Number.isFinite(mode.aggregate.frames_mean)).toBe(true);
-      const recomputedFrames =
-        mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
-      expect(
-        Math.abs(recomputedFrames - mode.aggregate.frames_mean),
-      ).toBeLessThan(0.01);
-      for (const metric of [
-        "mean_ms_per_frame",
-        "peak_ms_per_frame",
-      ] as const) {
+      const recomputedFrames = mode.runs.reduce((a, r) => a + r.frames, 0) / mode.runs.length;
+      expect(Math.abs(recomputedFrames - mode.aggregate.frames_mean)).toBeLessThan(0.01);
+      for (const metric of ["mean_ms_per_frame", "peak_ms_per_frame"] as const) {
         expect(Number.isFinite(mode.aggregate[metric].mean)).toBe(true);
         expect(Number.isFinite(mode.aggregate[metric].std_dev)).toBe(true);
         expect(mode.aggregate[metric].std_dev).toBeGreaterThanOrEqual(0);
-        const recomputed =
-          mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
-        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(
-          0.01,
-        );
+        const recomputed = mode.runs.reduce((a, r) => a + r[metric], 0) / mode.runs.length;
+        expect(Math.abs(recomputed - mode.aggregate[metric].mean)).toBeLessThan(0.01);
       }
     }
     expect(baseline.workload.messages).toBeGreaterThan(0);
@@ -474,9 +389,7 @@ describe("benchmark baseline M5 (T3.2)", () => {
     expect(baseline.workload.categories).toBeGreaterThan(0);
     // Cadence symmetry (EC-6, review dom-testing-6): the delta is only
     // meaningful if both modes produced the same frame count per run.
-    expect(baseline.modes[0]?.aggregate.frames_mean).toBe(
-      baseline.modes[1]?.aggregate.frames_mean,
-    );
+    expect(baseline.modes[0]?.aggregate.frames_mean).toBe(baseline.modes[1]?.aggregate.frames_mean);
     // The honest-delta contract (D6): the reportable result is the mode
     // delta, and sub-sigma deltas are declared inconclusive.
     expect(baseline.methodology).toContain("INCONCLUSIVE");

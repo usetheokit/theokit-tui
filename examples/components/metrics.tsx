@@ -15,10 +15,7 @@ const instance = render(
   <TheoTUIProvider>
     <Box flexDirection="column">
       <ContextWindowBar usedTokens={79_360} limitTokens={128_000} width={46} />
-      <TokenUsageChart
-        usage={{ input: 62_100, output: 14_800, cached: 2_400 }}
-        width={46}
-      />
+      <TokenUsageChart usage={{ input: 62_100, output: 14_800, cached: 2_400 }} width={46} />
       <CostMeter costUsd={1.87} />
       {/* B-001 — the same three meters, composed from one `TurnUsage`. The second panel carries
           no `cost` and no optional token counts, so it shows what "absent is absent" looks like:

@@ -63,8 +63,7 @@ export function isShellEnvelope(
     return false;
   }
   const candidate = result as Record<string, unknown>;
-  const hasAny =
-    "stdout" in candidate || "stderr" in candidate || "exitCode" in candidate;
+  const hasAny = "stdout" in candidate || "stderr" in candidate || "exitCode" in candidate;
   return (
     hasAny &&
     keyValid(candidate, "stdout", "string") &&
@@ -94,9 +93,7 @@ export function toShell(envelope: {
   return {
     stdout: envelope.stdout ?? "",
     stderr: envelope.stderr ?? "",
-    ...(typeof envelope.exitCode === "number"
-      ? { exitCode: envelope.exitCode }
-      : {}),
+    ...(typeof envelope.exitCode === "number" ? { exitCode: envelope.exitCode } : {}),
   };
 }
 
@@ -121,10 +118,7 @@ export function parseShellEnvelope(raw: string): NormalizedShell | undefined {
  * requires BOTH a `@@` hunk header AND a `---`/`diff --git` file header, so a
  * plain listing that merely contains `@@` is never misrouted. */
 export function looksLikeUnifiedDiff(text: string): boolean {
-  return (
-    /^@@ .* @@/m.test(text) &&
-    (/^--- /m.test(text) || /^diff --git /m.test(text))
-  );
+  return /^@@ .* @@/m.test(text) && (/^--- /m.test(text) || /^diff --git /m.test(text));
 }
 
 /** The timeline field that renders a tool-result VALUE best: an inline `diff`,
@@ -136,11 +130,7 @@ export function looksLikeUnifiedDiff(text: string): boolean {
  * (e.g. a `.text` field, or `JSON.stringify`). */
 export function routeToolResult(
   value: unknown,
-):
-  | { diff: string }
-  | { shell: NormalizedShell }
-  | { output: string }
-  | undefined {
+): { diff: string } | { shell: NormalizedShell } | { output: string } | undefined {
   const envelope = isShellEnvelope(value)
     ? toShell(value)
     : typeof value === "string"
@@ -167,17 +157,11 @@ export function routeToolResult(
  * (the widened arm); an object's content array contributes its text blocks
  * concatenated; anything else yields "" (the mint-empty rule's input).
  */
-export function extractAssistantText(
-  message: AgentStreamEvent["message"],
-): string {
+export function extractAssistantText(message: AgentStreamEvent["message"]): string {
   if (typeof message === "string") {
     return message;
   }
-  if (
-    typeof message !== "object" ||
-    message === null ||
-    !Array.isArray(message.content)
-  ) {
+  if (typeof message !== "object" || message === null || !Array.isArray(message.content)) {
     return "";
   }
   let text = "";

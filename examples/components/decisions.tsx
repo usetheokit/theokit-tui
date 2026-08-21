@@ -7,9 +7,9 @@ import {
   FreeTextInput,
   InkInputProvider,
   PlanApproval,
-  QuestionPrompt,
   type PlanDecision,
   type QuestionAnswer,
+  QuestionPrompt,
 } from "../../src/index.js";
 
 // M23 example: a scripted agent-decision ROUND-TRIP — ApprovalPrompt (composing a

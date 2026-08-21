@@ -9,12 +9,7 @@ import type { ShellEnvelope } from "../tools/tool-result.js";
 // guard and AgentTimeline's error message all derive from this array. The
 // discriminant is `kind`, NOT `type` — a deliberate divergence from all three
 // analogs (reserved-word-ambiguous naming; recorded in ADR D1).
-export const AGENT_EVENT_KINDS = [
-  "message",
-  "thinking",
-  "tool",
-  "explored",
-] as const;
+export const AGENT_EVENT_KINDS = ["message", "thinking", "tool", "explored"] as const;
 
 export type AgentEventKind = (typeof AGENT_EVENT_KINDS)[number];
 
@@ -78,7 +73,10 @@ export interface AgentExploredEvent {
  * M2 EC-16 parity). Extra properties are tolerated (M7 adapters may enrich).
  */
 export type AgentEvent =
-  AgentMessageEvent | AgentThinkingEvent | AgentToolEvent | AgentExploredEvent;
+  | AgentMessageEvent
+  | AgentThinkingEvent
+  | AgentToolEvent
+  | AgentExploredEvent;
 
 export function isAgentEventKind(value: unknown): value is AgentEventKind {
   return (AGENT_EVENT_KINDS as readonly unknown[]).includes(value);

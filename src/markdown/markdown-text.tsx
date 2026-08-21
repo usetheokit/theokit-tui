@@ -2,11 +2,10 @@ import { Box } from "ink";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
 import { parseMarkdown } from "./markdown.js";
 import { BlockNode } from "./markdown-block.js";
-
-import { useTheoTheme } from "../theme/theme.js";
-import { reportGuardFailure } from "../status/guard-sink.js";
 
 // M13 MarkdownText (plan m13-markdown-renderer, ADR D2): the render adapter
 // over the pure markdown-model — nodes → ink tree styled by THEME tokens
@@ -27,9 +26,7 @@ export function MarkdownText(props: MarkdownTextProps) {
   if (typeof props.text !== "string") {
     reportGuardFailure(
       "MarkdownText",
-      new TypeError(
-        `MarkdownText: \`text\` must be a string — got ${typeof props.text}`,
-      ),
+      new TypeError(`MarkdownText: \`text\` must be a string — got ${typeof props.text}`),
     );
   }
   const theme = useTheoTheme();

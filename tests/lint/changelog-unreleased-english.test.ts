@@ -45,8 +45,7 @@ export function scanUnreleased(changelog: string): Offender[] {
   // No empty-body guard: `scanText` already returns [] for an empty string, and a redundant line
   // is a line no mutant can kill — measured, then removed rather than given a test that proves
   // nothing.
-  const offset =
-    changelog.slice(0, changelog.indexOf(body)).split("\n").length - 1;
+  const offset = changelog.slice(0, changelog.indexOf(body)).split("\n").length - 1;
   return scanText("CHANGELOG.md", body).map((o) => ({
     ...o,
     line: o.line + offset,
@@ -100,13 +99,9 @@ describe("the [Unreleased] section is written in English", () => {
     // The normal state immediately after a release. A gate that failed here would be red on every
     // freshly-cut tree.
     expect(
-      scanUnreleased(
-        "# Changelog\n\n## [Unreleased]\n\n## [1.0.0] - 2026-01-01\n\n- x\n",
-      ),
+      scanUnreleased("# Changelog\n\n## [Unreleased]\n\n## [1.0.0] - 2026-01-01\n\n- x\n"),
     ).toEqual([]);
-    expect(
-      scanUnreleased("# Changelog\n\n## [1.0.0] - 2026-01-01\n\n- x\n"),
-    ).toEqual([]);
+    expect(scanUnreleased("# Changelog\n\n## [1.0.0] - 2026-01-01\n\n- x\n")).toEqual([]);
   });
 
   it("test_the_repositorys_unreleased_section_is_english", () => {

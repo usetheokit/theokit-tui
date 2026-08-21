@@ -3,15 +3,13 @@ import stringWidth from "string-width";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { ChatMessage } from "./chat-message.js";
-import { TheoTUIProvider } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { ChatMessage } from "./chat-message.js";
 
 describe("ChatMessage (T2.1)", () => {
   it("renders_user_message_with_glyph_prefix", async () => {
-    const frame = await renderFrame(
-      <ChatMessage role="user">hello</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="user">hello</ChatMessage>);
     expect(frame).toContain(">");
     expect(frame).toContain("hello");
   });
@@ -19,9 +17,7 @@ describe("ChatMessage (T2.1)", () => {
   it("renders_assistant_message_with_the_bullet_glyph", async () => {
     // M27.1 Claude Code parity: the assistant turn is marked with a `⏺` bullet
     // (aligned width-1 filled circle), distinct from the user's `>` prompt.
-    const frame = await renderFrame(
-      <ChatMessage role="assistant">hi there</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="assistant">hi there</ChatMessage>);
     expect(frame).toContain("⏺");
     expect(frame).toContain("hi there");
   });
@@ -29,9 +25,7 @@ describe("ChatMessage (T2.1)", () => {
   it("assistant_bullet_has_a_two_space_gap_aligning_with_tool_rows", async () => {
     // The `⏺` bullet sits two columns from its text — the same gap the tool
     // indicator uses — so message and tool rows align in a transcript.
-    const frame = await renderFrame(
-      <ChatMessage role="assistant">reply</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="assistant">reply</ChatMessage>);
 
     const plain = stripAnsi(frame);
     expect(plain).toContain("⏺  reply");
@@ -40,17 +34,13 @@ describe("ChatMessage (T2.1)", () => {
   it("user_message_text_renders_dim_the_input_echo", async () => {
     // M27.1: the user turn is the input echo — dim it so the assistant reply
     // (normal) reads as the prominent output (Claude Code contrast).
-    const frame = await renderFrame(
-      <ChatMessage role="user">my prompt</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="user">my prompt</ChatMessage>);
     expect(frame).toMatch(/\[2m/); // dim SGR on the user text
     expect(frame).toContain("my prompt");
   });
 
   it("assistant_message_text_is_not_dim", async () => {
-    const frame = await renderFrame(
-      <ChatMessage role="assistant">the reply</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="assistant">the reply</ChatMessage>);
     // The reply is the prominent output — the content is not dim-wrapped.
     // (The bullet may carry color, but the text stays normal weight.)
     expect(frame).toContain("the reply");
@@ -58,9 +48,7 @@ describe("ChatMessage (T2.1)", () => {
   });
 
   it("renders_system_message_with_glyph_prefix", async () => {
-    const frame = await renderFrame(
-      <ChatMessage role="system">context note</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="system">context note</ChatMessage>);
     expect(frame).toContain("·");
     expect(frame).toContain("context note");
   });
@@ -95,9 +83,7 @@ describe("ChatMessage (T2.1)", () => {
   it("forced_color_canary_ansi_escapes_present", async () => {
     // Canary (SEPA iteration-2): proves FORCE_COLOR=1 held in the worker -
     // catches any future regression of the vitest env pin (ADR D2).
-    const frame = await renderFrame(
-      <ChatMessage role="user">canary</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="user">canary</ChatMessage>);
     expect(frame).toContain("\u001b[");
   });
 
@@ -127,9 +113,7 @@ describe("ChatMessage (T2.1)", () => {
         role: "model",
         children: "x",
       }),
-    ).toThrow(
-      'ChatMessage: invalid role "model" — expected "user" | "assistant" | "system"',
-    );
+    ).toThrow('ChatMessage: invalid role "model" — expected "user" | "assistant" | "system"');
   });
 
   it("long_content_wraps_inside_narrow_box_without_crash", async () => {
@@ -167,9 +151,7 @@ describe("ChatMessage (T2.1)", () => {
     // markers render literally, and the two default paths are byte-equal
     // (LIVE comparison — kills the `markdown !== undefined` mutant, r2-F2).
     const md = "**bold** and `code`";
-    const absent = await renderFrame(
-      <ChatMessage role="assistant">{md}</ChatMessage>,
-    );
+    const absent = await renderFrame(<ChatMessage role="assistant">{md}</ChatMessage>);
     const explicitFalse = await renderFrame(
       <ChatMessage role="assistant" markdown={false}>
         {md}
@@ -305,9 +287,7 @@ describe("issue #56 — a horizontal margin must not push the row past the termi
   it("chat_message_vertical_margin_does_not_shrink_the_row", async () => {
     // Only the HORIZONTAL box model steals columns — `marginY` must leave the
     // width budget byte-identical to the no-margin render.
-    const plain = await renderFrame(
-      <ChatMessage role="assistant">{paragraph}</ChatMessage>,
-    );
+    const plain = await renderFrame(<ChatMessage role="assistant">{paragraph}</ChatMessage>);
     const withMarginY = await renderFrame(
       <ChatMessage role="assistant" marginY={2}>
         {paragraph}

@@ -1,10 +1,9 @@
 import { Box, Text } from "ink";
-
+import { reportGuardFailure } from "../status/guard-sink.js";
 import { CodeBlock } from "./code-block.js";
 import type { MarkdownNode } from "./markdown.js";
 import { Segments } from "./markdown-segments.js";
 import { Table } from "./markdown-table-view.js";
-import { reportGuardFailure } from "../status/guard-sink.js";
 
 function headingTone(
   level: number,
@@ -16,13 +15,7 @@ function headingTone(
   return level === 3 ? { bold: true } : { italic: true, dimColor: true };
 }
 
-export function BlockNode({
-  node,
-  accent,
-}: {
-  node: MarkdownNode;
-  accent: string;
-}) {
+export function BlockNode({ node, accent }: { node: MarkdownNode; accent: string }) {
   switch (node.kind) {
     case "heading":
       return (
@@ -72,9 +65,7 @@ export function BlockNode({
       const exhaustive: never = node;
       reportGuardFailure(
         "MarkdownText",
-        new TypeError(
-          `MarkdownText: unhandled node kind ${JSON.stringify(exhaustive)}`,
-        ),
+        new TypeError(`MarkdownText: unhandled node kind ${JSON.stringify(exhaustive)}`),
       );
     }
     /* v8 ignore stop */

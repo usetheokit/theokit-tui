@@ -1,5 +1,5 @@
 import { Box, Text } from "ink";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";

@@ -30,9 +30,7 @@ describe("fuzzyMatch (M21 T4.1)", () => {
   });
 
   it("prefers_an_exact_match_strongly", () => {
-    expect(fuzzyMatch("foo", "foo").score).toBeLessThan(
-      fuzzyMatch("foo", "foobar").score,
-    );
+    expect(fuzzyMatch("foo", "foo").score).toBeLessThan(fuzzyMatch("foo", "foobar").score);
   });
 });
 

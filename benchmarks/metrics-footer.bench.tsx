@@ -2,9 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-
+import { Box } from "ink";
 import { render } from "ink-testing-library";
-
+import type { ChatThreadMessage } from "../src/index.js";
 import {
   ChatThread,
   ContextWindowBar,
@@ -12,17 +12,8 @@ import {
   TheoTUIProvider,
   TokenUsageChart,
 } from "../src/index.js";
-import type { ChatThreadMessage } from "../src/index.js";
-import { Box } from "ink";
-import {
-  fmt,
-  frameSampler,
-  round,
-  stats,
-  tick,
-  stackVersions,
-} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats, tick } from "./sampling.js";
 
 // M5 metrics-footer benchmark (plan T3.2, ADR D6): the always-on footer
 // under a streaming M1 thread. The reportable result is the MODE DELTA
@@ -44,25 +35,16 @@ type Mode = "with-metrics" | "without-metrics";
 // step arrays are SHARED between modes (EC-6 cadence symmetry): exactly ONE
 // rerender per step in BOTH modes; without-metrics simply does not mount the
 // footer subtree (the tail-message append drives frames in both modes).
-const baseMessages: ChatThreadMessage[] = Array.from(
-  { length: N_MESSAGES },
-  (_, i) => ({
-    id: `m${i}`,
-    role: i % 2 === 0 ? "user" : "assistant",
-    content: `message ${i} — the quick brown fox jumps over the dog`,
-  }),
-);
+const baseMessages: ChatThreadMessage[] = Array.from({ length: N_MESSAGES }, (_, i) => ({
+  id: `m${i}`,
+  role: i % 2 === 0 ? "user" : "assistant",
+  content: `message ${i} — the quick brown fox jumps over the dog`,
+}));
 const tailTexts = Array.from({ length: N_STEPS + 1 }, (_, s) =>
   "streaming reply ".concat("x".repeat(s)),
 );
-const stepUsed = Array.from(
-  { length: N_STEPS + 1 },
-  (_, s) => 24_000 + s * TOKENS_PER_STEP,
-);
-const stepCost = Array.from(
-  { length: N_STEPS + 1 },
-  (_, s) => 0.4 + s * COST_PER_STEP,
-);
+const stepUsed = Array.from({ length: N_STEPS + 1 }, (_, s) => 24_000 + s * TOKENS_PER_STEP);
+const stepCost = Array.from({ length: N_STEPS + 1 }, (_, s) => 0.4 + s * COST_PER_STEP);
 
 // Fail-fast workload self-checks: the metric props MUST change every step
 // (frozen props would zero the with-metrics delta silently) and the tail
@@ -138,9 +120,7 @@ console.log(
 );
 
 const measured = smoke ? 1 : MEASURED_RUNS;
-const modes: Mode[] = smoke
-  ? ["with-metrics"]
-  : ["with-metrics", "without-metrics"];
+const modes: Mode[] = smoke ? ["with-metrics"] : ["with-metrics", "without-metrics"];
 const results: {
   mode: Mode;
   runs: RunMetrics[];
@@ -154,7 +134,7 @@ const results: {
 for (const mode of modes) {
   for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
-    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+    console.log(`${fmt(`${mode} warmup`, w)}  (discarded)`);
   }
   const runs: RunMetrics[] = [];
   for (let i = 0; i < measured; i++) {
@@ -209,7 +189,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     workload: {
       messages: N_MESSAGES,
       steps: N_STEPS,
@@ -241,6 +221,6 @@ if (!smoke) {
     "metrics-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
   console.log("baseline written: benchmarks/baselines/metrics-baseline.json");
 }

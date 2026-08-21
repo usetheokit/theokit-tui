@@ -33,7 +33,6 @@ import { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
 const ESC_CHAR = String.fromCharCode(27);
 const NEWLINE = String.fromCharCode(10);
 /** Any C0 control character. */
-// eslint-disable-next-line no-control-regex
 const CONTROL_CHAR_RE = /[\u0000-\u001F\u007F]/;
 const ISO_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
@@ -58,9 +57,7 @@ function fakeSink() {
  */
 function onlyLine(sink: { lines: readonly string[] }): string {
   if (sink.lines.length !== 1) {
-    throw new Error(
-      `expected exactly one line on the sink, got ${String(sink.lines.length)}`,
-    );
+    throw new Error(`expected exactly one line on the sink, got ${String(sink.lines.length)}`);
   }
   return sink.lines[0] as string;
 }
@@ -68,9 +65,7 @@ function onlyLine(sink: { lines: readonly string[] }): string {
 describe("reportGuardFailure (B-025 T1.1)", () => {
   it("a_reported_guard_failure_reaches_the_sink_and_still_throws", () => {
     const sink = fakeSink();
-    const error = new TypeError(
-      "UsagePanel: contextWindow must be > 0 — got 0",
-    );
+    const error = new TypeError("UsagePanel: contextWindow must be > 0 — got 0");
 
     // The throw is the contract 37 test files rest on. Reporting is ADDITIVE: it never replaces
     // the throw, and this assertion is what keeps a future "just log it" refactor honest.
@@ -149,11 +144,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
 
     try {
       expect(() => {
-        reportGuardFailure(
-          "UsagePanel",
-          new TypeError("Notice: variant unknown — got 'x'"),
-          sink,
-        );
+        reportGuardFailure("UsagePanel", new TypeError("Notice: variant unknown — got 'x'"), sink);
       }).toThrow(TypeError);
     } finally {
       process.stderr.write = realWrite;
@@ -172,9 +163,7 @@ describe("reportGuardFailure (B-025 T1.1)", () => {
         throw new Error("EPIPE: broken pipe");
       },
     };
-    const original = new TypeError(
-      "ContextWindowBar: usedTokens must be >= 0 — got -5",
-    );
+    const original = new TypeError("ContextWindowBar: usedTokens must be >= 0 — got -5");
 
     // The failure scenario the plan names: a closed pipe must not turn a diagnosable guard failure
     // into an EPIPE nobody can trace back to the real cause. Reporting is best-effort; the guard's
@@ -228,19 +217,14 @@ describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
         dispose();
       }
 
-      expect(readFileSync(logPath, "utf8")).toContain(
-        "UsagePanel: contextWindow",
-      );
+      expect(readFileSync(logPath, "utf8")).toContain("UsagePanel: contextWindow");
       // Nothing reached the stream the frame is painted on.
       expect(framed.join("")).not.toContain("UsagePanel: contextWindow");
 
       // And after teardown the line goes to the terminal again — the guard is scoped to the
       // session, not a permanent redirect.
       expect(() => {
-        reportGuardFailure(
-          "UsagePanel",
-          new TypeError("CostMeter: costUsd must be >= 0 — got -1"),
-        );
+        reportGuardFailure("UsagePanel", new TypeError("CostMeter: costUsd must be >= 0 — got -1"));
       }).toThrow(TypeError);
       expect(framed.join("")).toContain("CostMeter: costUsd");
     } finally {
@@ -263,14 +247,7 @@ describe("reportGuardFailure under installStderrGuard (B-025 T1.3)", () => {
 // claim was defeated by an input the author had not thought of, and nothing caught it.
 
 /** A string carrying the two things a record must survive: a control byte and a line break. */
-const HOSTILE_VALUE =
-  "12" +
-  NEWLINE +
-  "[theokit/tui] CostMeter: costUsd OK" +
-  ESC_CHAR +
-  "[2J" +
-  ESC_CHAR +
-  "[H";
+const HOSTILE_VALUE = `12${NEWLINE}[theokit/tui] CostMeter: costUsd OK${ESC_CHAR}[2J${ESC_CHAR}[H`;
 
 /**
  * Every code point that terminates a LINE for some reader, plus the 8-bit escape introducers.
@@ -301,9 +278,7 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
     expect(() => {
       reportGuardFailure(
         "UsagePanel",
-        new TypeError(
-          `UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`,
-        ),
+        new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`),
         sink,
       );
     }).toThrow(TypeError);
@@ -318,9 +293,7 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
     expect(() => {
       reportGuardFailure(
         "UsagePanel",
-        new TypeError(
-          `UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`,
-        ),
+        new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`),
         sink,
       );
     }).toThrow(TypeError);
@@ -334,9 +307,7 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
     expect(() => {
       reportGuardFailure(
         "UsagePanel",
-        new TypeError(
-          `UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`,
-        ),
+        new TypeError(`UsagePanel: usage.cost must be >= 0 — got ${HOSTILE_VALUE}`),
         sink,
       );
     }).toThrow(TypeError);
@@ -350,9 +321,7 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
     // reader parses it as a record start. Corrected to the property that actually matters rather
     // than to the number that made it green.
     const line = onlyLine(sink);
-    const starts = line
-      .split(NEWLINE)
-      .filter((part) => part.startsWith("[theokit/tui]"));
+    const starts = line.split(NEWLINE).filter((part) => part.startsWith("[theokit/tui]"));
     expect(starts.length).toBe(1);
     // And the copy carried by the attacker is still THERE, escaped and readable — the diagnostic
     // content was preserved, not silently dropped.
@@ -368,9 +337,7 @@ describe("the record is safe and attributable (B-025 v2 T1.1)", () => {
     expect(() => {
       reportGuardFailure(
         "UsagePanel",
-        new TypeError(
-          "UsagePanel: contextWindow must be a finite number > 0 when given — got 0",
-        ),
+        new TypeError("UsagePanel: contextWindow must be a finite number > 0 when given — got 0"),
         sink,
       );
     }).toThrow(TypeError);
@@ -469,11 +436,7 @@ describe("a lost record is counted (B-025 v2 T2.1)", () => {
     const before = lostGuardRecords();
 
     expect(() => {
-      reportGuardFailure(
-        "Notice",
-        new TypeError("Notice: variant unknown — got 'x'"),
-        broken,
-      );
+      reportGuardFailure("Notice", new TypeError("Notice: variant unknown — got 'x'"), broken);
     }).toThrow(TypeError);
 
     expect(lostGuardRecords()).toBe(before + 1);
@@ -481,9 +444,7 @@ describe("a lost record is counted (B-025 v2 T2.1)", () => {
 
   it("test_a_lost_record_does_not_replace_the_original_error", () => {
     const dead: GuardSink = { write: (): boolean => false };
-    const original = new TypeError(
-      "ContextWindowBar: usedTokens must be >= 0 — got -5",
-    );
+    const original = new TypeError("ContextWindowBar: usedTokens must be >= 0 — got -5");
 
     // Counting the loss must not turn a diagnosable guard failure into something else. The caller
     // still receives exactly the error the guard raised.
@@ -499,11 +460,7 @@ describe("a lost record is counted (B-025 v2 T2.1)", () => {
   it("test_the_counter_is_monotonic_and_reading_does_not_reset_it", () => {
     const dead: GuardSink = { write: (): boolean => false };
     expect(() => {
-      reportGuardFailure(
-        "Toast",
-        new TypeError("Toast: variant unknown — got 'purple'"),
-        dead,
-      );
+      reportGuardFailure("Toast", new TypeError("Toast: variant unknown — got 'purple'"), dead);
     }).toThrow(TypeError);
 
     // Two consecutive reads with no fire between them must agree. A counter that resets on read
@@ -547,9 +504,7 @@ describe("the record survives every line-breaking code point (B-025)", () => {
           .map((c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`)
           .join("")}]`,
       );
-      const starts = line
-        .split(anyLineBreak)
-        .filter((part) => part.startsWith("[theokit/tui]"));
+      const starts = line.split(anyLineBreak).filter((part) => part.startsWith("[theokit/tui]"));
       expect(starts.length).toBe(1);
     });
   }
@@ -579,9 +534,7 @@ describe("a malformed error argument is refused (B-025)", () => {
       }
 
       expect(caught).toBeInstanceOf(TypeError);
-      expect((caught as Error).message).toContain(
-        "reportGuardFailure: error must be an Error",
-      );
+      expect((caught as Error).message).toContain("reportGuardFailure: error must be an Error");
       // And nothing was written — a malformed call must not emit a record naming a value it could
       // not read.
       expect(sink.lines).toHaveLength(0);

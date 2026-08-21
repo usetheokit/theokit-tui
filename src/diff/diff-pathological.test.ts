@@ -68,17 +68,11 @@ describe("pathological patches (B-085)", () => {
     // measured rather than as assumed, because the assumption was the interesting part: a parser
     // that sized anything by `999999999999` would never have reached this assertion.
     expect(value[0]?.lines).toHaveLength(3);
-    expect(value[0]?.lines.map((l) => l.kind)).toEqual([
-      "del",
-      "add",
-      "context",
-    ]);
+    expect(value[0]?.lines.map((l) => l.kind)).toEqual(["del", "add", "context"]);
   });
 
   it("one_hundred_thousand_hunk_headers_parse_in_linear_time", () => {
-    const patch =
-      "diff --git a/a b/a\n--- a/a\n+++ b/a\n" +
-      "@@ -1,1 +1,1 @@\n".repeat(100_000);
+    const patch = `diff --git a/a b/a\n--- a/a\n+++ b/a\n${"@@ -1,1 +1,1 @@\n".repeat(100_000)}`;
 
     const { value, ms } = within(() => parseUnifiedDiff(patch));
 
@@ -102,10 +96,7 @@ describe("pathological patches (B-085)", () => {
   it("a_single_five_megabyte_line_is_not_scanned_quadratically", () => {
     // The classic quadratic shape: a per-character scan that restarts. 5MB in one line is where
     // that would show, and it is also the cheapest case measured (0.2ms) — which is the point.
-    const patch =
-      "diff --git a/a b/a\n--- a/a\n+++ b/a\n@@ -1,1 +1,1 @@\n+" +
-      "A".repeat(5_000_000) +
-      "\n";
+    const patch = `diff --git a/a b/a\n--- a/a\n+++ b/a\n@@ -1,1 +1,1 @@\n+${"A".repeat(5_000_000)}\n`;
 
     const { value, ms } = within(() => parseUnifiedDiff(patch));
 
@@ -122,9 +113,7 @@ describe("pathological patches (B-085)", () => {
     // is not a patch, and returning an empty array would let a caller render "no changes" for
     // input that was never a diff.
     expect(() => parseUnifiedDiff("A".repeat(200_000))).toThrow(TypeError);
-    expect(() => parseUnifiedDiff("A".repeat(200_000))).toThrow(
-      /did not parse as a unified diff/,
-    );
+    expect(() => parseUnifiedDiff("A".repeat(200_000))).toThrow(/did not parse as a unified diff/);
   });
 
   it("an_empty_patch_returns_nothing_instead_of_throwing_and_that_asymmetry_is_deliberate", () => {
@@ -139,9 +128,7 @@ describe("pathological patches (B-085)", () => {
   it("a_truncated_patch_ending_mid_hunk_does_not_throw", () => {
     // Truncation is what a pipe that closed early produces, so it is ordinary rather than exotic.
     const { value } = within(() =>
-      parseUnifiedDiff(
-        "diff --git a/a b/a\n--- a/a\n+++ b/a\n@@ -1,1 +1,1 @@\n-x",
-      ),
+      parseUnifiedDiff("diff --git a/a b/a\n--- a/a\n+++ b/a\n@@ -1,1 +1,1 @@\n-x"),
     );
 
     expect(value).toHaveLength(1);

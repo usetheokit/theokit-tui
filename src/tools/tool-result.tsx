@@ -1,12 +1,11 @@
 import { Box, Text } from "ink";
 import type { ReactNode } from "react";
-
-import { ExpandableOutput } from "./expandable-output.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { useTheoTheme } from "../theme/theme.js";
-import type { TheoTheme } from "../theme/theme.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import type { TheoTheme } from "../theme/theme.js";
+import { useTheoTheme } from "../theme/theme.js";
+import { ExpandableOutput } from "./expandable-output.js";
 
 /**
  * Input guard against pathological single payloads (gemini-cli
@@ -25,18 +24,13 @@ export interface TruncationResult {
  * lines, reserving one row for the `… +N lines hidden` indicator. Pure —
  * no ink imports; the M2 critical path.
  */
-export function truncateLines(
-  lines: string[],
-  maxLines: number,
-): TruncationResult {
+export function truncateLines(lines: string[], maxLines: number): TruncationResult {
   // EC-1: fail-fast typed error — slice(-(maxLines-1)) silently misbehaves
   // for maxLines <= 1 and non-integers (slice(-0) returns ALL lines).
   if (!Number.isInteger(maxLines) || maxLines < 1) {
     reportGuardFailure(
       "truncateLines",
-      new TypeError(
-        `truncateLines: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
-      ),
+      new TypeError(`truncateLines: maxLines must be an integer >= 1 — got ${String(maxLines)}`),
     );
   }
   if (lines.length <= maxLines) {
@@ -111,9 +105,7 @@ function resolveShell(shell: ShellEnvelope): ResolvedContent {
   // the plan): stderr gets whatever stdout left over.
   const stderrBudget = MAX_RESULT_CHARS - stdoutCap.text.length;
   const stderrCapped = shell.stderr.length > stderrBudget;
-  const stderrText = stderrCapped
-    ? shell.stderr.slice(0, Math.max(0, stderrBudget))
-    : shell.stderr;
+  const stderrText = stderrCapped ? shell.stderr.slice(0, Math.max(0, stderrBudget)) : shell.stderr;
   const rows = shell.stdout === "" ? [] : splitContent(stdoutCap.text);
   let stderrLabelIndex: number | undefined;
   if (shell.stderr !== "") {
@@ -121,10 +113,7 @@ function resolveShell(shell: ShellEnvelope): ResolvedContent {
     const stderrRows = splitContent(stderrText);
     // Review arch-4: when the combined budget capped stderr away entirely,
     // say so on the label instead of promising content that never renders.
-    rows.push(
-      stderrRows.length > 0 ? "stderr:" : "stderr: (capped)",
-      ...stderrRows,
-    );
+    rows.push(stderrRows.length > 0 ? "stderr:" : "stderr: (capped)", ...stderrRows);
   }
   return {
     rows,
@@ -142,16 +131,13 @@ function resolveContent(props: ToolResultProps): ResolvedContent {
   if (sources.length > 1) {
     reportGuardFailure(
       "ToolResult",
-      new TypeError(
-        "ToolResult: provide exactly one of children | lines | shell",
-      ),
+      new TypeError("ToolResult: provide exactly one of children | lines | shell"),
     );
   }
   if (props.shell !== undefined) {
     return resolveShell(props.shell);
   }
-  const raw =
-    props.lines !== undefined ? props.lines.join("\n") : (props.children ?? "");
+  const raw = props.lines !== undefined ? props.lines.join("\n") : (props.children ?? "");
   const { text, capped } = applyCharCap(raw);
   return {
     rows: raw === "" ? [] : splitContent(text),
@@ -178,11 +164,7 @@ function indicatorText(hidden: number, capped: boolean): string | undefined {
   return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
-function contentRows(
-  content: ResolvedContent,
-  visibleCount: number,
-  theme: TheoTheme,
-) {
+function contentRows(content: ResolvedContent, visibleCount: number, theme: TheoTheme) {
   // Positive start index — slice(-0) would resurrect EVERY row when the
   // visible budget is zero (EC-1's hazard at the render layer).
   const start = content.rows.length - visibleCount;
@@ -190,8 +172,7 @@ function contentRows(
     const absoluteIndex = start + index;
     const isLabel = absoluteIndex === content.stderrLabelIndex;
     const afterLabel =
-      content.stderrLabelIndex !== undefined &&
-      absoluteIndex > content.stderrLabelIndex;
+      content.stderrLabelIndex !== undefined && absoluteIndex > content.stderrLabelIndex;
     if (isLabel) {
       return (
         <Text key={absoluteIndex} dimColor>
@@ -200,10 +181,7 @@ function contentRows(
       );
     }
     return (
-      <Text
-        key={absoluteIndex}
-        {...(afterLabel ? { color: theme.status.error } : {})}
-      >
+      <Text key={absoluteIndex} {...(afterLabel ? { color: theme.status.error } : {})}>
         {row === "" ? " " : row}
       </Text>
     );
@@ -225,8 +203,7 @@ function resultView(
   visibleCount: number,
 ): ResultView {
   const indicator = indicatorText(hidden, content.capped);
-  const showExit =
-    typeof content.exitCode === "number" && content.exitCode !== 0;
+  const showExit = typeof content.exitCode === "number" && content.exitCode !== 0;
   const showPlaceholder = isShell && content.rows.length === 0;
   // Review dom-frontend-1 (DV-3 resolution): when truncation cuts INTO the
   // stderr block the label row is the FIRST thing tail-retention drops —
@@ -236,10 +213,7 @@ function resultView(
   const showPinnedStderrLabel =
     content.stderrLabelIndex !== undefined && content.stderrLabelIndex < start;
   const hasAnything =
-    content.rows.length > 0 ||
-    showExit ||
-    showPlaceholder ||
-    indicator !== undefined;
+    content.rows.length > 0 || showExit || showPlaceholder || indicator !== undefined;
   return {
     indicator,
     showExit,
@@ -296,9 +270,7 @@ export function ToolResult(props: ToolResultProps) {
   const theme = useTheoTheme();
   const m = pickMargin(props);
 
-  const truncation = expanded
-    ? { visible: content.rows, hidden: 0 }
-    : lineTruncation;
+  const truncation = expanded ? { visible: content.rows, hidden: 0 } : lineTruncation;
   const view = resultView(
     props.shell !== undefined,
     content,
@@ -311,24 +283,12 @@ export function ToolResult(props: ToolResultProps) {
 
   // M25 interactive mode: when line-capped, the content becomes an
   // ExpandableOutput (its own affordance replaces the static indicator).
-  const interactive = interactiveEligible(
-    props.interactive,
-    expanded,
-    lineTruncation.hidden,
-  );
-  const body: ReactNode = resultBody(
-    interactive,
-    content,
-    truncation,
-    lineTruncation,
-    theme,
-  );
+  const interactive = interactiveEligible(props.interactive, expanded, lineTruncation.hidden);
+  const body: ReactNode = resultBody(interactive, content, truncation, lineTruncation, theme);
 
   // Interactive mode replaces the LINE-cap indicator with the affordance, but the
   // CHAR cap must stay observable (silent data loss is worse — review M2).
-  const indicator = interactive
-    ? charCapIndicator(content.capped)
-    : view.indicator;
+  const indicator = interactive ? charCapIndicator(content.capped) : view.indicator;
 
   return (
     <Box flexDirection="column" {...m}>

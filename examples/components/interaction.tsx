@@ -5,8 +5,8 @@ import {
   OverlayProvider,
   Pager,
   SelectList,
-  useOverlay,
   type SelectListItem,
+  useOverlay,
 } from "../../src/index.js";
 import { FocusProvider } from "../../src/renderer/hooks/use-focus.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
@@ -23,18 +23,14 @@ const FRUITS: SelectListItem[] = [
   { value: "cherry", label: "cherry", description: "open a pager" },
 ];
 
-const LONG_TEXT = Array.from({ length: 60 }, (_, i) => `line ${i + 1}`).join(
-  "\n",
-);
+const LONG_TEXT = Array.from({ length: 60 }, (_, i) => `line ${i + 1}`).join("\n");
 
 function Demo() {
   const { push, pop } = useOverlay();
   const [chosen, setChosen] = useState<string | null>(null);
   return (
     <Box flexDirection="column" gap={1}>
-      <Text>
-        Pick a fruit (↑/↓, Enter) — it opens a scrollable Pager overlay:
-      </Text>
+      <Text>Pick a fruit (↑/↓, Enter) — it opens a scrollable Pager overlay:</Text>
       <SelectList
         items={FRUITS}
         onSubmit={(values) => {
@@ -48,9 +44,7 @@ function Demo() {
 }
 
 // Wire OUR input + focus + overlay providers (the composition root an app owns).
-const source = createInputSource(process.stdin as never, (d) =>
-  process.stdout.write(d),
-);
+const source = createInputSource(process.stdin as never, (d) => process.stdout.write(d));
 source.start();
 
 render(

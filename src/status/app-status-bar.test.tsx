@@ -1,10 +1,9 @@
-import { render } from "ink-testing-library";
 import { homedir } from "node:os";
+import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-
-import { AppStatusBar } from "./app-status-bar.js";
-import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { AppStatusBar } from "./app-status-bar.js";
 
 // M14 T1.2 (plan m14-status-bar, ADR D1): the slot row oracles — order,
 // separator emission between PRESENT slots only, width priority, degrade.
@@ -43,9 +42,7 @@ describe("AppStatusBar (M14 T1.2)", () => {
 
   it("missing_slots_emit_no_dangling_separator", () => {
     // EC-1: only model + state ⇒ exactly ONE separator, never "· ·".
-    const frame = stripAnsi(
-      renderBar(<AppStatusBar model="gpt-x" state="idle" />),
-    );
+    const frame = stripAnsi(renderBar(<AppStatusBar model="gpt-x" state="idle" />));
     const seps = frame.split("·").length - 1;
     expect(seps).toBe(1);
     expect(frame).not.toContain("· ·");
@@ -59,9 +56,7 @@ describe("AppStatusBar (M14 T1.2)", () => {
   });
 
   it("tokens_render_compacted", () => {
-    const frame = stripAnsi(
-      renderBar(<AppStatusBar tokens={{ used: 12300, limit: 128000 }} />),
-    );
+    const frame = stripAnsi(renderBar(<AppStatusBar tokens={{ used: 12300, limit: 128000 }} />));
     expect(frame).toContain("12.3k/128k");
   });
 
@@ -69,11 +64,7 @@ describe("AppStatusBar (M14 T1.2)", () => {
     // The Claude-Code footer shows the turn/session cost; `cost` sits after tokens, before state.
     const frame = stripAnsi(
       renderBar(
-        <AppStatusBar
-          tokens={{ used: 12300, limit: 128000 }}
-          cost={0.0021}
-          state="idle"
-        />,
+        <AppStatusBar tokens={{ used: 12300, limit: 128000 }} cost={0.0021} state="idle" />,
       ),
     );
     const iTokens = frame.indexOf("12.3k");
@@ -85,16 +76,12 @@ describe("AppStatusBar (M14 T1.2)", () => {
   });
 
   it("cost_slot_absent_when_undefined", () => {
-    const frame = stripAnsi(
-      renderBar(<AppStatusBar model="gpt-x" state="idle" />),
-    );
+    const frame = stripAnsi(renderBar(<AppStatusBar model="gpt-x" state="idle" />));
     expect(frame).not.toContain("$");
   });
 
   it("cwd_tildeifies_home_prefix", () => {
-    const frame = stripAnsi(
-      renderBar(<AppStatusBar cwd={`${homedir()}/work/repo`} />),
-    );
+    const frame = stripAnsi(renderBar(<AppStatusBar cwd={`${homedir()}/work/repo`} />));
     expect(frame).toContain("~/work/repo");
     expect(frame).not.toContain(homedir());
   });
@@ -133,15 +120,10 @@ describe("AppStatusBar (M14 T1.2)", () => {
   });
 
   it("monochrome_theme_keeps_separators_drops_color", () => {
-    const instance = render(
-      <TheoTUIProvider theme={themes["no-color"]}>{FULL}</TheoTUIProvider>,
-    );
+    const instance = render(<TheoTUIProvider theme={themes["no-color"]}>{FULL}</TheoTUIProvider>);
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    const colorSgr = frame.match(
-      // eslint-disable-next-line no-control-regex
-      /\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g,
-    );
+    const colorSgr = frame.match(/\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g);
     expect(colorSgr).toBeNull();
     expect(stripAnsi(frame)).toContain("·");
     expect(frame).toMatchSnapshot("status-bar-monochrome");
@@ -163,8 +145,7 @@ describe("AppStatusBar (M14 T1.2)", () => {
   });
 
   it("invalid_tokens_used_nan_throws", () => {
-    const bad = () =>
-      AppStatusBar({ tokens: { used: Number.NaN, limit: 128 } });
+    const bad = () => AppStatusBar({ tokens: { used: Number.NaN, limit: 128 } });
     expect(bad).toThrow(TypeError);
   });
 
@@ -190,9 +171,7 @@ describe("AppStatusBar (M14 T1.2)", () => {
   it("tildeify_requires_a_path_boundary", () => {
     // Review r2-F4/r1-F1: a SIBLING of home (~-backup) must stay literal;
     // cwd exactly equal to home renders "~".
-    const sibling = stripAnsi(
-      renderBar(<AppStatusBar cwd={`${homedir()}-backup/repo`} />),
-    );
+    const sibling = stripAnsi(renderBar(<AppStatusBar cwd={`${homedir()}-backup/repo`} />));
     expect(sibling).toContain(`${homedir()}-backup/repo`);
     expect(sibling).not.toContain("~-backup");
     const exact = stripAnsi(renderBar(<AppStatusBar cwd={homedir()} />));

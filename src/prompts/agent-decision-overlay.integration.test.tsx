@@ -1,12 +1,11 @@
 import { Text } from "ink";
 import { describe, expect, it } from "vitest";
-
-import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
-import { ApprovalPrompt } from "./approval-prompt.js";
+import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
+import { type ItlInstance, render } from "../../tests/renderer/itl-adapter.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";
 import { OverlayProvider, useOverlay } from "../renderer/hooks/use-overlay.js";
 import { useInput } from "../renderer/input/use-input.js";
-import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
+import { ApprovalPrompt } from "./approval-prompt.js";
 
 // M23 T4.1 — the overlay-integration edge case (blueprint edge case 5, ADR D7):
 // an ApprovalPrompt pushed as an overlay (the realistic trigger-driven pattern,
@@ -38,10 +37,7 @@ function Trigger({ decisions }: { decisions: string[] }) {
     (input) => {
       if (input === "o") {
         push(
-          <ApprovalPrompt
-            title="Approve overlay?"
-            onDecision={(d) => decisions.push(d)}
-          >
+          <ApprovalPrompt title="Approve overlay?" onDecision={(d) => decisions.push(d)}>
             <Text>$ do the thing</Text>
           </ApprovalPrompt>,
         );
@@ -67,11 +63,7 @@ describe("ApprovalPrompt overlay integration (M23 T4.1)", () => {
     // The ChoiceRow subscribes a couple renders after the overlay mounts (the
     // focus round-trip); Enter can land before it is listening. Retry until a
     // decision is captured — the loop stops on the FIRST success (no double).
-    for (
-      let attempt = 0;
-      attempt < 20 && decisions.length === 0;
-      attempt += 1
-    ) {
+    for (let attempt = 0; attempt < 20 && decisions.length === 0; attempt += 1) {
       app.stdin.write("\r"); // Enter → commit the active choice (once)
       await app.flush();
     }

@@ -1,5 +1,5 @@
 import { Box, Text } from "ink";
-import { createElement, useEffect, useMemo, type ReactElement } from "react";
+import { createElement, type ReactElement, useEffect, useMemo } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { useStdout } from "../renderer/hooks/use-stdout.js";
@@ -11,8 +11,8 @@ import {
   encodeITerm2,
   encodeKitty,
   getImageDimensions,
-  imageFallback,
   type ImageProtocol,
+  imageFallback,
 } from "../renderer/output/terminal-image.js";
 
 // M21 Image (plan m21-premium-capabilities T2.1, Feature A / ADR A2/A3): the
@@ -77,8 +77,7 @@ export function Image({
   protocol,
   ...margin
 }: ImageProps): ReactElement {
-  const resolvedProtocol =
-    protocol === undefined ? detectImageProtocol() : protocol;
+  const resolvedProtocol = protocol === undefined ? detectImageProtocol() : protocol;
   const dimensions = useMemo(
     () => getImageDimensions(base64Data, mimeType),
     [base64Data, mimeType],
@@ -104,22 +103,12 @@ export function Image({
     return createElement(
       Box,
       margin,
-      createElement(
-        Text,
-        {},
-        imageFallback(mimeType, dimensions ?? undefined, filename),
-      ),
+      createElement(Text, {}, imageFallback(mimeType, dimensions ?? undefined, filename)),
     );
   }
 
   const size = calculateImageCellSize(dimensions, maxWidthCells);
-  const lines = buildImageLines(
-    base64Data,
-    resolvedProtocol,
-    size.columns,
-    size.rows,
-    imageId,
-  );
+  const lines = buildImageLines(base64Data, resolvedProtocol, size.columns, size.rows, imageId);
   // The image host node carries the protocol escape + filler rows; margin goes
   // on a wrapping Box so the filler-row accounting inside the node is untouched.
   return createElement(

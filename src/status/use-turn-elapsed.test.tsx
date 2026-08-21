@@ -1,15 +1,7 @@
 import { Text } from "ink";
 import { render } from "ink-testing-library";
 import { act } from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { useTurnElapsed } from "./use-turn-elapsed.js";
 
@@ -35,13 +27,10 @@ function mountProbe(active: boolean) {
 
 describe("useTurnElapsed (M14 T1.1)", () => {
   beforeAll(() => {
-    (
-      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-    ).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   });
   afterAll(() => {
-    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-      .IS_REACT_ACT_ENVIRONMENT;
+    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT;
   });
   afterEach(() => {
     vi.useRealTimers();

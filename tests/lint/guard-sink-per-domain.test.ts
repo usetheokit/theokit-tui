@@ -68,9 +68,7 @@ describe("the guard sink is reached in every domain", () => {
   });
 
   it("branding", () => {
-    expectRecorded("WelcomeBanner", () =>
-      WelcomeBanner({ name: "   " } as never),
-    );
+    expectRecorded("WelcomeBanner", () => WelcomeBanner({ name: "   " } as never));
   });
 
   it("chat", () => {
@@ -80,15 +78,11 @@ describe("the guard sink is reached in every domain", () => {
   });
 
   it("diff", () => {
-    expectRecorded("DiffViewer", () =>
-      DiffViewer({ patch: "", maxLines: 0 } as never),
-    );
+    expectRecorded("DiffViewer", () => DiffViewer({ patch: "", maxLines: 0 } as never));
   });
 
   it("markdown", () => {
-    expectRecorded("CodeBlock", () =>
-      CodeBlock({ code: "x", maxLines: 0 } as never),
-    );
+    expectRecorded("CodeBlock", () => CodeBlock({ code: "x", maxLines: 0 } as never));
   });
 
   it("metrics", () => {
@@ -96,15 +90,11 @@ describe("the guard sink is reached in every domain", () => {
   });
 
   it("prompts", () => {
-    expectRecorded("WindowedList", () =>
-      WindowedList({ items: ["a"], window: 0 } as never),
-    );
+    expectRecorded("WindowedList", () => WindowedList({ items: ["a"], window: 0 } as never));
   });
 
   it("status", () => {
-    expectRecorded("Notice", () =>
-      Notice({ variant: "not-a-variant" as never, children: "x" }),
-    );
+    expectRecorded("Notice", () => Notice({ variant: "not-a-variant" as never, children: "x" }));
   });
 
   it("status — a second call site in the same domain", () => {
@@ -130,17 +120,13 @@ describe("the guard sink is reached in every domain", () => {
   });
 
   it("tools", () => {
-    expectRecorded("ToolCall", () =>
-      ToolCall({ name: "x", status: "not-a-status" as never }),
-    );
+    expectRecorded("ToolCall", () => ToolCall({ name: "x", status: "not-a-status" as never }));
   });
 
   it("renderer", () => {
     // B-075 — the first guard in this domain. `createFrameBudget` is a factory rather than a
     // component, so it is called directly; the F10 idiom that makes components reachable as
     // plain functions is unnecessary here.
-    expectRecorded("createFrameBudget", () =>
-      createFrameBudget({ frameBudgetMs: Number.NaN }),
-    );
+    expectRecorded("createFrameBudget", () => createFrameBudget({ frameBudgetMs: Number.NaN }));
   });
 });

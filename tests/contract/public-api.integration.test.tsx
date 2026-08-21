@@ -1,42 +1,36 @@
 import { Box } from "ink";
-import { describe, expect, it } from "vitest";
-import { waitFor } from "../fixtures/wait-for.js";
-
 // Integration boundary (plan T2.2, wiring pillar b): everything imported
 // ONLY through the composition root — exactly as a consumer would.
 import { render } from "ink-testing-library";
-import { vi } from "vitest";
-
+import { describe, expect, it, vi } from "vitest";
+import { stripAnsi } from "../../src/format/ansi.js";
+import type { AgentStreamEvent, TheoBuiltinThemeName } from "../../src/index.js";
 import {
   AGENT_EVENT_KINDS,
   AgentStreaming,
   AgentTimeline,
+  agentStreamReducer,
+  ChatComposer,
+  ChatMessage,
+  ChatThread,
   CodeBlock,
   ContextWindowBar,
   CostMeter,
   DiffViewer,
+  defaultTheme,
+  initialAgentStreamState,
   parseUnifiedDiff,
-  ChatComposer,
-  ChatMessage,
-  ChatThread,
   TheoTUIProvider,
   TokenUsageChart,
   ToolCallCard,
   ToolResult,
-  defaultTheme,
   themes,
-} from "../../src/index.js";
-import type { TheoBuiltinThemeName } from "../../src/index.js";
-import {
-  agentStreamReducer,
-  initialAgentStreamState,
   useAgentStream,
   WelcomeBanner,
 } from "../../src/index.js";
-import type { AgentStreamEvent } from "../../src/index.js";
 // (M1↔M2 composition asserted below — review wire-4.)
 import { renderFrame } from "../fixtures/helpers.js";
-import { stripAnsi } from "../../src/format/ansi.js";
+import { waitFor } from "../fixtures/wait-for.js";
 
 describe("public API integration (T2.2)", () => {
   it("public_entry_composes_provider_and_message_for_both_roles", async () => {
@@ -56,9 +50,7 @@ describe("public API integration (T2.2)", () => {
   });
 
   it("public_entry_renders_with_default_theme_without_provider", async () => {
-    const frame = await renderFrame(
-      <ChatMessage role="user">no provider needed</ChatMessage>,
-    );
+    const frame = await renderFrame(<ChatMessage role="user">no provider needed</ChatMessage>);
     expect(frame).toContain(defaultTheme.role.user.glyph.trim());
     expect(frame).toContain("no provider needed");
   });
@@ -129,9 +121,7 @@ describe("public API integration (M2 T3.1 — tool scene)", () => {
             />
           </ToolCallCard>
           <ToolCallCard name="pnpm lint" status="failed">
-            <ToolResult
-              shell={{ stdout: "", stderr: "1 error", exitCode: 1 }}
-            />
+            <ToolResult shell={{ stdout: "", stderr: "1 error", exitCode: 1 }} />
           </ToolCallCard>
         </Box>
       </TheoTUIProvider>,
@@ -199,12 +189,7 @@ describe("public API integration (M3 T3.1 — agent scene)", () => {
   });
 
   it("agent_events_export_kinds_array", () => {
-    expect(AGENT_EVENT_KINDS).toEqual([
-      "message",
-      "thinking",
-      "tool",
-      "explored",
-    ]);
+    expect(AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored"]);
   });
 });
 
@@ -255,11 +240,7 @@ describe("public API integration (M5 T3.1 — metrics scene)", () => {
     const frame = await renderFrame(
       <TheoTUIProvider>
         <Box flexDirection="column">
-          <ContextWindowBar
-            usedTokens={64_000}
-            limitTokens={128_000}
-            width={40}
-          />
+          <ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={40} />
           <TokenUsageChart usage={{ input: 12_500, output: 4_000 }} />
           <CostMeter costUsd={1.234} />
         </Box>
@@ -276,11 +257,7 @@ describe("public API integration (M5 T3.1 — metrics scene)", () => {
       <Box width={60}>
         <TheoTUIProvider>
           <Box flexDirection="column">
-            <ContextWindowBar
-              usedTokens={64_000}
-              limitTokens={128_000}
-              width={40}
-            />
+            <ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={40} />
             <TokenUsageChart usage={{ input: 12_500, output: 4_000 }} />
             <CostMeter costUsd={1.234} />
           </Box>
@@ -308,11 +285,7 @@ describe("public API integration (M6 T3.2 — theme matrix)", () => {
           <Box flexDirection="column">
             <ChatMessage role="assistant">theme matrix scene</ChatMessage>
             <ToolCallCard name="build" status="success" summary="ok" />
-            <ContextWindowBar
-              usedTokens={32_000}
-              limitTokens={128_000}
-              width={40}
-            />
+            <ContextWindowBar usedTokens={32_000} limitTokens={128_000} width={40} />
             <CodeBlock code={"const t = 1;"} language="typescript" />
           </Box>
         </TheoTUIProvider>
@@ -333,8 +306,7 @@ describe("public API integration (M6 T3.2 — theme matrix)", () => {
     // review tests-1: the snapshot pins HIGHLIGHTED bytes — await the
     // single-flight loader so a filtered/isolated run can't capture the
     // plain first frame (testing.md § 3 independence).
-    const { ensureHighlighter } =
-      await import("../../src/markdown/code-block.js");
+    const { ensureHighlighter } = await import("../../src/markdown/code-block.js");
     await ensureHighlighter();
     // B-097 — the wait is on the HIGHLIGHTED bytes, and the anchor asserts the same thing.
     //
@@ -353,8 +325,7 @@ describe("public API integration (M6 T3.2 — theme matrix)", () => {
     const HIGHLIGHTED_KEYWORD = "\u001B[34mconst\u001B[39m";
     const frame = await renderFrame(scene("light"), {
       predicate: (f) => f.includes(HIGHLIGHTED_KEYWORD),
-      describe:
-        "the code block to re-render HIGHLIGHTED after ensureHighlighter() flushed",
+      describe: "the code block to re-render HIGHLIGHTED after ensureHighlighter() flushed",
     });
     // Kept even though the wait guarantees it: if the wait is ever weakened, this fails on the
     // anchor naming what is missing, rather than on a snapshot diff of invisible bytes.
@@ -411,9 +382,7 @@ describe("public API integration (M7 T3.2 — stream adapter scene)", () => {
           <AgentTimeline events={events} />
           {streaming.active ? (
             <AgentStreaming
-              {...(streaming.thought === undefined
-                ? {}
-                : { thought: streaming.thought })}
+              {...(streaming.thought === undefined ? {} : { thought: streaming.thought })}
             />
           ) : undefined}
         </Box>

@@ -1,5 +1,5 @@
-import { CodeBlock } from "../markdown/code-block.js";
 import { DiffViewer } from "../diff/diff-viewer.js";
+import { CodeBlock } from "../markdown/code-block.js";
 import type { ToolCardResult } from "./tool-card-result.js";
 import { ToolResult } from "./tool-result.js";
 
@@ -48,10 +48,6 @@ export function ResultBody({ result }: { result: ToolCardResult }) {
           />
         );
       }
-      return (
-        <ToolResult {...defined({ maxLines: result.maxLines })}>
-          {result.text}
-        </ToolResult>
-      );
+      return <ToolResult {...defined({ maxLines: result.maxLines })}>{result.text}</ToolResult>;
   }
 }

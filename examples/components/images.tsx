@@ -22,8 +22,8 @@ function Demo() {
         maxWidthCells={20}
       />
       <Text dimColor>
-        Editor keys also work in ChatComposer now: C-w/C-k kill, C-y yank,
-        M-b/M-f word-nav, C-_ undo, ↑/↓ history.
+        Editor keys also work in ChatComposer now: C-w/C-k kill, C-y yank, M-b/M-f word-nav, C-_
+        undo, ↑/↓ history.
       </Text>
     </Box>
   );

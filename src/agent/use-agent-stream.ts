@@ -2,10 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import type { AgentStreamEvent } from "./agent-stream-event.js";
 import type { AgentStreamState } from "./agent-stream-reducer.js";
-import {
-  agentStreamReducer,
-  initialAgentStreamState,
-} from "./agent-stream-reducer.js";
+import { agentStreamReducer, initialAgentStreamState } from "./agent-stream-reducer.js";
 
 // The react seam (plan m7-stream-adapter ADR D4): a sequential awaited loop
 // over an async-iterable stream, folding each event through the pure reducer.
@@ -27,7 +24,8 @@ import {
  * the remount refolds it as an instant clean done (review F-10).
  */
 export type AgentStreamSource =
-  AsyncIterable<AgentStreamEvent> | (() => AsyncIterable<AgentStreamEvent>);
+  | AsyncIterable<AgentStreamEvent>
+  | (() => AsyncIterable<AgentStreamEvent>);
 
 export interface UseAgentStreamResult extends AgentStreamState {
   /** Stops consumption (iterator.return) and folds the terminal done. */
@@ -40,10 +38,7 @@ export interface UseAgentStreamResult extends AgentStreamState {
  * their unknown types fold to no-op in the public reducer). */
 type HookAction = { kind: "fold"; event: AgentStreamEvent } | { kind: "reset" };
 
-function hookReducer(
-  state: AgentStreamState,
-  action: HookAction,
-): AgentStreamState {
+function hookReducer(state: AgentStreamState, action: HookAction): AgentStreamState {
   if (action.kind === "reset") {
     return initialAgentStreamState;
   }
@@ -62,9 +57,7 @@ interface StreamControl {
   iterator?: AsyncIterator<AgentStreamEvent>;
 }
 
-export function useAgentStream(
-  source?: AgentStreamSource,
-): UseAgentStreamResult {
+export function useAgentStream(source?: AgentStreamSource): UseAgentStreamResult {
   const [state, dispatch] = useReducer(hookReducer, initialAgentStreamState);
   const controlRef = useRef<StreamControl>({ cancelled: false });
 
@@ -98,8 +91,7 @@ export function useAgentStream(
         if (control.cancelled) {
           return;
         }
-        const message =
-          thrown instanceof Error ? thrown.message : String(thrown);
+        const message = thrown instanceof Error ? thrown.message : String(thrown);
         dispatch({
           kind: "fold",
           event: { type: "error", error: { message } },

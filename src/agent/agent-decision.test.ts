@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DEFAULT_APPROVAL_CHOICES,
-  resolveChoiceKey,
-  type ChoiceKey,
-} from "./agent-decision.js";
+import { type ChoiceKey, DEFAULT_APPROVAL_CHOICES, resolveChoiceKey } from "./agent-decision.js";
 
 // M23 T1.1 — the pure decision-model keyboard oracle. `resolveChoiceKey` maps a
 // keypress over a fixed choice bar of `count` choices at active `index` to a
@@ -86,19 +82,11 @@ describe("resolveChoiceKey (M23 T1.1)", () => {
   });
 
   it("arrows_are_a_noop_when_there_are_no_choices", () => {
-    expect(
-      resolveChoiceKey("", KEY({ rightArrow: true }), 0, 0),
-    ).toBeUndefined();
-    expect(
-      resolveChoiceKey("", KEY({ leftArrow: true }), 0, 0),
-    ).toBeUndefined();
+    expect(resolveChoiceKey("", KEY({ rightArrow: true }), 0, 0)).toBeUndefined();
+    expect(resolveChoiceKey("", KEY({ leftArrow: true }), 0, 0)).toBeUndefined();
   });
 
   it("default_approval_choices_are_once_always_reject", () => {
-    expect(DEFAULT_APPROVAL_CHOICES.map((c) => c.value)).toEqual([
-      "once",
-      "always",
-      "reject",
-    ]);
+    expect(DEFAULT_APPROVAL_CHOICES.map((c) => c.value)).toEqual(["once", "always", "reject"]);
   });
 });

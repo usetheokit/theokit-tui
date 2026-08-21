@@ -1,11 +1,10 @@
 import { Box, Static } from "ink";
-import { memo, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
-
-import { ChatMessage } from "./chat-message.js";
-import type { ChatRole } from "./chat-message.js";
+import { memo, useMemo, useRef } from "react";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import type { ChatRole } from "./chat-message.js";
+import { ChatMessage } from "./chat-message.js";
 
 export interface ChatThreadMessage {
   /** Stable unique identity — React key + Static watermark anchor. */
@@ -114,10 +113,7 @@ export function ChatThread({
     0,
     messages.length - Math.max(0, windowSize) - Math.max(0, windowOverscan),
   );
-  const prefix = useMemo(
-    () => messages.slice(0, tailStart),
-    [messages, tailStart],
-  );
+  const prefix = useMemo(() => messages.slice(0, tailStart), [messages, tailStart]);
   const items = useMemo<StaticItem[]>(
     () => (frozenHeader === undefined ? prefix : [HEADER_SENTINEL, ...prefix]),
     [frozenHeader, prefix],
@@ -147,11 +143,7 @@ export function ChatThread({
         {tail.map((message, index) => (
           // First tail row is the thread's first turn ONLY when nothing
           // graduated into Static above it (items empty).
-          <Row
-            key={message.id}
-            message={message}
-            spaced={items.length > 0 || index > 0}
-          />
+          <Row key={message.id} message={message} spaced={items.length > 0 || index > 0} />
         ))}
       </Box>
     </>

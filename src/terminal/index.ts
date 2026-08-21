@@ -20,10 +20,10 @@
  * @public
  */
 
-export { DEFAULT_CAP_BYTES, DEFAULT_KEEP, rotateLog } from "./log-rotation.js";
 export type { RotateOptions } from "./log-rotation.js";
-export { installStderrGuard } from "./stderr-guard.js";
-export type { StderrGuardOptions } from "./stderr-guard.js";
-export { createWriteQueue } from "./write-queue.js";
-export type { WriteQueue } from "./write-queue.js";
+export { DEFAULT_CAP_BYTES, DEFAULT_KEEP, rotateLog } from "./log-rotation.js";
 export { CLEAR_SCREEN_AND_SCROLLBACK } from "./screen.js";
+export type { StderrGuardOptions } from "./stderr-guard.js";
+export { installStderrGuard } from "./stderr-guard.js";
+export type { WriteQueue } from "./write-queue.js";
+export { createWriteQueue } from "./write-queue.js";

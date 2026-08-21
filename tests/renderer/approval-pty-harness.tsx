@@ -2,10 +2,10 @@ import { Text } from "ink";
 
 import { ApprovalPrompt } from "../../src/prompts/approval-prompt.js";
 import { FocusProvider } from "../../src/renderer/hooks/use-focus.js";
-import { createRenderer } from "../../src/renderer/renderer.js";
-import { ProcessTerminal } from "../../src/renderer/terminal.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
 import { InputContext } from "../../src/renderer/input/use-input.js";
+import { createRenderer } from "../../src/renderer/renderer.js";
+import { ProcessTerminal } from "../../src/renderer/terminal.js";
 
 // M23 T4.1 PTY harness (plan m23-agent-decision-surfaces): a standalone program
 // node-pty spawns in a REAL pseudo-terminal. It renders the REAL ApprovalPrompt
@@ -16,9 +16,7 @@ import { InputContext } from "../../src/renderer/input/use-input.js";
 // (ChoiceRow keyboard → onDecision callback). Markers survive frame redraws
 // because the e2e buffers ALL bytes ever written.
 
-const stdin = process.stdin as unknown as Parameters<
-  typeof createInputSource
->[0];
+const stdin = process.stdin as unknown as Parameters<typeof createInputSource>[0];
 const source = createInputSource(stdin, (d) => process.stdout.write(d));
 source.setRawMode(true);
 source.start();

@@ -2,15 +2,13 @@ import { Box } from "ink";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { CodeBlock, ensureHighlighter, highlightLine } from "./code-block.js";
-import { TheoTUIProvider, defaultTheme } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { defaultTheme, TheoTUIProvider } from "../theme/theme.js";
+import { CodeBlock, ensureHighlighter, highlightLine } from "./code-block.js";
 
 /** Compound-SGR-safe strip (M2 idiom). */
 
-const SNIPPET = ["const x = 1;", "function f() {", "  return x;", "}"].join(
-  "\n",
-);
+const SNIPPET = ["const x = 1;", "function f() {", "  return x;", "}"].join("\n");
 
 const lines12 = Array.from({ length: 12 }, (_, i) => `line-${i}`).join("\n");
 
@@ -21,9 +19,7 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
     vi.resetModules();
     const fresh = await import("./code-block.js");
     const { render } = await import("ink-testing-library");
-    const instance = render(
-      <fresh.CodeBlock code={SNIPPET} language="typescript" />,
-    );
+    const instance = render(<fresh.CodeBlock code={SNIPPET} language="typescript" />);
     const first = instance.lastFrame() ?? "";
     instance.unmount();
     expect(stripAnsi(first)).toContain("const x = 1;");
@@ -33,9 +29,7 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
   it("highlight_preserves_text_exactly", async () => {
     // D8 text invariance: highlighting may only change color bytes.
     await ensureHighlighter();
-    const hi = await renderFrame(
-      <CodeBlock code={SNIPPET} language="typescript" />,
-    );
+    const hi = await renderFrame(<CodeBlock code={SNIPPET} language="typescript" />);
     const plain = await renderFrame(<CodeBlock code={SNIPPET} />);
     expect(stripAnsi(hi)).toBe(stripAnsi(plain));
   });
@@ -52,17 +46,13 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
 
   it("highlighted_frame_contains_color_bytes", async () => {
     await ensureHighlighter();
-    const frame = await renderFrame(
-      <CodeBlock code={SNIPPET} language="typescript" />,
-    );
+    const frame = await renderFrame(<CodeBlock code={SNIPPET} language="typescript" />);
     expect(frame).toMatch(/\[3[0-9]m/);
   });
 
   it("unknown_language_renders_plain", async () => {
     await ensureHighlighter();
-    const frame = await renderFrame(
-      <CodeBlock code={SNIPPET} language="nope-lang" />,
-    );
+    const frame = await renderFrame(<CodeBlock code={SNIPPET} language="nope-lang" />);
     const plain = await renderFrame(<CodeBlock code={SNIPPET} />);
     expect(frame).toBe(plain);
   });
@@ -84,18 +74,14 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
 
   it("capped_head_line_numbers_stay_original", async () => {
     // EC-11: original numbering on the visible head.
-    const frame = await renderFrame(
-      <CodeBlock code={lines12} maxLines={5} showLineNumbers />,
-    );
+    const frame = await renderFrame(<CodeBlock code={lines12} maxLines={5} showLineNumbers />);
     const plain = stripAnsi(frame);
     expect(plain).toMatch(/^ *1 line-0/m);
     expect(plain).toMatch(/^ *4 line-3/m);
   });
 
   it("line_numbers_render_dim_right_aligned", async () => {
-    const frame = await renderFrame(
-      <CodeBlock code={SNIPPET} showLineNumbers />,
-    );
+    const frame = await renderFrame(<CodeBlock code={SNIPPET} showLineNumbers />);
     expect(stripAnsi(frame)).toMatch(/^ *1 const/m);
   });
 
@@ -126,9 +112,7 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
 
   it("code_with_ansi_is_sanitized", async () => {
     // EC-16: agent output embeds escapes — stripped before render/highlight.
-    const frame = await renderFrame(
-      <CodeBlock code={"\u001B[31mred\u001B[39m text"} />,
-    );
+    const frame = await renderFrame(<CodeBlock code={"\u001B[31mred\u001B[39m text"} />);
     expect(stripAnsi(frame)).toBe("red text");
   });
 
@@ -145,9 +129,7 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const { render } = await import("ink-testing-library");
-      const instance = render(
-        <CodeBlock code={SNIPPET} language="typescript" />,
-      );
+      const instance = render(<CodeBlock code={SNIPPET} language="typescript" />);
       instance.unmount();
       await ensureHighlighter();
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -179,18 +161,14 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
       registered: () => true,
       highlight: () => ({ children: [] }),
     };
-    expect(
-      highlightLine("raw line", "ts", emptyRoot, "k", defaultTheme.code),
-    ).toBe("raw line");
+    expect(highlightLine("raw line", "ts", emptyRoot, "k", defaultTheme.code)).toBe("raw line");
     const throwing = {
       registered: () => true,
       highlight: () => {
         throw new Error("boom");
       },
     };
-    expect(
-      highlightLine("raw line", "ts", throwing, "k", defaultTheme.code),
-    ).toBe("raw line");
+    expect(highlightLine("raw line", "ts", throwing, "k", defaultTheme.code)).toBe("raw line");
     // Unknown hast node types render as null (renderHast fallthrough).
     const weirdNode = {
       registered: () => true,
@@ -198,13 +176,7 @@ describe("CodeBlock — highlight pipeline (T2.1, ADR D2/D6)", () => {
     };
     // tests-7: unknown hast nodes render as null children — the returned
     // value must be an element (not the raw string fallback).
-    const rendered = highlightLine(
-      "x",
-      "ts",
-      weirdNode,
-      "k",
-      defaultTheme.code,
-    );
+    const rendered = highlightLine("x", "ts", weirdNode, "k", defaultTheme.code);
     expect(typeof rendered).not.toBe("string");
   });
 

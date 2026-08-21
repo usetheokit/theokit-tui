@@ -60,9 +60,7 @@ const pattern = /^(export const VERSION = ")([^"]*)(";)$/m;
 const found = pattern.exec(source);
 if (found === null) {
   // Fail loud rather than write nothing: a silent no-op here is exactly the drift this closes.
-  console.error(
-    `sync-version: no \`export const VERSION = "…";\` line in ${entryPath}`,
-  );
+  console.error(`sync-version: no \`export const VERSION = "…";\` line in ${entryPath}`);
   process.exit(1);
 }
 

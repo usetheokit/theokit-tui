@@ -6,13 +6,7 @@ import { Box, Text } from "ink";
  * U-7 — exported so `WelcomeBanner` renders art the same way rather than growing a second
  * implementation. Two components drawing the same thing differently is how the art and the aside
  * ended up unreachable together in the first place. */
-export function ArtBlock({
-  art,
-  accent,
-}: {
-  art: string;
-  accent: string | undefined;
-}) {
+export function ArtBlock({ art, accent }: { art: string; accent: string | undefined }) {
   return (
     <Box flexDirection="column" flexShrink={0}>
       {art.split("\n").map((line, index) => (

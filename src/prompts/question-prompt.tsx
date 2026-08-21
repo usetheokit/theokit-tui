@@ -4,9 +4,9 @@ import { useState } from "react";
 import type { QuestionAnswer } from "../agent/agent-decision.js";
 import { FreeTextInput } from "../chat/free-text-input.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { useTheoTheme } from "../theme/theme.js";
 import { SelectList } from "./select-list.js";
 import type { SelectListItem } from "./select-list-model.js";
-import { useTheoTheme } from "../theme/theme.js";
 
 // M23 QuestionPrompt (plan m23-agent-decision-surfaces T2.1, ADR D6): a
 // per-question header + question text + a composed M22 SelectList (single or

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-
-import { CostMeter } from "./cost-meter.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
+import { CostMeter } from "./cost-meter.js";
 
 // T2.3 (plan m5-metrics-surface, ADRs D2/D3): honest cost display.
 describe("CostMeter", () => {
@@ -12,9 +11,7 @@ describe("CostMeter", () => {
   });
 
   it("approx_false_drops_marker", async () => {
-    const frame = await renderFrame(
-      <CostMeter costUsd={1.234} approx={false} />,
-    );
+    const frame = await renderFrame(<CostMeter costUsd={1.234} approx={false} />);
     const plain = stripAnsi(frame);
     expect(plain).toContain("cost $1.23");
     expect(plain).not.toContain("~");

@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-
-import { ContextWindowBar } from "./context-window-bar.js";
-import { TheoTUIProvider } from "../theme/theme.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { ContextWindowBar } from "./context-window-bar.js";
 
-const count = (haystack: string, needle: string): number =>
-  haystack.split(needle).length - 1;
+const count = (haystack: string, needle: string): number => haystack.split(needle).length - 1;
 
 // T2.1 (plan m5-metrics-surface, ADRs D2/D4/D7): the fill gauge.
 describe("ContextWindowBar", () => {
@@ -21,12 +19,7 @@ describe("ContextWindowBar", () => {
 
   it("renders_used_convention", async () => {
     const frame = await renderFrame(
-      <ContextWindowBar
-        usedTokens={64_000}
-        limitTokens={128_000}
-        width={40}
-        convention="used"
-      />,
+      <ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={40} convention="used" />,
     );
     const plain = stripAnsi(frame);
     expect(plain).toContain("50% used");
@@ -47,11 +40,7 @@ describe("ContextWindowBar", () => {
     // 99.6% used must NOT read "0% left"-adjacent lies: label says 1% left and
     // the bar keeps at least one empty cell (roadmap risk 2).
     const frame = await renderFrame(
-      <ContextWindowBar
-        usedTokens={127_488}
-        limitTokens={128_000}
-        width={40}
-      />,
+      <ContextWindowBar usedTokens={127_488} limitTokens={128_000} width={40} />,
     );
     const plain = stripAnsi(frame);
     expect(plain).toContain("1% left");
@@ -61,19 +50,12 @@ describe("ContextWindowBar", () => {
 
   it("endpoint_honesty_tiny_usage", async () => {
     const left = stripAnsi(
-      await renderFrame(
-        <ContextWindowBar usedTokens={512} limitTokens={128_000} width={40} />,
-      ),
+      await renderFrame(<ContextWindowBar usedTokens={512} limitTokens={128_000} width={40} />),
     );
     expect(left).toContain("99% left");
     const used = stripAnsi(
       await renderFrame(
-        <ContextWindowBar
-          usedTokens={512}
-          limitTokens={128_000}
-          width={40}
-          convention="used"
-        />,
+        <ContextWindowBar usedTokens={512} limitTokens={128_000} width={40} convention="used" />,
       ),
     );
     expect(used).toContain("1% used");
@@ -91,11 +73,7 @@ describe("ContextWindowBar", () => {
 
   it("over_limit_clamps_bar_and_stays_honest", async () => {
     const frame = await renderFrame(
-      <ContextWindowBar
-        usedTokens={140_000}
-        limitTokens={128_000}
-        width={40}
-      />,
+      <ContextWindowBar usedTokens={140_000} limitTokens={128_000} width={40} />,
     );
     const plain = stripAnsi(frame);
     expect(plain).toContain("0% left");
@@ -133,26 +111,14 @@ describe("ContextWindowBar", () => {
     // EC-5: THE computed boundary pair — label is 26 cols for this fixture,
     // so width 30 leaves exactly 3 bar cells and width 29 leaves 2 (< 3).
     const atBoundary = stripAnsi(
-      await renderFrame(
-        <ContextWindowBar
-          usedTokens={64_000}
-          limitTokens={128_000}
-          width={30}
-        />,
-      ),
+      await renderFrame(<ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={30} />),
     );
     // 50% of 3 cells rounds to 2 filled + 1 empty (review tests-2 — the
     // total-only assert also passed for 0█+3░).
     expect(count(atBoundary, "█")).toBe(2);
     expect(count(atBoundary, "░")).toBe(1);
     const below = stripAnsi(
-      await renderFrame(
-        <ContextWindowBar
-          usedTokens={64_000}
-          limitTokens={128_000}
-          width={29}
-        />,
-      ),
+      await renderFrame(<ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={29} />),
     );
     expect(below).toContain("% left");
     expect(below).not.toContain("█");
@@ -175,22 +141,11 @@ describe("ContextWindowBar", () => {
     // EC-1 interior drift: both conventions derive from ONE display percent.
     const used = stripAnsi(
       await renderFrame(
-        <ContextWindowBar
-          usedTokens={42_880}
-          limitTokens={128_000}
-          width={40}
-          convention="used"
-        />,
+        <ContextWindowBar usedTokens={42_880} limitTokens={128_000} width={40} convention="used" />,
       ),
     );
     const left = stripAnsi(
-      await renderFrame(
-        <ContextWindowBar
-          usedTokens={42_880}
-          limitTokens={128_000}
-          width={40}
-        />,
-      ),
+      await renderFrame(<ContextWindowBar usedTokens={42_880} limitTokens={128_000} width={40} />),
     );
     const usedPct = Number(/(\d+)% used/.exec(used)?.[1]);
     const leftPct = Number(/(\d+)% left/.exec(left)?.[1]);
@@ -208,11 +163,7 @@ describe("ContextWindowBar", () => {
   it("width_matrix_lines_fit", async () => {
     for (const w of [60, 30, 20]) {
       const frame = await renderFrame(
-        <ContextWindowBar
-          usedTokens={64_000}
-          limitTokens={128_000}
-          width={w}
-        />,
+        <ContextWindowBar usedTokens={64_000} limitTokens={128_000} width={w} />,
       );
       for (const row of stripAnsi(frame).split("\n")) {
         expect(row.length, `width ${w}`).toBeLessThanOrEqual(w);
@@ -237,11 +188,7 @@ describe("ContextWindowBar", () => {
     expect(partial).toMatchSnapshot("context-window-bar-partial");
 
     const full = await renderFrame(
-      <ContextWindowBar
-        usedTokens={128_000}
-        limitTokens={128_000}
-        width={40}
-      />,
+      <ContextWindowBar usedTokens={128_000} limitTokens={128_000} width={40} />,
     );
     expect(stripAnsi(full)).toContain("0% left");
     expect(count(stripAnsi(full), "░")).toBe(0);
@@ -260,18 +207,12 @@ describe("ContextWindowBar", () => {
     expect(() => ContextWindowBar({ usedTokens: -1 })).toThrow(
       "ContextWindowBar: usedTokens must be a finite number >= 0",
     );
-    expect(() => ContextWindowBar({ usedTokens: 1, limitTokens: 0 })).toThrow(
+    expect(() => ContextWindowBar({ usedTokens: 1, limitTokens: 0 })).toThrow(TypeError);
+    expect(() => ContextWindowBar({ usedTokens: Number.NaN })).toThrow(TypeError);
+    expect(() => ContextWindowBar({ usedTokens: 1, width: 1.5 })).toThrow(TypeError);
+    expect(() => ContextWindowBar({ usedTokens: 1, baselineTokens: Number.NaN })).toThrow(
       TypeError,
     );
-    expect(() => ContextWindowBar({ usedTokens: Number.NaN })).toThrow(
-      TypeError,
-    );
-    expect(() => ContextWindowBar({ usedTokens: 1, width: 1.5 })).toThrow(
-      TypeError,
-    );
-    expect(() =>
-      ContextWindowBar({ usedTokens: 1, baselineTokens: Number.NaN }),
-    ).toThrow(TypeError);
   });
 
   it("baseline_at_or_above_limit_throws", () => {
@@ -290,11 +231,7 @@ describe("ContextWindowBar — accent token (M6 T2.3)", () => {
   it("gauge_accent_follows_token", async () => {
     const frame = await renderFrame(
       <TheoTUIProvider theme={{ accent: "magenta" }}>
-        <ContextWindowBar
-          usedTokens={10_000}
-          limitTokens={128_000}
-          width={40}
-        />
+        <ContextWindowBar usedTokens={10_000} limitTokens={128_000} width={40} />
       </TheoTUIProvider>,
     );
     // Sub-warning fill uses the token.

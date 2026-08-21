@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { foldDiffLines, parseUnifiedDiff } from "./diff.js";
 import type { DiffLine } from "./diff.js";
+import { foldDiffLines, parseUnifiedDiff } from "./diff.js";
 
 // PATCH_BASIC fixture — DEFINED here (plan EC-23), duplicated per-file where
 // its exact line numbers are load-bearing.
@@ -53,14 +52,7 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
   it("parses_multi_file_patch", () => {
     const patch =
       PATCH_BASIC +
-      [
-        "--- a/second.ts",
-        "+++ b/second.ts",
-        "@@ -1,1 +1,1 @@",
-        "-x",
-        "+y",
-        "",
-      ].join("\n");
+      ["--- a/second.ts", "+++ b/second.ts", "@@ -1,1 +1,1 @@", "-x", "+y", ""].join("\n");
     const files = parseUnifiedDiff(patch);
     expect(files).toHaveLength(2);
     // parse-diff strips the a/ b/ prefixes (probed behavior — logged
@@ -69,40 +61,21 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
   });
 
   it("maps_dev_null_to_absent_names", () => {
-    const patch = [
-      "--- /dev/null",
-      "+++ b/new.ts",
-      "@@ -0,0 +1,1 @@",
-      "+hello",
-      "",
-    ].join("\n");
+    const patch = ["--- /dev/null", "+++ b/new.ts", "@@ -0,0 +1,1 @@", "+hello", ""].join("\n");
     const files = parseUnifiedDiff(patch);
     expect(files[0]!.oldName).toBeUndefined();
     expect(files[0]!.newName).toBe("new.ts");
   });
 
   it("maps_deleted_file_to_absent_new_name", () => {
-    const patch = [
-      "--- a/gone.ts",
-      "+++ /dev/null",
-      "@@ -1,1 +0,0 @@",
-      "-bye",
-      "",
-    ].join("\n");
+    const patch = ["--- a/gone.ts", "+++ /dev/null", "@@ -1,1 +0,0 @@", "-bye", ""].join("\n");
     const files = parseUnifiedDiff(patch);
     expect(files[0]!.oldName).toBe("gone.ts");
     expect(files[0]!.newName).toBeUndefined();
   });
 
   it("detects_rename_names", () => {
-    const patch = [
-      "--- a/old.ts",
-      "+++ b/new.ts",
-      "@@ -1,1 +1,1 @@",
-      "-a",
-      "+a2",
-      "",
-    ].join("\n");
+    const patch = ["--- a/old.ts", "+++ b/new.ts", "@@ -1,1 +1,1 @@", "-a", "+a2", ""].join("\n");
     const files = parseUnifiedDiff(patch);
     expect(files[0]!.oldName).toBe("old.ts");
     expect(files[0]!.newName).toBe("new.ts");
@@ -125,22 +98,12 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
       "",
     ].join("\n");
     const files = parseUnifiedDiff(patch);
-    expect(files[0]!.lines.some((l) => l.text.includes("No newline"))).toBe(
-      false,
-    );
+    expect(files[0]!.lines.some((l) => l.text.includes("No newline"))).toBe(false);
     expect(files[0]!.lines).toHaveLength(2);
   });
 
   it("preserves_blank_add_and_del_lines", () => {
-    const patch = [
-      "--- a/f.ts",
-      "+++ b/f.ts",
-      "@@ -1,2 +1,2 @@",
-      "-",
-      "+",
-      " x",
-      "",
-    ].join("\n");
+    const patch = ["--- a/f.ts", "+++ b/f.ts", "@@ -1,2 +1,2 @@", "-", "+", " x", ""].join("\n");
     const files = parseUnifiedDiff(patch);
     // Full-shape asserts binding kind to text (tests-16).
     expect(files[0]!.lines[0]).toEqual({ kind: "del", oldLine: 1, text: "" });
@@ -155,9 +118,7 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
   it("malformed_patch_throws_typed_error", () => {
     const call = () => parseUnifiedDiff("this is not a diff at all");
     expect(call).toThrow(TypeError);
-    expect(call).toThrow(
-      "parseUnifiedDiff: patch did not parse as a unified diff",
-    );
+    expect(call).toThrow("parseUnifiedDiff: patch did not parse as a unified diff");
   });
 
   it("binary_file_yields_zero_lines_with_names", () => {
@@ -188,20 +149,15 @@ describe("parseUnifiedDiff — pure model (T1.1, ADR D1/D7)", () => {
 
   it("trailing_garbage_after_valid_file_is_pinned", () => {
     // EC-1: parse-diff is LENIENT — garbage tail dropped (documented).
-    const files = parseUnifiedDiff(PATCH_BASIC + "\nrandom garbage tail here");
+    const files = parseUnifiedDiff(`${PATCH_BASIC}\nrandom garbage tail here`);
     expect(files).toHaveLength(1);
   });
 
   it("preserves_tabs_in_model_text", () => {
     // EC-7: model preserves \t — render layers expand.
-    const patch = [
-      "--- a/f.go",
-      "+++ b/f.go",
-      "@@ -1,1 +1,1 @@",
-      "-x",
-      "+\tindented",
-      "",
-    ].join("\n");
+    const patch = ["--- a/f.go", "+++ b/f.go", "@@ -1,1 +1,1 @@", "-x", "+\tindented", ""].join(
+      "\n",
+    );
     const files = parseUnifiedDiff(patch);
     expect(files[0]!.lines[1]!.text).toBe("\tindented");
   });
@@ -288,15 +244,11 @@ describe("foldDiffLines — pure fold math (T1.1, ADR D5)", () => {
     // folds once; change at the last line — long LEADING context folds once;
     // neither emits an empty fold at its edge.
     const headChange = [add(1), ...[2, 3, 4, 5, 6, 7, 8].map(ctx)];
-    const headFolds = foldDiffLines(headChange, 2).filter(
-      (r) => r.kind === "fold",
-    );
+    const headFolds = foldDiffLines(headChange, 2).filter((r) => r.kind === "fold");
     expect(headFolds).toHaveLength(1);
     expect(headFolds[0]!.hidden).toBe(5);
     const tailChange = [...[1, 2, 3, 4, 5, 6, 7].map(ctx), add(8)];
-    const tailFolds = foldDiffLines(tailChange, 2).filter(
-      (r) => r.kind === "fold",
-    );
+    const tailFolds = foldDiffLines(tailChange, 2).filter((r) => r.kind === "fold");
     expect(tailFolds).toHaveLength(1);
     expect(tailFolds[0]!.hidden).toBe(5);
     // Short runs at the edges never fold.

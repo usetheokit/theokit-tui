@@ -31,10 +31,7 @@ function clampOffset(state: PagerState, offset: number): PagerState {
   return { ...state, offset: Math.min(Math.max(0, offset), maxOffset(state)) };
 }
 
-const DELTAS: Record<
-  Exclude<PagerAction["type"], "resize">,
-  (state: PagerState) => number
-> = {
+const DELTAS: Record<Exclude<PagerAction["type"], "resize">, (state: PagerState) => number> = {
   "line-up": (s) => s.offset - 1,
   "line-down": (s) => s.offset + 1,
   "page-up": (s) => s.offset - s.viewportHeight,
@@ -45,10 +42,7 @@ const DELTAS: Record<
   "goto-bottom": (s) => maxOffset(s),
 };
 
-export function pagerReducer(
-  state: PagerState,
-  action: PagerAction,
-): PagerState {
+export function pagerReducer(state: PagerState, action: PagerAction): PagerState {
   if (action.type === "resize") {
     return clampOffset(
       {

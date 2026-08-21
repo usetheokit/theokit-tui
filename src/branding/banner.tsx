@@ -1,9 +1,8 @@
 import { Box, Text } from "ink";
-
-import { ArtBlock } from "./art-block.js";
+import type { LayoutMarginProps } from "../layout/layout-props.js";
 
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
-import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { ArtBlock } from "./art-block.js";
 
 // M27 <Banner> (plan ascii-banner-header): a startup header — a big ASCII-art
 // logo (a provided `art` string, rendered verbatim) OR the bold product `name`
@@ -47,9 +46,7 @@ function NameHeader({
   return (
     <Text bold {...(accent !== undefined ? { color: accent } : {})}>
       {name}
-      {version !== undefined && version !== "" ? (
-        <Text dimColor> v{version}</Text>
-      ) : null}
+      {version !== undefined && version !== "" ? <Text dimColor> v{version}</Text> : null}
     </Text>
   );
 }
@@ -81,14 +78,7 @@ function StatusPanel({
   );
 }
 
-export function Banner({
-  name,
-  version,
-  art,
-  status,
-  layout = "minimal",
-  ...margin
-}: BannerProps) {
+export function Banner({ name, version, art, status, layout = "minimal", ...margin }: BannerProps) {
   const theme = useTheoTheme();
   const accent = isMonochrome(theme) ? undefined : theme.accent;
   const header =

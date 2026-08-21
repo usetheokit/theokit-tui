@@ -1,27 +1,15 @@
 import { Box, Text } from "ink";
-
-import { SLASH_MENU_WINDOW } from "../slash-menu.js";
 import type { SlashMenu } from "../slash-menu.js";
+import { SLASH_MENU_WINDOW } from "../slash-menu.js";
 
-export function SlashMenuList({
-  menu,
-  accent,
-}: {
-  menu: SlashMenu;
-  accent: string;
-}) {
-  const visible = menu.matches.slice(
-    menu.windowStart,
-    menu.windowStart + SLASH_MENU_WINDOW,
-  );
+export function SlashMenuList({ menu, accent }: { menu: SlashMenu; accent: string }) {
+  const visible = menu.matches.slice(menu.windowStart, menu.windowStart + SLASH_MENU_WINDOW);
   return (
     <Box flexDirection="column" paddingLeft={2}>
       {/* B-052 — conditioned on the COUNT, matching `SelectList` (select-list.tsx:217) and
           `WindowedList` (windowed-list.tsx:146). `overflowUp` IS `hiddenBefore > 0`, so reading
           both would be two predicates for one fact. */}
-      {menu.hiddenBefore > 0 ? (
-        <Text dimColor>▲ {menu.hiddenBefore}</Text>
-      ) : null}
+      {menu.hiddenBefore > 0 ? <Text dimColor>▲ {menu.hiddenBefore}</Text> : null}
       {visible.map((command, index) => {
         const active = menu.windowStart + index === menu.clampedIndex;
         return (

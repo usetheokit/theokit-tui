@@ -95,17 +95,13 @@ function tracked(): string[] {
     .filter((p) => p.endsWith(".ts") || p.endsWith(".tsx"));
 }
 
-function scan(
-  pattern: RegExp,
-  options: { includeExempt?: boolean } = {},
-): string[] {
+function scan(pattern: RegExp, options: { includeExempt?: boolean } = {}): string[] {
   const hits: string[] = [];
   for (const rel of tracked()) {
     if (!options.includeExempt && EXEMPT.has(rel)) continue;
     const source = readFileSync(new URL(rel, REPO), "utf8");
     source.split("\n").forEach((line, index) => {
-      if (pattern.test(line))
-        hits.push(`${rel}:${String(index + 1)}: ${line.trim()}`);
+      if (pattern.test(line)) hits.push(`${rel}:${String(index + 1)}: ${line.trim()}`);
     });
   }
   return hits;

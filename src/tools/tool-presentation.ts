@@ -87,24 +87,15 @@ function firstStr(input: unknown, ...keys: string[]): string | undefined {
  * `input` to the `active` slot, so every subject-less tool rendered its running form forever. The
  * unit tests did not catch it — they asserted the header was non-empty, and it was.
  */
-function verbPair(
-  active: string,
-  done: string,
-  subject?: string,
-): ToolPresentation["header"] {
+function verbPair(active: string, done: string, subject?: string): ToolPresentation["header"] {
   return (_input, isActive) => {
     const verb = isActive ? active : done;
     return subject === undefined ? verb : `${verb} ${subject}`;
   };
 }
 
-function pathHeader(
-  active: string,
-  done: string,
-  ...keys: string[]
-): ToolPresentation["header"] {
-  return (input, isActive) =>
-    verbPair(active, done, firstStr(input, ...keys))(input, isActive);
+function pathHeader(active: string, done: string, ...keys: string[]): ToolPresentation["header"] {
+  return (input, isActive) => verbPair(active, done, firstStr(input, ...keys))(input, isActive);
 }
 
 /** Anything unrecognised. Names the tool, because "Running" alone is a spinner, not a log line. */
@@ -153,26 +144,17 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
     "shell_exec",
     {
       header: (input, active) =>
-        verbPair(
-          "Running",
-          "Ran",
-          firstStr(input, "command", "cmd"),
-        )(input, active),
+        verbPair("Running", "Ran", firstStr(input, "command", "cmd"))(input, active),
       body: shellBody,
       // The command verbatim: approving "a shell command" is approving anything.
-      approvalLabel: (input) =>
-        `Run \`${firstStr(input, "command", "cmd") ?? "(no command)"}\`?`,
+      approvalLabel: (input) => `Run \`${firstStr(input, "command", "cmd") ?? "(no command)"}\`?`,
     },
   ],
   [
     "interactive_shell",
     {
       header: (input, active) =>
-        verbPair(
-          "Starting",
-          "Started",
-          firstStr(input, "command", "cmd"),
-        )(input, active),
+        verbPair("Starting", "Started", firstStr(input, "command", "cmd"))(input, active),
       body: shellBody,
       approvalLabel: (input) =>
         `Start an interactive shell for \`${firstStr(input, "command", "cmd") ?? "(no command)"}\`?`,
@@ -181,25 +163,14 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
   [
     "write_stdin",
     {
-      header: pathHeader(
-        "Sending input to",
-        "Sent input to",
-        "sessionId",
-        "session_id",
-      ),
+      header: pathHeader("Sending input to", "Sent input to", "sessionId", "session_id"),
       approvalLabel: () => "Send input to the running shell?",
     },
   ],
   [
     "apply_patch",
     {
-      header: pathHeader(
-        "Applying a patch to",
-        "Patched",
-        "path",
-        "file",
-        "filePath",
-      ),
+      header: pathHeader("Applying a patch to", "Patched", "path", "file", "filePath"),
       body: diffBody,
       approvalLabel: (input) =>
         `Apply the patch to ${firstStr(input, "path", "file") ?? "the file"}?`,
@@ -210,8 +181,7 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
     {
       header: pathHeader("Editing", "Edited", "path", "file", "filePath"),
       body: diffBody,
-      approvalLabel: (input) =>
-        `Edit ${firstStr(input, "path", "file") ?? "the file"}?`,
+      approvalLabel: (input) => `Edit ${firstStr(input, "path", "file") ?? "the file"}?`,
     },
   ],
   [
@@ -219,26 +189,13 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
     {
       header: pathHeader("Writing", "Wrote", "path", "file", "filePath"),
       body: diffBody,
-      approvalLabel: (input) =>
-        `Write ${firstStr(input, "path", "file") ?? "the file"}?`,
+      approvalLabel: (input) => `Write ${firstStr(input, "path", "file") ?? "the file"}?`,
     },
   ],
-  [
-    "read_file",
-    { header: pathHeader("Reading", "Read", "path", "file", "filePath") },
-  ],
-  [
-    "list_dir",
-    { header: pathHeader("Listing", "Listed", "path", "dir", "directory") },
-  ],
-  [
-    "glob_files",
-    { header: pathHeader("Matching", "Matched", "pattern", "glob") },
-  ],
-  [
-    "search_text",
-    { header: pathHeader("Searching for", "Searched for", "pattern", "query") },
-  ],
+  ["read_file", { header: pathHeader("Reading", "Read", "path", "file", "filePath") }],
+  ["list_dir", { header: pathHeader("Listing", "Listed", "path", "dir", "directory") }],
+  ["glob_files", { header: pathHeader("Matching", "Matched", "pattern", "glob") }],
+  ["search_text", { header: pathHeader("Searching for", "Searched for", "pattern", "query") }],
   [
     "git_status",
     {
@@ -246,10 +203,7 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
       body: shellBody,
     },
   ],
-  [
-    "git_diff",
-    { header: verbPair("Reading the diff", "Read the diff"), body: diffBody },
-  ],
+  ["git_diff", { header: verbPair("Reading the diff", "Read the diff"), body: diffBody }],
   [
     "run_vitest",
     {
@@ -267,32 +221,19 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
   [
     "web_search",
     {
-      header: pathHeader(
-        "Searching the web for",
-        "Searched the web for",
-        "query",
-        "q",
-      ),
+      header: pathHeader("Searching the web for", "Searched the web for", "query", "q"),
     },
   ],
-  [
-    "current_time",
-    { header: verbPair("Checking the time", "Checked the time") },
-  ],
+  ["current_time", { header: verbPair("Checking the time", "Checked the time") }],
   ["question", { header: pathHeader("Asking", "Asked", "question", "prompt") }],
   ["plan_mode", { header: verbPair("Planning", "Planned") }],
-  [
-    "update_plan",
-    { header: verbPair("Updating the plan", "Updated the plan") },
-  ],
-  [
-    "todolist",
-    { header: verbPair("Updating the to-do list", "Updated the to-do list") },
-  ],
+  ["update_plan", { header: verbPair("Updating the plan", "Updated the plan") }],
+  ["todolist", { header: verbPair("Updating the to-do list", "Updated the to-do list") }],
 ];
 
-export const DEFAULT_TOOL_PRESENTATION: ReadonlyMap<string, ToolPresentation> =
-  new Map(DEFAULT_ENTRIES);
+export const DEFAULT_TOOL_PRESENTATION: ReadonlyMap<string, ToolPresentation> = new Map(
+  DEFAULT_ENTRIES,
+);
 
 /**
  * The defaults with `overrides` merged over them, per entry and per field.

@@ -88,18 +88,11 @@ function append(parent: RendererNode, child: RendererNode): void {
   parent.children.push(child);
   child.parent = parent;
   if (parent.yogaNode && child.yogaNode) {
-    parent.yogaNode.insertChild(
-      child.yogaNode,
-      parent.yogaNode.getChildCount(),
-    );
+    parent.yogaNode.insertChild(child.yogaNode, parent.yogaNode.getChildCount());
   }
 }
 
-function insert(
-  parent: RendererNode,
-  child: RendererNode,
-  before: RendererNode,
-): void {
+function insert(parent: RendererNode, child: RendererNode, before: RendererNode): void {
   detach(child);
   const at = parent.children.indexOf(before);
   parent.children.splice(at === -1 ? parent.children.length : at, 0, child);
@@ -205,11 +198,7 @@ export function createHostReconciler(onCommit: () => void) {
         // full new style as currentStyle (border-width reads the whole picture),
         // mirroring Ink so a removed style key resets to the yoga default.
         const next = styleOf(nextProps);
-        applyStyles(
-          instance.yogaNode,
-          diffStyle(styleOf(prevProps), next),
-          next,
-        );
+        applyStyles(instance.yogaNode, diffStyle(styleOf(prevProps), next), next);
       }
     },
     commitTextUpdate(textInstance, _oldText, newText): void {

@@ -27,9 +27,7 @@ function requireValidArguments(capBytes: number, keep: number): void {
     throw new RangeError(`invalid cap: ${String(capBytes)}`);
   }
   if (!Number.isInteger(keep) || keep < 1) {
-    throw new RangeError(
-      `keep must be >= 1 (0 is equivalent to truncate): ${String(keep)}`,
-    );
+    throw new RangeError(`keep must be >= 1 (0 is equivalent to truncate): ${String(keep)}`);
   }
 }
 
@@ -54,8 +52,7 @@ export function rotateLog(path: string, options: RotateOptions = {}): void {
     if (existsSync(oldest)) unlinkSync(oldest);
     for (let i = keep - 2; i >= 0; i--) {
       const generation = `${path}.${String(i)}`;
-      if (existsSync(generation))
-        renameSync(generation, `${path}.${String(i + 1)}`);
+      if (existsSync(generation)) renameSync(generation, `${path}.${String(i + 1)}`);
     }
     renameSync(path, `${path}.0`);
   } catch {

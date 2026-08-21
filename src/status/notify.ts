@@ -15,16 +15,14 @@ export interface NotifySink {
 }
 
 /** Pick the notify protocol for this env, or `null` to suppress. Pure. */
-export function detectNotifyProtocol(
-  env: NodeJS.ProcessEnv,
-): NotifyProtocol | null {
+export function detectNotifyProtocol(env: NodeJS.ProcessEnv): NotifyProtocol | null {
   // A multiplexer wins first — never emit a raw escape that leaks through it.
-  if (env["TMUX"] || env["STY"] || env["ZELLIJ"]) return null;
+  if (env.TMUX || env.STY || env.ZELLIJ) return null;
   // OSC-9 only where it is KNOWN-supported (iTerm2 / ConEmu).
   if (
-    env["TERM_PROGRAM"] === "iTerm.app" ||
-    env["ITERM_SESSION_ID"] !== undefined ||
-    env["ConEmuPID"] !== undefined
+    env.TERM_PROGRAM === "iTerm.app" ||
+    env.ITERM_SESSION_ID !== undefined ||
+    env.ConEmuPID !== undefined
   ) {
     return "osc9";
   }

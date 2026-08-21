@@ -1,13 +1,13 @@
 import {
   createContext,
   createElement,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 
 import { InputContext } from "../input/use-input.js";
@@ -61,10 +61,7 @@ export const FocusContext = createContext<FocusContextValue>({
 FocusContext.displayName = "TheoTuiFocusContext";
 
 /** The next active focusable id after `activeId` (wraps to undefined at the end). */
-function findNext(
-  focusables: Focusable[],
-  activeId: string | undefined,
-): string | undefined {
+function findNext(focusables: Focusable[], activeId: string | undefined): string | undefined {
   const start = focusables.findIndex((f) => f.id === activeId);
   for (let i = start + 1; i < focusables.length; i++) {
     if (focusables[i]!.isActive) {
@@ -75,10 +72,7 @@ function findNext(
 }
 
 /** The previous active focusable id before `activeId` (wraps at the start). */
-function findPrevious(
-  focusables: Focusable[],
-  activeId: string | undefined,
-): string | undefined {
+function findPrevious(focusables: Focusable[], activeId: string | undefined): string | undefined {
   const start = focusables.findIndex((f) => f.id === activeId);
   for (let i = start - 1; i >= 0; i--) {
     if (focusables[i]!.isActive) {
@@ -116,19 +110,14 @@ export function FocusProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [isFocusEnabled, setIsFocusEnabled] = useState(true);
 
-  const add = useCallback(
-    (id: string, { autoFocus }: { autoFocus: boolean }) => {
-      setFocusables((prev) =>
-        prev.some((f) => f.id === id)
-          ? prev
-          : [...prev, { id, isActive: true }],
-      );
-      if (autoFocus) {
-        setActiveId((current) => current ?? id);
-      }
-    },
-    [],
-  );
+  const add = useCallback((id: string, { autoFocus }: { autoFocus: boolean }) => {
+    setFocusables((prev) =>
+      prev.some((f) => f.id === id) ? prev : [...prev, { id, isActive: true }],
+    );
+    if (autoFocus) {
+      setActiveId((current) => current ?? id);
+    }
+  }, []);
 
   const remove = useCallback((id: string) => {
     setFocusables((prev) => prev.filter((f) => f.id !== id));
@@ -136,15 +125,11 @@ export function FocusProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const activate = useCallback((id: string) => {
-    setFocusables((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, isActive: true } : f)),
-    );
+    setFocusables((prev) => prev.map((f) => (f.id === id ? { ...f, isActive: true } : f)));
   }, []);
 
   const deactivate = useCallback((id: string) => {
-    setFocusables((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, isActive: false } : f)),
-    );
+    setFocusables((prev) => prev.map((f) => (f.id === id ? { ...f, isActive: false } : f)));
     setActiveId((current) => (current === id ? undefined : current));
   }, []);
 
@@ -159,19 +144,14 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   const focusNext = useCallback(() => {
     setFocusables((current) => {
-      setActiveId(
-        (active) => findNext(current, active) ?? firstActive(current) ?? active,
-      );
+      setActiveId((active) => findNext(current, active) ?? firstActive(current) ?? active);
       return current;
     });
   }, []);
 
   const focusPrevious = useCallback(() => {
     setFocusables((current) => {
-      setActiveId(
-        (active) =>
-          findPrevious(current, active) ?? lastActive(current) ?? active,
-      );
+      setActiveId((active) => findPrevious(current, active) ?? lastActive(current) ?? active);
       return current;
     });
   }, []);
@@ -273,8 +253,7 @@ export function useFocus({
   // Destructure the STABLE methods (each is useCallback([])). Depending on the
   // whole context object would re-run these effects on every activeId change —
   // re-applying autoFocus and instantly undoing an ESC blur.
-  const { activeId, add, remove, activate, deactivate, focus } =
-    useContext(FocusContext);
+  const { activeId, add, remove, activate, deactivate, focus } = useContext(FocusContext);
   const source = useContext(InputContext);
   const id = useMemo(
     // Ink's exact id fallback; deterministic when a customId is passed.
@@ -310,13 +289,7 @@ export function useFocus({
 /** Focus controls for the whole tree (Ink's useFocusManager). */
 export function useFocusManager(): Pick<
   FocusContextValue,
-  | "enableFocus"
-  | "disableFocus"
-  | "focusNext"
-  | "focusPrevious"
-  | "focus"
-  | "blur"
-  | "activeId"
+  "enableFocus" | "disableFocus" | "focusNext" | "focusPrevious" | "focus" | "blur" | "activeId"
 > {
   const ctx = useContext(FocusContext);
   return {

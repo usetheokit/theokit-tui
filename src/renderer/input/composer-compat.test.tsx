@@ -1,14 +1,13 @@
 import { render } from "ink-testing-library";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
-
+import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { actionForKey } from "../../chat/chat-composer.js";
 import {
   initialTextBuffer,
-  textBufferReducer,
   type TextBufferState,
+  textBufferReducer,
 } from "../../chat/text-buffer.js";
-import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { createInputSource, type InputSource } from "./input-source.js";
 import { InputContext, useInput } from "./use-input.js";
 
@@ -21,13 +20,7 @@ import { InputContext, useInput } from "./use-input.js";
 // (the reducer transition — not React's async re-render — is what compat is
 // about), incl. the M15 EC-5 error-propagation flow.
 
-function Provider({
-  source,
-  children,
-}: {
-  source: InputSource;
-  children: ReactNode;
-}) {
+function Provider({ source, children }: { source: InputSource; children: ReactNode }) {
   return createElement(InputContext.Provider, { value: source }, children);
 }
 

@@ -9,7 +9,7 @@
 // `windowFor` (select-list-model.ts) — one authoritative site for the slash +
 // mention + SelectList windows (DRY). The trigger/filter contract is unchanged.
 
-import { windowFor, type WindowView } from "../prompts/select-list-model.js";
+import { type WindowView, windowFor } from "../prompts/select-list-model.js";
 
 export interface SlashCommand {
   /** Command name WITHOUT the slash (e.g. "help"). */

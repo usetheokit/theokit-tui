@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  composerShortcutsFor,
-  footerHintFor,
-} from "./composer-capabilities.js";
+import { composerShortcutsFor, footerHintFor } from "./composer-capabilities.js";
 import { DEFAULT_COMPOSER_SHORTCUTS } from "./keyboard-help.js";
 
 // B-005 (plan b005-capability-affordances, ADRs D1-D5): affordances a caller declares.
@@ -59,8 +56,6 @@ describe("footerHintFor", () => {
   });
 
   it("joins_declared_affordances_in_a_stable_order", () => {
-    expect(footerHintFor({ shortcuts: true, agents: true })).toBe(
-      "? for shortcuts · ← for agents",
-    );
+    expect(footerHintFor({ shortcuts: true, agents: true })).toBe("? for shortcuts · ← for agents");
   });
 });

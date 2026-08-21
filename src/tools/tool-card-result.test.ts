@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { assertToolCardResult } from "./tool-card-result.js";
 import type { ToolCardResult } from "./tool-card-result.js";
+import { assertToolCardResult } from "./tool-card-result.js";
 
 // M16 T1.1 (plan m16-tool-card-variants, ADR D1): the union's kind
 // validation — REACHABLE from JS callers, so an explicit boundary check

@@ -26,9 +26,7 @@ const instance = render(
         rows={turns}
         selected={4}
         window={5}
-        header={
-          <Text dimColor>history — the header is the caller's, not ours</Text>
-        }
+        header={<Text dimColor>history — the header is the caller's, not ours</Text>}
       />
       {/* A list that fits renders whole, with no counts at all. */}
       <WindowedList marginTop={1} rows={turns.slice(0, 3)} selected={1} />

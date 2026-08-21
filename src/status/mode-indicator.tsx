@@ -1,10 +1,9 @@
 import { Box, Text } from "ink";
-
+import { unionMessage } from "../agent/union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { isMonochrome, useTheoTheme } from "../theme/theme.js";
-import { unionMessage } from "../agent/union-message.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 
 // #2 ModeIndicator — the Claude Code permission-mode footer line:
 //   ⏵⏵ auto-accept edits on (shift+tab to cycle)
@@ -64,10 +63,7 @@ export function ModeIndicator({ mode, label, ...margin }: ModeIndicatorProps) {
   const theme = useTheoTheme();
   const mono = isMonochrome(theme);
   const text =
-    label ??
-    (mode === "default"
-      ? undefined
-      : MODE_LABEL[mode as "auto-accept" | "plan"]);
+    label ?? (mode === "default" ? undefined : MODE_LABEL[mode as "auto-accept" | "plan"]);
   if (text === undefined) {
     return null;
   }

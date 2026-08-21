@@ -16,9 +16,7 @@ import { describe, expect, it } from "vitest";
 // Named `.integration.` and not `.subprocess.`: `integration` and `e2e` are the only qualifiers this
 // repo registers (ADR 0003), and its own structure test caught the invented third one.
 
-const FIXTURE = fileURLToPath(
-  new URL("../../tests/fixtures/boundary-app.tsx", import.meta.url),
-);
+const FIXTURE = fileURLToPath(new URL("../../tests/fixtures/boundary-app.tsx", import.meta.url));
 
 interface Run {
   readonly stdout: string;
@@ -56,11 +54,7 @@ function renderInChildProcess(
   return fresh;
 }
 
-function spawnFixture(opts: {
-  wrapped: boolean;
-  throws?: boolean;
-  presetExit?: number;
-}): Run {
+function spawnFixture(opts: { wrapped: boolean; throws?: boolean; presetExit?: number }): Run {
   try {
     const stdout = execFileSync("npx", ["tsx", FIXTURE], {
       encoding: "utf8",
@@ -69,9 +63,7 @@ function spawnFixture(opts: {
         ...process.env,
         WRAPPED: opts.wrapped ? "1" : "0",
         THROW: opts.throws === false ? "0" : "1",
-        ...(opts.presetExit === undefined
-          ? {}
-          : { PRESET_EXIT: String(opts.presetExit) }),
+        ...(opts.presetExit === undefined ? {} : { PRESET_EXIT: String(opts.presetExit) }),
         FORCE_COLOR: "0",
       },
       stdio: "pipe",

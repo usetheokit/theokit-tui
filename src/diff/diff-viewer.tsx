@@ -1,15 +1,14 @@
 import { Box, Text } from "ink";
-import { useEffect, useState, type ReactNode } from "react";
-
-import { ensureHighlighter, highlightLine } from "../markdown/code-block.js";
-import { foldDiffLines, parseUnifiedDiff } from "./diff.js";
-import type { DiffFile, DiffLine, DiffRow } from "./diff.js";
-import { pairIntraLines, type WordSegment } from "./diff-word.js";
+import { type ReactNode, useEffect, useState } from "react";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { useTheoTheme } from "../theme/theme.js";
-import type { TheoTheme } from "../theme/theme.js";
+import { ensureHighlighter, highlightLine } from "../markdown/code-block.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import type { TheoTheme } from "../theme/theme.js";
+import { useTheoTheme } from "../theme/theme.js";
+import type { DiffFile, DiffLine, DiffRow } from "./diff.js";
+import { foldDiffLines, parseUnifiedDiff } from "./diff.js";
+import { pairIntraLines, type WordSegment } from "./diff-word.js";
 
 const TAB_WIDTH = 4;
 
@@ -97,13 +96,11 @@ const EXT_TO_LANG: Record<string, string> = {
 
 function languageForFile(file: DiffFile): string | undefined {
   const name = file.newName ?? file.oldName;
-  const ext =
-    name === undefined ? undefined : /\.([a-z0-9]+)$/i.exec(name)?.[1];
+  const ext = name === undefined ? undefined : /\.([a-z0-9]+)$/i.exec(name)?.[1];
   return ext === undefined ? undefined : EXT_TO_LANG[ext.toLowerCase()];
 }
 
-const expandTabs = (value: string): string =>
-  value.replaceAll("\t", " ".repeat(TAB_WIDTH));
+const expandTabs = (value: string): string => value.replaceAll("\t", " ".repeat(TAB_WIDTH));
 
 /**
  * Per-side hunk-gap tracker (SEPA F1): comparing mixed old/new numbers
@@ -143,9 +140,7 @@ function fileRows(file: DiffFile, contextLines: number | undefined): ViewRow[] {
     return rows;
   }
   const body: DiffRow[] =
-    contextLines !== undefined
-      ? foldDiffLines(file.lines, contextLines)
-      : file.lines;
+    contextLines !== undefined ? foldDiffLines(file.lines, contextLines) : file.lines;
   // A fold row already marks the jump — the `⋮` gap fires only without one.
   const counters: SideCounters = { lastOld: undefined, lastNew: undefined };
   for (const row of body) {
@@ -183,9 +178,7 @@ function gutterWidth(files: DiffFile[]): number {
 
 function headerRow(file: DiffFile, theme: TheoTheme, key: string) {
   const name =
-    file.oldName !== undefined &&
-    file.newName !== undefined &&
-    file.oldName !== file.newName
+    file.oldName !== undefined && file.newName !== undefined && file.oldName !== file.newName
       ? `${file.oldName} → ${file.newName}`
       : (file.newName ?? file.oldName ?? "(unnamed)");
   return (
@@ -221,20 +214,12 @@ function backgroundHeaderRow(file: DiffFile, multiFile: boolean, key: string) {
 /** The line body: word-segmented `inverse` spans when intra-line highlight has
  * segments for this line, else the current single tab-expanded text (byte-
  * identical for the default path). */
-function lineBody(
-  line: DiffLine,
-  color: { color?: string },
-  segments: WordSegment[] | undefined,
-) {
+function lineBody(line: DiffLine, color: { color?: string }, segments: WordSegment[] | undefined) {
   if (segments === undefined || segments.length === 0) {
     return line.text === "" ? " " : expandTabs(line.text);
   }
   return segments.map((segment, index) => (
-    <Text
-      key={`w${index}`}
-      {...color}
-      {...(segment.changed ? { inverse: true } : {})}
-    >
+    <Text key={`w${index}`} {...color} {...(segment.changed ? { inverse: true } : {})}>
       {expandTabs(segment.text)}
     </Text>
   ));
@@ -242,11 +227,7 @@ function lineBody(
 
 /** Classic whole-line fg color for a diff line; empty in the background
  * variant — the row TINT carries the add/del semantics there. */
-function lineColor(
-  line: DiffLine,
-  theme: TheoTheme,
-  background: boolean,
-): { color?: string } {
+function lineColor(line: DiffLine, theme: TheoTheme, background: boolean): { color?: string } {
   if (background) {
     return {};
   }
@@ -258,9 +239,7 @@ function lineColor(
 
 /** Row background prop (background variant only; empty token → none). */
 function rowBackground(bgBody: { bgColor: string } | undefined) {
-  return bgBody !== undefined && bgBody.bgColor !== ""
-    ? { backgroundColor: bgBody.bgColor }
-    : {};
+  return bgBody !== undefined && bgBody.bgColor !== "" ? { backgroundColor: bgBody.bgColor } : {};
 }
 
 function lineRow(
@@ -279,15 +258,11 @@ function lineRow(
   return (
     <Box key={key} {...rowBackground(bgBody)}>
       <Box flexShrink={0}>
-        {showLineNumbers && (
-          <Text dimColor>{String(number ?? "").padStart(width)} </Text>
-        )}
+        {showLineNumbers && <Text dimColor>{String(number ?? "").padStart(width)} </Text>}
         <Text {...color}>{sign} </Text>
       </Box>
       <Text {...color} wrap="wrap">
-        {bgBody !== undefined && !hasSegments
-          ? bgBody.body
-          : lineBody(line, color, segments)}
+        {bgBody !== undefined && !hasSegments ? bgBody.body : lineBody(line, color, segments)}
       </Text>
     </Box>
   );
@@ -349,38 +324,20 @@ function bgLineProps(
   bgCtx: BgContext,
 ): { bgColor: string; body: ReactNode } {
   const bgColor =
-    line.kind === "add"
-      ? theme.diff.addedBg
-      : line.kind === "del"
-        ? theme.diff.removedBg
-        : "";
+    line.kind === "add" ? theme.diff.addedBg : line.kind === "del" ? theme.diff.removedBg : "";
   const text = line.text === "" ? " " : expandTabs(line.text);
-  const body = highlightLine(
-    text,
-    bgCtx.langAt(index),
-    bgCtx.highlighter,
-    `r${index}`,
-    theme.code,
-  );
+  const body = highlightLine(text, bgCtx.langAt(index), bgCtx.highlighter, `r${index}`, theme.code);
   return { bgColor, body };
 }
 
-function assertValidBounds(
-  maxLines: number | undefined,
-  contextLines: number | undefined,
-): void {
+function assertValidBounds(maxLines: number | undefined, contextLines: number | undefined): void {
   if (maxLines !== undefined && (!Number.isInteger(maxLines) || maxLines < 1)) {
     reportGuardFailure(
       "DiffViewer",
-      new TypeError(
-        `DiffViewer: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
-      ),
+      new TypeError(`DiffViewer: maxLines must be an integer >= 1 — got ${String(maxLines)}`),
     );
   }
-  if (
-    contextLines !== undefined &&
-    (!Number.isInteger(contextLines) || contextLines < 0)
-  ) {
+  if (contextLines !== undefined && (!Number.isInteger(contextLines) || contextLines < 0)) {
     reportGuardFailure(
       "DiffViewer",
       new TypeError(
@@ -407,16 +364,12 @@ function capRows(
   if (!capped) {
     return { visible: rows, capped, hiddenSourceLines: 0 };
   }
-  const hiddenSourceLines = rows
-    .slice(maxLines as number)
-    .reduce((total, row) => {
-      if (row.kind === "fold") {
-        return total + row.hidden;
-      }
-      return row.kind === "add" || row.kind === "del" || row.kind === "context"
-        ? total + 1
-        : total;
-    }, 0);
+  const hiddenSourceLines = rows.slice(maxLines as number).reduce((total, row) => {
+    if (row.kind === "fold") {
+      return total + row.hidden;
+    }
+    return row.kind === "add" || row.kind === "del" || row.kind === "context" ? total + 1 : total;
+  }, 0);
   return { visible: rows.slice(0, maxLines), capped, hiddenSourceLines };
 }
 
@@ -515,15 +468,7 @@ export function DiffViewer({
   return (
     <Box flexDirection="column" {...m}>
       {visible.map((row, index) =>
-        viewRowElement(
-          row,
-          index,
-          theme,
-          showLineNumbers,
-          width,
-          intraMap,
-          bgCtx,
-        ),
+        viewRowElement(row, index, theme, showLineNumbers, width, intraMap, bgCtx),
       )}
       {capped && <Text dimColor>… (+{hiddenSourceLines} more lines)</Text>}
     </Box>

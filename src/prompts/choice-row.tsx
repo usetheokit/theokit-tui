@@ -1,11 +1,7 @@
 import { Box, Text } from "ink";
 import { useEffect, useRef, useState } from "react";
 
-import {
-  resolveChoiceKey,
-  type ApprovalChoice,
-  type ChoiceKey,
-} from "../agent/agent-decision.js";
+import { type ApprovalChoice, type ChoiceKey, resolveChoiceKey } from "../agent/agent-decision.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";
 import { useInput } from "../renderer/input/use-input.js";
@@ -68,12 +64,7 @@ export function ChoiceRow({
 
   useInput(
     (input, key) => {
-      const action = resolveChoiceKey(
-        input,
-        key as unknown as ChoiceKey,
-        count,
-        indexRef.current,
-      );
+      const action = resolveChoiceKey(input, key as unknown as ChoiceKey, count, indexRef.current);
       if (!action) return;
       if (action.type === "move") {
         indexRef.current = action.index;
@@ -100,10 +91,7 @@ export function ChoiceRow({
         // is the Box's row/column gap (issue #50).
         const trailer = !vertical && position < count - 1 ? "   " : "";
         return (
-          <Text
-            key={choice.value}
-            {...(active ? { color: theme.accent } : { dimColor: true })}
-          >
+          <Text key={choice.value} {...(active ? { color: theme.accent } : { dimColor: true })}>
             {marker}
             {prefix}
             {choice.label}

@@ -1,15 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
-
-import { render } from "ink-testing-library";
+import { fileURLToPath } from "node:url";
 import { Text } from "ink";
+import { render } from "ink-testing-library";
 
 import { TheoTUIProvider, WelcomeBanner } from "../src/index.js";
-import { fmt, frameSampler, round, stats, stackVersions } from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats } from "./sampling.js";
 
 // M12 welcome-banner benchmark (plan T2.2, ADR D3): the reveal is a
 // per-frame path — the recorded M9 flip condition fired, so the component
@@ -35,8 +34,7 @@ const BANNER_PROPS = {
   hints: ["/help for commands", "esc to cancel a running turn"],
 } as const;
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 type Mode = "reveal" | "static";
 
@@ -130,16 +128,16 @@ const staticRuns: RunMetrics[] = [];
 
 for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
   const w = await runReveal();
-  console.log(fmt("reveal warmup", w) + "  (discarded)");
+  console.log(`${fmt("reveal warmup", w)}  (discarded)`);
 }
 for (let i = 0; i < measured; i++) {
   const r = await runReveal();
   revealRuns.push(r);
-  console.log(fmt(`reveal #${i + 1}`, r) + `  wall=${r.wall_ms.toFixed(0)}ms`);
+  console.log(`${fmt(`reveal #${i + 1}`, r)}  wall=${r.wall_ms.toFixed(0)}ms`);
 }
 for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
   const w = await runStatic();
-  console.log(fmt("static warmup", w) + "  (discarded)");
+  console.log(`${fmt("static warmup", w)}  (discarded)`);
 }
 for (let i = 0; i < measured; i++) {
   const r = await runStatic();
@@ -165,13 +163,9 @@ for (const m of modes) {
     `${m.mode.padEnd(8)} mean=${agg.mean_ms_per_frame.mean}±${agg.mean_ms_per_frame.std_dev}ms  peak=${agg.peak_ms_per_frame.mean}±${agg.peak_ms_per_frame.std_dev}ms`,
   );
 }
-console.log(
-  `reveal wall: ${wallStats.mean}±${wallStats.std_dev}ms (< 2000 required)`,
-);
+console.log(`reveal wall: ${wallStats.mean}±${wallStats.std_dev}ms (< 2000 required)`);
 if (wallStats.mean >= 2000) {
-  throw new Error(
-    `bench: reveal wall ${wallStats.mean}ms breaks the < 2 s DoD`,
-  );
+  throw new Error(`bench: reveal wall ${wallStats.mean}ms breaks the < 2 s DoD`);
 }
 
 if (!smoke) {
@@ -181,7 +175,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     load_1min_at_start: round(loadAtStart),
     workload: {
       reveal_phases: REVEAL_PHASES,
@@ -212,8 +206,6 @@ if (!smoke) {
     "welcome-banner-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/welcome-banner-baseline.json",
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log("baseline written: benchmarks/baselines/welcome-banner-baseline.json");
 }

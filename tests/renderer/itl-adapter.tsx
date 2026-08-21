@@ -48,11 +48,7 @@ export function render(
   const frames: string[] = [];
 
   const wrap = (el: ReactNode): ReactNode =>
-    createElement(
-      InputContext.Provider,
-      { value: source },
-      createElement(FocusProvider, null, el),
-    );
+    createElement(InputContext.Provider, { value: source }, createElement(FocusProvider, null, el));
 
   renderer.render(wrap(element));
 

@@ -34,10 +34,7 @@ describe("benchmark baseline M12 (T2.2)", () => {
   it("m12_banner_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/welcome-banner-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/welcome-banner-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as BannerBaseline;
@@ -56,9 +53,7 @@ describe("benchmark baseline M12 (T2.2)", () => {
         expect(Number.isFinite(run.peak_ms_per_frame)).toBe(true);
       }
       expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.mean)).toBe(true);
-      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.std_dev)).toBe(
-        true,
-      );
+      expect(Number.isFinite(mode.aggregate.mean_ms_per_frame.std_dev)).toBe(true);
     }
 
     // DoD: the reveal completes in < 2 s — measured, not assumed.
@@ -76,10 +71,7 @@ describe("benchmark baseline M13 (T3.1)", () => {
   it("m13_chat_message_markdown_mode_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/chat-message-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/chat-message-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {
@@ -112,10 +104,7 @@ describe("benchmark baseline M14 (T2.2)", () => {
   it("m14_status_bar_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/status-bar-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/status-bar-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {
@@ -148,10 +137,7 @@ describe("benchmark baseline M15 (T3.1)", () => {
   it("m15_composer_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/composer-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/composer-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {
@@ -185,10 +171,7 @@ describe("benchmark baseline M17 (T3.1)", () => {
   it("m17_renderer_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/renderer-skeleton-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/renderer-skeleton-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {
@@ -228,10 +211,7 @@ describe("benchmark baseline M18 (T3.1)", () => {
   it("m18_layout_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/renderer-layout-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/renderer-layout-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {
@@ -260,10 +240,7 @@ describe("benchmark baseline M20 (T3.1)", () => {
   it("m20_comparative_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/comparative-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/comparative-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {
@@ -294,9 +271,7 @@ describe("benchmark baseline M20 (T3.1)", () => {
     // log-update on the streaming workload (the cutover's headline advantage).
     const v4 = baseline.modes.find((m) => m.mode === "v4")!;
     const ink = baseline.modes.find((m) => m.mode === "ink")!;
-    expect(v4.aggregate.bytes_written.mean).toBeLessThan(
-      ink.aggregate.bytes_written.mean,
-    );
+    expect(v4.aggregate.bytes_written.mean).toBeLessThan(ink.aggregate.bytes_written.mean);
   });
 });
 
@@ -305,10 +280,7 @@ describe("benchmark baseline M21 editor (T3.1)", () => {
   it("m21_editor_baseline_contract", () => {
     const baseline = JSON.parse(
       readFileSync(
-        new URL(
-          "../../benchmarks/baselines/editor-baseline.json",
-          import.meta.url,
-        ),
+        new URL("../../benchmarks/baselines/editor-baseline.json", import.meta.url),
         "utf8",
       ),
     ) as {

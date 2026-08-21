@@ -1,12 +1,8 @@
 import { render } from "ink-testing-library";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-
-import {
-  agentStreamReducer,
-  initialAgentStreamState,
-} from "./agent-stream-reducer.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
+import { agentStreamReducer, initialAgentStreamState } from "./agent-stream-reducer.js";
 import { AgentTimeline } from "./agent-timeline.js";
 
 // T1.2 (plan m7-stream-adapter, ADRs D2/D9): the mapping fold. The mirror's
@@ -57,9 +53,7 @@ function find(state: ReturnType<typeof fold>, id: string) {
  * validation (unique ids, valid kinds/statuses, output⊕shell) — real render,
  * so the boundary throw propagates. */
 function passesBoundary(state: ReturnType<typeof fold>): boolean {
-  const { unmount } = render(
-    createElement(AgentTimeline, { events: state.events }),
-  );
+  const { unmount } = render(createElement(AgentTimeline, { events: state.events }));
   unmount();
   return true;
 }
@@ -249,9 +243,7 @@ describe("agentStreamReducer", () => {
 
   it("tool_completion_for_unknown_id_appends_terminal", () => {
     // Mirror parity — no throw, no running phase.
-    const s = fold(
-      toolCompleted("ghost", { stdout: "", stderr: "", exitCode: 0 }),
-    );
+    const s = fold(toolCompleted("ghost", { stdout: "", stderr: "", exitCode: 0 }));
     expect(s.events[0]).toMatchObject({ id: "tool-ghost", status: "success" });
   });
 
@@ -270,9 +262,7 @@ describe("agentStreamReducer", () => {
     // to a JSON STRING before emitting tool_call. Without parsing it here the
     // timeline dumps `{"stdout":...}` raw instead of firing ToolResult's shell
     // renderer (the observed UX gap vs Codex).
-    const s = fold(
-      toolCompleted("c1", '{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'),
-    );
+    const s = fold(toolCompleted("c1", '{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'));
     const tool = find(s, "tool-c1");
     expect(tool).toMatchObject({
       shell: { stdout: "MCP_SUM=111", exitCode: 0 },
@@ -284,12 +274,7 @@ describe("agentStreamReducer", () => {
     // apply_patch returns a unified diff, wrapped by the SDK in the shell
     // envelope JSON string. A clean diff routes to `diff` (colored inline diff).
     const diff = "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
-    const s = fold(
-      toolCompleted(
-        "c1",
-        JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 }),
-      ),
-    );
+    const s = fold(toolCompleted("c1", JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 })));
     const tool = find(s, "tool-c1");
     expect((tool as { diff?: string }).diff).toContain("@@");
     expect(tool).not.toHaveProperty("output");
@@ -354,11 +339,7 @@ describe("agentStreamReducer", () => {
 
   it("error_fails_open_tools_and_closes_live_message", () => {
     // EC-6 — never the mirror's frozen spinner / silently lost text.
-    const s = fold(
-      delta("partial"),
-      toolRunning("c1", "t"),
-      errEvt({ message: "boom" }),
-    );
+    const s = fold(delta("partial"), toolRunning("c1", "t"), errEvt({ message: "boom" }));
     expect(s.status).toBe("error");
     expect(s.error?.message).toBe("boom");
     expect(find(s, "tool-c1")).toMatchObject({ status: "failed" });
@@ -375,12 +356,7 @@ describe("agentStreamReducer", () => {
 
   it("done_finalizes_and_drops_later_events", () => {
     // Drop-after-terminal — the mirror's resurrection rejected.
-    const s = fold(
-      delta("hi"),
-      doneEvt(),
-      delta("ZOMBIE"),
-      toolRunning("z", "t"),
-    );
+    const s = fold(delta("hi"), doneEvt(), delta("ZOMBIE"), toolRunning("z", "t"));
     expect(s.status).toBe("done");
     expect(s.events).toHaveLength(1);
     expect(s.events[0]).toMatchObject({ text: "hi" });

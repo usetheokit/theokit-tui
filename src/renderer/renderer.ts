@@ -1,12 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import Yoga from "yoga-layout";
-
-import {
-  createHostReconciler,
-  createRootNode,
-  type RendererNode,
-} from "./host-config.js";
 import { StdoutContext, type StdoutContextValue } from "./hooks/use-stdout.js";
+import { createHostReconciler, createRootNode, type RendererNode } from "./host-config.js";
 import { OutputEngine } from "./output/output-engine.js";
 import { Output } from "./output/output-grid.js";
 import { renderNodeToOutput } from "./output/render-node.js";
@@ -168,11 +163,7 @@ export function createRenderer(terminal: Terminal): Renderer {
       if (disposed) {
         return;
       }
-      const wrapped = createElement(
-        StdoutContext.Provider,
-        { value: stdoutValue },
-        element,
-      );
+      const wrapped = createElement(StdoutContext.Provider, { value: stdoutValue }, element);
       reconciler.updateContainerSync(wrapped, container, null, () => {});
       reconciler.flushSyncWork();
     },

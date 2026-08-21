@@ -53,6 +53,10 @@ export function useRisingEdge<L extends string>(
 
   const previous = useRef<number | undefined>(undefined);
 
+  // `onRiseRef` is a ref ON PURPOSE — see the comment above it. Callers pass an inline arrow, so
+  // depending on `onRise` would re-run this effect every render, turning a rising edge into a
+  // per-render fire.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `onRise` is held in a ref by design.
   useEffect(() => {
     const before = previous.current;
     previous.current = rank;
@@ -63,6 +67,5 @@ export function useRisingEdge<L extends string>(
     // `level` is derived from `rank`, and depending on both would re-run when a caller renames a
     // level without changing its position. Depending on `rank` alone is what makes a fall-then-rise
     // re-arm rather than firing twice at the top.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rank]);
 }

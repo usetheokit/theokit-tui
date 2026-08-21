@@ -4,18 +4,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { render } from "ink-testing-library";
-
-import { ChatThread, TheoTUIProvider } from "../src/index.js";
 import type { ChatThreadMessage } from "../src/index.js";
-import {
-  fmt,
-  frameSampler,
-  round,
-  stats,
-  tick,
-  stackVersions,
-} from "./sampling.js";
+import { ChatThread, TheoTUIProvider } from "../src/index.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats, tick } from "./sampling.js";
 
 // M1 thread benchmark (plan T4.1, ADR D6): plain vs windowed mode matrix.
 // Workload per EC-1 (edge-case MUST FIX): each step BOTH replaces the last
@@ -41,13 +33,7 @@ const makeMessage = (i: number, content?: string): ChatThreadMessage => ({
   content: content ?? `message ${i} — the quick brown fox jumps over the dog`,
 });
 
-function App({
-  messages,
-  mode,
-}: {
-  messages: ChatThreadMessage[];
-  mode: Mode;
-}) {
+function App({ messages, mode }: { messages: ChatThreadMessage[]; mode: Mode }) {
   return (
     <TheoTUIProvider>
       <ChatThread
@@ -75,7 +61,7 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
     // Streaming repaint + append churn in one step (EC-1).
     messages = [
       ...messages.slice(0, -1),
-      { ...last, content: last.content + "x" },
+      { ...last, content: `${last.content}x` },
       makeMessage(messages.length),
     ];
     instance.rerender(<App messages={messages} mode={mode} />);
@@ -107,7 +93,7 @@ for (const mode of modes) {
   // Smoke skips warmups — proof-of-execution only (review F-xval-3 budget).
   for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
-    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+    console.log(`${fmt(`${mode} warmup`, w)}  (discarded)`);
   }
   const runs: RunMetrics[] = [];
   for (let i = 0; i < measured; i++) {
@@ -141,7 +127,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     workload: {
       messages: N_MESSAGES,
       streamed_tokens: N_TOKENS,
@@ -164,8 +150,6 @@ if (!smoke) {
     "chat-thread-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/chat-thread-baseline.json",
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log("baseline written: benchmarks/baselines/chat-thread-baseline.json");
 }

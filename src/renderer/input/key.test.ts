@@ -74,17 +74,13 @@ describe("projectKey (M19 T1.1)", () => {
 describe("projectKey — Home and End", () => {
   it("projects_home_in_every_terminal_form", () => {
     for (const seq of ["\x1b[H", "\x1b[1~", "\x1b[7~", "\x1bOH"]) {
-      expect(projectKey(seq).key.home, `sequence ${JSON.stringify(seq)}`).toBe(
-        true,
-      );
+      expect(projectKey(seq).key.home, `sequence ${JSON.stringify(seq)}`).toBe(true);
     }
   });
 
   it("projects_end_in_every_terminal_form", () => {
     for (const seq of ["\x1b[F", "\x1b[4~", "\x1b[8~", "\x1bOF"]) {
-      expect(projectKey(seq).key.end, `sequence ${JSON.stringify(seq)}`).toBe(
-        true,
-      );
+      expect(projectKey(seq).key.end, `sequence ${JSON.stringify(seq)}`).toBe(true);
     }
   });
 

@@ -11,13 +11,7 @@ import { InputContext, useInput, usePaste } from "./use-input.js";
 // ink-testing-library (React context works the same); driven by our own fake
 // stdin (independent of Ink's).
 
-function Provider({
-  source,
-  children,
-}: {
-  source: InputSource;
-  children: ReactNode;
-}) {
+function Provider({ source, children }: { source: InputSource; children: ReactNode }) {
   return createElement(InputContext.Provider, { value: source }, children);
 }
 
@@ -31,9 +25,7 @@ describe("useInput / usePaste (M19 T2.1)", () => {
       useInput((_input, key) => keys.push(key));
       return null;
     }
-    const app = render(
-      createElement(Provider, { source, children: createElement(Probe) }),
-    );
+    const app = render(createElement(Provider, { source, children: createElement(Probe) }));
     stdin.send("\x1b[D");
     expect(keys).toHaveLength(1);
     expect(keys[0]!.leftArrow).toBe(true);
@@ -65,9 +57,7 @@ describe("useInput / usePaste (M19 T2.1)", () => {
       useInput(() => {});
       return null;
     }
-    const app = render(
-      createElement(Provider, { source, children: createElement(Probe) }),
-    );
+    const app = render(createElement(Provider, { source, children: createElement(Probe) }));
     expect(stdin.rawModeCalls).toEqual([true]);
     app.unmount();
     expect(stdin.rawModeCalls).toEqual([true, false]);

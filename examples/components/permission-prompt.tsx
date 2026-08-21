@@ -1,10 +1,6 @@
-import { Text, render } from "ink";
+import { render, Text } from "ink";
 
-import {
-  InkInputProvider,
-  PermissionPrompt,
-  TheoTUIProvider,
-} from "../../src/index.js";
+import { InkInputProvider, PermissionPrompt, TheoTUIProvider } from "../../src/index.js";
 
 // The Claude Code tool-approval card, live. Arrow keys (↑/↓) or a digit (1/2)
 // move the selection; Enter commits; Esc is the safe default (No). Mounts

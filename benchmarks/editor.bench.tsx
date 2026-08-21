@@ -1,14 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 
 import {
-  editorReducer,
-  initialEditorState,
   type EditorAction,
   type EditorState,
+  editorReducer,
+  initialEditorState,
 } from "../src/chat/composer-editor.js";
 import { round, stats } from "./sampling.js";
 
@@ -83,7 +83,7 @@ function main(): void {
   const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "editor-baseline.json");
-  writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
+  writeFileSync(outFile, `${JSON.stringify(baseline, null, 2)}\n`);
   process.stdout.write(
     `\neditor bench (load ${round(loadAtStart)}): ${baseline.aggregate.us_per_op.mean} µs/op → ${outFile}\n`,
   );

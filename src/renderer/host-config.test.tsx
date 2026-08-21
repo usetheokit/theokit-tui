@@ -117,11 +117,7 @@ describe("host-config yoga tree (M18 T1.1)", () => {
     );
     const box = root.children[0]!;
     expect(box.yogaNode!.getChildCount()).toBe(3);
-    expect(box.children.map((c) => c.children[0]!.text)).toEqual([
-      "a",
-      "b",
-      "c",
-    ]);
+    expect(box.children.map((c) => c.children[0]!.text)).toEqual(["a", "b", "c"]);
   });
 
   it("commit_update_reapplies_styles_to_yoga_node", () => {

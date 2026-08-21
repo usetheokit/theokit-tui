@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-
-import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
+import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
+import { type ItlInstance, render } from "../../tests/renderer/itl-adapter.js";
+import type { QuestionAnswer } from "../agent/agent-decision.js";
 import { QuestionPrompt } from "./question-prompt.js";
 import type { SelectListItem } from "./select-list-model.js";
-import type { QuestionAnswer } from "../agent/agent-decision.js";
-import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
 
 /**
  * Poll the frame for `substring` (deterministic, not a fixed sleep — testing.md
@@ -21,9 +20,7 @@ async function waitForFrame(
     if ((app.lastFrame() ?? "").includes(substring)) return;
     await app.flush();
   }
-  throw new Error(
-    `frame never contained ${JSON.stringify(substring)} — got:\n${app.lastFrame()}`,
-  );
+  throw new Error(`frame never contained ${JSON.stringify(substring)} — got:\n${app.lastFrame()}`);
 }
 
 /**
@@ -164,12 +161,7 @@ describe("QuestionPrompt component (M23 T2.1)", () => {
 
   it("no_free_text_when_allowFreeText_is_false", async () => {
     const app = render(
-      <QuestionPrompt
-        header="H"
-        question="Q"
-        options={OPTIONS}
-        onAnswer={() => {}}
-      />,
+      <QuestionPrompt header="H" question="Q" options={OPTIONS} onAnswer={() => {}} />,
     );
     await app.flush();
     expect(app.lastFrame()).not.toContain("Other");
@@ -179,12 +171,7 @@ describe("QuestionPrompt component (M23 T2.1)", () => {
   it("empty_submit_is_a_noop", async () => {
     const answers: QuestionAnswer[] = [];
     const app = render(
-      <QuestionPrompt
-        header="H"
-        question="Q"
-        options={[]}
-        onAnswer={(a) => answers.push(a)}
-      />,
+      <QuestionPrompt header="H" question="Q" options={[]} onAnswer={(a) => answers.push(a)} />,
     );
     await app.flush();
     app.stdin.write("\r"); // nothing selected, no options → no-op
@@ -195,12 +182,7 @@ describe("QuestionPrompt component (M23 T2.1)", () => {
 
   it("empty_options_render_without_crashing", async () => {
     const app = render(
-      <QuestionPrompt
-        header="H"
-        question="No options here"
-        options={[]}
-        onAnswer={() => {}}
-      />,
+      <QuestionPrompt header="H" question="No options here" options={[]} onAnswer={() => {}} />,
     );
     await app.flush();
     expect(app.lastFrame()).toContain("No options here");

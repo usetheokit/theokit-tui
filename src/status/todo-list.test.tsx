@@ -1,12 +1,11 @@
-import { createElement } from "react";
-import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 import { render as inkRender } from "ink-testing-library";
+import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-
-import { render } from "../../tests/renderer/itl-adapter.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { TodoList, todoRowStyle, type TodoItem } from "./todo-list.js";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
+import { render } from "../../tests/renderer/itl-adapter.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { type TodoItem, TodoList, todoRowStyle } from "./todo-list.js";
 
 // M24 T1.2 — TodoList over the itl-adapter. A live checklist keyed by stable id
 // (☐ pending / ◐ active / ☑ done), replace-item in place, duplicate-id throw,
@@ -19,10 +18,7 @@ const ITEMS: TodoItem[] = [
 ];
 
 /** `ESC [ 30m` .. `ESC [ 37m` — the eight basic foreground colours (B-087). */
-const SGR_COLOURS = Array.from(
-  { length: 8 },
-  (_, n) => `\u001B[3${String(n)}m`,
-);
+const SGR_COLOURS = Array.from({ length: 8 }, (_, n) => `\u001B[3${String(n)}m`);
 
 describe("TodoList (M24 T1.2)", () => {
   it("renders_items_with_status_glyphs", async () => {
@@ -40,11 +36,7 @@ describe("TodoList (M24 T1.2)", () => {
     await app.flush();
     expect(app.lastFrame()).toContain("◐ wire up");
     // A NEW items array with a NEW object for id "b" flips it to done.
-    const next: TodoItem[] = [
-      ITEMS[0]!,
-      { id: "b", label: "wire up", status: "done" },
-      ITEMS[2]!,
-    ];
+    const next: TodoItem[] = [ITEMS[0]!, { id: "b", label: "wire up", status: "done" }, ITEMS[2]!];
     app.rerender(createElement(TodoList, { items: next }));
     await app.flush();
     expect(app.lastFrame()).toContain("☑ wire up");
@@ -132,12 +124,9 @@ describe("TodoList (M24 T1.2)", () => {
           children: createElement(TodoList, { items: ITEMS }),
         }),
       );
-      await waitForCondition(
-        () => (app.lastFrame() ?? "").includes("scaffold"),
-        {
-          describe: "the todo list to render its first item",
-        },
-      );
+      await waitForCondition(() => (app.lastFrame() ?? "").includes("scaffold"), {
+        describe: "the todo list to render its first item",
+      });
       const frame = app.lastFrame() ?? "";
       app.unmount();
       return frame;
@@ -163,8 +152,7 @@ describe("TodoList (M24 T1.2)", () => {
     // A colour SGR is `ESC [ 3n m`. Probed as a substring set rather than a RegExp literal: an
     // escape byte inside a RegExp trips `no-control-regex`, and the disable comment would be a
     // suppression where a plainer expression does the same job.
-    const hasColour = (frame: string): boolean =>
-      SGR_COLOURS.some((code) => frame.includes(code));
+    const hasColour = (frame: string): boolean => SGR_COLOURS.some((code) => frame.includes(code));
     expect(hasColour(mono)).toBe(false);
     expect(hasColour(dark)).toBe(true);
   });

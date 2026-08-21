@@ -5,10 +5,11 @@
  * `UIMessage` satisfies 1:1 — so a consumer of TheoKit's unified agent client passes `useAgent().thread`
  * straight through without importing `ai`. Pure functions, no React, no Ink.
  */
-import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
-import { routeToolResult } from "./agent-stream-event.js";
+
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
+import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import { routeToolResult } from "./agent-stream-event.js";
 
 /** A message part, read structurally — a `text`/`reasoning` block or a tool invocation. */
 export interface UIMessagePartLike {
@@ -43,16 +44,10 @@ export interface TurnUsage {
   durationMs?: number;
 }
 
-const USAGE_TOKEN_KEYS = [
-  "reasoningTokens",
-  "cacheReadTokens",
-  "cacheWriteTokens",
-] as const;
+const USAGE_TOKEN_KEYS = ["reasoningTokens", "cacheReadTokens", "cacheWriteTokens"] as const;
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null;
-const isFiniteNumber = (v: unknown): v is number =>
-  typeof v === "number" && Number.isFinite(v);
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 /**
  * Read the per-turn usage from a message's metadata, or `undefined` when absent/malformed. Structural and
@@ -192,9 +187,7 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
  * diff); a plain string (file/grep/dir listings) stays `output`. Routing logic
  * is shared with the stream reducer — see `routeToolResult`.
  */
-function toolResultContent(
-  tool: ToolPartView,
-): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
+function toolResultContent(tool: ToolPartView): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
   if (tool.state === "output-error") {
     return tool.errorText !== undefined ? { output: tool.errorText } : {};
   }
@@ -230,8 +223,7 @@ function toToolEvent(
   formatResult?: ToolResultFormatter,
 ): AgentToolEvent {
   let event: AgentToolEvent = {
-    id:
-      tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
+    id: tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
     name: tool.toolName,
     status: TOOL_STATUS[tool.state] ?? "pending",
@@ -293,15 +285,9 @@ const EXPLORE_GROUP_MIN = 2;
  * Reuse is by CONTENT, never by id: while the run is open it grows under the same id, and returning
  * the old block would freeze the new read off-screen.
  */
-const blockCache = new WeakMap<
-  object,
-  { tools: readonly AgentToolEvent[]; event: AgentEvent }
->();
+const blockCache = new WeakMap<object, { tools: readonly AgentToolEvent[]; event: AgentEvent }>();
 
-function exploredBlock(
-  first: AgentToolEvent,
-  tools: AgentToolEvent[],
-): AgentEvent {
+function exploredBlock(first: AgentToolEvent, tools: AgentToolEvent[]): AgentEvent {
   const previous = blockCache.get(first);
   if (
     previous !== undefined &&
@@ -357,15 +343,12 @@ function groupExploration(
  * Project messages onto the chat surface: one `ChatThreadMessage` per message that has text, its `content`
  * the concatenation of the message's text parts. Tool-only / reasoning-only turns produce no chat bubble.
  */
-export function messagesToChatThread(
-  messages: readonly UIMessageLike[],
-): ChatThreadMessage[] {
+export function messagesToChatThread(messages: readonly UIMessageLike[]): ChatThreadMessage[] {
   const out: ChatThreadMessage[] = [];
   for (const message of messages) {
     let content = "";
     for (const part of message.parts) {
-      if (part.type === "text" && typeof part.text === "string")
-        content += part.text;
+      if (part.type === "text" && typeof part.text === "string") content += part.text;
     }
     if (content.length === 0) continue;
     out.push({ id: message.id, role: message.role, content });
@@ -433,10 +416,7 @@ export interface MessagesToEventsOptions {
  * produces new objects, the prefix never matches and the fast path never fires. The M92 review
  * measured 0 of 5 renders. The two items are one mechanism seen from two sides.
  */
-const eventCache = new WeakMap<
-  object,
-  { parts: readonly unknown[]; events: AgentEvent[] }
->();
+const eventCache = new WeakMap<object, { parts: readonly unknown[]; events: AgentEvent[] }>();
 
 /** The events of a message, from cache when the parts are the SAME by identity. */
 function eventsOfMessage(
@@ -447,11 +427,7 @@ function eventsOfMessage(
   // Only cache when there are no formatters: they are caller-supplied functions and can change
   // between renders without the message changing. Keying on function identity would add a key
   // dimension for a case the consumer does not exercise (its formatters are module-stable).
-  if (
-    opts?.formatToolHeader !== undefined ||
-    opts?.formatToolResult !== undefined
-  )
-    return derive();
+  if (opts?.formatToolHeader !== undefined || opts?.formatToolResult !== undefined) return derive();
   const key = message as unknown as object;
   const previous = eventCache.get(key);
   if (
@@ -472,9 +448,7 @@ export function messagesToAgentEvents(
 ): AgentEvent[] {
   const events: AgentEvent[] = [];
   for (const message of messages) {
-    const cached = eventsOfMessage(message, opts, () =>
-      deriveOneMessage(message, opts),
-    );
+    const cached = eventsOfMessage(message, opts, () => deriveOneMessage(message, opts));
     events.push(...cached);
   }
   const explore0 = new Set(opts?.exploreTools ?? DEFAULT_EXPLORE_TOOLS);
@@ -487,41 +461,33 @@ function deriveOneMessage(
   opts: MessagesToEventsOptions | undefined,
 ): AgentEvent[] {
   const events: AgentEvent[] = [];
-  {
-    message.parts.forEach((part, index) => {
-      if (part.type === "text") {
-        if (typeof part.text === "string" && part.text.length > 0) {
-          events.push({
-            id: `${message.id}::m${index}`,
-            kind: "message",
-            role: message.role,
-            text: part.text,
-          });
-        }
-        return;
+  message.parts.forEach((part, index) => {
+    if (part.type === "text") {
+      if (typeof part.text === "string" && part.text.length > 0) {
+        events.push({
+          id: `${message.id}::m${index}`,
+          kind: "message",
+          role: message.role,
+          text: part.text,
+        });
       }
-      if (part.type === "reasoning") {
-        if (typeof part.text === "string" && part.text.length > 0) {
-          events.push({
-            id: `${message.id}::r${index}`,
-            kind: "thinking",
-            text: part.text,
-          });
-        }
-        return;
+      return;
+    }
+    if (part.type === "reasoning") {
+      if (typeof part.text === "string" && part.text.length > 0) {
+        events.push({
+          id: `${message.id}::r${index}`,
+          kind: "thinking",
+          text: part.text,
+        });
       }
-      const tool = toolView(part);
-      if (tool !== null)
-        events.push(
-          toToolEvent(
-            tool,
-            message.id,
-            index,
-            opts?.formatToolHeader,
-            opts?.formatToolResult,
-          ),
-        );
-    });
-  }
+      return;
+    }
+    const tool = toolView(part);
+    if (tool !== null)
+      events.push(
+        toToolEvent(tool, message.id, index, opts?.formatToolHeader, opts?.formatToolResult),
+      );
+  });
   return events;
 }

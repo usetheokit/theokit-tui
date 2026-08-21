@@ -13,11 +13,11 @@
  * ARM A writes the moment the cursor appears. ARM B waits for the cursor AND one macrotask.
  * If the mechanism is real, A loses keystrokes and B does not.
  */
-import { describe, expect, it } from "vitest";
+
 import { render } from "ink-testing-library";
-import React from "react";
-import { ChatComposer } from "./chat-composer.js";
+import { describe, expect, it } from "vitest";
 import { TheoTUIProvider } from "../theme/theme.js";
+import { ChatComposer } from "./chat-composer.js";
 
 const CURSOR = "\u001B[7m";
 const hasCursor = (f: string) => f.includes(CURSOR) || f.includes("▏");
@@ -38,18 +38,13 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 const ATTEMPTS = 20;
 
 /** Spin until `ready` holds, or until `limit` macrotasks have passed. Reports whether it held. */
-const spinUntil = async (
-  ready: () => boolean,
-  limit: number,
-): Promise<boolean> => {
+const spinUntil = async (ready: () => boolean, limit: number): Promise<boolean> => {
   for (let n = 0; n < limit && !ready(); n++) await tick();
   return ready();
 };
 
 /** One attempt: mount, wait for the cursor, write, and report whether the write survived. */
-async function attemptOnce(
-  waitAMacrotaskAfterCursor: boolean,
-): Promise<boolean> {
+async function attemptOnce(waitAMacrotaskAfterCursor: boolean): Promise<boolean> {
   const inst = render(
     <TheoTUIProvider>
       <ChatComposer onSubmit={() => {}} />

@@ -1,9 +1,8 @@
 import { Box, Static, Text } from "ink";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-
-import { createRenderer } from "../../src/renderer/index.js";
 import { useStdout } from "../../src/renderer/hooks/use-stdout.js";
+import { createRenderer } from "../../src/renderer/index.js";
 import { OutputEngine } from "../../src/renderer/output/output-engine.js";
 import { VirtualTerminal } from "./virtual-terminal.js";
 
@@ -86,8 +85,7 @@ describe("Static scrollback through the renderer (M20 T1.1)", () => {
       { flexDirection: "column" },
       createElement(Static, {
         items,
-        children: (item: unknown) =>
-          createElement(Text, { key: String(item) }, String(item)),
+        children: (item: unknown) => createElement(Text, { key: String(item) }, String(item)),
       }),
       createElement(Text, {}, `LIVE:${items.length}`),
     );
@@ -115,9 +113,11 @@ describe("Static scrollback through the renderer (M20 T1.1)", () => {
     renderer.render(createElement(App, { items: ["one", "two", "three"] }));
     await settle(term);
     const lines = term.screenLines();
-    expect(
-      lines.filter((l) => l === "one" || l === "two" || l === "three"),
-    ).toEqual(["one", "two", "three"]);
+    expect(lines.filter((l) => l === "one" || l === "two" || l === "three")).toEqual([
+      "one",
+      "two",
+      "three",
+    ]);
     expect(lines[lines.length - 1]).toBe("LIVE:3");
     // "one" was graduated in the first render and NEVER rewritten afterwards.
     expect(term.writeStream().split("one").length - 1).toBe(1);

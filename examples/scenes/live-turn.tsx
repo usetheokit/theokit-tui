@@ -8,8 +8,8 @@ import {
   notify,
   ThinkingBlock,
   Toast,
-  TodoList,
   type TodoItem,
+  TodoList,
 } from "../../src/index.js";
 import { FocusProvider } from "../../src/renderer/hooks/use-focus.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
@@ -49,22 +49,14 @@ function Demo() {
       <CollapsibleBlock summary={<Text>tool output (space to expand)</Text>}>
         <Text dimColor>… 240 lines of build log …</Text>
       </CollapsibleBlock>
-      <AgentStreaming
-        phrases={["Thinking", "Cooking", "Reticulating splines"]}
-      />
-      <Toast
-        message="build finished ✓"
-        durationMs={5000}
-        onDismiss={() => {}}
-      />
+      <AgentStreaming phrases={["Thinking", "Cooking", "Reticulating splines"]} />
+      <Toast message="build finished ✓" durationMs={5000} onDismiss={() => {}} />
     </Box>
   );
 }
 
 // Wire OUR input + focus providers (the composition root an app owns).
-const source = createInputSource(process.stdin as never, (d) =>
-  process.stdout.write(d),
-);
+const source = createInputSource(process.stdin as never, (d) => process.stdout.write(d));
 source.start();
 
 const instance = render(

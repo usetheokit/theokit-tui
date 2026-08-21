@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import {
-  LAYOUT_MARGIN_KEYS,
-  horizontalMargin,
-  omitMargin,
-  pickMargin,
-} from "./layout-props.js";
 import type { LayoutMarginProps } from "./layout-props.js";
+import { horizontalMargin, LAYOUT_MARGIN_KEYS, omitMargin, pickMargin } from "./layout-props.js";
 
 describe("pickMargin (universal margin)", () => {
   it("returns_empty_object_when_no_margin_passed", () => {
@@ -82,9 +76,7 @@ describe("pickMargin (universal margin)", () => {
 
   it("horizontal_margin_ignores_the_vertical_family", () => {
     // Vertical margin costs ROWS, never columns — it must not shrink a width.
-    expect(
-      horizontalMargin({ marginY: 4, marginTop: 3, marginBottom: 2 }),
-    ).toBe(0);
+    expect(horizontalMargin({ marginY: 4, marginTop: 3, marginBottom: 2 })).toBe(0);
   });
 
   it("exposes_the_seven_margin_keys_in_stable_order", () => {

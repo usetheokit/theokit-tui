@@ -1,20 +1,15 @@
 import { describe, expect, it } from "vitest";
-
+import type { AgentStreamEvent } from "./agent-stream-event.js";
 import {
   extractAssistantText,
   isShellEnvelope,
   looksLikeUnifiedDiff,
 } from "./agent-stream-event.js";
-import type { AgentStreamEvent } from "./agent-stream-event.js";
 
 describe("looksLikeUnifiedDiff", () => {
   it("detects a git-style unified diff (hunk + file header)", () => {
-    expect(looksLikeUnifiedDiff("--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y\n")).toBe(
-      true,
-    );
-    expect(
-      looksLikeUnifiedDiff("diff --git a/x b/x\n@@ -1 +1 @@\n-x\n+y"),
-    ).toBe(true);
+    expect(looksLikeUnifiedDiff("--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y\n")).toBe(true);
+    expect(looksLikeUnifiedDiff("diff --git a/x b/x\n@@ -1 +1 @@\n-x\n+y")).toBe(true);
   });
 
   it("rejects plain text that merely mentions @@ or ---", () => {
@@ -55,11 +50,7 @@ describe("isShellEnvelope", () => {
 describe("extractAssistantText", () => {
   it("assistant_text_extracted_from_content_blocks", () => {
     const text = extractAssistantText({
-      content: [
-        { type: "text", text: "a" },
-        { type: "tool_use" },
-        { type: "text", text: "b" },
-      ],
+      content: [{ type: "text", text: "a" }, { type: "tool_use" }, { type: "text", text: "b" }],
     });
     expect(text).toBe("ab");
   });
@@ -71,13 +62,7 @@ describe("extractAssistantText", () => {
   });
 
   it("assistant_text_empty_on_garbage", () => {
-    for (const bad of [
-      undefined,
-      null,
-      {},
-      { content: "x" },
-      { content: [{}] },
-    ]) {
+    for (const bad of [undefined, null, {}, { content: "x" }, { content: [{}] }]) {
       const out = extractAssistantText(bad as never);
       expect(out, JSON.stringify(bad)).toBe("");
     }

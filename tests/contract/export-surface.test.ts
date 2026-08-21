@@ -22,11 +22,7 @@ describe("public entry surface (T0.2)", () => {
     expect(mod.defaultTheme.role.assistant.glyph).toBe("⏺  ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
     // M6: built-ins exported; dark IS the default theme (same object).
-    expect(Object.keys(mod.themes).sort()).toEqual([
-      "dark",
-      "light",
-      "no-color",
-    ]);
+    expect(Object.keys(mod.themes).sort()).toEqual(["dark", "light", "no-color"]);
     expect(mod.themes.dark).toBe(mod.defaultTheme);
     // Module-internal by design (M6 — the file's absence-pin pattern):
     expect(mod).not.toHaveProperty("resolveTheme");
@@ -116,11 +112,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.KeyboardHelp).toBe("function");
     expect(Array.isArray(mod.DEFAULT_COMPOSER_SHORTCUTS)).toBe(true);
     // The `?` toggle chord must be documented in the shipped default list.
-    expect(
-      mod.DEFAULT_COMPOSER_SHORTCUTS.some(
-        (s: { keys: string }) => s.keys === "?",
-      ),
-    ).toBe(true);
+    expect(mod.DEFAULT_COMPOSER_SHORTCUTS.some((s: { keys: string }) => s.keys === "?")).toBe(true);
   });
 
   it("public_entry_exposes_tool_call_surface", async () => {
@@ -161,7 +153,7 @@ describe("public entry surface (T0.2)", () => {
       "wrap-ansi",
       "yoga-layout",
     ]);
-    expect(pkg.peerDependencies["react"]).toBeDefined();
+    expect(pkg.peerDependencies.react).toBeDefined();
   });
 
   it("public_entry_exposes_diff_model", async () => {
@@ -189,14 +181,10 @@ describe("public entry surface (T0.2)", () => {
       peerDependencies: Record<string, string>;
       peerDependenciesMeta: Record<string, { optional?: boolean }>;
     };
-    expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
-      "figlet",
-      "lowlight",
-      "react",
-    ]);
-    expect(pkg.peerDependenciesMeta["lowlight"]?.optional).toBe(true);
+    expect(Object.keys(pkg.peerDependencies).sort()).toEqual(["figlet", "lowlight", "react"]);
+    expect(pkg.peerDependenciesMeta.lowlight?.optional).toBe(true);
     // M27: figlet is also an OPTIONAL peer (renderFigletArt degrades to null).
-    expect(pkg.peerDependenciesMeta["figlet"]?.optional).toBe(true);
+    expect(pkg.peerDependenciesMeta.figlet?.optional).toBe(true);
     // The `ai` optional peer left with the `./ai-sdk` shim removal — the
     // root-entry projections are structural (`UIMessageLike`), no `ai` types.
     expect(pkg.peerDependencies).not.toHaveProperty("ai");
@@ -213,28 +201,17 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_agent_surface", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.AgentTimeline).toBe("function");
-    expect(mod.AGENT_EVENT_KINDS).toEqual([
-      "message",
-      "thinking",
-      "tool",
-      "explored",
-    ]);
+    expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored"]);
     // Review M1: the explored-grouping default is part of the public contract
     // (the CHANGELOG names it — consumers extend it via [...DEFAULT_EXPLORE_TOOLS, ...]).
     expect(mod.DEFAULT_EXPLORE_TOOLS).toContain("read_file");
     expect(
-      Object.isFrozen(mod.DEFAULT_EXPLORE_TOOLS) ||
-        Array.isArray(mod.DEFAULT_EXPLORE_TOOLS),
+      Object.isFrozen(mod.DEFAULT_EXPLORE_TOOLS) || Array.isArray(mod.DEFAULT_EXPLORE_TOOLS),
     ).toBe(true);
     // AgentExploredEvent is type-only — presence pinned by typecheck.
     // Runtime union arrays exported for D8 boundary validation (M3):
     expect(mod.CHAT_ROLES).toEqual(["user", "assistant", "system"]);
-    expect(mod.TOOL_CALL_STATUSES).toEqual([
-      "pending",
-      "running",
-      "success",
-      "failed",
-    ]);
+    expect(mod.TOOL_CALL_STATUSES).toEqual(["pending", "running", "success", "failed"]);
     expect(typeof mod.AgentStreaming).toBe("function");
     // Module-internal by plan decision (EC-10, ADR D7 precedent):
     expect(mod).not.toHaveProperty("formatElapsed");
@@ -270,12 +247,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ModeIndicator).toBe("function");
     expect(mod.PERMISSION_MODES).toEqual(["default", "auto-accept", "plan"]);
     expect(typeof mod.Notice).toBe("function");
-    expect(mod.NOTICE_VARIANTS).toEqual([
-      "info",
-      "warning",
-      "success",
-      "error",
-    ]);
+    expect(mod.NOTICE_VARIANTS).toEqual(["info", "warning", "success", "error"]);
     // #45: the two-line StatusFooter.
     expect(typeof mod.StatusFooter).toBe("function");
     // Stack — the vertical-rhythm primitive.
@@ -318,18 +290,11 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.FreeTextInput).toBe("function");
     // The Claude Code tool-approval card + its default Yes/No choices.
     expect(typeof mod.PermissionPrompt).toBe("function");
-    expect(mod.DEFAULT_PERMISSION_CHOICES.map((c) => c.value)).toEqual([
-      "yes",
-      "no",
-    ]);
+    expect(mod.DEFAULT_PERMISSION_CHOICES.map((c) => c.value)).toEqual(["yes", "no"]);
     // The pure oracle + the canonical approval triad (values only — the lib
     // never enumerates policy semantics, ADR D3/D5).
     expect(typeof mod.resolveChoiceKey).toBe("function");
-    expect(mod.DEFAULT_APPROVAL_CHOICES.map((c) => c.value)).toEqual([
-      "once",
-      "always",
-      "reject",
-    ]);
+    expect(mod.DEFAULT_APPROVAL_CHOICES.map((c) => c.value)).toEqual(["once", "always", "reject"]);
     expect(mod.OTHER_OPTION_VALUE).toBe("__theo_other__");
     // Module-internal by design (the absence-pin pattern): the plan choice set
     // stays private; only resolveChoiceKey + DEFAULT_APPROVAL_CHOICES are public.

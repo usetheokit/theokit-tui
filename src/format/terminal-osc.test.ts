@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  osc8Link,
-  setTerminalTitle,
-  supportsHyperlinks,
-} from "./terminal-osc.js";
+import { osc8Link, setTerminalTitle, supportsHyperlinks } from "./terminal-osc.js";
 
 // M25 T4.1 — the terminal-title + OSC-8 hyperlink helpers (blueprint ADR D),
 // mirroring notify.ts: pure, injectable env/out, no-op / degrade off-TTY or under
@@ -64,12 +60,7 @@ describe("osc8Link (M25 T4.1)", () => {
   });
 
   it("returns_plain_text_under_a_multiplexer", () => {
-    const link = osc8Link(
-      "docs",
-      "https://theo.dev",
-      { TMUX: "x" },
-      { isTTY: true },
-    );
+    const link = osc8Link("docs", "https://theo.dev", { TMUX: "x" }, { isTTY: true });
     expect(link).toBe("docs");
   });
 });

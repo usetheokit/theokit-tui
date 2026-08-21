@@ -1,6 +1,4 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-
 import type {
   InteractionUpdate,
   SDKAssistantMessage,
@@ -9,6 +7,7 @@ import type {
   SDKThinkingMessage,
   SDKToolUseMessage,
 } from "@theokit/sdk";
+import { describe, expect, it } from "vitest";
 
 import type { AgentStreamEvent } from "../../src/agent/agent-stream-event.js";
 import {

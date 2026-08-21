@@ -42,10 +42,7 @@ function runGateScriptIn(script: string, cwd: string): Probe {
     JSON.parse(
       execFileSync(
         "node",
-        [
-          "-e",
-          "process.stdout.write(require('fs').readFileSync('package.json','utf8'))",
-        ],
+        ["-e", "process.stdout.write(require('fs').readFileSync('package.json','utf8'))"],
         {
           cwd: REPO_ROOT,
           encoding: "utf8",
@@ -89,11 +86,7 @@ describe("gate format:check (B-051) — the property, executed", () => {
   it("test_an_untracked_file_cannot_turn_the_gate_red", () => {
     withRepo((dir) => {
       // Arrange — a badly formatted file that git does not track.
-      writeFileSync(
-        join(dir, "untracked.ts"),
-        "const   bad=1;;;\n\n\n",
-        "utf8",
-      );
+      writeFileSync(join(dir, "untracked.ts"), "const   bad=1;;;\n\n\n", "utf8");
 
       // Act
       const { exitCode } = runGateScriptIn(script, dir);
@@ -151,10 +144,10 @@ describe("gate format:check (B-051) — the property, executed", () => {
 // what is affordable, and the difference is recorded rather than papered over.
 describe("gate lint (B-051) — the shape, asserted", () => {
   const command = (
-    JSON.parse(
-      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-    ) as { scripts: Record<string, string> }
-  ).scripts["lint"];
+    JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
+      scripts: Record<string, string>;
+    }
+  ).scripts.lint;
 
   it("test_the_file_list_comes_from_the_index", () => {
     expect(command).toBeDefined();

@@ -2,16 +2,16 @@ import { Box } from "ink";
 import { render } from "ink-testing-library";
 
 import { AgentStreaming } from "../../src/agent/agent-streaming.js";
+import { AgentTimeline } from "../../src/agent/agent-timeline.js";
+import { WelcomeBanner } from "../../src/branding/welcome-banner.js";
 import { ChatComposer } from "../../src/chat/chat-composer.js";
+import { ChatThread } from "../../src/chat/chat-thread.js";
+import { DiffViewer } from "../../src/diff/diff-viewer.js";
 import { CodeBlock } from "../../src/markdown/code-block.js";
 import { ContextWindowBar } from "../../src/metrics/context-window-bar.js";
 import { CostMeter } from "../../src/metrics/cost-meter.js";
-import { DiffViewer } from "../../src/diff/diff-viewer.js";
-import { AgentTimeline } from "../../src/agent/agent-timeline.js";
-import { ChatThread } from "../../src/chat/chat-thread.js";
-import { TheoTUIProvider } from "../../src/theme/theme.js";
 import { TokenUsageChart } from "../../src/metrics/token-usage-chart.js";
-import { WelcomeBanner } from "../../src/branding/welcome-banner.js";
+import { TheoTUIProvider } from "../../src/theme/theme.js";
 import { ToolCall } from "../../src/tools/tool-call.js";
 import { ToolCallCard } from "../../src/tools/tool-call-card.js";
 import { ToolResult } from "../../src/tools/tool-result.js";
@@ -28,9 +28,7 @@ const instance = render(
   <TheoTUIProvider>
     <Box flexDirection="column">
       <ChatThread
-        header={
-          <WelcomeBanner name="Probe" version="0.0.0" hints={["hint row"]} />
-        }
+        header={<WelcomeBanner name="Probe" version="0.0.0" hints={["hint row"]} />}
         messages={[
           { id: "s", role: "system", content: "session context" },
           { id: "u", role: "user", content: "plain text probe" },

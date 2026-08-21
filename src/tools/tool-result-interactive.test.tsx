@@ -46,10 +46,7 @@ describe("ToolResult interactive (M25 T3.1)", () => {
     // review M2: interactive mode replaces the LINE-cap indicator with the
     // affordance, but a CHAR cap must remain observable (no silent data loss).
     // Many short lines totalling > 20k chars → BOTH line-capped AND char-capped.
-    const huge = Array.from(
-      { length: 400 },
-      (_, i) => `row ${i} ${"x".repeat(60)}`,
-    ).join("\n");
+    const huge = Array.from({ length: 400 }, (_, i) => `row ${i} ${"x".repeat(60)}`).join("\n");
     const app = render(
       createElement(ToolResult, {
         children: huge,

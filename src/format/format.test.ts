@@ -33,9 +33,7 @@ describe("formatTokens", () => {
     for (const bad of [-1, Number.NaN, Infinity]) {
       expect(() => formatTokens(bad)).toThrow(TypeError);
     }
-    expect(() => formatTokens(-1)).toThrow(
-      "formatTokens: value must be a finite number >= 0",
-    );
+    expect(() => formatTokens(-1)).toThrow("formatTokens: value must be a finite number >= 0");
   });
 });
 
@@ -78,8 +76,6 @@ describe("formatCost", () => {
     for (const bad of [-0.01, Number.NaN, Infinity]) {
       expect(() => formatCost(bad)).toThrow(TypeError);
     }
-    expect(() => formatCost(-0.01)).toThrow(
-      "formatCost: costUsd must be a finite number >= 0",
-    );
+    expect(() => formatCost(-0.01)).toThrow("formatCost: costUsd must be a finite number >= 0");
   });
 });

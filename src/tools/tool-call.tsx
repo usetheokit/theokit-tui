@@ -1,23 +1,16 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
-
-import { useTheoTheme } from "../theme/theme.js";
-import type { TheoTheme } from "../theme/theme.js";
-
 import { unionMessage } from "../agent/union-message.js";
-import { pickMargin } from "../layout/layout-props.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { pickMargin } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import type { TheoTheme } from "../theme/theme.js";
+import { useTheoTheme } from "../theme/theme.js";
 
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
 // status touches it (plus a glyph/spinner branch) exactly once.
-export const TOOL_CALL_STATUSES = [
-  "pending",
-  "running",
-  "success",
-  "failed",
-] as const;
+export const TOOL_CALL_STATUSES = ["pending", "running", "success", "failed"] as const;
 const VALID_STATUSES = TOOL_CALL_STATUSES;
 
 /** Tool-call lifecycle states (M2 — plan ADR D1; M3 may extend additively). */
@@ -120,17 +113,13 @@ export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
   const theme = useTheoTheme();
   // M26: `name(args)` — the summary becomes a parenthesized, dim arg suffix
   // glued to the name (Claude Code header shape), single-lined + truncated.
-  const args = formatArgs(
-    summary === undefined ? undefined : singleLine(summary),
-  );
+  const args = formatArgs(summary === undefined ? undefined : singleLine(summary));
   // wrap="truncate-end" keeps the header genuinely one line at ANY terminal
   // width (review dom-frontend-3 — gemini-cli ToolGroupDisplay idiom); a
   // wrapping row of sibling Texts misrenders as parallel columns.
   return (
     <Box {...pickMargin(margin)}>
-      <Box minWidth={STATUS_INDICATOR_WIDTH}>
-        {statusIndicator(status, theme)}
-      </Box>
+      <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
         {formatToolName(singleLine(name))}
       </Text>

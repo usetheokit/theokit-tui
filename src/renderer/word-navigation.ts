@@ -17,10 +17,7 @@ function isWhitespace(segment: string): boolean {
 /** Chars of trailing whitespace popped off the end of `segments`. */
 function popTrailingWhitespace(segments: Seg[]): number {
   let len = 0;
-  while (
-    segments.length > 0 &&
-    isWhitespace(segments[segments.length - 1]!.segment)
-  ) {
+  while (segments.length > 0 && isWhitespace(segments[segments.length - 1]!.segment)) {
     len += segments.pop()!.segment.length;
   }
   return len;
@@ -80,17 +77,10 @@ function skipLeadingWhitespace(iterator: Iterator<Seg>): {
 }
 
 /** Chars of a leading punctuation run consumed from the front iterator. */
-function skipPunctuationRunForward(
-  iterator: Iterator<Seg>,
-  first: IteratorResult<Seg>,
-): number {
+function skipPunctuationRunForward(iterator: Iterator<Seg>, first: IteratorResult<Seg>): number {
   let len = 0;
   let next = first;
-  while (
-    !next.done &&
-    !next.value.isWordLike &&
-    !isWhitespace(next.value.segment)
-  ) {
+  while (!next.done && !next.value.isWordLike && !isWhitespace(next.value.segment)) {
     len += next.value.segment.length;
     next = iterator.next();
   }
@@ -109,9 +99,7 @@ export function findWordForward(text: string, cursor: number): number {
     return newCursor;
   }
   if (next.value.isWordLike) {
-    newCursor +=
-      PUNCTUATION_REGEX.exec(next.value.segment)?.index ??
-      next.value.segment.length;
+    newCursor += PUNCTUATION_REGEX.exec(next.value.segment)?.index ?? next.value.segment.length;
   } else {
     newCursor += skipPunctuationRunForward(iterator, next);
   }

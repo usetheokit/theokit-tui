@@ -36,17 +36,12 @@ function trackedComponents(): string[] {
     cwd: REPO_ROOT,
     encoding: "utf8",
   });
-  return out
-    .split("\n")
-    .filter((p) => p.endsWith(".tsx") && !p.includes(".test."));
+  return out.split("\n").filter((p) => p.endsWith(".tsx") && !p.includes(".test."));
 }
 
 export function silentGuards(): string[] {
   return trackedComponents().filter((rel) => {
-    const source = readFileSync(
-      new URL(rel, new URL("../../", import.meta.url)),
-      "utf8",
-    );
+    const source = readFileSync(new URL(rel, new URL("../../", import.meta.url)), "utf8");
     return THROWS_TYPED.test(source) && !IMPORTS_SINK.test(source);
   });
 }

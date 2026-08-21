@@ -1,16 +1,13 @@
 import { describe, expect, it } from "vitest";
-
-import { DEFAULT_COMPOSER_SHORTCUTS, KeyboardHelp } from "./keyboard-help.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
+import { DEFAULT_COMPOSER_SHORTCUTS, KeyboardHelp } from "./keyboard-help.js";
 
 describe("KeyboardHelp", () => {
   it("renders_each_shortcut_key_and_description", async () => {
     const frame = stripAnsi(
       await renderFrame(
-        <KeyboardHelp
-          shortcuts={[{ keys: "Ctrl+C", description: "Quit the app" }]}
-        />,
+        <KeyboardHelp shortcuts={[{ keys: "Ctrl+C", description: "Quit the app" }]} />,
       ),
     );
     expect(frame).toContain("Ctrl+C");
@@ -20,17 +17,13 @@ describe("KeyboardHelp", () => {
   it("renders_the_default_title_and_a_custom_one", async () => {
     const def = stripAnsi(await renderFrame(<KeyboardHelp shortcuts={[]} />));
     expect(def).toContain("Keyboard shortcuts");
-    const custom = stripAnsi(
-      await renderFrame(<KeyboardHelp shortcuts={[]} title="Shortcuts" />),
-    );
+    const custom = stripAnsi(await renderFrame(<KeyboardHelp shortcuts={[]} title="Shortcuts" />));
     expect(custom).toContain("Shortcuts");
   });
 
   it("default_composer_shortcuts_cover_the_headline_chords", async () => {
     const frame = stripAnsi(
-      await renderFrame(
-        <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />,
-      ),
+      await renderFrame(<KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />),
     );
     for (const chord of ["Enter", "/", "@", "!", "?"]) {
       expect(frame).toContain(chord);
@@ -51,9 +44,7 @@ describe("KeyboardHelp", () => {
   // was verified by running an example and reading the output by eye, which is not a gate.
   it("default_panel_layout", async () => {
     expect(
-      await renderFrame(
-        <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />,
-      ),
+      await renderFrame(<KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />),
     ).toMatchSnapshot("keyboard-help-defaults");
   });
 });

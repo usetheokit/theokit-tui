@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 
 import { render as inkRender } from "ink";
 
@@ -63,8 +63,7 @@ function scene(n: number, step: number): React.ReactElement {
   const messages = Array.from({ length: n }, (_, i) => ({
     id: String(i),
     role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
-    content:
-      i === n - 1 ? `streaming ${"·".repeat(step)}` : `message ${i} content`,
+    content: i === n - 1 ? `streaming ${"·".repeat(step)}` : `message ${i} content`,
   }));
   return <ChatThread messages={messages} />;
 }
@@ -96,7 +95,6 @@ async function runOwn(): Promise<Sample> {
 
 async function runInk(): Promise<Sample> {
   const stdout = new ByteStdout();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const instance = inkRender(scene(MESSAGES, 0), { stdout: stdout as any });
   const start = performance.now();
   for (let f = 0; f < UPDATE_FRAMES; f++) {
@@ -155,7 +153,7 @@ async function main(): Promise<void> {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "" },
     load_1min_at_start: round(loadAtStart),
     workload: { messages: MESSAGES, update_frames: UPDATE_FRAMES },
     protocol: {
@@ -169,7 +167,7 @@ async function main(): Promise<void> {
   const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "comparative-baseline.json");
-  writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
+  writeFileSync(outFile, `${JSON.stringify(baseline, null, 2)}\n`);
   process.stdout.write(
     `\ncomparative bench (load ${round(loadAtStart)}):\n` +
       `  v4  → ${v4.aggregate.mean_ms_per_frame.mean} ms/frame, ${v4.aggregate.bytes_written.mean} bytes\n` +

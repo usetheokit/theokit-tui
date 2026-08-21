@@ -87,11 +87,7 @@ function cellAlign(cell: string): TableAlign {
 }
 
 /** Build a `table` node from a header line, delimiter line, and body lines. */
-function buildTable(
-  headerLine: string,
-  delimLine: string,
-  bodyLines: string[],
-): MarkdownNode {
+function buildTable(headerLine: string, delimLine: string, bodyLines: string[]): MarkdownNode {
   const header = splitTableRow(headerLine);
   const align = splitTableRow(delimLine).map(cellAlign);
   const rows = bodyLines.map((line) => {
@@ -116,11 +112,7 @@ function tryConsumeTable(
 ): { node: MarkdownNode; endIndex: number } | null {
   const line = lines[index] as string;
   const next = lines[index + 1];
-  if (
-    !TABLE_ROW_RE.test(line) ||
-    next === undefined ||
-    !TABLE_DELIM_RE.test(next)
-  ) {
+  if (!TABLE_ROW_RE.test(line) || next === undefined || !TABLE_DELIM_RE.test(next)) {
     return null;
   }
   const body: string[] = [];
@@ -170,9 +162,7 @@ function classifyLine(line: string): MarkdownNode {
 }
 
 /** Matches a fence-opening line into marker + language, or null. */
-function openFence(
-  line: string,
-): { marker: string; language: string | undefined } | null {
+function openFence(line: string): { marker: string; language: string | undefined } | null {
   const fence = line.match(FENCE_RE);
   if (fence?.[1] === undefined) {
     return null;
@@ -187,7 +177,10 @@ function openFence(
  * >= open length, no trailing language (gemini :91-116). */
 function closesFence(line: string, marker: string): boolean {
   const close = line.match(FENCE_RE);
+  // The optional-chain form returns `boolean | undefined` under `strict`, which this
+  // function's `boolean` return type rejects (TS2322). The explicit guards are what type-check.
   return (
+    // biome-ignore lint/complexity/useOptionalChain: explicit guards required by TS2322 — see above.
     close !== null &&
     close[1] !== undefined &&
     close[1].startsWith(marker[0] as string) &&
@@ -273,10 +266,7 @@ const isWordChar = (value: string): boolean => /\w/.test(value);
 
 /** Tokenizes ONE line of text into styled segments. Code spans are
  * VERBATIM (no nested styling); unmatched markers stay literal. */
-export function parseInlineSegments(
-  text: string,
-  inherited: InlineStyles = {},
-): InlineSegment[] {
+export function parseInlineSegments(text: string, inherited: InlineStyles = {}): InlineSegment[] {
   if (!/[*_~`[]|https?:/.test(text)) {
     return text === "" ? [] : [{ text, styles: inherited }];
   }
@@ -301,6 +291,9 @@ export function parseInlineSegments(
   let lastIndex = 0;
   INLINE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
+  // The assignment-in-condition IS the documented idiom for a global RegExp: `exec` advances
+  // `lastIndex`, so the call and the null test have to be the same expression.
+  // biome-ignore lint/suspicious/noAssignInExpressions: canonical global-RegExp exec loop.
   while ((match = INLINE_RE.exec(text)) !== null) {
     literal(text.slice(lastIndex, match.index));
     lastIndex = INLINE_RE.lastIndex;
@@ -326,11 +319,7 @@ interface InlineEmitters {
 /** True when a wrapped marker was emitted (bold-italic/bold/strike). */
 function emitWrappedMarker(full: string, emit: InlineEmitters): boolean {
   for (const [marker, styles] of WRAPPED_MARKERS) {
-    if (
-      full.startsWith(marker) &&
-      full.endsWith(marker) &&
-      full.length > marker.length * 2
-    ) {
+    if (full.startsWith(marker) && full.endsWith(marker) && full.length > marker.length * 2) {
       emit.nested(full.slice(marker.length, -marker.length), styles);
       return true;
     }
@@ -341,12 +330,7 @@ function emitWrappedMarker(full: string, emit: InlineEmitters): boolean {
 /** Italic run with the gemini word-boundary AND path guards (:168-180) —
  * intra-word runs and path/glob contexts (asterisks between path
  * separators) stay literal. */
-function isItalicRun(
-  full: string,
-  text: string,
-  matchIndex: number,
-  lastIndex: number,
-): boolean {
+function isItalicRun(full: string, text: string, matchIndex: number, lastIndex: number): boolean {
   return (
     (full.startsWith("*") || full.startsWith("_")) &&
     full.length > 2 &&

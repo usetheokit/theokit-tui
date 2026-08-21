@@ -1,5 +1,5 @@
-import { render } from "ink-testing-library";
 import { Text } from "ink";
+import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
 import { sanitizeUntrusted, stripAnsi } from "./ansi.js";
@@ -58,9 +58,7 @@ describe("stripAnsi (B-055)", () => {
   it("joins_adjacent_colour_runs_so_a_bar_reads_as_one_string", () => {
     // The contract `metrics/progress-bar.test.tsx:7` already documented in a comment —
     // "Full ANSI strip incl. ESC, so adjacent color runs (filled + empty) join."
-    expect(stripAnsi(`${ESC}[32m###${ESC}[39m${ESC}[90m...${ESC}[39m`)).toBe(
-      "###...",
-    );
+    expect(stripAnsi(`${ESC}[32m###${ESC}[39m${ESC}[90m...${ESC}[39m`)).toBe("###...");
   });
 });
 
@@ -123,9 +121,7 @@ describe("sanitizeUntrusted (B-078)", () => {
   it("removes_the_8_bit_c1_forms_too", () => {
     // U+009D is 8-bit OSC, U+009B is 8-bit CSI: an alternative spelling of the same sequences that
     // neither matcher above sees, because both are anchored on ESC.
-    expect(sanitizeUntrusted("\u009D52;c;ZXZpbA==\u009Cx")).toBe(
-      "52;c;ZXZpbA==x",
-    );
+    expect(sanitizeUntrusted("\u009D52;c;ZXZpbA==\u009Cx")).toBe("52;c;ZXZpbA==x");
     expect(sanitizeUntrusted("a\u009Bb")).toBe("ab");
   });
 
@@ -136,8 +132,6 @@ describe("sanitizeUntrusted (B-078)", () => {
   });
 
   it("leaves_bracketed_plain_text_alone", () => {
-    expect(sanitizeUntrusted("value [1m] and [;m end")).toBe(
-      "value [1m] and [;m end",
-    );
+    expect(sanitizeUntrusted("value [1m] and [;m end")).toBe("value [1m] and [;m end");
   });
 });

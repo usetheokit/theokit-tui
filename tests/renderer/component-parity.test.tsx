@@ -2,7 +2,7 @@ import { Box, Text } from "ink";
 import { render as inkRender } from "ink-testing-library";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-
+import { stripAnsi } from "../../src/format/ansi.js";
 import {
   AgentStreaming,
   AgentTimeline,
@@ -10,22 +10,21 @@ import {
   ChatComposer,
   ChatMessage,
   ChatThread,
+  type ChatThreadMessage,
   CodeBlock,
   ContextWindowBar,
   CostMeter,
   DiffViewer,
   MarkdownText,
+  TheoTUIProvider,
   TokenUsageChart,
   ToolCall,
   ToolCallCard,
   ToolResult,
-  TheoTUIProvider,
   WelcomeBanner,
-  type ChatThreadMessage,
 } from "../../src/index.js";
 import { createRenderer } from "../../src/renderer/index.js";
 import { VirtualTerminal } from "./virtual-terminal.js";
-import { stripAnsi } from "../../src/format/ansi.js";
 
 // M20 T3.1 (plan m20-scrollback-cutover, ADR D2/D3): the DoD-2 gate. EVERY
 // shipped component is dual-rendered through Ink (the baseline) AND our renderer
@@ -56,11 +55,7 @@ function inkLines(element: ReactElement): string[] {
   return lines;
 }
 
-async function ourLines(
-  element: ReactElement,
-  cols: number,
-  rows: number,
-): Promise<string[]> {
+async function ourLines(element: ReactElement, cols: number, rows: number): Promise<string[]> {
   const term = new VirtualTerminal(cols, rows);
   const r = createRenderer(term);
   r.render(element);
@@ -129,11 +124,7 @@ const scenes: Scene[] = [
   {
     // M25: a Markdown table renders byte-identically under Ink and V4.
     name: "MarkdownTable",
-    element: (
-      <MarkdownText
-        text={"| a | b |\n| --- | ---: |\n| one | 1 |\n| two | 2 |"}
-      />
-    ),
+    element: <MarkdownText text={"| a | b |\n| --- | ---: |\n| one | 1 |\n| two | 2 |"} />,
     cols: 60,
   },
   {
@@ -165,9 +156,7 @@ const scenes: Scene[] = [
   },
   {
     name: "WelcomeBanner",
-    element: (
-      <WelcomeBanner name="Theo" version="0.20.0" tagline="terminal AI" />
-    ),
+    element: <WelcomeBanner name="Theo" version="0.20.0" tagline="terminal AI" />,
     cols: 60,
     rows: 12,
   },
@@ -209,51 +198,43 @@ describe("component parity — full suite on the new renderer (M20 T3.1)", () =>
   // Renders every shipped component under BOTH renderers — a heavy, dual-render
   // test whose per-scene work grows with the surface; a generous timeout keeps it
   // deterministic under parallel-suite load (testing.md §6 — no flaky sleeps).
-  it(
-    "every_component_renders_byte_identical_to_ink_or_documented",
-    { timeout: 30000 },
-    async () => {
-      const results: {
-        name: string;
-        match: boolean;
-        ink: string;
-        ours: string;
-      }[] = [];
-      for (const scene of scenes) {
-        const ink = inkLines(scene.element);
-        const ours = await ourLines(
-          scene.element,
-          scene.cols ?? 60,
-          scene.rows ?? 12,
-        );
-        // Vacuity guard: a scene must produce real output on BOTH sides.
-        const nonEmpty = ink.length > 0 && ours.length > 0;
-        const match = nonEmpty && JSON.stringify(ink) === JSON.stringify(ours);
-        results.push({
-          name: scene.name,
-          match,
-          ink: JSON.stringify(ink),
-          ours: JSON.stringify(ours),
-        });
-      }
-      const passed = results.filter((r) => r.match);
-      const failed = results.filter((r) => !r.match);
-      const rate = passed.length / results.length;
-      // Surface every divergence so the report can document its scoped cause.
-      for (const f of failed) {
-        console.log(
-          `PARITY DIVERGENCE [${f.name}]\n  ink : ${f.ink}\n  ours: ${f.ours}`,
-        );
-      }
-      console.log(
-        `COMPONENT PARITY: ${passed.length}/${results.length} (${(rate * 100).toFixed(1)}%) — diverged: ${failed.map((f) => f.name).join(", ") || "none"}`,
-      );
-      // Pin the actual state: 100% today, so a future single-component regression
-      // FAILS the gate instead of coasting on a 10% margin (review M1). Any real
-      // divergence must be individually documented + this list narrowed.
-      expect(failed.map((f) => f.name)).toEqual([]);
-    },
-  );
+  it("every_component_renders_byte_identical_to_ink_or_documented", {
+    timeout: 30000,
+  }, async () => {
+    const results: {
+      name: string;
+      match: boolean;
+      ink: string;
+      ours: string;
+    }[] = [];
+    for (const scene of scenes) {
+      const ink = inkLines(scene.element);
+      const ours = await ourLines(scene.element, scene.cols ?? 60, scene.rows ?? 12);
+      // Vacuity guard: a scene must produce real output on BOTH sides.
+      const nonEmpty = ink.length > 0 && ours.length > 0;
+      const match = nonEmpty && JSON.stringify(ink) === JSON.stringify(ours);
+      results.push({
+        name: scene.name,
+        match,
+        ink: JSON.stringify(ink),
+        ours: JSON.stringify(ours),
+      });
+    }
+    const passed = results.filter((r) => r.match);
+    const failed = results.filter((r) => !r.match);
+    const rate = passed.length / results.length;
+    // Surface every divergence so the report can document its scoped cause.
+    for (const f of failed) {
+      console.log(`PARITY DIVERGENCE [${f.name}]\n  ink : ${f.ink}\n  ours: ${f.ours}`);
+    }
+    console.log(
+      `COMPONENT PARITY: ${passed.length}/${results.length} (${(rate * 100).toFixed(1)}%) — diverged: ${failed.map((f) => f.name).join(", ") || "none"}`,
+    );
+    // Pin the actual state: 100% today, so a future single-component regression
+    // FAILS the gate instead of coasting on a 10% margin (review M1). Any real
+    // divergence must be individually documented + this list narrowed.
+    expect(failed.map((f) => f.name)).toEqual([]);
+  });
 });
 
 // A thread long enough to ACTUALLY graduate rows into Static (windowSize=4,
@@ -280,23 +261,13 @@ describe("M11 scrollback oracles on the new renderer (M20 T3.1)", () => {
     const term = new VirtualTerminal(60, 30);
     const r = createRenderer(term);
     r.render(
-      <ChatThread
-        header={HEADER}
-        messages={bigThread(6)}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <ChatThread header={HEADER} messages={bigThread(6)} windowSize={4} windowOverscan={2} />,
     );
     await tick();
     await tick();
     for (const n of [12, 20]) {
       r.render(
-        <ChatThread
-          header={HEADER}
-          messages={bigThread(n)}
-          windowSize={4}
-          windowOverscan={2}
-        />,
+        <ChatThread header={HEADER} messages={bigThread(n)} windowSize={4} windowOverscan={2} />,
       );
       await tick();
       await tick();
@@ -305,12 +276,8 @@ describe("M11 scrollback oracles on the new renderer (M20 T3.1)", () => {
     const stream = term.writeStream();
     // Header printed exactly once (print-once), above msg-0, and history ordered.
     expect(stream.split("BANNER").length - 1).toBe(1);
-    expect(stream.indexOf("BANNER")).toBeLessThan(
-      stream.indexOf("msg-0 content"),
-    );
-    expect(stream.indexOf("msg-0 content")).toBeLessThan(
-      stream.indexOf("msg-13 content"),
-    );
+    expect(stream.indexOf("BANNER")).toBeLessThan(stream.indexOf("msg-0 content"));
+    expect(stream.indexOf("msg-0 content")).toBeLessThan(stream.indexOf("msg-13 content"));
     r.unmount();
   });
 
@@ -321,19 +288,11 @@ describe("M11 scrollback oracles on the new renderer (M20 T3.1)", () => {
     // windowSize+overscan) remains, the oldest message does not.
     const term = new VirtualTerminal(40, 8);
     const r = createRenderer(term);
-    r.render(
-      <ChatThread messages={bigThread(6)} windowSize={4} windowOverscan={2} />,
-    );
+    r.render(<ChatThread messages={bigThread(6)} windowSize={4} windowOverscan={2} />);
     await tick();
     await tick();
     for (const n of [12, 20]) {
-      r.render(
-        <ChatThread
-          messages={bigThread(n)}
-          windowSize={4}
-          windowOverscan={2}
-        />,
-      );
+      r.render(<ChatThread messages={bigThread(n)} windowSize={4} windowOverscan={2} />);
       await tick();
       await tick();
     }

@@ -7,8 +7,6 @@ export {
   type InputEvent,
   type InputParser,
 } from "./input-parser.js";
-export { parseKeypress, type Keypress } from "./parse-keypress.js";
-export { projectKey, type Key } from "./key.js";
 export {
   createInputSource,
   type InputSource,
@@ -16,13 +14,15 @@ export {
   type KeyHandler,
   type PasteHandler,
 } from "./input-source.js";
-export { InputContext, useInput, usePaste } from "./use-input.js";
+export { type Key, projectKey } from "./key.js";
 export {
-  chordOf,
-  defaultKeymap,
-  resolveAction,
   type Action,
   type Chord,
+  chordOf,
+  defaultKeymap,
   type Keymap,
+  resolveAction,
 } from "./keybindings.js";
-export { KITTY_DISABLE, KITTY_ENABLE, detectKittyActive } from "./kitty.js";
+export { detectKittyActive, KITTY_DISABLE, KITTY_ENABLE } from "./kitty.js";
+export { type Keypress, parseKeypress } from "./parse-keypress.js";
+export { InputContext, useInput, usePaste } from "./use-input.js";

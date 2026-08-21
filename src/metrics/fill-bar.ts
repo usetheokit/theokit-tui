@@ -47,9 +47,7 @@ export const MIN_BAR_CELLS = 3;
  */
 export function displayPercent(ratio: number): number {
   if (typeof ratio !== "number" || !Number.isFinite(ratio)) {
-    throw new TypeError(
-      `displayPercent: ratio must be a finite number — got ${String(ratio)}`,
-    );
+    throw new TypeError(`displayPercent: ratio must be a finite number — got ${String(ratio)}`);
   }
   if (ratio <= 0) {
     return 0;
@@ -105,9 +103,7 @@ export function renderFillBar(
   options?: FillBarOptions,
 ): FillBarSegments {
   if (typeof ratio !== "number" || !Number.isFinite(ratio)) {
-    throw new TypeError(
-      `renderFillBar: ratio must be a finite number — got ${String(ratio)}`,
-    );
+    throw new TypeError(`renderFillBar: ratio must be a finite number — got ${String(ratio)}`);
   }
   const fullChar = options?.fullChar ?? "█";
   const emptyChar = options?.emptyChar ?? "░";

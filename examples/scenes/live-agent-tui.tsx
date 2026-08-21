@@ -1,16 +1,15 @@
-import { Box, Text, render, useApp } from "ink";
+import { Box, render, Text, useApp } from "ink";
 import { useEffect } from "react";
-
+import type { AgentStreamEvent } from "../../src/index.js";
 import {
   AgentStreaming,
   AgentTimeline,
   ContextWindowBar,
   TheoTUIProvider,
+  useAgentStream,
   VERSION,
   WelcomeBanner,
-  useAgentStream,
 } from "../../src/index.js";
-import type { AgentStreamEvent } from "../../src/index.js";
 
 // Live agent demo (plan m8-ga-publish T2.1, ADR D2 — ROADMAP M8 DoD-1): a
 // REAL LLM turn streamed through the M7 adapter using ONLY @theokit/tui
@@ -20,10 +19,9 @@ import type { AgentStreamEvent } from "../../src/index.js";
 // GATE: without OPENROUTER_API_KEY the demo renders an instructive banner
 // scene and exits 0 (deterministic for CI); with the key it streams a real
 // turn. Model kept cheap/fast on purpose.
-const API_KEY = process.env["OPENROUTER_API_KEY"];
-const MODEL = process.env["OPENROUTER_MODEL"] ?? "openai/gpt-4o-mini";
-const PROMPT =
-  "In two short sentences, greet a developer opening an AI coding agent TUI.";
+const API_KEY = process.env.OPENROUTER_API_KEY;
+const MODEL = process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini";
+const PROMPT = "In two short sentences, greet a developer opening an AI coding agent TUI.";
 
 /** One SSE line → a text delta (or null for keep-alives/[DONE] handled upstream). */
 function parseSseDelta(line: string): string | null {
@@ -51,25 +49,20 @@ function drainLines(buffer: string): { lines: string[]; rest: string } {
 
 /** OpenRouter SSE → AgentStreamEvent generator (the caller-side transport). */
 async function* openRouterTurn(): AsyncGenerator<AgentStreamEvent> {
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${API_KEY ?? ""}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        stream: true,
-        messages: [{ role: "user", content: PROMPT }],
-      }),
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${API_KEY ?? ""}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      model: MODEL,
+      stream: true,
+      messages: [{ role: "user", content: PROMPT }],
+    }),
+  });
   if (!response.ok || response.body === null) {
-    throw new Error(
-      `OpenRouter HTTP ${response.status} ${response.statusText}`,
-    );
+    throw new Error(`OpenRouter HTTP ${response.status} ${response.statusText}`);
   }
   const decoder = new TextDecoder();
   const reader = response.body.getReader();
@@ -104,22 +97,14 @@ function LiveTurn() {
   }, [status, exit]);
   return (
     <Box flexDirection="column" width={72}>
-      <WelcomeBanner
-        name="Theo TUI live demo"
-        version={VERSION}
-        tagline={`model: ${MODEL}`}
-      />
+      <WelcomeBanner name="Theo TUI live demo" version={VERSION} tagline={`model: ${MODEL}`} />
       <AgentTimeline events={events} />
       {streaming.active ? (
         <AgentStreaming
-          {...(streaming.thought === undefined
-            ? {}
-            : { thought: streaming.thought })}
+          {...(streaming.thought === undefined ? {} : { thought: streaming.thought })}
         />
       ) : undefined}
-      {error === undefined ? undefined : (
-        <Text color="red">stream failed: {error.message}</Text>
-      )}
+      {error === undefined ? undefined : <Text color="red">stream failed: {error.message}</Text>}
       <ContextWindowBar usedTokens={events.length * 24} limitTokens={128000} />
     </Box>
   );
@@ -139,8 +124,8 @@ function KeylessScene() {
         ]}
       />
       <Text dimColor>
-        No OPENROUTER_API_KEY in the environment — rendering the instructive
-        scene and exiting cleanly.
+        No OPENROUTER_API_KEY in the environment — rendering the instructive scene and exiting
+        cleanly.
       </Text>
     </Box>
   );

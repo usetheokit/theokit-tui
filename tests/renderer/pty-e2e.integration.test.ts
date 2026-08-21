@@ -1,5 +1,5 @@
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { afterAll, describe, expect, it } from "vitest";
 
@@ -59,9 +59,7 @@ function spawnHarness(mod: typeof import("node-pty")): Session {
             return;
           }
           if (Date.now() - start > timeoutMs) {
-            reject(
-              new Error(`timeout waiting for ${pattern} — got:\n${buffer}`),
-            );
+            reject(new Error(`timeout waiting for ${pattern} — got:\n${buffer}`));
             return;
           }
           // duration is the subject: a POLL INTERVAL inside a bounded wait that already rejects

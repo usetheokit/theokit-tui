@@ -16,15 +16,11 @@ describe("isMotionEnabled (M24 T1.1)", () => {
   });
 
   it("disabled_when_NO_MOTION_is_set", () => {
-    expect(isMotionEnabled({ THEOKIT_TUI_NO_MOTION: "1" }, TTY, false)).toBe(
-      false,
-    );
+    expect(isMotionEnabled({ THEOKIT_TUI_NO_MOTION: "1" }, TTY, false)).toBe(false);
   });
 
   it("empty_string_NO_MOTION_counts_as_unset", () => {
-    expect(isMotionEnabled({ THEOKIT_TUI_NO_MOTION: "" }, TTY, false)).toBe(
-      true,
-    );
+    expect(isMotionEnabled({ THEOKIT_TUI_NO_MOTION: "" }, TTY, false)).toBe(true);
   });
 
   it("disabled_on_non_tty", () => {

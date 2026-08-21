@@ -47,39 +47,34 @@ const PROTOCOL_RULES: {
   {
     protocol: null,
     match: ({ env, term }) =>
-      Boolean(env["TMUX"]) ||
+      Boolean(env.TMUX) ||
       term.startsWith("tmux") ||
-      Boolean(env["ZELLIJ"]) ||
+      Boolean(env.ZELLIJ) ||
       term.startsWith("screen"),
   },
   {
     protocol: "kitty",
-    match: ({ env, termProgram }) =>
-      Boolean(env["KITTY_WINDOW_ID"]) || termProgram === "kitty",
+    match: ({ env, termProgram }) => Boolean(env.KITTY_WINDOW_ID) || termProgram === "kitty",
   },
   {
     protocol: "kitty",
     match: ({ env, termProgram, term }) =>
-      termProgram === "ghostty" ||
-      term.includes("ghostty") ||
-      Boolean(env["GHOSTTY_RESOURCES_DIR"]),
+      termProgram === "ghostty" || term.includes("ghostty") || Boolean(env.GHOSTTY_RESOURCES_DIR),
   },
   {
     protocol: "kitty",
-    match: ({ env, termProgram }) =>
-      Boolean(env["WEZTERM_PANE"]) || termProgram === "wezterm",
+    match: ({ env, termProgram }) => Boolean(env.WEZTERM_PANE) || termProgram === "wezterm",
   },
   {
     protocol: "kitty",
     match: ({ env, termProgram }) =>
       termProgram === "warpterminal" ||
-      Boolean(env["WARP_SESSION_ID"]) ||
-      Boolean(env["WARP_TERMINAL_SESSION_UUID"]),
+      Boolean(env.WARP_SESSION_ID) ||
+      Boolean(env.WARP_TERMINAL_SESSION_UUID),
   },
   {
     protocol: "iterm2",
-    match: ({ env, termProgram }) =>
-      Boolean(env["ITERM_SESSION_ID"]) || termProgram === "iterm.app",
+    match: ({ env, termProgram }) => Boolean(env.ITERM_SESSION_ID) || termProgram === "iterm.app",
   },
 ];
 
@@ -92,8 +87,8 @@ const PROTOCOL_RULES: {
 export function detectImageProtocol(env: Env = process.env): ImageProtocol {
   const ctx: ImageContext = {
     env,
-    termProgram: env["TERM_PROGRAM"]?.toLowerCase() ?? "",
-    term: env["TERM"]?.toLowerCase() ?? "",
+    termProgram: env.TERM_PROGRAM?.toLowerCase() ?? "",
+    term: env.TERM?.toLowerCase() ?? "",
   };
   for (const rule of PROTOCOL_RULES) {
     if (rule.match(ctx)) {
@@ -184,38 +179,26 @@ export function calculateImageCellSize(
 ): ImageCellSize {
   const maxWidth = Math.max(1, Math.floor(maxWidthCells));
   const maxHeight =
-    maxHeightCells === undefined
-      ? undefined
-      : Math.max(1, Math.floor(maxHeightCells));
+    maxHeightCells === undefined ? undefined : Math.max(1, Math.floor(maxHeightCells));
   const imageWidth = Math.max(1, imageDimensions.widthPx);
   const imageHeight = Math.max(1, imageDimensions.heightPx);
 
   const widthScale = (maxWidth * cell.widthPx) / imageWidth;
   const heightScale =
-    maxHeight === undefined
-      ? widthScale
-      : (maxHeight * cell.heightPx) / imageHeight;
+    maxHeight === undefined ? widthScale : (maxHeight * cell.heightPx) / imageHeight;
   const scale = Math.min(widthScale, heightScale);
 
   const columns = Math.ceil((imageWidth * scale) / cell.widthPx);
   const rows = Math.ceil((imageHeight * scale) / cell.heightPx);
   return {
     columns: Math.max(1, Math.min(maxWidth, columns)),
-    rows: Math.max(
-      1,
-      maxHeight === undefined ? rows : Math.min(maxHeight, rows),
-    ),
+    rows: Math.max(1, maxHeight === undefined ? rows : Math.min(maxHeight, rows)),
   };
 }
 
 function getPngDimensions(buffer: Buffer): ImageDimensions | null {
   if (buffer.length < 24) return null;
-  if (
-    buffer[0] !== 0x89 ||
-    buffer[1] !== 0x50 ||
-    buffer[2] !== 0x4e ||
-    buffer[3] !== 0x47
-  ) {
+  if (buffer[0] !== 0x89 || buffer[1] !== 0x50 || buffer[2] !== 0x4e || buffer[3] !== 0x47) {
     return null;
   }
   return {
@@ -225,8 +208,7 @@ function getPngDimensions(buffer: Buffer): ImageDimensions | null {
 }
 
 function getJpegDimensions(buffer: Buffer): ImageDimensions | null {
-  if (buffer.length < 2 || buffer[0] !== 0xff || buffer[1] !== 0xd8)
-    return null;
+  if (buffer.length < 2 || buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
   let offset = 2;
   while (offset < buffer.length - 9) {
     if (buffer[offset] !== 0xff) {
@@ -288,10 +270,7 @@ function getWebpDimensions(buffer: Buffer): ImageDimensions | null {
 }
 
 /** Intrinsic pixel dimensions from magic bytes — no decode, no dependency. */
-export function getImageDimensions(
-  base64Data: string,
-  mimeType: string,
-): ImageDimensions | null {
+export function getImageDimensions(base64Data: string, mimeType: string): ImageDimensions | null {
   // Buffer.from(…, "base64") is lenient (never throws — invalid chars are
   // dropped), and every parser is length-guarded, so no try/catch is needed.
   const buffer = Buffer.from(base64Data, "base64");

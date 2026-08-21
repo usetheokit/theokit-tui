@@ -1,11 +1,10 @@
 import { Box, Text } from "ink";
-
-import { MIN_BAR_CELLS, renderFillBar } from "./fill-bar.js";
+import { assertFiniteNonNegative, formatTokens } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { useTheoTheme } from "../theme/theme.js";
-import { assertFiniteNonNegative, formatTokens } from "../format/format.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
+import { MIN_BAR_CELLS, renderFillBar } from "./fill-bar.js";
 
 /** Fixed row order (codex fields ∪ gemini metrics — plan ADR D2). */
 const TOKEN_CATEGORIES = ["input", "output", "cached", "reasoning"] as const;
@@ -53,19 +52,13 @@ function collectRows(usage: TokenUsageChartProps["usage"]): ChartRow[] {
  * category (relative comparison — "where did tokens go"; total tokens is NOT
  * a limit, the gauge for that is ContextWindowBar — plan ADR D8).
  */
-export function TokenUsageChart({
-  usage,
-  width = 40,
-  ...marginProps
-}: TokenUsageChartProps) {
+export function TokenUsageChart({ usage, width = 40, ...marginProps }: TokenUsageChartProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   const rows = collectRows(usage);
   if (!Number.isInteger(width) || width < 0) {
     reportGuardFailure(
       "TokenUsageChart",
-      new TypeError(
-        `TokenUsageChart: width must be an integer >= 0 — got ${String(width)}`,
-      ),
+      new TypeError(`TokenUsageChart: width must be an integer >= 0 — got ${String(width)}`),
     );
   }
   const theme = useTheoTheme();

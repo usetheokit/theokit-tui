@@ -21,11 +21,7 @@ const isCsiParameterByte = (b: number): boolean => b >= 0x30 && b <= 0x3f;
 const isCsiIntermediateByte = (b: number): boolean => b >= 0x20 && b <= 0x2f;
 const isCsiFinalByte = (b: number): boolean => b >= 0x40 && b <= 0x7e;
 
-function parseCsiSequence(
-  input: string,
-  start: number,
-  prefixLength: number,
-): ParseResult {
+function parseCsiSequence(input: string, start: number, prefixLength: number): ParseResult {
   const payloadStart = start + prefixLength + 1;
   for (let index = payloadStart; index < input.length; index++) {
     // index < length guarantees a defined code point.
@@ -45,11 +41,7 @@ function parseCsiSequence(
   return "pending";
 }
 
-function parseSs3Sequence(
-  input: string,
-  start: number,
-  prefixLength: number,
-): ParseResult {
+function parseSs3Sequence(input: string, start: number, prefixLength: number): ParseResult {
   const nextIndex = start + prefixLength + 2;
   if (nextIndex > input.length) {
     return "pending";
@@ -62,11 +54,7 @@ function parseSs3Sequence(
   return { sequence: input.slice(start, nextIndex), nextIndex };
 }
 
-function parseControlSequence(
-  input: string,
-  start: number,
-  prefixLength: number,
-): ParseResult {
+function parseControlSequence(input: string, start: number, prefixLength: number): ParseResult {
   // The caller guards length, so the type byte after the prefix is defined.
   const type = input[start + prefixLength];
   if (type === "[") {
@@ -85,10 +73,7 @@ function parseEscapedCodePoint(input: string, escapeIndex: number): Parsed {
   return { sequence: input.slice(escapeIndex, nextIndex), nextIndex };
 }
 
-function parseEscapeSequence(
-  input: string,
-  escapeIndex: number,
-): Parsed | "pending" {
+function parseEscapeSequence(input: string, escapeIndex: number): Parsed | "pending" {
   if (escapeIndex === input.length - 1) {
     return "pending";
   }
@@ -194,11 +179,7 @@ export function createInputParser(): InputParser {
     },
     hasPendingEscape(): boolean {
       // Don't flush while assembling a paste-start marker or awaiting paste end.
-      return (
-        pending.startsWith(ESC) &&
-        !pending.startsWith(PASTE_START) &&
-        pending !== "\x1b[200"
-      );
+      return pending.startsWith(ESC) && !pending.startsWith(PASTE_START) && pending !== "\x1b[200";
     },
     flushPendingEscape(): string | undefined {
       if (!pending.startsWith(ESC)) {

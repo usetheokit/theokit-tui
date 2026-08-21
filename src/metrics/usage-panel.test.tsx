@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
-import type { TurnUsage } from "../agent/messages-to-events.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { UsagePanel } from "./usage-panel.js";
+import type { TurnUsage } from "../agent/messages-to-events.js";
 import { stripAnsi } from "../format/ansi.js";
+import { UsagePanel } from "./usage-panel.js";
 
 /** The minimum a turn always reports. Optional fields are added per test, never by default —
  *  the whole point of D2 is that absent stays absent. */
@@ -48,9 +47,7 @@ afterEach(() => {
 describe("UsagePanel", () => {
   it("renders_only_the_categories_the_turn_reported", async () => {
     const plain = stripAnsi(
-      await renderFrame(
-        <UsagePanel usage={minimalTurn} contextWindow={128_000} />,
-      ),
+      await renderFrame(<UsagePanel usage={minimalTurn} contextWindow={128_000} />),
     );
     expect(plain).toContain("input");
     expect(plain).toContain("output");
@@ -61,9 +58,7 @@ describe("UsagePanel", () => {
 
   it("omits_the_cost_meter_when_the_turn_reported_no_cost", async () => {
     const plain = stripAnsi(
-      await renderFrame(
-        <UsagePanel usage={minimalTurn} contextWindow={128_000} />,
-      ),
+      await renderFrame(<UsagePanel usage={minimalTurn} contextWindow={128_000} />),
     );
     expect(plain).not.toContain("cost");
   });
@@ -90,10 +85,7 @@ describe("UsagePanel", () => {
   it("defaults_to_context_then_tokens_then_cost", async () => {
     const plain = stripAnsi(
       await renderFrame(
-        <UsagePanel
-          usage={{ ...minimalTurn, cost: 0.42 }}
-          contextWindow={128_000}
-        />,
+        <UsagePanel usage={{ ...minimalTurn, cost: 0.42 }} contextWindow={128_000} />,
       ),
     );
     expect(plain.indexOf("%")).toBeLessThan(plain.indexOf("input"));
@@ -118,9 +110,7 @@ describe("UsagePanel", () => {
   // Ink session. `TurnUsage` carries no window, so a consumer whose model declares none must be
   // able to say so. Omitting the prop degrades to the absolute count the meter already supports.
   it("renders_the_absolute_count_when_no_context_window_is_given", async () => {
-    const plain = stripAnsi(
-      await renderFrame(<UsagePanel usage={minimalTurn} />),
-    );
+    const plain = stripAnsi(await renderFrame(<UsagePanel usage={minimalTurn} />));
     expect(plain).not.toContain("%");
     expect(plain).toContain("input");
   });
@@ -150,9 +140,7 @@ describe("UsagePanel", () => {
     // test drives `cost: NaN`, which routes through `assertForwardedUsage`, never through here.
     //
     // The branch's own header claimed BOTH call sites were closed. One was.
-    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
-      TypeError,
-    );
+    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(TypeError);
     expect(guardRecords.join("")).toContain("UsagePanel: contextWindow");
   });
 
@@ -162,9 +150,7 @@ describe("UsagePanel", () => {
     // helper wraps `ink-testing-library`, which resolves with an empty frame instead of rejecting.
     // That is the HARNESS, not production — a real `render()` prints ink's ERROR panel and exits
     // (B-031). T3.1 asserts the production path with a real render.
-    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
-      TypeError,
-    );
+    expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(TypeError);
     expect(() => UsagePanel({ usage: minimalTurn, contextWindow: 0 })).toThrow(
       "UsagePanel: contextWindow must be a finite number > 0 when given",
     );
@@ -183,12 +169,12 @@ describe("UsagePanel", () => {
   // are NOT forwarded and are NOT validated here — guarding a field it does not use would be the
   // composite claiming authority over data it never touches.
   it("a_non_finite_input_token_count_is_refused_by_the_panel_itself", () => {
-    expect(() =>
-      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
-    ).toThrow(TypeError);
-    expect(() =>
-      UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } }),
-    ).toThrow("UsagePanel: usage.inputTokens");
+    expect(() => UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } })).toThrow(
+      TypeError,
+    );
+    expect(() => UsagePanel({ usage: { ...minimalTurn, inputTokens: Number.NaN } })).toThrow(
+      "UsagePanel: usage.inputTokens",
+    );
 
     // T3.2 — the throw is only half the contract. The record is the other half, and until this
     // existed the suite could not tell `reportGuardFailure(...)` from a plain `throw`.
@@ -199,18 +185,18 @@ describe("UsagePanel", () => {
     // Measured in the B-025 probe: NaN reaches CostMeter and blanks the whole panel — the
     // sections that were fine vanish with the one that was not. Validating only inputTokens was
     // rejected in ADR D2 for exactly this.
-    expect(() =>
-      UsagePanel({ usage: { ...minimalTurn, cost: Number.NaN } }),
-    ).toThrow("UsagePanel: usage.cost");
+    expect(() => UsagePanel({ usage: { ...minimalTurn, cost: Number.NaN } })).toThrow(
+      "UsagePanel: usage.cost",
+    );
   });
 
   it("a_negative_optional_token_count_is_refused_by_the_panel_itself", () => {
-    expect(() =>
-      UsagePanel({ usage: { ...minimalTurn, cacheReadTokens: -1 } }),
-    ).toThrow("UsagePanel: usage.cacheReadTokens");
-    expect(() =>
-      UsagePanel({ usage: { ...minimalTurn, reasoningTokens: -1 } }),
-    ).toThrow("UsagePanel: usage.reasoningTokens");
+    expect(() => UsagePanel({ usage: { ...minimalTurn, cacheReadTokens: -1 } })).toThrow(
+      "UsagePanel: usage.cacheReadTokens",
+    );
+    expect(() => UsagePanel({ usage: { ...minimalTurn, reasoningTokens: -1 } })).toThrow(
+      "UsagePanel: usage.reasoningTokens",
+    );
   });
 
   it("a_non_finite_output_token_count_is_refused_by_the_panel_itself", () => {
@@ -218,9 +204,9 @@ describe("UsagePanel", () => {
     // `outputTokens` was IN `FORWARDED_USAGE_FIELDS` and exercised by no test, so deleting it from
     // the list killed nothing. It is forwarded (`tokenCategories` -> `TokenUsageChart`), so a NaN
     // there reproduces the D2 failure mode exactly like `inputTokens` does.
-    expect(() =>
-      UsagePanel({ usage: { ...minimalTurn, outputTokens: Number.NaN } }),
-    ).toThrow("UsagePanel: usage.outputTokens");
+    expect(() => UsagePanel({ usage: { ...minimalTurn, outputTokens: Number.NaN } })).toThrow(
+      "UsagePanel: usage.outputTokens",
+    );
   });
 
   it("the_error_names_UsagePanel_not_a_child", () => {
@@ -241,18 +227,14 @@ describe("UsagePanel", () => {
     // The guard must not turn ABSENT into invalid. `TurnUsage` marks these optional and ADR D2 of
     // B-001 says absent stays absent; a guard that rejected `undefined` would break every turn an
     // agent reports without a cache read.
-    const plain = stripAnsi(
-      await renderFrame(<UsagePanel usage={minimalTurn} />),
-    );
+    const plain = stripAnsi(await renderFrame(<UsagePanel usage={minimalTurn} />));
     expect(plain).toContain("input");
   });
 
   it("a_present_zero_is_a_measurement_and_is_accepted", async () => {
     // 0 is a reported value, not a missing one. Rejecting it would discard a real measurement.
     const plain = stripAnsi(
-      await renderFrame(
-        <UsagePanel usage={{ ...minimalTurn, cacheReadTokens: 0, cost: 0 }} />,
-      ),
+      await renderFrame(<UsagePanel usage={{ ...minimalTurn, cacheReadTokens: 0, cost: 0 }} />),
     );
     expect(plain).toContain("cached");
   });
@@ -281,20 +263,14 @@ describe("UsagePanel", () => {
 
   it("minimal_turn_layout_omits_what_was_not_reported", async () => {
     expect(
-      stripAnsi(
-        await renderFrame(
-          <UsagePanel usage={minimalTurn} contextWindow={128_000} />,
-        ),
-      ),
+      stripAnsi(await renderFrame(<UsagePanel usage={minimalTurn} contextWindow={128_000} />)),
     ).toMatchSnapshot("usage-panel-minimal-turn");
   });
 
   // EC-3 — disabling every section yields silence, not an empty frame.
   it("renders_nothing_when_every_section_is_disabled", async () => {
     const plain = stripAnsi(
-      await renderFrame(
-        <UsagePanel usage={minimalTurn} contextWindow={128_000} order={[]} />,
-      ),
+      await renderFrame(<UsagePanel usage={minimalTurn} contextWindow={128_000} order={[]} />),
     );
     expect(plain.trim()).toBe("");
   });

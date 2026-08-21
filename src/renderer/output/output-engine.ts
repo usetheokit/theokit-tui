@@ -101,10 +101,8 @@ export class OutputEngine {
   render(newLines: string[]): void {
     const width = this.terminal.columns;
     const height = this.terminal.rows;
-    const widthChanged =
-      this.previousWidth !== 0 && this.previousWidth !== width;
-    const heightChanged =
-      this.previousHeight !== 0 && this.previousHeight !== height;
+    const widthChanged = this.previousWidth !== 0 && this.previousWidth !== width;
+    const heightChanged = this.previousHeight !== 0 && this.previousHeight !== height;
 
     if (widthChanged || heightChanged) {
       const which = widthChanged ? "width" : "height";
@@ -113,12 +111,7 @@ export class OutputEngine {
       // A resize re-anchors the live frame at the screen top. Graduated history
       // already scrolled into native scrollback is NOT re-emitted (the
       // fullStaticOutput accumulator is the tracked follow-up — review H1).
-      this.resizeRender(
-        newLines,
-        width,
-        height,
-        `terminal ${which} changed (${from} -> ${to})`,
-      );
+      this.resizeRender(newLines, width, height, `terminal ${which} changed (${from} -> ${to})`);
       return;
     }
     if (this.previousLines.length === 0) {
@@ -143,27 +136,16 @@ export class OutputEngine {
   }
 
   /** Resize: clear the visible screen (keep native scrollback) and redraw. */
-  private resizeRender(
-    newLines: string[],
-    width: number,
-    height: number,
-    reason: string,
-  ): void {
+  private resizeRender(newLines: string[], width: number, height: number, reason: string): void {
     this.fullRedrawCount += 1;
     this.lastRedrawReason = reason;
-    this.terminal.write(
-      synchronized(CLEAR_SCREEN_HOME + newLines.join("\r\n")),
-    );
+    this.terminal.write(synchronized(CLEAR_SCREEN_HOME + newLines.join("\r\n")));
     this.cursorRow = Math.max(0, newLines.length - 1);
     this.commit(newLines, width, height);
   }
 
   /** Repaint the whole live frame at the current (relative) cursor — post-static. */
-  private relativeFullRender(
-    newLines: string[],
-    width: number,
-    height: number,
-  ): void {
+  private relativeFullRender(newLines: string[], width: number, height: number): void {
     this.fullRedrawCount += 1;
     this.lastRedrawReason = "static graduated — repaint live frame";
     const rows = newLines.map((line) => CLEAR_LINE + line);
@@ -173,11 +155,7 @@ export class OutputEngine {
   }
 
   /** Line-diff: rewrite only the changed row range (pi :1370-1440), relative. */
-  private differentialRender(
-    newLines: string[],
-    width: number,
-    height: number,
-  ): void {
+  private differentialRender(newLines: string[], width: number, height: number): void {
     const [firstChanged, lastChanged] = this.changedRange(newLines);
     if (firstChanged === -1) {
       // No change — do not touch the terminal (idempotence).
@@ -185,8 +163,7 @@ export class OutputEngine {
       return;
     }
     const deletedTail =
-      newLines.length < this.previousLines.length &&
-      firstChanged >= newLines.length;
+      newLines.length < this.previousLines.length && firstChanged >= newLines.length;
     const body = deletedTail
       ? this.deletedTailBody(newLines)
       : this.changedSpanBody(newLines, firstChanged, lastChanged);
@@ -200,8 +177,7 @@ export class OutputEngine {
     let lastChanged = -1;
     const maxLen = Math.max(newLines.length, this.previousLines.length);
     for (let i = 0; i < maxLen; i++) {
-      const oldLine =
-        i < this.previousLines.length ? this.previousLines[i] : "";
+      const oldLine = i < this.previousLines.length ? this.previousLines[i] : "";
       const newLine = i < newLines.length ? newLines[i] : "";
       if (oldLine !== newLine) {
         if (firstChanged === -1) {
@@ -229,17 +205,12 @@ export class OutputEngine {
    * — M21 T2.1) from being re-blasted when a sibling row in the span changes, and
    * avoids stacking a duplicate kitty placement (review HIGH). Relative-cursor.
    */
-  private changedSpanBody(
-    newLines: string[],
-    firstChanged: number,
-    lastChanged: number,
-  ): string {
+  private changedSpanBody(newLines: string[], firstChanged: number, lastChanged: number): string {
     const seek = this.seekTo(firstChanged);
     const rows: string[] = [];
     for (let row = firstChanged; row <= lastChanged; row++) {
       const newLine = row < newLines.length ? newLines[row] : "";
-      const oldLine =
-        row < this.previousLines.length ? this.previousLines[row] : "";
+      const oldLine = row < this.previousLines.length ? this.previousLines[row] : "";
       // Unchanged row → emit nothing (the join's \r\n advances past it).
       rows.push(newLine === oldLine ? "" : CLEAR_LINE + newLine);
     }

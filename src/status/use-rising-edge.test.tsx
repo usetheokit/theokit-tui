@@ -78,12 +78,10 @@ describe("useRisingEdge", () => {
   // frame. A test against an effect throw would pass vacuously, which is the silent failure this
   // ADR exists to prevent.
   it("an_unknown_level_throws_naming_the_hook", () => {
-    expect(() =>
-      Probe({ level: "catastrophic", onRise: () => undefined }),
-    ).toThrow(TypeError);
-    expect(() =>
-      Probe({ level: "catastrophic", onRise: () => undefined }),
-    ).toThrow('useRisingEdge: level "catastrophic" is not in the ordering');
+    expect(() => Probe({ level: "catastrophic", onRise: () => undefined })).toThrow(TypeError);
+    expect(() => Probe({ level: "catastrophic", onRise: () => undefined })).toThrow(
+      'useRisingEdge: level "catastrophic" is not in the ordering',
+    );
   });
 
   it("an_inline_callback_does_not_cause_a_repeat_fire", async () => {
@@ -122,29 +120,11 @@ describe("useRisingEdge", () => {
   // EC-2 — callers pass an array literal, which is a new array every render.
   it("a_fresh_ordering_array_with_the_same_levels_does_not_refire", async () => {
     const onRise = vi.fn();
-    const app = render(
-      <Probe
-        level="calm"
-        onRise={onRise}
-        levels={["calm", "busy", "urgent"]}
-      />,
-    );
+    const app = render(<Probe level="calm" onRise={onRise} levels={["calm", "busy", "urgent"]} />);
     await tick();
-    app.rerender(
-      <Probe
-        level="urgent"
-        onRise={onRise}
-        levels={["calm", "busy", "urgent"]}
-      />,
-    );
+    app.rerender(<Probe level="urgent" onRise={onRise} levels={["calm", "busy", "urgent"]} />);
     await tick();
-    app.rerender(
-      <Probe
-        level="urgent"
-        onRise={onRise}
-        levels={["calm", "busy", "urgent"]}
-      />,
-    );
+    app.rerender(<Probe level="urgent" onRise={onRise} levels={["calm", "busy", "urgent"]} />);
     await tick();
     expect(onRise).toHaveBeenCalledTimes(1);
   });

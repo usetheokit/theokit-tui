@@ -24,19 +24,13 @@ function Ticker(): React.ReactElement {
       <Text>theokit/tui — own renderer (M17 skeleton)</Text>
       <Text>react-reconciler + differential engine + CSI-2026</Text>
       <Text>{`ticks: ${"█".repeat(n)}${"░".repeat(5 - n)} ${n}/5`}</Text>
-      {n >= 5 ? (
-        <Text>done — press Ctrl-C to exit</Text>
-      ) : (
-        <Text>rendering…</Text>
-      )}
+      {n >= 5 ? <Text>done — press Ctrl-C to exit</Text> : <Text>rendering…</Text>}
     </Box>
   );
 }
 
 if (!process.stdout.isTTY) {
-  process.stdout.write(
-    "example:renderer is interactive (TTY only). Run it in a real terminal.\n",
-  );
+  process.stdout.write("example:renderer is interactive (TTY only). Run it in a real terminal.\n");
   process.exit(0);
 }
 

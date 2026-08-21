@@ -35,10 +35,10 @@ const namedChords: Partial<Record<keyof Key, Chord>> = {
  */
 export function chordOf(input: string, key: Key): Chord | undefined {
   if (key.ctrl && input.length === 1) {
-    return "ctrl+" + input.toLowerCase();
+    return `ctrl+${input.toLowerCase()}`;
   }
   if (key.meta && input.length === 1) {
-    return "alt+" + input.toLowerCase();
+    return `alt+${input.toLowerCase()}`;
   }
   for (const [field, chord] of Object.entries(namedChords)) {
     if (key[field as keyof Key]) {
@@ -49,10 +49,7 @@ export function chordOf(input: string, key: Key): Chord | undefined {
 }
 
 /** Resolve the action bound to a chord (or undefined when unbound). */
-export function resolveAction(
-  keymap: Keymap,
-  chord: Chord,
-): Action | undefined {
+export function resolveAction(keymap: Keymap, chord: Chord): Action | undefined {
   return keymap.get(chord);
 }
 

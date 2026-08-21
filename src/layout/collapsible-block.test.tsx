@@ -1,15 +1,14 @@
 import { Box, Text } from "ink";
 import { render as inkRender } from "ink-testing-library";
+import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 
-import { createElement } from "react";
-
 import { render } from "../../tests/renderer/itl-adapter.js";
-import { WindowedList } from "../prompts/windowed-list.js";
 import { stripAnsi } from "../format/ansi.js";
+import { WindowedList } from "../prompts/windowed-list.js";
+import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { CollapsibleBlock } from "./collapsible-block.js";
 import { ThinkingBlock } from "./thinking-block.js";
-import { TheoTUIProvider, themes } from "../theme/theme.js";
 
 // M24 T3.1 — CollapsibleBlock over the itl-adapter. A collapsed summary +
 // expandable body, controlled OR key-toggled (Space/Enter when focused); ▶/▼
@@ -72,11 +71,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
   it("controlled_expanded_prop_wins_and_calls_onToggle_not_internal_state", async () => {
     const toggles: boolean[] = [];
     const app = render(
-      <CollapsibleBlock
-        summary={<Text>s</Text>}
-        expanded={false}
-        onToggle={(e) => toggles.push(e)}
-      >
+      <CollapsibleBlock summary={<Text>s</Text>} expanded={false} onToggle={(e) => toggles.push(e)}>
         <Text>controlled-body</Text>
       </CollapsibleBlock>,
     );
@@ -166,9 +161,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
   });
 
   it("thinking_block_preset_is_collapsed_and_renders_markdown_body_when_expanded", async () => {
-    const app = render(
-      <ThinkingBlock>Let me **reason** about it</ThinkingBlock>,
-    );
+    const app = render(<ThinkingBlock>Let me **reason** about it</ThinkingBlock>);
     await app.flush();
     expect(app.lastFrame()).toContain("Thinking"); // default summary
     expect(app.lastFrame()).not.toContain("reason"); // collapsed
@@ -201,8 +194,7 @@ describe("CollapsibleBlock (M24 T3.1)", () => {
   });
 });
 
-const rows = (n: number): string[] =>
-  Array.from({ length: n }, (_, i) => `row-${String(i)}`);
+const rows = (n: number): string[] => Array.from({ length: n }, (_, i) => `row-${String(i)}`);
 
 describe("B-053 — the disclosure pair is distinguishable from window overflow", () => {
   it("a_numeric_summary_no_longer_looks_like_a_hidden_row_count", async () => {

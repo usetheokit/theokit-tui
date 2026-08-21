@@ -1,10 +1,15 @@
 // Barrel for the renderer's output stage (ADR 0001) — everything between a
 // laid-out node tree and the bytes written to the terminal.
 
-export { Output } from "./output-grid.js";
 export { OutputEngine } from "./output-engine.js";
+export { Output } from "./output-grid.js";
 export { renderNodeToOutput } from "./render-node.js";
-
+export type {
+  CellDimensions,
+  ImageCellSize,
+  ImageDimensions,
+  ImageProtocol,
+} from "./terminal-image.js";
 export {
   allocateImageId,
   calculateImageCellSize,
@@ -14,10 +19,4 @@ export {
   encodeKitty,
   getImageDimensions,
   imageFallback,
-} from "./terminal-image.js";
-export type {
-  CellDimensions,
-  ImageCellSize,
-  ImageDimensions,
-  ImageProtocol,
 } from "./terminal-image.js";

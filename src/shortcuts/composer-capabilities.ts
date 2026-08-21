@@ -80,10 +80,7 @@ export interface FooterAffordances {
 }
 
 /** Affordance text in the order the footer reads it, each gated on the capability it names. */
-const FOOTER_AFFORDANCES: readonly (readonly [
-  keyof FooterAffordances,
-  string,
-])[] = [
+const FOOTER_AFFORDANCES: readonly (readonly [keyof FooterAffordances, string])[] = [
   ["shortcuts", "? for shortcuts"],
   ["agents", "← for agents"],
 ];

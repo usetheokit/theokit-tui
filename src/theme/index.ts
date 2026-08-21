@@ -2,13 +2,6 @@
 // src/index.ts re-exports this file; anything NOT listed here is
 // module-internal by construction rather than by comment.
 
-export {
-  TheoTUIProvider,
-  defaultTheme,
-  themes,
-  useTheoTheme,
-} from "./theme.js";
-
 export type {
   CodeTokens,
   GlyphToken,
@@ -18,4 +11,10 @@ export type {
   TheoThemeOverride,
   TheoThemeProp,
   ToolStatusTokens,
+} from "./theme.js";
+export {
+  defaultTheme,
+  TheoTUIProvider,
+  themes,
+  useTheoTheme,
 } from "./theme.js";

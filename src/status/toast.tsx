@@ -2,8 +2,8 @@ import { Box, Text } from "ink";
 import { useEffect, useRef } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
-import { useTheoTheme, isMonochrome } from "../theme/theme.js";
 import type { TheoTheme } from "../theme/theme.js";
+import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 
 // M24 Toast (plan m24-live-progress-surfaces T4.1, ADR D4, RISK-1): a transient
 // message on a BOUNDED one-shot timer — the M12 driver idiom (self-clearing at

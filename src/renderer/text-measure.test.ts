@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RendererNode } from "./host-config.js";
-import {
-  measureText,
-  measureTextNode,
-  squashTextNodes,
-  wrapText,
-} from "./text-measure.js";
+import { measureText, measureTextNode, squashTextNodes, wrapText } from "./text-measure.js";
 
 // M18 T2.1 (plan m18-yoga-layout, ADR D3): the text measure func + wrap — Ink's
 // measure-text.js / wrap-text.js / squash-text-nodes.js ported over the SAME
@@ -16,10 +11,7 @@ function textNode(value: string): RendererNode {
   return { type: "#text", props: {}, children: [], text: value };
 }
 
-function inkText(
-  children: RendererNode[],
-  props: Record<string, unknown> = {},
-): RendererNode {
+function inkText(children: RendererNode[], props: Record<string, unknown> = {}): RendererNode {
   return { type: "ink-text", props, children };
 }
 
@@ -51,10 +43,7 @@ describe("text-measure (M18 T2.1)", () => {
 
   it("squash_applies_internal_transform_to_nested_text", () => {
     const upper = (s: string): string => s.toUpperCase();
-    const node = inkText([
-      textNode("a"),
-      inkText([textNode("b")], { internal_transform: upper }),
-    ]);
+    const node = inkText([textNode("a"), inkText([textNode("b")], { internal_transform: upper })]);
     expect(squashTextNodes(node)).toBe("aB");
   });
 

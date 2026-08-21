@@ -3,10 +3,7 @@
 // Grapheme discipline via Intl.Segmenter: cursor ops never split emoji or
 // combining marks (borrowed from the react-ink useTextBuffer analog).
 
-import {
-  findWordBackward,
-  findWordForward,
-} from "../renderer/word-navigation.js";
+import { findWordBackward, findWordForward } from "../renderer/word-navigation.js";
 
 export interface TextBufferState {
   text: string;
@@ -164,13 +161,8 @@ function clampCursor(state: TextBufferState): TextBufferState {
 }
 
 /** M15 D3: replace line 1 with `/name ` — cursor after the space. */
-function completeCommand(
-  state: TextBufferState,
-  name: string,
-): TextBufferState {
-  const rest = state.text.includes("\n")
-    ? state.text.slice(state.text.indexOf("\n"))
-    : "";
+function completeCommand(state: TextBufferState, name: string): TextBufferState {
+  const rest = state.text.includes("\n") ? state.text.slice(state.text.indexOf("\n")) : "";
   const line = `/${name} `;
   return { text: line + rest, cursorOffset: line.length };
 }
@@ -218,11 +210,7 @@ function lineEndOffset(text: string, cursor: number): number {
 }
 
 /** Remove `[from, to)` and place the cursor at `from`; return the removed slice. */
-function sliceKill(
-  state: TextBufferState,
-  from: number,
-  to: number,
-): KillResult {
+function sliceKill(state: TextBufferState, from: number, to: number): KillResult {
   return {
     state: {
       text: state.text.slice(0, from) + state.text.slice(to),

@@ -1,12 +1,9 @@
 import { createElement, useState } from "react";
 import { describe, expect, it } from "vitest";
 
-import {
-  render,
-  type ItlInstance,
-} from "../../../tests/renderer/itl-adapter.js";
-import { useFocus } from "./use-focus.js";
+import { type ItlInstance, render } from "../../../tests/renderer/itl-adapter.js";
 import { useInput } from "../input/use-input.js";
+import { useFocus } from "./use-focus.js";
 import { OverlayProvider, useOverlay } from "./use-overlay.js";
 
 // M22 T2.1 — the overlay layer, driven through the itl-adapter (OUR renderer +
@@ -30,11 +27,7 @@ function Bg() {
   const { isFocused } = useFocus({ autoFocus: true, id: "bg" });
   const [n, setN] = useState(0);
   useInput(() => setN((x) => x + 1), { isActive: isFocused });
-  return createElement(
-    "ink-text",
-    {},
-    `bg:${isFocused ? "ON" : "off"} bgkeys:${n}`,
-  );
+  return createElement("ink-text", {}, `bg:${isFocused ? "ON" : "off"} bgkeys:${n}`);
 }
 
 function Overlay({ id }: { id: string }) {

@@ -1,9 +1,8 @@
 import { Text } from "ink";
 import type { ReactNode } from "react";
-
+import { MarkdownText } from "../markdown/markdown-text.js";
 import { CollapsibleBlock } from "./collapsible-block.js";
 import type { LayoutMarginProps } from "./layout-props.js";
-import { MarkdownText } from "../markdown/markdown-text.js";
 
 export interface ThinkingBlockProps extends LayoutMarginProps {
   /** Summary line; defaults to "Thinking…". */
@@ -21,8 +20,7 @@ export function ThinkingBlock({
   defaultExpanded = false,
   ...margin
 }: ThinkingBlockProps) {
-  const body =
-    typeof children === "string" ? <MarkdownText text={children} /> : children;
+  const body = typeof children === "string" ? <MarkdownText text={children} /> : children;
   return (
     <CollapsibleBlock
       {...margin}

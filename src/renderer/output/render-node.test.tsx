@@ -2,8 +2,8 @@ import { Box, Text } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { VirtualTerminal } from "../../../tests/renderer/virtual-terminal.js";
-import { colorizeForeground } from "./render-node.js";
 import { createRenderer } from "../renderer.js";
+import { colorizeForeground } from "./render-node.js";
 
 const ESC = "\x1b[";
 
@@ -16,11 +16,7 @@ async function tick(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-async function screen(
-  element: React.ReactElement,
-  cols = 40,
-  rows = 12,
-): Promise<string[]> {
+async function screen(element: React.ReactElement, cols = 40, rows = 12): Promise<string[]> {
   const term = new VirtualTerminal(cols, rows);
   const r = createRenderer(term);
   r.render(element);

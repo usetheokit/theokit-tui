@@ -4,11 +4,8 @@ import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AgentStreamEvent } from "./agent-stream-event.js";
+import type { AgentStreamSource, UseAgentStreamResult } from "./use-agent-stream.js";
 import { useAgentStream } from "./use-agent-stream.js";
-import type {
-  AgentStreamSource,
-  UseAgentStreamResult,
-} from "./use-agent-stream.js";
 
 // T2.1 (plan m7-stream-adapter, ADR D4): the react seam. Probe component +
 // timer-free fakes (pull generator + deferred stream) — never renderHook,
@@ -28,9 +25,7 @@ async function ticks(count = 20): Promise<void> {
   }
 }
 
-async function* finiteStream(
-  events: AgentStreamEvent[],
-): AsyncGenerator<AgentStreamEvent> {
+async function* finiteStream(events: AgentStreamEvent[]): AsyncGenerator<AgentStreamEvent> {
   for (const event of events) {
     yield event;
   }
@@ -39,8 +34,7 @@ async function* finiteStream(
 /** Controllable stream: `next()` blocks until the TEST resolves it — the
  * mirror's 5ms setInterval rebuilt without a single timer. */
 function deferredStream() {
-  let resolveNext:
-    ((result: IteratorResult<AgentStreamEvent>) => void) | undefined;
+  let resolveNext: ((result: IteratorResult<AgentStreamEvent>) => void) | undefined;
   let returned = false;
   const iterator: AsyncIterator<AgentStreamEvent> = {
     next: () =>
@@ -67,13 +61,7 @@ interface Captured {
   current?: UseAgentStreamResult;
 }
 
-function Probe({
-  source,
-  captured,
-}: {
-  source?: AgentStreamSource;
-  captured: Captured;
-}) {
+function Probe({ source, captured }: { source?: AgentStreamSource; captured: Captured }) {
   const result = useAgentStream(source);
   captured.current = result;
   return <Text>{result.status}</Text>;
@@ -87,10 +75,7 @@ describe("useAgentStream", () => {
   it("hook_folds_finite_stream_to_done", async () => {
     const captured: Captured = {};
     const { unmount } = render(
-      <Probe
-        source={finiteStream([delta("a"), delta("b")])}
-        captured={captured}
-      />,
+      <Probe source={finiteStream([delta("a"), delta("b")])} captured={captured} />,
     );
     await ticks();
     expect(captured.current?.status).toBe("done");
@@ -114,9 +99,7 @@ describe("useAgentStream", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const fake = deferredStream();
     const captured: Captured = {};
-    const { unmount } = render(
-      <Probe source={fake.iterable} captured={captured} />,
-    );
+    const { unmount } = render(<Probe source={fake.iterable} captured={captured} />);
     await ticks(3);
     fake.emit(delta("a"));
     await ticks(3);
@@ -144,8 +127,7 @@ describe("useAgentStream", () => {
     // themselves are pinned deterministically below (double_effect test).
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const multiShot: AsyncIterable<AgentStreamEvent> = {
-      [Symbol.asyncIterator]: () =>
-        finiteStream([delta("a"), delta("b")])[Symbol.asyncIterator](),
+      [Symbol.asyncIterator]: () => finiteStream([delta("a"), delta("b")])[Symbol.asyncIterator](),
     };
     const captured: Captured = {};
     const { unmount } = render(
@@ -194,9 +176,7 @@ describe("useAgentStream", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const fake = deferredStream();
     const captured: Captured = {};
-    const { rerender, unmount } = render(
-      <Probe source={fake.iterable} captured={captured} />,
-    );
+    const { rerender, unmount } = render(<Probe source={fake.iterable} captured={captured} />);
     await ticks(3);
     fake.emit(delta("a"));
     await ticks(3);
@@ -222,9 +202,7 @@ describe("useAgentStream", () => {
   it("factory_restart_resets_state", async () => {
     const captured: Captured = {};
     const factoryA: AgentStreamSource = () => finiteStream([delta("a")]);
-    const { rerender, unmount } = render(
-      <Probe source={factoryA} captured={captured} />,
-    );
+    const { rerender, unmount } = render(<Probe source={factoryA} captured={captured} />);
     await ticks();
     expect(captured.current?.events[0]).toMatchObject({
       id: "msg-1",
@@ -247,9 +225,7 @@ describe("useAgentStream", () => {
   it("cancel_stops_consumption_and_marks_done", async () => {
     const fake = deferredStream();
     const captured: Captured = {};
-    const { unmount } = render(
-      <Probe source={fake.iterable} captured={captured} />,
-    );
+    const { unmount } = render(<Probe source={fake.iterable} captured={captured} />);
     await ticks(3);
     fake.emit(delta("a"));
     await ticks(3);
@@ -266,9 +242,7 @@ describe("useAgentStream", () => {
     // Review F-9: idempotent — the already-cancelled early return.
     const fake = deferredStream();
     const captured: Captured = {};
-    const { unmount } = render(
-      <Probe source={fake.iterable} captured={captured} />,
-    );
+    const { unmount } = render(<Probe source={fake.iterable} captured={captured} />);
     await ticks(3);
     fake.emit(delta("a"));
     await ticks(3);
@@ -284,9 +258,7 @@ describe("useAgentStream", () => {
     // Review F-9: cancelled flag + terminal reducer state drop late events.
     const fake = deferredStream();
     const captured: Captured = {};
-    const { unmount } = render(
-      <Probe source={fake.iterable} captured={captured} />,
-    );
+    const { unmount } = render(<Probe source={fake.iterable} captured={captured} />);
     await ticks(3);
     fake.emit(delta("a"));
     await ticks(3);
@@ -325,8 +297,7 @@ describe("useAgentStream", () => {
     // teardown/cancel call-sites. Vitest fails the run on unhandled
     // rejections — surviving ticks IS the oracle.
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    let resolveNext:
-      ((result: IteratorResult<AgentStreamEvent>) => void) | undefined;
+    let resolveNext: ((result: IteratorResult<AgentStreamEvent>) => void) | undefined;
     const iterator: AsyncIterator<AgentStreamEvent> = {
       next: () =>
         new Promise((resolve) => {
@@ -380,9 +351,7 @@ describe("useAgentStream", () => {
       throw new Error("stream blew up");
     }
     const captured: Captured = {};
-    const { unmount } = render(
-      <Probe source={throwing()} captured={captured} />,
-    );
+    const { unmount } = render(<Probe source={throwing()} captured={captured} />);
     await ticks();
     expect(captured.current?.status).toBe("error");
     expect(captured.current?.error?.message).toBe("stream blew up");
@@ -399,9 +368,7 @@ describe("useAgentStream", () => {
       throw "plain string failure";
     }
     const captured: Captured = {};
-    const { unmount } = render(
-      <Probe source={throwsValue()} captured={captured} />,
-    );
+    const { unmount } = render(<Probe source={throwsValue()} captured={captured} />);
     await ticks();
     expect(captured.current?.status).toBe("error");
     expect(captured.current?.error?.message).toBe("plain string failure");

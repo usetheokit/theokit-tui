@@ -132,10 +132,7 @@ export interface SelectedSurface {
  * `render` is a thunk for the same reason: building the node eagerly would invoke the winner's
  * render at selection time, so a caller that only wants the claimant would pay for it.
  */
-export function selectSurface<S>(
-  layers: readonly SurfaceLayer<S>[],
-  state: S,
-): SelectedSurface {
+export function selectSurface<S>(layers: readonly SurfaceLayer<S>[], state: S): SelectedSurface {
   for (const layer of layers) {
     if (!layer.when(state)) continue;
     return { layer: layer.name, render: () => layer.render(state) };

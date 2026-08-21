@@ -6,22 +6,18 @@
 // dispatcher. Buffer edits delegate to the pure textBufferReducer; the stateful
 // rings live here, outside that reducer (SRP — text-buffer stays a pure buffer).
 
-import {
-  chordOf,
-  defaultKeymap,
-  resolveAction,
-} from "../renderer/input/keybindings.js";
 import type { Key } from "../renderer/input/key.js";
+import { chordOf, defaultKeymap, resolveAction } from "../renderer/input/keybindings.js";
 import {
   initialTextBuffer,
+  type KillResult,
   killLineEnd,
   killLineStart,
   killWordBackward,
   killWordForward,
-  textBufferReducer,
-  type KillResult,
   type TextBufferAction,
   type TextBufferState,
+  textBufferReducer,
 } from "./text-buffer.js";
 
 const HISTORY_CAP = 100;
@@ -76,14 +72,9 @@ export const initialEditorState: EditorState = {
 };
 
 /** Push a snapshot, keeping the undo stack bounded like the history. */
-function pushUndo(
-  undo: TextBufferState[],
-  snapshot: TextBufferState,
-): TextBufferState[] {
+function pushUndo(undo: TextBufferState[], snapshot: TextBufferState): TextBufferState[] {
   const next = [...undo, snapshot];
-  return next.length > HISTORY_CAP
-    ? next.slice(next.length - HISTORY_CAP)
-    : next;
+  return next.length > HISTORY_CAP ? next.slice(next.length - HISTORY_CAP) : next;
 }
 
 /** A run of word-char inserts coalesces into one undo step (fish-style, ADR B1). */
@@ -91,10 +82,7 @@ function isWordCharInsert(action: TextBufferAction): boolean {
   return action.type === "insert" && /^\w+$/.test(action.text);
 }
 
-function applyBuffer(
-  state: EditorState,
-  action: TextBufferAction,
-): EditorState {
+function applyBuffer(state: EditorState, action: TextBufferAction): EditorState {
   const mutating =
     action.type !== "move-left" &&
     action.type !== "move-right" &&
@@ -103,8 +91,7 @@ function applyBuffer(
     action.type !== "move-word-left" &&
     action.type !== "move-word-right";
   const coalesce = isWordCharInsert(action) && state.coalescingInsert;
-  const undo =
-    mutating && !coalesce ? pushUndo(state.undo, state.buffer) : state.undo;
+  const undo = mutating && !coalesce ? pushUndo(state.undo, state.buffer) : state.undo;
   return {
     ...state,
     buffer: textBufferReducer(state.buffer, action),
@@ -132,10 +119,7 @@ function applyKill(state: EditorState, kind: KillKind): EditorState {
   let ring: string[];
   if (state.lastKill && state.ring.length > 0) {
     const last = state.ring[state.ring.length - 1]!;
-    ring = [
-      ...state.ring.slice(0, -1),
-      prepend ? result.killed + last : last + result.killed,
-    ];
+    ring = [...state.ring.slice(0, -1), prepend ? result.killed + last : last + result.killed];
   } else {
     ring = [...state.ring, result.killed];
   }
@@ -171,10 +155,7 @@ function applyYankPop(state: EditorState): EditorState {
   // Rotate the ring, then re-yank: remove the previously-yanked head and insert
   // the new head at the same place.
   const previous = state.ring[state.ring.length - 1]!;
-  const rotated = [
-    state.ring[state.ring.length - 1]!,
-    ...state.ring.slice(0, -1),
-  ];
+  const rotated = [state.ring[state.ring.length - 1]!, ...state.ring.slice(0, -1)];
   const head = rotated[rotated.length - 1]!;
   const cursor = state.buffer.cursorOffset;
   const start = Math.max(0, cursor - previous.length);
@@ -208,11 +189,7 @@ function applyUndo(state: EditorState): EditorState {
 }
 
 /** Load `text` into the buffer with the cursor at the end (history recall). */
-function loadText(
-  state: EditorState,
-  text: string,
-  historyIndex: number,
-): EditorState {
+function loadText(state: EditorState, text: string, historyIndex: number): EditorState {
   return {
     ...state,
     buffer: { text, cursorOffset: text.length },
@@ -230,9 +207,7 @@ function applyHistoryPrev(state: EditorState): EditorState {
   // First step off the live draft: remember it.
   const draft = state.historyIndex === -1 ? state.buffer.text : state.draft;
   const index =
-    state.historyIndex === -1
-      ? state.history.length - 1
-      : Math.max(0, state.historyIndex - 1);
+    state.historyIndex === -1 ? state.history.length - 1 : Math.max(0, state.historyIndex - 1);
   return loadText({ ...state, draft }, state.history[index]!, index);
 }
 
@@ -251,10 +226,7 @@ function applyHistoryNext(state: EditorState): EditorState {
 function applySubmit(state: EditorState, entry: string): EditorState {
   // Dedup a consecutive identical entry; cap the ring.
   const last = state.history[state.history.length - 1];
-  const history =
-    last === entry
-      ? state.history
-      : [...state.history, entry].slice(-HISTORY_CAP);
+  const history = last === entry ? state.history : [...state.history, entry].slice(-HISTORY_CAP);
   return {
     ...initialEditorState,
     ring: state.ring,
@@ -282,10 +254,7 @@ const CHORD_ACTIONS: Record<string, EditorAction> = {
  * Resolve an emacs editor action from a keypress via the M19 keymap, or
  * undefined when the key is not an editor chord. `C-_` (0x1f) is undo.
  */
-export function editorActionForChord(
-  input: string,
-  key: Key,
-): EditorAction | undefined {
+export function editorActionForChord(input: string, key: Key): EditorAction | undefined {
   if (input === "\x1f") {
     return { type: "undo" };
   }
@@ -294,10 +263,7 @@ export function editorActionForChord(
   return action ? CHORD_ACTIONS[action] : undefined;
 }
 
-export function editorReducer(
-  state: EditorState,
-  action: EditorAction,
-): EditorState {
+export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case "buffer":
       return applyBuffer(state, action.action);

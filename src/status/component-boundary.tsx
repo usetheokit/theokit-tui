@@ -77,10 +77,6 @@ export class ComponentBoundary extends Component<
 
   override render(): ReactNode {
     if (!this.state.failed) return this.props.children;
-    return (
-      this.props.fallback ?? (
-        <Text dimColor>[{this.props.component} unavailable]</Text>
-      )
-    );
+    return this.props.fallback ?? <Text dimColor>[{this.props.component} unavailable]</Text>;
   }
 }

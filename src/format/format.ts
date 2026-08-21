@@ -44,10 +44,7 @@ function oneDecimal(scaled: number): number {
  * Promotion saturates at "b" (the last unit — an undesigned-but-defined tail).
  */
 export function formatTokens(value: number): string {
-  assertFiniteNonNegative(
-    value,
-    "formatTokens: value must be a finite number >= 0",
-  );
+  assertFiniteNonNegative(value, "formatTokens: value must be a finite number >= 0");
   const n = Math.floor(value);
   if (n < 1000) {
     return String(n);
@@ -82,14 +79,8 @@ export interface FormatCostOptions {
  * sub-cent cost renders "<$0.01", NEVER "$0.00" (a rendered lie); exactly 0 is
  * exact ("$0.00", no marker).
  */
-export function formatCost(
-  costUsd: number,
-  options?: FormatCostOptions,
-): string {
-  assertFiniteNonNegative(
-    costUsd,
-    "formatCost: costUsd must be a finite number >= 0",
-  );
+export function formatCost(costUsd: number, options?: FormatCostOptions): string {
+  assertFiniteNonNegative(costUsd, "formatCost: costUsd must be a finite number >= 0");
   const approx = options?.approx ?? true;
   if (costUsd === 0) {
     return "$0.00";

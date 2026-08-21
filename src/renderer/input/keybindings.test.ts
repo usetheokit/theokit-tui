@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { chordOf, defaultKeymap, resolveAction } from "./keybindings.js";
 import { projectKey } from "./key.js";
+import { chordOf, defaultKeymap, resolveAction } from "./keybindings.js";
 
 // M19 T2.1 (plan m19-input-stack, ADR from blueprint §4): the remappable emacs
 // keybindings registry — chord → action. `chordOf(input, key)` builds a chord
@@ -44,9 +43,7 @@ describe("keybindings (M19 T2.1)", () => {
 });
 
 /** Helper: project a raw sequence into the (input, key) tuple chordOf expects. */
-function tuple(
-  sequence: string,
-): [string, ReturnType<typeof projectKey>["key"]] {
+function tuple(sequence: string): [string, ReturnType<typeof projectKey>["key"]] {
   const { input, key } = projectKey(sequence);
   return [input, key];
 }

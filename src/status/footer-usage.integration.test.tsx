@@ -1,12 +1,8 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-
-import { AppStatusBar } from "./app-status-bar.js";
-import {
-  readTurnUsage,
-  type UIMessageLike,
-} from "../agent/messages-to-events.js";
+import { readTurnUsage, type UIMessageLike } from "../agent/messages-to-events.js";
 import { stripAnsi } from "../format/ansi.js";
+import { AppStatusBar } from "./app-status-bar.js";
 
 /**
  * Reproduces the EXACT footer wiring the scaffolded `tui/App.tsx` uses (create-theokit templates): read
@@ -25,9 +21,7 @@ function Footer({
   const usages = thread.map(readTurnUsage).filter((u) => u !== undefined);
   const lastUsage = usages.at(-1);
   const sessionCost = usages.reduce((sum, u) => sum + (u.cost ?? 0), 0);
-  const tokens = lastUsage
-    ? { used: lastUsage.inputTokens, limit: contextWindow }
-    : undefined;
+  const tokens = lastUsage ? { used: lastUsage.inputTokens, limit: contextWindow } : undefined;
   return (
     <AppStatusBar
       model="gpt-4o-mini"
@@ -67,8 +61,7 @@ describe("scaffold TUI footer — usage wiring (Front 1 render proof)", () => {
       }),
     ];
     const frame = stripAnsi(
-      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ??
-        "",
+      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ?? "",
     );
     // Context window = the LAST turn's input tokens (12.3k) over the model window (128k).
     expect(frame).toContain("12.3k/128k");
@@ -88,8 +81,7 @@ describe("scaffold TUI footer — usage wiring (Front 1 render proof)", () => {
       { id: "u1", role: "user", parts: [{ type: "text", text: "q1" }] },
     ];
     const frame = stripAnsi(
-      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ??
-        "",
+      render(<Footer thread={thread} contextWindow={128_000} />).lastFrame() ?? "",
     );
     expect(frame).not.toContain("/128k");
     expect(frame).not.toContain("$");

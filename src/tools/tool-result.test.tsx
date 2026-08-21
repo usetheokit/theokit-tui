@@ -4,8 +4,7 @@ import { describe, expect, it } from "vitest";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { ToolResult, truncateLines } from "./tool-result.js";
 
-const numbered = (n: number): string[] =>
-  Array.from({ length: n }, (_, i) => `line-${i}`);
+const numbered = (n: number): string[] => Array.from({ length: n }, (_, i) => `line-${i}`);
 
 describe("truncateLines — pure helper (T2.1, ADR D7)", () => {
   it("helper_returns_all_lines_when_within_limit", () => {
@@ -37,9 +36,7 @@ describe("truncateLines — pure helper (T2.1, ADR D7)", () => {
     // EC-1 negative lens: fail-fast typed error, no magic clamping.
     const call = () => truncateLines(["a"], 0);
     expect(call).toThrow(TypeError);
-    expect(call).toThrow(
-      "truncateLines: maxLines must be an integer >= 1 — got 0",
-    );
+    expect(call).toThrow("truncateLines: maxLines must be an integer >= 1 — got 0");
   });
 
   it("helper_rejects_negative_max_lines", () => {
@@ -63,26 +60,20 @@ describe("truncateLines — pure helper (T2.1, ADR D7)", () => {
 
 describe("ToolResult — plain content (T2.1)", () => {
   it("renders_tail_with_hidden_indicator", async () => {
-    const frame = await renderFrame(
-      <ToolResult lines={numbered(20)} maxLines={10} />,
-    );
+    const frame = await renderFrame(<ToolResult lines={numbered(20)} maxLines={10} />);
     expect(frame).not.toContain("line-0");
     expect(frame).toContain("line-19");
     expect(frame).toContain("… +11 lines hidden");
   });
 
   it("expanded_renders_everything", async () => {
-    const frame = await renderFrame(
-      <ToolResult lines={numbered(20)} maxLines={10} expanded />,
-    );
+    const frame = await renderFrame(<ToolResult lines={numbered(20)} maxLines={10} expanded />);
     expect(frame).toContain("line-0");
     expect(frame).not.toContain("hidden");
   });
 
   it("exact_fit_renders_without_indicator", async () => {
-    const frame = await renderFrame(
-      <ToolResult lines={numbered(10)} maxLines={10} />,
-    );
+    const frame = await renderFrame(<ToolResult lines={numbered(10)} maxLines={10} />);
     expect(frame).toContain("line-9"); // presence pairing (review tests-4)
     expect(frame).not.toContain("hidden");
   });
@@ -94,18 +85,14 @@ describe("ToolResult — plain content (T2.1)", () => {
 
   it("cap_does_not_fire_at_exactly_20000_chars", async () => {
     // EC-5: boundary is > 20000 — exactly 20000 passes untouched.
-    const frame = await renderFrame(
-      <ToolResult lines={["y".repeat(20000)]} expanded />,
-    );
+    const frame = await renderFrame(<ToolResult lines={["y".repeat(20000)]} expanded />);
     expect(frame).toContain("y"); // presence pairing (review tests-5)
     expect(frame).not.toContain("capped");
   });
 
   it("expanded_does_not_bypass_char_cap", async () => {
     // EC-5: the 20k cap is an input guard, not display truncation.
-    const frame = await renderFrame(
-      <ToolResult lines={["y".repeat(30000)]} expanded />,
-    );
+    const frame = await renderFrame(<ToolResult lines={["y".repeat(30000)]} expanded />);
     expect(frame).toContain("output capped at 20000 chars");
   });
 
@@ -123,9 +110,7 @@ describe("ToolResult — plain content (T2.1)", () => {
     // hook moves first, switch these to renderFrame rejection asserts.
     const call = () => ToolResult({ lines: ["a"], children: "b" });
     expect(call).toThrow(TypeError);
-    expect(call).toThrow(
-      "ToolResult: provide exactly one of children | lines | shell",
-    );
+    expect(call).toThrow("ToolResult: provide exactly one of children | lines | shell");
   });
 
   it("no_content_source_renders_nothing", async () => {
@@ -137,9 +122,7 @@ describe("ToolResult — plain content (T2.1)", () => {
   it("render_max_lines_one_shows_indicator_only", async () => {
     // EC-1 at the RENDER layer: visible=[] must not resurrect all rows
     // (slice(-0) hazard lives in the render path too).
-    const frame = await renderFrame(
-      <ToolResult lines={numbered(5)} maxLines={1} />,
-    );
+    const frame = await renderFrame(<ToolResult lines={numbered(5)} maxLines={1} />);
     expect(frame).toContain("… +5 lines hidden");
     expect(frame).not.toContain("line-0");
     expect(frame).not.toContain("line-4");
@@ -148,17 +131,14 @@ describe("ToolResult — plain content (T2.1)", () => {
   it("expanded_still_rejects_invalid_max_lines", () => {
     // SEPA phase-2 F3: prop validity must not depend on `expanded`. Direct
     // call — Ink's error boundary swallows render-time throws (F10 note).
-    const call = () =>
-      ToolResult({ lines: ["a"], maxLines: 0, expanded: true });
+    const call = () => ToolResult({ lines: ["a"], maxLines: 0, expanded: true });
     expect(call).toThrow(TypeError);
     expect(call).toThrow("maxLines must be an integer >= 1");
   });
 
   it("blank_line_occupies_a_row", async () => {
     // EC-11 render half (SEPA phase-2 F7): blank lines keep their row.
-    const frame = await renderFrame(
-      <ToolResult lines={["a", "", "b"]} expanded />,
-    );
+    const frame = await renderFrame(<ToolResult lines={["a", "", "b"]} expanded />);
     expect(frame.split("\n")).toHaveLength(3);
   });
 
@@ -182,9 +162,7 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
 
   it("shell_labels_stderr_block", async () => {
     const frame = await renderFrame(
-      <ToolResult
-        shell={{ stdout: "ok", stderr: "permission denied", exitCode: 0 }}
-      />,
+      <ToolResult shell={{ stdout: "ok", stderr: "permission denied", exitCode: 0 }} />,
     );
     expect(frame).toContain("stderr:");
     expect(frame).toContain("permission denied");
@@ -208,9 +186,7 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
   });
 
   it("empty_streams_render_placeholder", async () => {
-    const frame = await renderFrame(
-      <ToolResult shell={{ stdout: "", stderr: "", exitCode: 0 }} />,
-    );
+    const frame = await renderFrame(<ToolResult shell={{ stdout: "", stderr: "", exitCode: 0 }} />);
     expect(frame).toContain("(no output)");
   });
 
@@ -231,9 +207,7 @@ describe("ToolResult — shell envelope (T2.2, ADR D5)", () => {
 
   it("shell_without_exit_code_renders_no_badge", async () => {
     // EC-3: a mid-stream envelope must NOT render "exited undefined".
-    const frame = await renderFrame(
-      <ToolResult shell={{ stdout: "x-stream", stderr: "" }} />,
-    );
+    const frame = await renderFrame(<ToolResult shell={{ stdout: "x-stream", stderr: "" }} />);
     expect(frame).toContain("x-stream"); // presence pairing (F4)
     expect(frame).not.toContain("exited");
   });

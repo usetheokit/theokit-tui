@@ -44,8 +44,7 @@ describe("PermissionPrompt (Claude Code tool approval)", () => {
     const app = render(
       createElement(PermissionPrompt, {
         ...base,
-        ruleNote:
-          "Permission rule Bash(npm *) requires confirmation for this command.",
+        ruleNote: "Permission rule Bash(npm *) requires confirmation for this command.",
         hint: "/permissions to update rules",
       }),
     );
@@ -117,8 +116,8 @@ describe("PermissionPrompt (Claude Code tool approval)", () => {
   });
 
   it("throws_on_empty_tool_type", () => {
-    expect(() =>
-      PermissionPrompt({ toolType: "", command: "x", onDecision: () => {} }),
-    ).toThrow(TypeError);
+    expect(() => PermissionPrompt({ toolType: "", command: "x", onDecision: () => {} })).toThrow(
+      TypeError,
+    );
   });
 });

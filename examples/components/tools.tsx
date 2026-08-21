@@ -1,6 +1,6 @@
-import { Box, Text, render } from "ink";
+import { Box, render, Text } from "ink";
 import { useEffect, useState } from "react";
-
+import type { ToolCallStatus } from "../../src/index.js";
 import {
   ChatMessage,
   TheoTUIProvider,
@@ -8,7 +8,6 @@ import {
   ToolCallCard,
   ToolResult,
 } from "../../src/index.js";
-import type { ToolCallStatus } from "../../src/index.js";
 
 // Tool-cards demo (plan T3.2 — TTFATT caller): an agent turn with a queued
 // tool, a scripted running→success transition, and a failed shell card with
@@ -20,10 +19,7 @@ const isInteractive = process.stdout.isTTY === true;
 const TRANSITION_MS = 1200;
 const EXIT_MS = 2500;
 
-const longOutput = Array.from(
-  { length: 40 },
-  (_, i) => `installed package-${i}`,
-).join("\n");
+const longOutput = Array.from({ length: 40 }, (_, i) => `installed package-${i}`).join("\n");
 
 function Demo() {
   const [buildStatus, setBuildStatus] = useState<ToolCallStatus>(

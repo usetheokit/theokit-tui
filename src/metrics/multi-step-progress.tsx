@@ -1,7 +1,7 @@
 import { Box, Text } from "ink";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
-import { TodoList, type TodoItem } from "../status/todo-list.js";
+import { type TodoItem, TodoList } from "../status/todo-list.js";
 
 // M24 MultiStepProgress (plan m24-live-progress-surfaces T2.1, ADR D2): a
 // discrete n-of-m step list. A step IS a TodoList item with ordered semantics, so

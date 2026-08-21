@@ -20,8 +20,7 @@ export interface QuestionAnswer {
 }
 
 /** A PlanApproval decision: approve, or revise with optional feedback. */
-export type PlanDecision =
-  { kind: "approve" } | { kind: "revise"; feedback?: string };
+export type PlanDecision = { kind: "approve" } | { kind: "revise"; feedback?: string };
 
 /** The canonical approval triad (opencode parity — ADR D3). Override-able. */
 export const DEFAULT_APPROVAL_CHOICES: readonly ApprovalChoice[] = [
@@ -43,7 +42,9 @@ export interface ChoiceKey {
 
 /** The action a keypress resolves to on a choice bar. */
 export type ChoiceKeyAction =
-  { type: "move"; index: number } | { type: "commit" } | { type: "cancel" };
+  | { type: "move"; index: number }
+  | { type: "commit" }
+  | { type: "cancel" };
 
 /**
  * Resolve one keypress over a `count`-choice bar at active `index` to an action
@@ -60,10 +61,8 @@ export function resolveChoiceKey(
   if (key.return) return { type: "commit" };
   if (key.escape) return { type: "cancel" };
   if (count <= 0) return undefined;
-  if (key.rightArrow || key.downArrow)
-    return { type: "move", index: (index + 1) % count };
-  if (key.leftArrow || key.upArrow)
-    return { type: "move", index: (index - 1 + count) % count };
+  if (key.rightArrow || key.downArrow) return { type: "move", index: (index + 1) % count };
+  if (key.leftArrow || key.upArrow) return { type: "move", index: (index - 1 + count) % count };
   if (/^[1-9]$/.test(input)) {
     const nth = Number(input) - 1;
     if (nth < count) return { type: "move", index: nth };

@@ -1,11 +1,10 @@
 import { Box, Text } from "ink";
 import type { ReactNode } from "react";
-
+import { unionMessage } from "../agent/union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { isMonochrome, useTheoTheme } from "../theme/theme.js";
-import { unionMessage } from "../agent/union-message.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 
 // #3 Notice — a persistent inline banner (distinct from the transient Toast):
 //   !! Both apiKeyHelper and ANTHROPIC_API_KEY set · auth may not work   (warning)

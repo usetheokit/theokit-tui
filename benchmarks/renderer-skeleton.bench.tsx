@@ -1,15 +1,15 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 
 import { Box, Text } from "ink";
 import { render as inkRender } from "ink-testing-library";
 
 import { createRenderer } from "../src/renderer/renderer.js";
 import type { Terminal } from "../src/renderer/terminal.js";
-import { round, stats, stackVersions, tick } from "./sampling.js";
+import { round, stackVersions, stats, tick } from "./sampling.js";
 
 // M17 renderer bench (plan T3.1, ADR D4): the FIRST dual-engine baseline with
 // a BYTES-written axis. EC-5 — the differential engine's win is BYTES, not
@@ -87,10 +87,7 @@ async function runInk(): Promise<{ meanMs: number; bytes: number }> {
     await tick();
   }
   const elapsed = performance.now() - start;
-  const bytes = instance.frames.reduce(
-    (sum, frame) => sum + Buffer.byteLength(frame, "utf8"),
-    0,
-  );
+  const bytes = instance.frames.reduce((sum, frame) => sum + Buffer.byteLength(frame, "utf8"), 0);
   instance.unmount();
   return { meanMs: elapsed / (UPDATE_FRAMES + 1), bytes };
 }
@@ -135,7 +132,7 @@ async function main(): Promise<void> {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "" },
     load_1min_at_start: round(loadAtStart),
     workload: { lines: LINES, update_frames: UPDATE_FRAMES },
     protocol: {
@@ -151,7 +148,7 @@ async function main(): Promise<void> {
   const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "renderer-skeleton-baseline.json");
-  writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
+  writeFileSync(outFile, `${JSON.stringify(baseline, null, 2)}\n`);
 
   process.stdout.write(
     `\nrenderer-skeleton bench (load ${round(loadAtStart)}):\n` +

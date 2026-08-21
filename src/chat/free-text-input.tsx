@@ -1,8 +1,7 @@
 import { Box, Text } from "ink";
 import { useEffect, useReducer, useRef } from "react";
-
-import { pickMargin } from "../layout/layout-props.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
+import { pickMargin } from "../layout/layout-props.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";
 import type { Key } from "../renderer/input/key.js";
 import { useInput } from "../renderer/input/use-input.js";
@@ -108,9 +107,7 @@ export function FreeTextInput({
   // code units would render more dots than characters entered — leaking a wrong length is still
   // leaking a length.
   const rendered =
-    mask === undefined
-      ? state.text
-      : maskCharOf(mask).repeat([...state.text].length);
+    mask === undefined ? state.text : maskCharOf(mask).repeat([...state.text].length);
   const content = (
     <Text>
       {label} {rendered}

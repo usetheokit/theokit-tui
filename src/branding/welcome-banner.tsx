@@ -3,11 +3,11 @@ import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { isMotionEnabled } from "./motion.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { ArtBlock } from "./art-block.js";
 import { bannerArtWidth } from "./figlet-art.js";
-import { reportGuardFailure } from "../status/guard-sink.js";
+import { isMotionEnabled } from "./motion.js";
 
 // WelcomeBanner (plan m9-welcome-banner, ADRs D1-D5): the Claude Code/
 // gemini-cli-style startup banner as a LEAF primitive. Color exclusively via
@@ -69,11 +69,7 @@ const REVEAL_TICK_MS = 80;
 const MIN_ANIMATION_ROWS = 15;
 const MIN_ANIMATION_COLUMNS = 44;
 
-function assertSingleLine(
-  prop: string,
-  value: string,
-  allowEmpty: boolean,
-): void {
+function assertSingleLine(prop: string, value: string, allowEmpty: boolean): void {
   if (!allowEmpty && value.trim() === "") {
     reportGuardFailure(
       "WelcomeBanner",
@@ -159,9 +155,7 @@ function staticBannerTree(
 ) {
   const { name, tagline, hints, children, aside, art } = props;
   const taglineLines =
-    tagline === undefined
-      ? []
-      : tagline.split("\n").filter((line) => line.trim() !== "");
+    tagline === undefined ? [] : tagline.split("\n").filter((line) => line.trim() !== "");
   const mainContent = (
     <>
       {art === undefined ? (
@@ -206,9 +200,7 @@ function staticBannerTree(
   // space the art needs. Without art the previous behaviour is kept exactly — a text header has no
   // intrinsic width to protect and should still absorb the leftover space.
   const artColumn =
-    art === undefined
-      ? { flexGrow: 1 }
-      : { width: bannerArtWidth(art), flexShrink: 0 as const };
+    art === undefined ? { flexGrow: 1 } : { width: bannerArtWidth(art), flexShrink: 0 as const };
   return (
     <Box {...boxProps} flexDirection="row">
       <Box flexDirection="column" {...artColumn}>
@@ -259,8 +251,7 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
   // So the cap applies to the one-column layout, where it protects line length, and the two-column
   // layout takes the terminal it was given (still bounded by `columns`, so it never exceeds the
   // real screen). This is what the consumer that reported it was doing by hand with `width={cols-2}`.
-  const width =
-    props.aside === undefined ? Math.min(columns, MAX_WIDTH) : columns;
+  const width = props.aside === undefined ? Math.min(columns, MAX_WIDTH) : columns;
   // One box definition shared by the reveal frame and the static tree. The
   // consumer margin is spread LAST so it wins over any box default.
   const boxProps = {
@@ -276,10 +267,7 @@ export function WelcomeBanner(props: WelcomeBannerProps) {
     // children are withheld until convergence (phase === REVEAL_PHASES
     // falls through to the static tree below, byte-identical by
     // construction).
-    const shown = name.slice(
-      0,
-      Math.ceil((name.length * phase) / REVEAL_PHASES),
-    );
+    const shown = name.slice(0, Math.ceil((name.length * phase) / REVEAL_PHASES));
     return (
       <Box {...boxProps}>
         <Text wrap="truncate-end" color={theme.accent} bold>

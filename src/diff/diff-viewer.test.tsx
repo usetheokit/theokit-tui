@@ -2,10 +2,10 @@ import { Box } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { ensureHighlighter } from "../markdown/code-block.js";
-import { DiffViewer } from "./diff-viewer.js";
-import { TheoTUIProvider } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { ensureHighlighter } from "../markdown/code-block.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { DiffViewer } from "./diff-viewer.js";
 
 /** Compound-SGR-safe strip (M2 idiom) — frames carry ANSI (FORCE_COLOR=1). */
 
@@ -62,22 +62,13 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
   });
 
   it("rename_shows_arrow", async () => {
-    const patch = [
-      "--- a/old.ts",
-      "+++ b/new.ts",
-      "@@ -1,1 +1,1 @@",
-      "-a",
-      "+a2",
-      "",
-    ].join("\n");
+    const patch = ["--- a/old.ts", "+++ b/new.ts", "@@ -1,1 +1,1 @@", "-a", "+a2", ""].join("\n");
     const frame = await renderFrame(<DiffViewer patch={patch} />);
     expect(stripAnsi(frame)).toContain("old.ts → new.ts");
   });
 
   it("line_numbers_toggle_off", async () => {
-    const frame = await renderFrame(
-      <DiffViewer patch={PATCH_BASIC} showLineNumbers={false} />,
-    );
+    const frame = await renderFrame(<DiffViewer patch={PATCH_BASIC} showLineNumbers={false} />);
     const plain = stripAnsi(frame);
     // Whole-frame negative (tests-10 — plan literal restored).
     expect(plain).not.toMatch(/^\s*\d+ /m);
@@ -124,14 +115,7 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
 
   it("blank_add_line_renders_signed_row", async () => {
     // SEPA F6: the blank-line placeholder branch needs viewer coverage.
-    const patch = [
-      "--- a/b.ts",
-      "+++ b/b.ts",
-      "@@ -1,1 +1,2 @@",
-      " x",
-      "+",
-      "",
-    ].join("\n");
+    const patch = ["--- a/b.ts", "+++ b/b.ts", "@@ -1,1 +1,2 @@", " x", "+", ""].join("\n");
     const frame = await renderFrame(<DiffViewer patch={patch} />);
     expect(stripAnsi(frame)).toMatch(/^\s*\d+ \+\s*$/m);
   });
@@ -140,10 +124,7 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
     // SEPA F4 pinned as DESIGN: no separator row between files — the bold
     // header + stats row IS the boundary (DV-3).
     const patch =
-      PATCH_BASIC +
-      ["--- a/two.ts", "+++ b/two.ts", "@@ -1,1 +1,1 @@", "-x", "+y", ""].join(
-        "\n",
-      );
+      PATCH_BASIC + ["--- a/two.ts", "+++ b/two.ts", "@@ -1,1 +1,1 @@", "-x", "+y", ""].join("\n");
     const frame = await renderFrame(<DiffViewer patch={patch} />);
     const plain = stripAnsi(frame);
     const rows = plain.split("\n");
@@ -153,18 +134,14 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
   });
 
   it("context_lines_fold_hides_runs", async () => {
-    const frame = await renderFrame(
-      <DiffViewer patch={longContextPatch(10)} contextLines={2} />,
-    );
+    const frame = await renderFrame(<DiffViewer patch={longContextPatch(10)} contextLines={2} />);
     const plain = stripAnsi(frame);
     expect(plain).toContain("--- 8 lines hidden ---");
     expect(plain).toContain("changed line");
   });
 
   it("max_lines_caps_with_trailer", async () => {
-    const frame = await renderFrame(
-      <DiffViewer patch={longContextPatch(15)} maxLines={5} />,
-    );
+    const frame = await renderFrame(<DiffViewer patch={longContextPatch(15)} maxLines={5} />);
     const plain = stripAnsi(frame);
     const rows = plain.split("\n").filter((r) => r.trim() !== "");
     expect(rows.length).toBeLessThanOrEqual(6);
@@ -173,9 +150,7 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
 
   it("cap_retention_is_head", async () => {
     // EC-5: documents rule — header + FIRST rows survive.
-    const frame = await renderFrame(
-      <DiffViewer patch={longContextPatch(15)} maxLines={5} />,
-    );
+    const frame = await renderFrame(<DiffViewer patch={longContextPatch(15)} maxLines={5} />);
     const plain = stripAnsi(frame);
     expect(plain).toContain("long.ts");
     expect(plain).toContain("ctx-0");
@@ -200,10 +175,7 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
   it("max_lines_scope_is_global_across_files", async () => {
     // EC-4: global budget, headers included.
     const patch =
-      PATCH_BASIC +
-      ["--- a/two.ts", "+++ b/two.ts", "@@ -1,1 +1,1 @@", "-x", "+y", ""].join(
-        "\n",
-      );
+      PATCH_BASIC + ["--- a/two.ts", "+++ b/two.ts", "@@ -1,1 +1,1 @@", "-x", "+y", ""].join("\n");
     const frame = await renderFrame(<DiffViewer patch={patch} maxLines={5} />);
     const rows = stripAnsi(frame)
       .split("\n")
@@ -243,21 +215,12 @@ describe("DiffViewer — unified renderer (T1.2)", () => {
   it("malformed_patch_propagates_typed_error", () => {
     const call = () => DiffViewer({ patch: "not a diff" });
     expect(call).toThrow(TypeError);
-    expect(call).toThrow(
-      "parseUnifiedDiff: patch did not parse as a unified diff",
-    );
+    expect(call).toThrow("parseUnifiedDiff: patch did not parse as a unified diff");
   });
 
   it("tab_renders_as_four_spaces", async () => {
     // EC-7: render layer expands tabs (model preserves).
-    const patch = [
-      "--- a/f.go",
-      "+++ b/f.go",
-      "@@ -1,1 +1,1 @@",
-      "-x",
-      "+\tx",
-      "",
-    ].join("\n");
+    const patch = ["--- a/f.go", "+++ b/f.go", "@@ -1,1 +1,1 @@", "-x", "+\tx", ""].join("\n");
     const frame = await renderFrame(<DiffViewer patch={patch} />);
     expect(stripAnsi(frame)).toContain("    x");
     expect(frame).not.toContain("\t");
@@ -325,9 +288,7 @@ describe("DiffViewer intra-line highlight (M25 T2.1)", () => {
   });
 
   it("on_marks_the_changed_word_with_an_inverse_span", async () => {
-    const frame = await renderFrame(
-      <DiffViewer patch={PATCH_WORD} intraLineHighlight />,
-    );
+    const frame = await renderFrame(<DiffViewer patch={PATCH_WORD} intraLineHighlight />);
     expect(frame).toContain(INVERSE); // the changed word is inverse-video
     // The unchanged words + the changed words are all still present.
     expect(stripAnsi(frame)).toContain("the quick brown fox");
@@ -337,17 +298,10 @@ describe("DiffViewer intra-line highlight (M25 T2.1)", () => {
   it("does_not_highlight_a_pure_indentation_change", async () => {
     // Leading-whitespace-only change: the words are unchanged, so no inverse
     // span lights up the indentation (pi's strip-leading-whitespace rule).
-    const patch = [
-      "--- a/y.ts",
-      "+++ b/y.ts",
-      "@@ -1,1 +1,1 @@",
-      "-value",
-      "+  value",
-      "",
-    ].join("\n");
-    const frame = await renderFrame(
-      <DiffViewer patch={patch} intraLineHighlight />,
+    const patch = ["--- a/y.ts", "+++ b/y.ts", "@@ -1,1 +1,1 @@", "-value", "+  value", ""].join(
+      "\n",
     );
+    const frame = await renderFrame(<DiffViewer patch={patch} intraLineHighlight />);
     // "value" is unchanged; only the (stripped) leading whitespace differs, which
     // is not marked — so no inverse span wraps the word.
     expect(stripAnsi(frame)).toContain("value");
@@ -391,9 +345,7 @@ describe("DiffViewer background variant (Claude Code look)", () => {
       "+dos",
       "",
     ].join("\n");
-    const plain = stripAnsi(
-      await renderFrame(<DiffViewer patch={twoFiles} background />),
-    );
+    const plain = stripAnsi(await renderFrame(<DiffViewer patch={twoFiles} background />));
     expect(plain).toContain("a.ts — Added 1 line, removed 1 line");
     expect(plain).toContain("b.ts — Added 1 line, removed 1 line");
   });
@@ -413,9 +365,7 @@ describe("DiffViewer background variant (Claude Code look)", () => {
   });
 
   it("background_keeps_line_numbers_and_signs", async () => {
-    const plain = stripAnsi(
-      await renderFrame(<DiffViewer patch={TS_PATCH} background />),
-    );
+    const plain = stripAnsi(await renderFrame(<DiffViewer patch={TS_PATCH} background />));
     // Same gutter shape as the classic render — signs stay the
     // color-independent mechanism. Background rows are PADDED to the full
     // container width (that's how the tint spans the row), so the content
@@ -427,9 +377,7 @@ describe("DiffViewer background variant (Claude Code look)", () => {
 
   it("background_off_is_byte_identical_to_default", async () => {
     const def = await renderFrame(<DiffViewer patch={TS_PATCH} />);
-    const off = await renderFrame(
-      <DiffViewer patch={TS_PATCH} background={false} />,
-    );
+    const off = await renderFrame(<DiffViewer patch={TS_PATCH} background={false} />);
     expect(off).toBe(def);
   });
 
@@ -447,9 +395,7 @@ describe("DiffViewer background variant (Claude Code look)", () => {
     // lowlight is a devDependency — the highlighter loads for real.
     await ensureHighlighter();
     const frame = await renderFrame(<DiffViewer patch={TS_PATCH} background />);
-    const fnRow = frame
-      .split("\n")
-      .find((l) => stripAnsi(l).includes("function realReadPointer"));
+    const fnRow = frame.split("\n").find((l) => stripAnsi(l).includes("function realReadPointer"));
     // The `function` keyword picks up the theme code color (keyword: blue →
     // [34m at 16-color; 38;… at higher levels) — proof the line went through
     // the highlighter, not the plain-text path.

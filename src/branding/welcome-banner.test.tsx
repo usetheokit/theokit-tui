@@ -1,12 +1,11 @@
-import { Box, Text } from "ink";
 import { readFileSync } from "node:fs";
+import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-
-import { TheoTUIProvider, themes } from "../theme/theme.js";
-import { WelcomeBanner } from "./welcome-banner.js";
-import type { WelcomeBannerProps } from "./welcome-banner.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider, themes } from "../theme/theme.js";
+import type { WelcomeBannerProps } from "./welcome-banner.js";
+import { WelcomeBanner } from "./welcome-banner.js";
 
 // T1.1 (plan m9-welcome-banner, ADRs D1-D5): the banner unit suite — house
 // static-component shape (boundary pairs, width sweep, batched snapshots,
@@ -175,9 +174,7 @@ describe("WelcomeBanner", () => {
     for (const cols of [60, 40, 24]) {
       const frame = renderAtColumns(cols, longProps);
       for (const line of stripAnsi(frame).split("\n")) {
-        expect(line.length, `cols=${cols} line="${line}"`).toBeLessThanOrEqual(
-          cols,
-        );
+        expect(line.length, `cols=${cols} line="${line}"`).toBeLessThanOrEqual(cols);
       }
     }
   });
@@ -235,17 +232,11 @@ describe("WelcomeBanner", () => {
     // proven by the degrade-matrix subprocess at chalk level 0.
     const instance = render(
       <TheoTUIProvider theme={themes["no-color"]}>
-        <WelcomeBanner
-          name="T"
-          version="1.0.0"
-          tagline="tag"
-          hints={["hint"]}
-        />
+        <WelcomeBanner name="T" version="1.0.0" tagline="tag" hints={["hint"]} />
       </TheoTUIProvider>,
     );
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    // eslint-disable-next-line no-control-regex
     const colorSgr = /\u001B\[(?:3[0-8]|4[0-8]|9[0-7]|10[0-7])[;m]/;
     expect(frame).not.toMatch(colorSgr);
   });
@@ -262,20 +253,14 @@ describe("WelcomeBanner", () => {
     for (const props of bad) {
       // House idiom (context-window-bar precedent): direct call — the
       // boundary validation runs BEFORE any hook.
-      expect(() => WelcomeBanner(props), JSON.stringify(props)).toThrow(
-        TypeError,
-      );
+      expect(() => WelcomeBanner(props), JSON.stringify(props)).toThrow(TypeError);
     }
     // D5 — the message names the offending prop.
     const err = catchError(() => WelcomeBanner({ name: "a\nb" }));
     expect(err.message).toContain("name");
-    const hintErr = catchError(() =>
-      WelcomeBanner({ name: "T", hints: ["bad\nhint"] }),
-    );
+    const hintErr = catchError(() => WelcomeBanner({ name: "T", hints: ["bad\nhint"] }));
     expect(hintErr.message).toContain("hints");
-    const versionErr = catchError(() =>
-      WelcomeBanner({ name: "T", version: "1\n2" }),
-    );
+    const versionErr = catchError(() => WelcomeBanner({ name: "T", version: "1\n2" }));
     expect(versionErr.message).toContain("version");
   });
 
@@ -308,10 +293,7 @@ describe("WelcomeBanner", () => {
   it("banner_composes_above_other_content_without_static", () => {
     // D4 pin: plain component above the thread — plus the module-source
     // assert (review tests-1): the banner never imports <Static>.
-    const source = readFileSync(
-      new URL("./welcome-banner.tsx", import.meta.url),
-      "utf8",
-    );
+    const source = readFileSync(new URL("./welcome-banner.tsx", import.meta.url), "utf8");
     expect(source).not.toMatch(/import\s*\{[^}]*\bStatic\b[^}]*\}/);
     const instance = render(
       <Box flexDirection="column">
@@ -369,9 +351,7 @@ describe("U-7 — art composes with the aside", () => {
   });
 
   it("test_the_version_still_shows_on_the_degrade_path", () => {
-    const frame = stripAnsi(
-      renderBanner({ name: "TheoCode", version: "0.1.0" }),
-    );
+    const frame = stripAnsi(renderBanner({ name: "TheoCode", version: "0.1.0" }));
 
     expect(frame).toContain("v0.1.0");
   });
@@ -414,9 +394,7 @@ describe("U-7b — art is not compressed by the aside", () => {
     );
 
     // Each art row must appear at its full width; a compressed column breaks them into fragments.
-    const fullRows = frame
-      .split("\n")
-      .filter((line) => line.includes("█".repeat(34)));
+    const fullRows = frame.split("\n").filter((line) => line.includes("█".repeat(34)));
     expect(
       fullRows.length,
       "the art column was compressed by the aside — rows came back shorter than the art itself",
@@ -441,14 +419,10 @@ describe("U-7b — art is not compressed by the aside", () => {
 
   it("test_a_single_column_art_banner_is_unchanged", () => {
     // Anti-vacuity floor: the layout that already worked must not regress.
-    const frame = stripAnsi(
-      renderBanner({ name: "X", art: WIDE_ART, tagline: "welcome-line" }),
-    );
+    const frame = stripAnsi(renderBanner({ name: "X", art: WIDE_ART, tagline: "welcome-line" }));
 
     expect(frame).toContain("welcome-line");
-    expect(
-      frame.split("\n").filter((l) => l.includes("█".repeat(34))).length,
-    ).toBe(3);
+    expect(frame.split("\n").filter((l) => l.includes("█".repeat(34))).length).toBe(3);
   });
 });
 

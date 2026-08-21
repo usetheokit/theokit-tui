@@ -1,14 +1,9 @@
 import { Box, Text, useStdout } from "ink";
 import { useEffect, useState } from "react";
-
-import {
-  assertFiniteNonNegative,
-  formatElapsed,
-  formatTokens,
-} from "../format/format.js";
-import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { isMotionEnabled } from "../branding/motion.js";
 import { useSparkle } from "../branding/sparkle.js";
+import { assertFiniteNonNegative, formatElapsed, formatTokens } from "../format/format.js";
+import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 
 // M24 (plan m24-live-progress-surfaces T5.1, ADR D7): the phrase-cycler is a
@@ -22,10 +17,7 @@ function usePhraseCycler(count: number, active: boolean): number {
   const [index, setIndex] = useState(0);
   useEffect(() => {
     if (!active || count <= 1) return;
-    const id = setInterval(
-      () => setIndex((current) => (current + 1) % count),
-      PHRASE_INTERVAL_MS,
-    );
+    const id = setInterval(() => setIndex((current) => (current + 1) % count), PHRASE_INTERVAL_MS);
     return () => clearInterval(id);
   }, [active, count]);
   return count > 0 ? index % count : 0;
@@ -130,9 +122,7 @@ function resolvePrimaryLine(
   phrases: readonly string[] | undefined,
 ): string {
   const raw =
-    phraseActive && cycled !== undefined
-      ? cycled
-      : thought || phrases?.[0] || "Thinking…";
+    phraseActive && cycled !== undefined ? cycled : thought || phrases?.[0] || "Thinking…";
   return singleLine(raw);
 }
 
@@ -152,8 +142,7 @@ export function AgentStreaming({
 }: AgentStreamingProps) {
   // Boundary validation before hooks (F10 idiom): elapsed + tokens are validated
   // even when the hint is hidden — prop validity must not depend on another prop.
-  const elapsed =
-    elapsedSeconds !== undefined ? formatElapsed(elapsedSeconds) : undefined;
+  const elapsed = elapsedSeconds !== undefined ? formatElapsed(elapsedSeconds) : undefined;
   if (tokens !== undefined) {
     assertFiniteNonNegative(tokens, "AgentStreaming: tokens must be >= 0");
   }
@@ -170,11 +159,7 @@ export function AgentStreaming({
       <Box minWidth={3}>
         <Text color={theme.toolStatus.running.color}>{sparkle}</Text>
       </Box>
-      <Text
-        italic
-        wrap="truncate-end"
-        {...(dimPulse ? { dimColor: true } : {})}
-      >
+      <Text italic wrap="truncate-end" {...(dimPulse ? { dimColor: true } : {})}>
         {primary}
       </Text>
       {showCancelHint && (

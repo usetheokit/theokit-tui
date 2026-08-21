@@ -3,11 +3,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  type DirEntryLike,
+  type FileSystemLike,
   isPathQuery,
   searchFiles,
   splitMentionPath,
-  type DirEntryLike,
-  type FileSystemLike,
 } from "./file-search.js";
 
 // M21 T4.1 — the async @-file provider over an INJECTED in-memory filesystem
@@ -95,9 +95,7 @@ describe("searchFiles (M21 T4.1)", () => {
     const many = fakeFs({
       "/repo": dir("a.ts", "b.ts", "c.ts"),
     });
-    expect(
-      (await searchFiles("", { cwd: CWD, fs: many, maxResults: 2 })).length,
-    ).toBe(2);
+    expect((await searchFiles("", { cwd: CWD, fs: many, maxResults: 2 })).length).toBe(2);
 
     const throwing: FileSystemLike = {
       readDir: async () => {
@@ -180,11 +178,7 @@ describe("splitMentionPath", () => {
 describe("searchFiles — @ path navigation", () => {
   it("lists_a_home_directory_via_tilde_with_a_prefix_filter", async () => {
     const fs = fakeFs({
-      "/home/dev": [
-        subdir("Área de Trabalho"),
-        subdir("Documents"),
-        ...dir("notes.txt"),
-      ],
+      "/home/dev": [subdir("Área de Trabalho"), subdir("Documents"), ...dir("notes.txt")],
     });
     const results = await searchFiles("~/Áre", {
       cwd: "/repo",
@@ -211,9 +205,7 @@ describe("searchFiles — @ path navigation", () => {
       },
       readGitignore: async () => null,
     };
-    await expect(
-      searchFiles("~/nope/", { cwd: "/repo", home: HOME, fs }),
-    ).resolves.toEqual([]);
+    await expect(searchFiles("~/nope/", { cwd: "/repo", home: HOME, fs })).resolves.toEqual([]);
   });
 
   it("a_plain_query_still_uses_the_cwd_fuzzy_walk", async () => {
@@ -228,11 +220,7 @@ describe("searchFiles — @ path navigation", () => {
 
   it("hides_hidden_entries_unless_the_partial_starts_with_a_dot", async () => {
     const fs = fakeFs({
-      "/home/dev": [
-        subdir(".ansible"),
-        subdir("Documents"),
-        ...dir(".bashrc", "notes.txt"),
-      ],
+      "/home/dev": [subdir(".ansible"), subdir("Documents"), ...dir(".bashrc", "notes.txt")],
     });
     // `@~/` lists the home dir but hides the dotfiles (the `@~/` clutter bug).
     const shown = await searchFiles("~/", { cwd: "/repo", home: HOME, fs });
@@ -251,9 +239,7 @@ describe("B-072 — a root-level file is not hostage to subtrees that sort befor
     // directories and never opened `package.json`, `src/`, `tests/` or `wiki/`.
     const fs = fakeFs({
       "/repo": [subdir("aaa-src"), ...dir("package.json"), subdir("zzz")],
-      "/repo/aaa-src": dir(
-        ...Array.from({ length: 60 }, (_, i) => `f${String(i)}.ts`),
-      ),
+      "/repo/aaa-src": dir(...Array.from({ length: 60 }, (_, i) => `f${String(i)}.ts`)),
       "/repo/zzz": dir("last.ts"),
     });
 
@@ -285,9 +271,7 @@ describe("B-072 — a root-level file is not hostage to subtrees that sort befor
       "/repo": [subdir("aaa"), ...dir("shallow.ts")],
       "/repo/aaa": [subdir("deep")],
       "/repo/aaa/deep": [subdir("deeper")],
-      "/repo/aaa/deep/deeper": dir(
-        ...Array.from({ length: 30 }, (_, i) => `f${String(i)}.ts`),
-      ),
+      "/repo/aaa/deep/deeper": dir(...Array.from({ length: 30 }, (_, i) => `f${String(i)}.ts`)),
     });
 
     const hits = await searchFiles("", { cwd: CWD, fs, maxResults: 5 });

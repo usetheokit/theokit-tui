@@ -54,12 +54,7 @@ describe("OutputEngine (M17 T1.1)", () => {
     const eng = new OutputEngine(term);
     await renderAndRead(eng, term, ["alpha", "beta"]);
     term.writes.length = 0;
-    const screen = await renderAndRead(eng, term, [
-      "alpha",
-      "beta",
-      "gamma",
-      "delta",
-    ]);
+    const screen = await renderAndRead(eng, term, ["alpha", "beta", "gamma", "delta"]);
     const second = term.writeStream();
     expect(second).toContain("gamma");
     expect(second).toContain("delta");

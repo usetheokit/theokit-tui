@@ -7,11 +7,7 @@ const NO_COLOR_CURSOR_MARKER = "▏";
 /** Placeholder-branch cursor cell (M6 D8): visible marker under monochrome
  * themes (chalk level 0 strips the inverse attribute). */
 function PlaceholderCursor({ marker }: { marker: boolean }) {
-  return marker ? (
-    <Text>{NO_COLOR_CURSOR_MARKER}</Text>
-  ) : (
-    <Text inverse> </Text>
-  );
+  return marker ? <Text>{NO_COLOR_CURSOR_MARKER}</Text> : <Text inverse> </Text>;
 }
 
 /** Text-branch cursor cell (M6 D8): the marker before the char under
@@ -55,10 +51,7 @@ export function InputRow({
   glyph: string;
   prefixColor: string;
 }) {
-  const { before, atCursor, after } = cursorSlices(
-    buffer.text,
-    buffer.cursorOffset,
-  );
+  const { before, atCursor, after } = cursorSlices(buffer.text, buffer.cursorOffset);
   const showPlaceholder = buffer.text.length === 0 && placeholder.length > 0;
   const noColorMarker = monochrome && isFocused;
   return (
@@ -74,11 +67,7 @@ export function InputRow({
           {before}
           {/* Cursor cell only while focused (review F-dom-4 — plan: "cursor
               shows when focused"); blurred composers render plain text. */}
-          <CursorCell
-            atCursor={atCursor}
-            focused={isFocused}
-            marker={noColorMarker}
-          />
+          <CursorCell atCursor={atCursor} focused={isFocused} marker={noColorMarker} />
           {after}
         </Text>
       )}

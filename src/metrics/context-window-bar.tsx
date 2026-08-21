@@ -1,16 +1,10 @@
 import { Box, Text } from "ink";
-
-import {
-  MIN_BAR_CELLS,
-  displayPercent,
-  formatPercent,
-  renderFillBar,
-} from "./fill-bar.js";
 import { assertFiniteNonNegative, formatTokens } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { useTheoTheme } from "../theme/theme.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
+import { displayPercent, formatPercent, MIN_BAR_CELLS, renderFillBar } from "./fill-bar.js";
 
 /** Warn when the used ratio reaches this fraction (gemini default). */
 const WARNING_RATIO = 0.5;
@@ -55,9 +49,7 @@ function assertTokenProps({
   }
   if (
     limitTokens !== undefined &&
-    (typeof limitTokens !== "number" ||
-      !Number.isFinite(limitTokens) ||
-      limitTokens <= 0)
+    (typeof limitTokens !== "number" || !Number.isFinite(limitTokens) || limitTokens <= 0)
   ) {
     reportGuardFailure(
       "ContextWindowBar",
@@ -81,11 +73,7 @@ function assertTokenProps({
 function assertProps(props: ContextWindowBarProps): void {
   assertTokenProps(props);
   const { limitTokens, baselineTokens, width } = props;
-  if (
-    limitTokens !== undefined &&
-    baselineTokens !== undefined &&
-    baselineTokens >= limitTokens
-  ) {
+  if (limitTokens !== undefined && baselineTokens !== undefined && baselineTokens >= limitTokens) {
     reportGuardFailure(
       "ContextWindowBar",
       new TypeError(
@@ -96,9 +84,7 @@ function assertProps(props: ContextWindowBarProps): void {
   if (width !== undefined && (!Number.isInteger(width) || width < 0)) {
     reportGuardFailure(
       "ContextWindowBar",
-      new TypeError(
-        `ContextWindowBar: width must be an integer >= 0 — got ${String(width)}`,
-      ),
+      new TypeError(`ContextWindowBar: width must be an integer >= 0 — got ${String(width)}`),
     );
   }
 }
@@ -113,13 +99,7 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
   // Boundary guards FIRST, before hooks (F10 idiom).
   assertProps(props);
   const m = pickMargin(props);
-  const {
-    usedTokens,
-    limitTokens,
-    convention = "left",
-    baselineTokens = 0,
-    width = 40,
-  } = props;
+  const { usedTokens, limitTokens, convention = "left", baselineTokens = 0, width = 40 } = props;
   const theme = useTheoTheme();
 
   if (limitTokens === undefined) {
@@ -130,8 +110,7 @@ export function ContextWindowBar(props: ContextWindowBarProps) {
     );
   }
 
-  const usedRatio =
-    Math.max(0, usedTokens - baselineTokens) / (limitTokens - baselineTokens);
+  const usedRatio = Math.max(0, usedTokens - baselineTokens) / (limitTokens - baselineTokens);
   // 'used' consumes the authority's label form directly; 'left' DERIVES from
   // the same displayPercent — NEVER a second formatPercent(1 − usedRatio)
   // call (the EC-1 float trap: 1 − 5e-17 === 1 → "100% left" overclaim).

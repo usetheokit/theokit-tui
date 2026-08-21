@@ -4,23 +4,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { render } from "ink-testing-library";
-
-import {
-  ChatThread,
-  TheoTUIProvider,
-  ToolCallCard,
-  ToolResult,
-} from "../src/index.js";
 import type { ChatThreadMessage, ToolCallStatus } from "../src/index.js";
-import {
-  fmt,
-  frameSampler,
-  stats,
-  tick,
-  stackVersions,
-  round,
-} from "./sampling.js";
+import { ChatThread, TheoTUIProvider, ToolCallCard, ToolResult } from "../src/index.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats, tick } from "./sampling.js";
 
 // M2 tool-cards benchmark (plan T3.2, Blueprint Corner 3): thread + mixed
 // status cards mounted, then status transitions on running cards, with one
@@ -36,38 +23,24 @@ const MEASURED_RUNS = 5;
 const smoke = process.argv.includes("--smoke");
 const loadAtStart = loadavg()[0] ?? -1;
 
-const STATUS_CYCLE: ToolCallStatus[] = [
-  "pending",
-  "running",
-  "success",
-  "failed",
-];
+const STATUS_CYCLE: ToolCallStatus[] = ["pending", "running", "success", "failed"];
 
-const longOutput = Array.from(
-  { length: LONG_OUTPUT_LINES },
-  (_, i) => `output line ${i}`,
-).join("\n");
-
-const messages: ChatThreadMessage[] = Array.from(
-  { length: N_MESSAGES },
-  (_, i) => ({
-    id: `m${i}`,
-    role: i % 2 === 0 ? "user" : "assistant",
-    content: `message ${i} — the quick brown fox jumps over the dog`,
-  }),
+const longOutput = Array.from({ length: LONG_OUTPUT_LINES }, (_, i) => `output line ${i}`).join(
+  "\n",
 );
+
+const messages: ChatThreadMessage[] = Array.from({ length: N_MESSAGES }, (_, i) => ({
+  id: `m${i}`,
+  role: i % 2 === 0 ? "user" : "assistant",
+  content: `message ${i} — the quick brown fox jumps over the dog`,
+}));
 
 function App({ statuses }: { statuses: ToolCallStatus[] }) {
   return (
     <TheoTUIProvider>
       <ChatThread messages={messages} />
       {statuses.map((status, i) => (
-        <ToolCallCard
-          key={`card-${i}`}
-          name={`tool-${i}`}
-          status={status}
-          summary={`arg-${i}`}
-        >
+        <ToolCallCard key={`card-${i}`} name={`tool-${i}`} status={status} summary={`arg-${i}`}>
           <ToolResult
             shell={{
               stdout: i === 0 ? longOutput : `result ${i}`,
@@ -138,7 +111,7 @@ console.log(
 const measured = smoke ? 1 : MEASURED_RUNS;
 for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
   const w = await runOnce();
-  console.log(fmt("warmup", w) + "  (discarded)");
+  console.log(`${fmt("warmup", w)}  (discarded)`);
 }
 const runs: RunMetrics[] = [];
 for (let i = 0; i < measured; i++) {
@@ -148,9 +121,7 @@ for (let i = 0; i < measured; i++) {
 }
 
 const aggregate = {
-  frames_mean:
-    Math.round((runs.reduce((a, r) => a + r.frames, 0) / runs.length) * 1000) /
-    1000,
+  frames_mean: Math.round((runs.reduce((a, r) => a + r.frames, 0) / runs.length) * 1000) / 1000,
   mean_ms_per_frame: stats(runs.map((r) => r.mean_ms_per_frame)),
   peak_ms_per_frame: stats(runs.map((r) => r.peak_ms_per_frame)),
 };
@@ -166,7 +137,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     load_1min_at_start: round(loadAtStart),
     workload: {
       messages: N_MESSAGES,
@@ -196,8 +167,6 @@ if (!smoke) {
     "tool-cards-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/tool-cards-baseline.json",
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log("baseline written: benchmarks/baselines/tool-cards-baseline.json");
 }

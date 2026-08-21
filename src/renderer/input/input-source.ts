@@ -1,8 +1,8 @@
 import { EventEmitter } from "node:events";
 
 import { createInputParser } from "./input-parser.js";
-import { projectKey, type Key } from "./key.js";
-import { KITTY_DISABLE, KITTY_ENABLE, detectKittyActive } from "./kitty.js";
+import { type Key, projectKey } from "./key.js";
+import { detectKittyActive, KITTY_DISABLE, KITTY_ENABLE } from "./kitty.js";
 
 // M19 InputSource (plan m19-input-stack, ADR D1/D3): the raw-stdin lifecycle —
 // a symmetric sibling to the output Terminal seam. Reads a stdin stream, frames

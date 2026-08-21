@@ -9,8 +9,7 @@ render(
     <Box flexDirection="column">
       <ChatMessage role="user">What is @theokit/tui?</ChatMessage>
       <ChatMessage role="assistant">
-        Ink primitives for AI-agent surfaces — chat, tool-calls, timelines,
-        diffs and metrics.
+        Ink primitives for AI-agent surfaces — chat, tool-calls, timelines, diffs and metrics.
       </ChatMessage>
     </Box>
   </TheoTUIProvider>,

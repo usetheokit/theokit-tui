@@ -43,11 +43,7 @@ const KINDS = ["diff", "output", "preview"] as const;
 
 /** Boundary validation for the card's `result` prop (fail-fast). */
 export function assertToolCardResult(result: ToolCardResult): void {
-  if (
-    typeof result !== "object" ||
-    result === null ||
-    !KINDS.includes(result.kind)
-  ) {
+  if (typeof result !== "object" || result === null || !KINDS.includes(result.kind)) {
     throw new TypeError(
       `ToolCallCard: \`result.kind\` must be one of ${KINDS.join(" | ")} — got ${JSON.stringify(
         typeof result === "object" && result !== null ? result.kind : result,

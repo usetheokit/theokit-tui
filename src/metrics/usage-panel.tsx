@@ -45,18 +45,12 @@ export interface UsagePanelProps extends LayoutMarginProps {
  * that only PRESENT keys render and that a present `0` draws a row. Sending `cached: 0` for a
  * turn that reported no cache read would claim a measurement the agent never made.
  */
-function tokenCategories(
-  usage: TurnUsage,
-): Partial<Record<TokenCategory, number>> {
+function tokenCategories(usage: TurnUsage): Partial<Record<TokenCategory, number>> {
   return {
     input: usage.inputTokens,
     output: usage.outputTokens,
-    ...(usage.cacheReadTokens === undefined
-      ? {}
-      : { cached: usage.cacheReadTokens }),
-    ...(usage.reasoningTokens === undefined
-      ? {}
-      : { reasoning: usage.reasoningTokens }),
+    ...(usage.cacheReadTokens === undefined ? {} : { cached: usage.cacheReadTokens }),
+    ...(usage.reasoningTokens === undefined ? {} : { reasoning: usage.reasoningTokens }),
   };
 }
 
@@ -77,8 +71,7 @@ const SECTION_RENDERERS: Record<
     />
   ),
   tokens: (usage) => <TokenUsageChart usage={tokenCategories(usage)} />,
-  cost: (usage) =>
-    usage.cost === undefined ? null : <CostMeter costUsd={usage.cost} />,
+  cost: (usage) => (usage.cost === undefined ? null : <CostMeter costUsd={usage.cost} />),
 };
 
 /**
@@ -118,10 +111,7 @@ function assertForwardedUsage(usage: TurnUsage): void {
       // The helper is not made to report directly: it lives in `src/format`, a low-level module,
       // and importing `src/status` there would invert the dependency direction
       // (`rules/architecture.md` § 1).
-      assertFiniteNonNegative(
-        value,
-        `UsagePanel: usage.${field} must be a finite number >= 0`,
-      );
+      assertFiniteNonNegative(value, `UsagePanel: usage.${field} must be a finite number >= 0`);
     } catch (err) {
       reportGuardFailure("UsagePanel", err as Error);
     }
@@ -147,9 +137,7 @@ export function UsagePanel({
   // supported state (ADR D3); a non-positive number is a programming error and says so.
   if (
     contextWindow !== undefined &&
-    (typeof contextWindow !== "number" ||
-      !Number.isFinite(contextWindow) ||
-      contextWindow <= 0)
+    (typeof contextWindow !== "number" || !Number.isFinite(contextWindow) || contextWindow <= 0)
   ) {
     reportGuardFailure(
       "UsagePanel",

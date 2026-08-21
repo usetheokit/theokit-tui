@@ -2,13 +2,13 @@ import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 
 import {
-  DEFAULT_APPROVAL_CHOICES,
   type ApprovalChoice,
   type ApprovalDecision,
+  DEFAULT_APPROVAL_CHOICES,
 } from "../agent/agent-decision.js";
-import { ChoiceRow } from "./choice-row.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { useTheoTheme } from "../theme/theme.js";
+import { ChoiceRow } from "./choice-row.js";
 
 // M23 ApprovalPrompt (plan m23-agent-decision-surfaces T1.2, ADR D1/D2/D3/D5): a
 // titled pending-action card. The PREVIEW is a `children` slot — the app composes

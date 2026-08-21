@@ -1,11 +1,8 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-import {
-  waitFor as waitForCondition,
-  WAIT_BUDGET_MS,
-} from "../../tests/fixtures/wait-for.js";
+import { WAIT_BUDGET_MS, waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
-import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
+import { type ItlInstance, render } from "../../tests/renderer/itl-adapter.js";
 import { FreeTextInput } from "./free-text-input.js";
 
 // M23 — direct unit tests for the shared FreeTextInput (it is a public export;
@@ -23,9 +20,7 @@ async function waitForFrame(
     if ((app.lastFrame() ?? "").includes(substring)) return;
     await app.flush();
   }
-  throw new Error(
-    `frame never contained ${JSON.stringify(substring)} — got:\n${app.lastFrame()}`,
-  );
+  throw new Error(`frame never contained ${JSON.stringify(substring)} — got:\n${app.lastFrame()}`);
 }
 
 /**
@@ -49,11 +44,7 @@ async function typeWhenReady(app: ItlInstance, text: string): Promise<void> {
 }
 
 /** Press a key, retrying until `done()` — used for submits with no echo. */
-async function pressUntil(
-  app: ItlInstance,
-  bytes: string,
-  done: () => boolean,
-): Promise<void> {
+async function pressUntil(app: ItlInstance, bytes: string, done: () => boolean): Promise<void> {
   for (let attempt = 0; attempt < 20 && !done(); attempt += 1) {
     app.stdin.write(bytes);
     await app.flush();
@@ -84,9 +75,7 @@ async function typeMaskedWhenReady(
 
 describe("FreeTextInput (M23)", () => {
   it("renders_the_label_and_echoes_typed_text", async () => {
-    const app = render(
-      createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }),
-    );
+    const app = render(createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }));
     await waitForFrame(app, "Type:");
     await typeWhenReady(app, "hello");
     expect(app.lastFrame()).toContain("hello");
@@ -114,9 +103,7 @@ describe("FreeTextInput (M23)", () => {
   });
 
   it("backspace_deletes_the_last_grapheme", async () => {
-    const app = render(
-      createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }),
-    );
+    const app = render(createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }));
     await waitForFrame(app, "Type:");
     await typeWhenReady(app, "abc");
     app.stdin.write("\x7f"); // backspace → "ab"
@@ -191,9 +178,7 @@ describe("FreeTextInput (M23)", () => {
     await typeMaskedWhenReady(app, "sk-secret", 9);
 
     const frame = app.lastFrame() ?? "";
-    expect(frame, "the plaintext reached the terminal").not.toContain(
-      "sk-secret",
-    );
+    expect(frame, "the plaintext reached the terminal").not.toContain("sk-secret");
     expect(frame).toContain("\u2022".repeat(9));
     app.unmount();
   });
@@ -253,19 +238,14 @@ describe("FreeTextInput (M23)", () => {
     // caught. The count is the whole property here: the newline must vanish, not be swallowed into
     // the buffer as a fifth character.
     const dots = /\u2022+/.exec(app.lastFrame() ?? "")?.[0] ?? "";
-    expect(
-      dots.length,
-      "the pasted newline became a character in the secret",
-    ).toBe(4);
+    expect(dots.length, "the pasted newline became a character in the secret").toBe(4);
     app.unmount();
   });
 
   it("unmasked_behaviour_is_byte_identical_without_the_prop", async () => {
     // Backward-compatibility guard: `mask` is opt-in and every existing caller
     // must observe exactly what it observed before the prop existed.
-    const app = render(
-      createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }),
-    );
+    const app = render(createElement(FreeTextInput, { label: "Type:", onSubmit: () => {} }));
     await waitForFrame(app, "Type:");
     await typeWhenReady(app, "plain");
 

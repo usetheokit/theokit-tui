@@ -1,11 +1,7 @@
 import { Text } from "ink";
 import { describe, expect, it } from "vitest";
 
-import {
-  narrowingLayer,
-  selectSurface,
-  type SurfaceLayer,
-} from "./surface-layers.js";
+import { narrowingLayer, type SurfaceLayer, selectSurface } from "./surface-layers.js";
 
 /**
  * B-074 — the RED for `narrowingLayer`.
@@ -69,10 +65,9 @@ describe("narrowingLayer (B-074)", () => {
     const layers: readonly SurfaceLayer<Chat>[] = [narrow, wide];
 
     expect(selectSurface(layers, { mode: "chat" }).layer).toBe("composer");
-    expect(
-      selectSurface(layers, { mode: "approval", pendingApproval: { id: "x" } })
-        .layer,
-    ).toBe("approval");
+    expect(selectSurface(layers, { mode: "approval", pendingApproval: { id: "x" } }).layer).toBe(
+      "approval",
+    );
   });
 
   it("keeps_precedence_and_does_not_evaluate_a_later_when", () => {

@@ -31,15 +31,11 @@ describe("detectNotifyProtocol (M24 T4.1)", () => {
   });
 
   it("null_under_tmux_screen_and_zellij", () => {
-    expect(detectNotifyProtocol({ TMUX: "/tmp/tmux-1000/default,1,0" })).toBe(
-      null,
-    );
+    expect(detectNotifyProtocol({ TMUX: "/tmp/tmux-1000/default,1,0" })).toBe(null);
     expect(detectNotifyProtocol({ STY: "1234.pts-0.host" })).toBe(null);
     expect(detectNotifyProtocol({ ZELLIJ: "0" })).toBe(null);
     // A multiplexer wins even over an iTerm2 signal (suppress is conservative).
-    expect(detectNotifyProtocol({ TMUX: "x", TERM_PROGRAM: "iTerm.app" })).toBe(
-      null,
-    );
+    expect(detectNotifyProtocol({ TMUX: "x", TERM_PROGRAM: "iTerm.app" })).toBe(null);
   });
 });
 

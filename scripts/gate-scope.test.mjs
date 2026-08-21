@@ -14,12 +14,13 @@
  * gives 6 pass / 1 fail; restored, 7 pass. One, and it is the right one — the other six pin
  * behaviour the mutation does not touch, which is what a regression guard is for.
  */
-import { test } from "node:test";
+
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "gate-scope.mjs");
@@ -57,7 +58,7 @@ function makeRepo() {
 function runGate({
   cwd,
   label = "lint",
-  stdout = "[]",
+  stdout = JSON.stringify({ summary: { changed: 0, unchanged: 0 }, diagnostics: [] }),
   exitCode = 0,
   files = [],
 }) {
@@ -76,9 +77,36 @@ function runGate({
   );
 }
 
-const ONE_RESULT = JSON.stringify([
-  { filePath: "src/tracked.ts", messages: [] },
-]);
+const ONE_RESULT = JSON.stringify({
+  summary: { changed: 0, unchanged: 1, errors: 0, warnings: 0 },
+  diagnostics: [],
+  command: "lint",
+});
+
+// B-109 — the lint gate is Biome now, and Biome's JSON reporter is a DIFFERENT SHAPE from
+// ESLint's. ESLint emits an array of per-file results, so `.length` was the file count. Biome
+// emits `{ summary: { changed, unchanged, ... }, diagnostics: [...] }`, where the count is
+// `changed + unchanged` and `diagnostics.length` is the number of PROBLEMS — a number that is
+// zero on a clean run. Counting the wrong field would make every green run report "inspected
+// nothing" and, under RULE 2, fail the build.
+const BIOME_CLEAN = JSON.stringify({
+  summary: { changed: 0, unchanged: 3, errors: 0, warnings: 0 },
+  diagnostics: [],
+  command: "lint",
+});
+
+test("the lint counter reads Biome's summary, not its diagnostics array", () => {
+  const root = makeRepo();
+
+  const r = runGate({ cwd: root, stdout: BIOME_CLEAN, files: ["src/tracked.ts"] });
+
+  assert.equal(r.status, 0, "a clean Biome run must pass");
+  assert.match(
+    r.stdout,
+    /3 files inspected/,
+    "changed + unchanged is the inspected set; diagnostics.length is 0 on a clean run",
+  );
+});
 
 test("a passing gate names untracked source files of the same kind", () => {
   const root = makeRepo();
@@ -169,7 +197,11 @@ test("zero inspected still fails", () => {
   // did not run.
   const root = makeRepo();
 
-  const r = runGate({ cwd: root, stdout: "[]", files: [] });
+  const r = runGate({
+    cwd: root,
+    stdout: JSON.stringify({ summary: { changed: 0, unchanged: 0 }, diagnostics: [] }),
+    files: [],
+  });
 
   assert.equal(r.status, 1);
   assert.match(r.stderr, /INSPECTED NOTHING/);

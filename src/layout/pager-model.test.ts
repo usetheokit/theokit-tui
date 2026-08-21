@@ -2,20 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   maxOffset,
+  type PagerState,
   pagerReducer,
   scrollPercent,
   visibleRange,
-  type PagerState,
 } from "./pager-model.js";
 
 // M22 T3.1 — the pure pager scroll model (bubbles viewport port): clamp,
 // percent at boundaries, visible slice, and the canonical action set.
 
-const state = (
-  offset: number,
-  viewportHeight = 5,
-  totalLines = 20,
-): PagerState => ({
+const state = (offset: number, viewportHeight = 5, totalLines = 20): PagerState => ({
   offset,
   viewportHeight,
   totalLines,

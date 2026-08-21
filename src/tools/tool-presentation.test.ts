@@ -31,10 +31,7 @@ describe("DEFAULT_TOOL_PRESENTATION", () => {
     for (const name of KNOWN_TOOL_NAMES) {
       const entry = DEFAULT_TOOL_PRESENTATION.get(name);
       expect(entry, `no presentation for '${name}'`).toBeDefined();
-      expect(
-        entry?.header({}, true).length,
-        `empty header for '${name}'`,
-      ).toBeGreaterThan(0);
+      expect(entry?.header({}, true).length, `empty header for '${name}'`).toBeGreaterThan(0);
     }
   });
 
@@ -101,12 +98,7 @@ describe("toolPresentation", () => {
     expect(
       map.get("read_file")?.header({ path: "a.ts" }, true),
       "restating 19 entries to change one is not an override, it is a fork",
-    ).toBe(
-      DEFAULT_TOOL_PRESENTATION.get("read_file")?.header(
-        { path: "a.ts" },
-        true,
-      ),
-    );
+    ).toBe(DEFAULT_TOOL_PRESENTATION.get("read_file")?.header({ path: "a.ts" }, true));
   });
 
   it("test_a_partial_override_keeps_the_rest_of_that_entry", () => {
@@ -115,24 +107,15 @@ describe("toolPresentation", () => {
     });
     expect(map.get("shell_exec")?.approvalLabel?.({})).toBe("Rodar?");
     expect(map.get("shell_exec")?.header({ command: "ls" }, true)).toBe(
-      DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.header(
-        { command: "ls" },
-        true,
-      ),
+      DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.header({ command: "ls" }, true),
     );
   });
 
   it("test_the_defaults_are_not_mutated_by_an_override", () => {
-    const before = DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.header(
-      { command: "ls" },
-      true,
-    );
+    const before = DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.header({ command: "ls" }, true);
     toolPresentation({ shell_exec: { header: () => "hijacked" } });
     expect(
-      DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.header(
-        { command: "ls" },
-        true,
-      ),
+      DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.header({ command: "ls" }, true),
       "one surface's override must not reach another surface's map",
     ).toBe(before);
   });
@@ -150,27 +133,15 @@ describe("approval labels", () => {
   it("test_the_tools_that_change_things_carry_an_approval_label", () => {
     // The label is what a human reads before saying yes. Every tool that writes or executes must
     // have one; a generic "Allow?" for `apply_patch` tells the human nothing about what changes.
-    for (const name of [
-      "shell_exec",
-      "apply_patch",
-      "write_file",
-      "edit_file",
-    ]) {
+    for (const name of ["shell_exec", "apply_patch", "write_file", "edit_file"]) {
       const label = DEFAULT_TOOL_PRESENTATION.get(name)?.approvalLabel;
-      expect(
-        label,
-        `${name} changes things and must say what it will do`,
-      ).toBeDefined();
-      expect(
-        label?.({ command: "rm -rf /", path: "a.ts" }).length,
-      ).toBeGreaterThan(0);
+      expect(label, `${name} changes things and must say what it will do`).toBeDefined();
+      expect(label?.({ command: "rm -rf /", path: "a.ts" }).length).toBeGreaterThan(0);
     }
   });
 
   it("test_a_read_only_tool_needs_no_approval_label", () => {
-    expect(
-      DEFAULT_TOOL_PRESENTATION.get("read_file")?.approvalLabel,
-    ).toBeUndefined();
+    expect(DEFAULT_TOOL_PRESENTATION.get("read_file")?.approvalLabel).toBeUndefined();
   });
 });
 

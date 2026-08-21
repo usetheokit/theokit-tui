@@ -1,20 +1,15 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 
-import {
-  AppStatusBar,
-  ChatMessage,
-  TheoTUIProvider,
-  useTurnElapsed,
-} from "../src/index.js";
-import { fmt, frameSampler, round, stats, stackVersions } from "./sampling.js";
+import { AppStatusBar, ChatMessage, TheoTUIProvider, useTurnElapsed } from "../src/index.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats } from "./sampling.js";
 
 // M14 app-status-bar benchmark (plan T2.2, ADR D3): the ticking bar is a
 // per-frame path (M9 flip condition). Modes:
@@ -32,8 +27,7 @@ const MEASURED_RUNS = 3;
 const smoke = process.argv.includes("--smoke");
 const loadAtStart = loadavg()[0] ?? -1;
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 function Thread() {
   return (
@@ -141,19 +135,17 @@ const measured = smoke ? 1 : MEASURED_RUNS;
 if (!smoke) {
   for (let i = 0; i < WARMUP_RUNS; i++) {
     const w = await runTicking();
-    console.log(fmt("ticking warmup", w) + "  (discarded)");
+    console.log(`${fmt("ticking warmup", w)}  (discarded)`);
   }
   for (let i = 0; i < measured; i++) {
     const r = await runTicking();
     tickingRuns.push(r);
-    console.log(
-      fmt(`ticking #${i + 1}`, r) + `  wall=${r.wall_ms.toFixed(0)}ms`,
-    );
+    console.log(`${fmt(`ticking #${i + 1}`, r)}  wall=${r.wall_ms.toFixed(0)}ms`);
   }
 }
 for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
   const w = await runStatic();
-  console.log(fmt("static warmup", w) + "  (discarded)");
+  console.log(`${fmt("static warmup", w)}  (discarded)`);
 }
 for (let i = 0; i < measured; i++) {
   const r = await runStatic();
@@ -188,7 +180,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     load_1min_at_start: round(loadAtStart),
     workload: {
       ticks: N_TICKS,
@@ -219,8 +211,6 @@ if (!smoke) {
     "status-bar-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/status-bar-baseline.json",
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log("baseline written: benchmarks/baselines/status-bar-baseline.json");
 }

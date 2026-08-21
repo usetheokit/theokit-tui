@@ -1,5 +1,5 @@
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { afterAll, describe, expect, it } from "vitest";
 
@@ -58,9 +58,7 @@ function spawnHarness(mod: typeof import("node-pty")): Session {
             return;
           }
           if (Date.now() - start > timeoutMs) {
-            reject(
-              new Error(`timeout waiting for ${pattern} — got:\n${buffer}`),
-            );
+            reject(new Error(`timeout waiting for ${pattern} — got:\n${buffer}`));
             return;
           }
           // duration is the subject: a POLL INTERVAL inside a bounded wait that already rejects
@@ -79,39 +77,36 @@ afterAll(() => {
   }
 });
 
-describe.skipIf(!pty)(
-  "ApprovalPrompt PTY e2e — full approve flow (M23 T4.1)",
-  () => {
-    it("drives_the_choice_bar_over_real_raw_mode_and_emits_the_decision", async () => {
-      const session = spawnHarness(pty!);
-      sessions.push(session);
-      // The harness reports isTTY — the REAL raw-mode path (a pipe would be false).
-      // A generous READY wait: the tsx subprocess cold-start can exceed 5s under
-      // parallel-suite load (testing.md §6 — deterministic, not a fixed sleep).
-      const ready = await session.waitFor(/READY tty=(true|false)/, 15000);
-      expect(ready).toContain("READY tty=true");
+describe.skipIf(!pty)("ApprovalPrompt PTY e2e — full approve flow (M23 T4.1)", () => {
+  it("drives_the_choice_bar_over_real_raw_mode_and_emits_the_decision", async () => {
+    const session = spawnHarness(pty!);
+    sessions.push(session);
+    // The harness reports isTTY — the REAL raw-mode path (a pipe would be false).
+    // A generous READY wait: the tsx subprocess cold-start can exceed 5s under
+    // parallel-suite load (testing.md §6 — deterministic, not a fixed sleep).
+    const ready = await session.waitFor(/READY tty=(true|false)/, 15000);
+    expect(ready).toContain("READY tty=true");
 
-      // The ChoiceRow subscribes to input a couple renders after mount (the focus
-      // round-trip), so the very first key can land before it is listening. The
-      // digit jump is IDEMPOTENT (key "2" → index 1 = "always"), so retrying it
-      // until the marker moves is safe (no overshoot) and deterministic.
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        session.write("2"); // jump to the 2nd choice ("always")
-        try {
-          await session.waitFor(/❯ Allow always/, 300);
-          break;
-        } catch {
-          /* not subscribed yet — retry the idempotent jump */
-        }
+    // The ChoiceRow subscribes to input a couple renders after mount (the focus
+    // round-trip), so the very first key can land before it is listening. The
+    // digit jump is IDEMPOTENT (key "2" → index 1 = "always"), so retrying it
+    // until the marker moves is safe (no overshoot) and deterministic.
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      session.write("2"); // jump to the 2nd choice ("always")
+      try {
+        await session.waitFor(/❯ Allow always/, 300);
+        break;
+      } catch {
+        /* not subscribed yet — retry the idempotent jump */
       }
-      expect(session.output()).toContain("❯ Allow always");
+    }
+    expect(session.output()).toContain("❯ Allow always");
 
-      session.write("\r"); // Enter → commit the active choice
-      await session.waitFor(/DECISION=always/);
-      expect(session.output()).toContain("DECISION=always");
-    }, 20000);
-  },
-);
+    session.write("\r"); // Enter → commit the active choice
+    await session.waitFor(/DECISION=always/);
+    expect(session.output()).toContain("DECISION=always");
+  }, 20000);
+});
 
 if (skipReason) {
   // Surface the skip so a green run is never mistaken for coverage.

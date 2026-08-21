@@ -39,29 +39,24 @@ describe("package manifest contract (T0.1)", () => {
     // B-104 slice 2: `./keys` ships the modal keypress router — the ORDERING RULE only, with the
     // states, keys and actions as type parameters. Separate from `./terminal` because it is pure:
     // routing a key in a test should not pull in file handles to do it.
-    expect(Object.keys(pkg.exports)).toEqual([
-      ".",
-      "./renderer",
-      "./terminal",
-      "./keys",
-    ]);
+    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./terminal", "./keys"]);
     const dot = pkg.exports["."] ?? {};
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);
-    expect(dot["types"]).toBe("./dist/index.d.ts");
-    expect(dot["default"]).toBe("./dist/index.js");
+    expect(dot.types).toBe("./dist/index.d.ts");
+    expect(dot.default).toBe("./dist/index.js");
     const renderer = pkg.exports["./renderer"] ?? {};
     expect(Object.keys(renderer)).toEqual(["types", "default"]);
-    expect(renderer["types"]).toBe("./dist/renderer/index.d.ts");
-    expect(renderer["default"]).toBe("./dist/renderer/index.js");
+    expect(renderer.types).toBe("./dist/renderer/index.d.ts");
+    expect(renderer.default).toBe("./dist/renderer/index.js");
     const terminal = pkg.exports["./terminal"] ?? {};
     expect(Object.keys(terminal)).toEqual(["types", "default"]);
-    expect(terminal["types"]).toBe("./dist/terminal/index.d.ts");
-    expect(terminal["default"]).toBe("./dist/terminal/index.js");
+    expect(terminal.types).toBe("./dist/terminal/index.d.ts");
+    expect(terminal.default).toBe("./dist/terminal/index.js");
     const keys = pkg.exports["./keys"] ?? {};
     expect(Object.keys(keys)).toEqual(["types", "default"]);
-    expect(keys["types"]).toBe("./dist/keys/index.d.ts");
-    expect(keys["default"]).toBe("./dist/keys/index.js");
+    expect(keys.types).toBe("./dist/keys/index.d.ts");
+    expect(keys.default).toBe("./dist/keys/index.js");
     expect(pkg.files).toEqual(["dist"]);
     // Legacy resolution fields must point at the same ESM artifacts
     // (review F-arch-3 — a stale "main" passes exports-only assertions).
@@ -90,14 +85,10 @@ describe("package manifest contract (T0.1)", () => {
     // optional peer was REMOVED with the `./ai-sdk` shim — the root-entry
     // projections are structural (`UIMessageLike`), no `ai` types anywhere.
     // react stays the only REQUIRED peer.
-    expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
-      "figlet",
-      "lowlight",
-      "react",
-    ]);
+    expect(Object.keys(pkg.peerDependencies).sort()).toEqual(["figlet", "lowlight", "react"]);
     expect(pkg.peerDependencies).not.toHaveProperty("ai");
     expect(pkg.peerDependenciesMeta).not.toHaveProperty("ai");
-    expect(pkg.peerDependenciesMeta["figlet"]?.optional).toBe(true);
+    expect(pkg.peerDependenciesMeta.figlet?.optional).toBe(true);
     // ^19.2.0 — mirrors ink7's exact floor (react >=19.2.0, blueprint M10
     // Corner 2); the 0.10.x line remains the ink5/react18 track.
     expect(pkg.peerDependencies.react).toBe("^19.2.0");

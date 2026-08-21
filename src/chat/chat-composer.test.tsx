@@ -1,18 +1,10 @@
 import { render } from "ink-testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  waitFor as waitForCondition,
-  WAIT_BUDGET_MS,
-} from "../../tests/fixtures/wait-for.js";
-
-import {
-  ChatComposer,
-  isNewlineChord,
-  parseShellCommand,
-} from "./chat-composer.js";
-import { TheoTUIProvider } from "../theme/theme.js";
+import { WAIT_BUDGET_MS, waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 import { stripAnsi } from "../format/ansi.js";
 import { searchFiles } from "../search/file-search.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { ChatComposer, isNewlineChord, parseShellCommand } from "./chat-composer.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
 // SEPA brief: never trust prose renderings of control bytes).
@@ -108,10 +100,7 @@ const recordNoReaction = (rawFrame: string | undefined, startedAt: number) => {
   );
 };
 
-const settleWatching = async (
-  readFrame: () => string | undefined,
-  before?: string,
-) => {
+const settleWatching = async (readFrame: () => string | undefined, before?: string) => {
   const startedAt = performance.now();
   let previous: string | undefined;
   // B-057 — the fix, and it is one boolean. Stability alone was never the condition: the frame is
@@ -178,10 +167,7 @@ const settleWatching = async (
 // So the ordering is no longer available to get wrong: capturing, writing and settling happen
 // inside ONE function, and callers hand it the write to perform rather than performing it
 // themselves. There is no baseline parameter left to misplace.
-const settleAround = async (
-  write: () => void,
-  readFrame: () => string | undefined,
-) => {
+const settleAround = async (write: () => void, readFrame: () => string | undefined) => {
   const before = readFrame();
   write();
   await settleWatching(readFrame, before);
@@ -266,13 +252,10 @@ async function mount(
     // Pinned by `b058-render-effect-window.test.tsx`. That is the run-9 frame explained: the
     // recorded frame contained the focus indicator because focus HAD landed — the subscription
     // had not.
-    await waitForCondition(
-      () => hasFocusIndicator(instance.lastFrame() ?? ""),
-      {
-        describe:
-          "the composer to take focus (the cursor indicator to appear) — until it does, `useInput` is inactive and every keystroke is dropped",
-      },
-    );
+    await waitForCondition(() => hasFocusIndicator(instance.lastFrame() ?? ""), {
+      describe:
+        "the composer to take focus (the cursor indicator to appear) — until it does, `useInput` is inactive and every keystroke is dropped",
+    });
 
     // The yield that closes the window. It is an ORDERING guarantee, not a duration: React
     // schedules passive effects on a MessageChannel task, and a MessageChannel task always drains
@@ -286,10 +269,7 @@ async function mount(
   return instance;
 }
 
-async function type(
-  instance: Awaited<ReturnType<typeof mount>>,
-  chunks: string[],
-) {
+async function type(instance: Awaited<ReturnType<typeof mount>>, chunks: string[]) {
   for (const chunk of chunks) {
     await writeThenSettle(instance, chunk);
   }
@@ -314,16 +294,13 @@ async function waitForFrame(
   // B-033 — delegates to the shared helper so the BOUND lives in one place. This loop's own 2000ms
   // was the measured defect: at load 26 it expired on a frame that was correct, and the same number
   // was copied into a second helper further down this very file.
-  await waitForCondition(
-    () => (instance.lastFrame() ?? "").includes(substring) === present,
-    {
-      // B-058 — the no-reaction settles are appended to the message, so a wait that fails ten
-      // seconds downstream names the 200ms event that is its likely cause instead of leaving the
-      // reader to guess. Empty on a healthy run, so this adds nothing to a passing test.
-      describe: `the frame to ${present ? "contain" : "stop containing"} ${JSON.stringify(substring)} — last frame:\n${instance.lastFrame() ?? ""}${describeNoReactionSettles()}`,
-      ...(timeoutMs === undefined ? {} : { timeoutMs }),
-    },
-  );
+  await waitForCondition(() => (instance.lastFrame() ?? "").includes(substring) === present, {
+    // B-058 — the no-reaction settles are appended to the message, so a wait that fails ten
+    // seconds downstream names the 200ms event that is its likely cause instead of leaving the
+    // reader to guess. Empty on a healthy run, so this adds nothing to a passing test.
+    describe: `the frame to ${present ? "contain" : "stop containing"} ${JSON.stringify(substring)} — last frame:\n${instance.lastFrame() ?? ""}${describeNoReactionSettles()}`,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+  });
 }
 
 describe("ChatComposer (T3.2)", () => {
@@ -370,18 +347,14 @@ describe("ChatComposer (T3.2)", () => {
   });
 
   it("placeholder_renders_when_empty", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} placeholder="Type a message" />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} placeholder="Type a message" />);
     await waitForFrame(instance, "Type a message");
     instance.unmount();
   });
 
   it("single_line_mode_ignores_ctrl_j", async () => {
     const onSubmit = vi.fn();
-    const instance = await mount(
-      <ChatComposer onSubmit={onSubmit} multiLine={false} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={onSubmit} multiLine={false} />);
     await type(instance, ["ab", CTRL_J, "cd", ENTER]);
     expect(onSubmit).toHaveBeenCalledWith("abcd");
     instance.unmount();
@@ -428,10 +401,7 @@ describe("ChatComposer (T3.2)", () => {
   it("unfocused_composer_ignores_input", async () => {
     // Review F-tests-1 (plan T3.2 Deep Dives): isActive gating verified.
     const onSubmit = vi.fn();
-    const instance = await mount(
-      <ChatComposer onSubmit={onSubmit} autoFocus={false} />,
-      false,
-    );
+    const instance = await mount(<ChatComposer onSubmit={onSubmit} autoFocus={false} />, false);
     await type(instance, ["abc", ENTER]);
     expect(onSubmit).not.toHaveBeenCalled();
     instance.unmount();
@@ -510,9 +480,7 @@ describe("ChatComposer (T3.2)", () => {
   });
 
   it("bordered_renders_a_box_around_the_input", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} bordered placeholder="type…" />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} bordered placeholder="type…" />);
     const frame = plain(instance.lastFrame());
     // A rounded border corner is present (the Claude Code look).
     expect(frame).toMatch(/[╭┌]/);
@@ -595,9 +563,7 @@ const plain = (frame: string | undefined): string => stripAnsi(frame ?? "");
 
 describe("ChatComposer slash menu (M15 T2.1)", () => {
   it("typing_slash_opens_menu_with_all_commands", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/"]);
     const frame = plain(instance.lastFrame());
     expect(frame).toContain("clear");
@@ -607,9 +573,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("typing_narrows_and_zero_match_closes", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/", "h", "e"]);
     let frame = plain(instance.lastFrame());
     expect(frame).toContain("help");
@@ -622,9 +586,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("mid_text_slash_never_opens", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["hi ", "/", "w"]);
     const frame = plain(instance.lastFrame());
     expect(frame).toContain("hi /w"); // the input DID land (r2-F8 anchor)
@@ -633,9 +595,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("arrows_move_selection_without_touching_buffer", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/", DOWN_ARROW, UP_ARROW, DOWN_ARROW, DOWN_ARROW]);
     // Buffer text still exactly "/" — arrows were consumed by the menu.
     const frame = plain(instance.lastFrame());
@@ -648,9 +608,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("window_slides_with_markers_and_counter", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={MANY} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={MANY} />);
     await type(instance, ["/"]);
     let frame = plain(instance.lastFrame());
     expect(frame).toContain("▼"); // overflow below at start
@@ -669,9 +627,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     // `WindowedList` (windowed-list.tsx:146,157) render `\u25B2 n` / `\u25BC n` from this same
     // model; the menus rendered a bare glyph over counts they already held. The UPPER edge is
     // asserted here because that is the edge B-022 shipped unpinned.
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={MANY} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={MANY} />);
     await type(instance, ["/"]);
     // Row 0 of 9 in a 5-row window: four rows below, none above.
     expect(plain(instance.lastFrame())).toMatch(/\u25BC\s*4/);
@@ -699,12 +655,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     let message = "";
     try {
       // A substring that will never appear, with a short budget: this is the failure path.
-      await waitForFrame(
-        instance,
-        "this frame will never contain me",
-        true,
-        300,
-      );
+      await waitForFrame(instance, "this frame will never contain me", true, 300);
     } catch (err) {
       message = (err as Error).message;
     }
@@ -731,9 +682,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("tab_completes_to_command_with_trailing_space", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/", "h", "e", TAB, "x"]);
     // Typing after Tab proves the REAL trailing space (r2-F6 — the cursor
     // cell rendered a cosmetic space that masked the no-space mutant).
@@ -775,9 +724,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("escape_dismisses_and_typing_reopens", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/", "h", ESC]);
     // ink's escape parser holds a lone ESC briefly (meta-prefix window) — poll
     // until the menu is gone rather than a fixed sleep (flaky under load,
@@ -832,8 +779,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
         commands={[
           {
             name: "deploy",
-            description:
-              "deploys the current workspace to the remote environment with all checks",
+            description: "deploys the current workspace to the remote environment with all checks",
           },
         ]}
       />,
@@ -841,9 +787,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     Object.defineProperty(instance.stdout, "columns", { get: () => 40 });
     await type(instance, ["/"]);
     const frame = plain(instance.lastFrame());
-    const menuRows = frame
-      .split("\n")
-      .filter((line) => line.includes("/deploy"));
+    const menuRows = frame.split("\n").filter((line) => line.includes("/deploy"));
     expect(menuRows).toHaveLength(1);
     // The single row FITS the 40 columns (truncation, not wrapping).
     expect((menuRows[0] ?? "").length).toBeLessThanOrEqual(40);
@@ -851,9 +795,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("slash_on_second_line_does_not_trigger", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["a", CTRL_J, "/", "h"]);
     const frame = plain(instance.lastFrame());
     expect(frame).toContain("a"); // the multiline draft landed (r2-F8)
@@ -870,10 +812,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     );
     await type(instance, ["/"]);
     const raw = instance.lastFrame() ?? "";
-    const colorSgr = raw.match(
-      // eslint-disable-next-line no-control-regex
-      /\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g,
-    );
+    const colorSgr = raw.match(/\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g);
     expect(colorSgr).toBeNull();
     expect(plain(raw)).toContain("❯");
     expect(raw).toMatchSnapshot("slash-menu-monochrome");
@@ -881,9 +820,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("menu_open_scene_snapshot", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/"]);
     const frame = instance.lastFrame() ?? "";
     expect(frame).toContain("help");
@@ -892,9 +829,7 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
   });
 
   it("hint_line_renders_dim", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} hint="esc cancels the turn" />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} hint="esc cancels the turn" />);
     const raw = instance.lastFrame() ?? "";
     expect(plain(raw)).toContain("esc cancels the turn");
     // The dimness itself (r2-F7): SGR 2 wraps the hint text.
@@ -941,9 +876,7 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     ["src/foo.ts", "foo.md", "bar.ts"].filter((p) => p.includes(query));
 
   it("at_mention_opens_a_fuzzy_file_menu_and_completes_a_path", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />);
     await type(instance, ["@", "f", "o"]);
     await waitForFrame(instance, "src/foo.ts"); // async candidates loaded
     expect(plain(instance.lastFrame())).toContain("foo.md");
@@ -956,9 +889,7 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
   it("renders_a_file_mention_row_without_a_leading_slash", async () => {
     // Parity nit: the mention menu reuses the slash renderer. A file path must
     // render bare (`❯ src/foo.ts`), NOT slash-prefixed (`/src/foo.ts`).
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} fileSearch={fakeSearch} />);
     await type(instance, ["@", "f", "o"]);
     await waitForFrame(instance, "src/foo.ts"); // menu open
     expect(plain(instance.lastFrame())).not.toContain("/src/foo.ts");
@@ -974,9 +905,7 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
     const manyFiles = Array.from({ length: 9 }, (_, i) => `src/deep${i}.ts`);
     const wideSearch = async (query: string): Promise<string[]> =>
       manyFiles.filter((p) => p.includes(query));
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} fileSearch={wideSearch} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} fileSearch={wideSearch} />);
     await type(instance, ["@", "d", "e"]);
     await waitForFrame(instance, "src/deep0.ts");
     // Row 0 of 9 in a 5-row window: four below, none above.
@@ -1040,9 +969,7 @@ describe("ChatComposer @-file mentions (M21 T4.1)", () => {
 
   it("slash_command_menu_still_works_unchanged", async () => {
     // ADR-C3 regression guard: the M15 `/` menu is untouched by the @ addition.
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} commands={COMMANDS} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} commands={COMMANDS} />);
     await type(instance, ["/", "h"]);
     await waitForFrame(instance, "show help");
     instance.unmount();
@@ -1079,18 +1006,14 @@ describe("ChatComposer bang mode (! quick command)", () => {
   });
 
   it("shows_a_shell_mode_hint_while_bang_prefixed", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} onShellCommand={() => {}} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} onShellCommand={() => {}} />);
     await type(instance, ["!"]);
     await waitForFrame(instance, "shell mode");
     instance.unmount();
   });
 
   it("esc_exits_shell_mode_by_clearing_the_draft", async () => {
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} onShellCommand={() => {}} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} onShellCommand={() => {}} />);
     await type(instance, ["!", "l", "s"]);
     await waitForFrame(instance, "ls");
     await type(instance, [ESC]);
@@ -1110,9 +1033,7 @@ describe("ChatComposer bang mode (! quick command)", () => {
 describe("ChatComposer help toggle (?)", () => {
   it("question_mark_on_an_empty_buffer_toggles_help_and_is_not_typed", async () => {
     const onHelpToggle = vi.fn();
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} onHelpToggle={onHelpToggle} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} onHelpToggle={onHelpToggle} />);
     await type(instance, ["?"]);
     expect(onHelpToggle).toHaveBeenCalledTimes(1);
     await waitForFrame(instance, "?", false); // the `?` is consumed, not inserted
@@ -1121,9 +1042,7 @@ describe("ChatComposer help toggle (?)", () => {
 
   it("question_mark_after_text_is_a_literal_char_not_a_toggle", async () => {
     const onHelpToggle = vi.fn();
-    const instance = await mount(
-      <ChatComposer onSubmit={() => {}} onHelpToggle={onHelpToggle} />,
-    );
+    const instance = await mount(<ChatComposer onSubmit={() => {}} onHelpToggle={onHelpToggle} />);
     await type(instance, ["h", "i", "?"]);
     await waitForFrame(instance, "hi?");
     expect(onHelpToggle).not.toHaveBeenCalled();
@@ -1189,11 +1108,7 @@ const typeUntil = async (
  * where the pre-B-033 local loop failed in 2.1 s saying `expected 'h' to be 'hi'`. A mandatory
  * field satisfied by a placeholder is an optional field with extra steps.
  */
-const waitFor = async (
-  predicate: () => boolean,
-  describe: string,
-  timeoutMs?: number,
-) => {
+const waitFor = async (predicate: () => boolean, describe: string, timeoutMs?: number) => {
   await waitForCondition(predicate, {
     describe,
     ...(timeoutMs === undefined ? {} : { timeoutMs }),
@@ -1233,17 +1148,10 @@ describe("ChatComposer onChange", () => {
     const onChange = vi.fn();
     const inst = render(
       <TheoTUIProvider>
-        <ChatComposer
-          onSubmit={() => {}}
-          onChange={onChange}
-          initialValue="draft"
-        />
+        <ChatComposer onSubmit={() => {}} onChange={onChange} initialValue="draft" />
       </TheoTUIProvider>,
     );
-    await waitFor(
-      () => onChange.mock.calls.length > 0,
-      "onChange to fire at least once",
-    );
+    await waitFor(() => onChange.mock.calls.length > 0, "onChange to fire at least once");
     // (a) the seeded draft appears in the frame…
     expect(inst.lastFrame()).toContain("draft");
     // (b) …and onChange fired after mount with the initial text.
@@ -1251,11 +1159,7 @@ describe("ChatComposer onChange", () => {
     // The seeded draft stays editable — typing appends at the seeded cursor.
     // Two ticks: the useInput subscription attaches after the mount frame
     // (same idiom as the sibling test above).
-    await typeUntil(
-      inst,
-      "!",
-      () => onChange.mock.calls.at(-1)?.[0] === "draft!",
-    );
+    await typeUntil(inst, "!", () => onChange.mock.calls.at(-1)?.[0] === "draft!");
     expect(onChange.mock.calls.at(-1)?.[0]).toBe("draft!");
     inst.unmount();
   });
@@ -1276,10 +1180,7 @@ describe("issue #59 item 3 — an unstable onChange identity does not re-fire", 
       </TheoTUIProvider>
     );
     const inst = render(tree());
-    await waitFor(
-      () => spy.mock.calls.length > 0,
-      "the submit spy to be called",
-    );
+    await waitFor(() => spy.mock.calls.length > 0, "the submit spy to be called");
     await tickOnchange();
     const antes = spy.mock.calls.length;
 

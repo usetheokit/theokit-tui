@@ -1,23 +1,18 @@
 import { Box, Static, Text } from "ink";
-import { memo, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
-
-import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
-import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import { memo, useMemo, useRef } from "react";
 import { CHAT_ROLES, ChatMessage } from "../chat/chat-message.js";
 import { HEADER_SENTINEL_KEY } from "../chat/chat-thread.js";
 import { DiffViewer } from "../diff/diff-viewer.js";
-import {
-  STATUS_INDICATOR_WIDTH,
-  TOOL_CALL_STATUSES,
-  formatToolName,
-} from "../tools/tool-call.js";
-import { ToolCallCard } from "../tools/tool-call-card.js";
-import { ToolResult } from "../tools/tool-result.js";
-import { useTheoTheme } from "../theme/theme.js";
-import { unionMessage } from "./union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
+import { formatToolName, STATUS_INDICATOR_WIDTH, TOOL_CALL_STATUSES } from "../tools/tool-call.js";
+import { ToolCallCard } from "../tools/tool-call-card.js";
+import { ToolResult } from "../tools/tool-result.js";
+import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
+import { unionMessage } from "./union-message.js";
 
 const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
 
@@ -64,9 +59,7 @@ type TimelineStaticItem = typeof HEADER_SENTINEL | AgentEvent;
  * FIELD TYPES are TypeScript's job (not re-checked at runtime — SEPA F5
  * scope note). Extra/unknown properties are tolerated (EC-12).
  */
-function validateMessageEvent(
-  event: Extract<AgentEvent, { kind: "message" }>,
-): void {
+function validateMessageEvent(event: Extract<AgentEvent, { kind: "message" }>): void {
   if (!CHAT_ROLES.includes(event.role)) {
     reportGuardFailure(
       "AgentTimeline",
@@ -100,10 +93,7 @@ function validateToolEvent(event: Extract<AgentEvent, { kind: "tool" }>): void {
   }
   // SEPA F1: ToolResult's own maxLines guard would fire mid-render
   // (swallowed, wrong component name) — mirror it at THIS boundary.
-  if (
-    event.maxLines !== undefined &&
-    (!Number.isInteger(event.maxLines) || event.maxLines < 1)
-  ) {
+  if (event.maxLines !== undefined && (!Number.isInteger(event.maxLines) || event.maxLines < 1)) {
     reportGuardFailure(
       "AgentTimeline",
       new TypeError(
@@ -287,8 +277,7 @@ function ThinkingRow({ text }: { text: string }) {
 const DEFAULT_DIFF_MAX_LINES = 20;
 
 function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
-  const maxLines =
-    event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
+  const maxLines = event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
   // A unified-diff result (e.g. apply_patch) renders as a Claude-Code-style
   // inline diff (row backgrounds + prose stats + syntax highlight — the card
   // header already names the tool/file); everything else goes through
@@ -302,9 +291,7 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
       />
     );
   }
-  const hasBody =
-    (event.output !== undefined && event.output !== "") ||
-    event.shell !== undefined;
+  const hasBody = (event.output !== undefined && event.output !== "") || event.shell !== undefined;
   if (!hasBody) return null;
   return (
     <ToolResult
@@ -372,9 +359,7 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
   return (
     <Box flexDirection="column">
       <Box>
-        <Text color={token.color}>
-          {token.glyph.padEnd(STATUS_INDICATOR_WIDTH)}
-        </Text>
+        <Text color={token.color}>{token.glyph.padEnd(STATUS_INDICATOR_WIDTH)}</Text>
         <Text bold>Explored</Text>
         <Text dimColor>{` (${tools.length})`}</Text>
       </Box>
@@ -498,11 +483,7 @@ export function AgentTimeline({
         {tail.map((event, index) => (
           // First tail block is the timeline's first ONLY when nothing graduated
           // into Static above it (items empty).
-          <Row
-            key={event.id}
-            event={event}
-            spaced={items.length > 0 || index > 0}
-          />
+          <Row key={event.id} event={event} spaced={items.length > 0 || index > 0} />
         ))}
       </Box>
     </>

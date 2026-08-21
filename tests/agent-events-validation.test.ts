@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import {
-  assertValidEvents,
-  resetIncrementalValidation,
-} from "../src/agent/agent-timeline.js";
+import { assertValidEvents, resetIncrementalValidation } from "../src/agent/agent-timeline.js";
 
 const ev = (id: string, text: string) =>
   ({ id, kind: "message", role: "assistant", text }) as never;
-const bad = (id: string) =>
-  ({ id, kind: "does-not-exist", role: "assistant", text: "x" }) as never;
+const bad = (id: string) => ({ id, kind: "does-not-exist", role: "assistant", text: "x" }) as never;
 
 /**
  * M92 T5.1 — incremental validation **must not** stop catching invalid input.
@@ -32,38 +28,28 @@ describe("M92 — assertValidEvents on both paths", () => {
 
   it("EXTENSION — a duplicate id in the tail is still caught", () => {
     assertValidEvents([ev("a", "one")]);
-    expect(() => assertValidEvents([ev("a", "one"), ev("a", "two")])).toThrow(
-      /duplicate event id/,
-    );
+    expect(() => assertValidEvents([ev("a", "one"), ev("a", "two")])).toThrow(/duplicate event id/);
   });
 
   it("EXTENSION — an unknown kind in the tail is still caught", () => {
     assertValidEvents([ev("b1", "one")]);
-    expect(() => assertValidEvents([ev("b1", "one"), bad("b2")])).toThrow(
-      /unknown event kind/,
-    );
+    expect(() => assertValidEvents([ev("b1", "one"), bad("b2")])).toThrow(/unknown event kind/);
   });
 
   it("NON-EXTENSION — an invalid event in the MIDDLE falls back and is still caught", () => {
     assertValidEvents([ev("c1", "one"), ev("c2", "two")]);
     // A completely different array: not an extension, so the full sweep has to run.
-    expect(() => assertValidEvents([bad("d1"), ev("d2", "three")])).toThrow(
-      /unknown event kind/,
-    );
+    expect(() => assertValidEvents([bad("d1"), ev("d2", "three")])).toThrow(/unknown event kind/);
   });
 
   it("NON-EXTENSION — a duplicate in the middle of a new array is still caught", () => {
     assertValidEvents([ev("e1", "one")]);
-    expect(() => assertValidEvents([ev("x", "a"), ev("x", "b")])).toThrow(
-      /duplicate event id/,
-    );
+    expect(() => assertValidEvents([ev("x", "a"), ev("x", "b")])).toThrow(/duplicate event id/);
   });
 
   it("a valid EXTENSION is NOT rejected — the optimisation does not break the legitimate case", () => {
     assertValidEvents([ev("f1", "one")]);
-    expect(() =>
-      assertValidEvents([ev("f1", "one"), ev("f2", "two")]),
-    ).not.toThrow();
+    expect(() => assertValidEvents([ev("f1", "one"), ev("f2", "two")])).not.toThrow();
   });
 
   it("after a REJECTION, the invalid array does NOT become a trusted prefix", () => {
@@ -104,8 +90,7 @@ const tool = (id: string, extra: Record<string, unknown> = {}) =>
     status: "success",
     ...extra,
   }) as never;
-const explored = (id: string, tools: unknown[]) =>
-  ({ id, kind: "explored", tools }) as never;
+const explored = (id: string, tools: unknown[]) => ({ id, kind: "explored", tools }) as never;
 
 describe("issue #58 — assertValidEvents descends into 'explored' events", () => {
   beforeEach(() => {
@@ -113,22 +98,20 @@ describe("issue #58 — assertValidEvents descends into 'explored' events", () =
   });
 
   it("a duplicate nested id inside the SAME block throws", () => {
-    expect(() =>
-      assertValidEvents([explored("e1", [tool("t1"), tool("t1")])]),
-    ).toThrow(/duplicate event id "t1"/);
+    expect(() => assertValidEvents([explored("e1", [tool("t1"), tool("t1")])])).toThrow(
+      /duplicate event id "t1"/,
+    );
   });
 
   it("a nested id colliding with a TOP-LEVEL id throws", () => {
     // The id set is shared: nested and top level live in the same namespace.
-    expect(() =>
-      assertValidEvents([ev("t1", "one"), explored("e1", [tool("t1")])]),
-    ).toThrow(/duplicate event id "t1"/);
+    expect(() => assertValidEvents([ev("t1", "one"), explored("e1", [tool("t1")])])).toThrow(
+      /duplicate event id "t1"/,
+    );
   });
 
   it("an empty 'explored' block throws instead of rendering 'Explored (0)'", () => {
-    expect(() => assertValidEvents([explored("e1", [])])).toThrow(
-      /at least one/,
-    );
+    expect(() => assertValidEvents([explored("e1", [])])).toThrow(/at least one/);
   });
 
   it("an invalid status on a nested entry throws", () => {
@@ -137,30 +120,24 @@ describe("issue #58 — assertValidEvents descends into 'explored' events", () =
     // VALID — the test then asserted a throw that could never happen. Whoever edits this line next:
     // the value has to be one the union rejects, or this test stops testing anything.
     expect(() =>
-      assertValidEvents([
-        explored("e1", [tool("t1", { status: "not-a-status" })]),
-      ]),
+      assertValidEvents([explored("e1", [tool("t1", { status: "not-a-status" })])]),
     ).toThrow(/invalid status/);
   });
 
   it("output/shell/diff exclusivity applies to nested entries", () => {
     expect(() =>
-      assertValidEvents([
-        explored("e1", [tool("t1", { output: "x", diff: "y" })]),
-      ]),
+      assertValidEvents([explored("e1", [tool("t1", { output: "x", diff: "y" })])]),
     ).toThrow(/only one of/);
   });
 
   it("an invalid maxLines on a nested entry throws", () => {
-    expect(() =>
-      assertValidEvents([explored("e1", [tool("t1", { maxLines: 0 })])]),
-    ).toThrow(/maxLines must be an integer/);
+    expect(() => assertValidEvents([explored("e1", [tool("t1", { maxLines: 0 })])])).toThrow(
+      /maxLines must be an integer/,
+    );
   });
 
   it("a valid 'explored' block is NOT rejected", () => {
-    expect(() =>
-      assertValidEvents([explored("e1", [tool("t1"), tool("t2")])]),
-    ).not.toThrow();
+    expect(() => assertValidEvents([explored("e1", [tool("t1"), tool("t2")])])).not.toThrow();
   });
 
   it("EXTENSION — nested ids from the prefix stay reserved in the tail", () => {

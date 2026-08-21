@@ -1,12 +1,6 @@
-import { Box, Text, render } from "ink";
+import { Box, render, Text } from "ink";
 
-import {
-  Banner,
-  ChatMessage,
-  CostMeter,
-  TodoList,
-  TheoTUIProvider,
-} from "../../src/index.js";
+import { Banner, ChatMessage, CostMeter, TheoTUIProvider, TodoList } from "../../src/index.js";
 
 // Universal margin API demo: EVERY component accepts the CSS/Ink margin family
 // (margin / marginX / marginY / marginTop / marginRight / marginBottom /

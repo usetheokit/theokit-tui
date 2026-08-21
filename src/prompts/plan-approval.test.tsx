@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-
-import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
-import { PlanApproval } from "./plan-approval.js";
-import type { PlanDecision } from "../agent/agent-decision.js";
 import { WAIT_BUDGET_MS } from "../../tests/fixtures/wait-for.js";
+import { type ItlInstance, render } from "../../tests/renderer/itl-adapter.js";
+import type { PlanDecision } from "../agent/agent-decision.js";
+import { PlanApproval } from "./plan-approval.js";
 
 // M23 T3.1 — PlanApproval over the itl-adapter. A markdown plan body (M13
 // MarkdownText) + a ChoiceRow of approve/revise; `revise` reveals a feedback
@@ -22,9 +21,7 @@ async function waitForFrame(
     if ((app.lastFrame() ?? "").includes(substring)) return;
     await app.flush();
   }
-  throw new Error(
-    `frame never contained ${JSON.stringify(substring)} — got:\n${app.lastFrame()}`,
-  );
+  throw new Error(`frame never contained ${JSON.stringify(substring)} — got:\n${app.lastFrame()}`);
 }
 
 /** Type an atomic key burst, retrying until it echoes (subscribe lags focus). */
@@ -42,11 +39,7 @@ async function typeWhenReady(app: ItlInstance, text: string): Promise<void> {
 }
 
 /** Press a key, retrying until `done()` — used for submits with no echo. */
-async function pressUntil(
-  app: ItlInstance,
-  bytes: string,
-  done: () => boolean,
-): Promise<void> {
+async function pressUntil(app: ItlInstance, bytes: string, done: () => boolean): Promise<void> {
   for (let attempt = 0; attempt < 20 && !done(); attempt += 1) {
     app.stdin.write(bytes);
     await app.flush();
@@ -67,9 +60,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
 
   it("approve_emits_approve", async () => {
     const decisions: PlanDecision[] = [];
-    const app = render(
-      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
-    );
+    const app = render(<PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />);
     await app.flush();
     app.stdin.write("\r"); // first choice = approve
     expect(decisions).toEqual([{ kind: "approve" }]);
@@ -90,9 +81,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
   it("esc_from_the_feedback_input_returns_to_the_choice_bar", async () => {
     // review HIGH-2: the free-text branch is not a dead end — Esc cancels back.
     const decisions: PlanDecision[] = [];
-    const app = render(
-      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
-    );
+    const app = render(<PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />);
     await app.flush();
     app.stdin.write("\x1b[C"); // → revise
     await app.flush();
@@ -111,9 +100,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
 
   it("revise_with_feedback_emits_the_feedback", async () => {
     const decisions: PlanDecision[] = [];
-    const app = render(
-      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
-    );
+    const app = render(<PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />);
     await app.flush();
     app.stdin.write("\x1b[C"); // → revise
     await app.flush();
@@ -127,9 +114,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
 
   it("revise_with_empty_feedback_is_allowed", async () => {
     const decisions: PlanDecision[] = [];
-    const app = render(
-      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
-    );
+    const app = render(<PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />);
     await app.flush();
     app.stdin.write("\x1b[C"); // → revise
     await app.flush();
@@ -142,9 +127,7 @@ describe("PlanApproval component (M23 T3.1)", () => {
 
   it("escape_never_auto_approves", async () => {
     const decisions: PlanDecision[] = [];
-    const app = render(
-      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
-    );
+    const app = render(<PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />);
     await app.flush();
     app.stdin.write("\x1b"); // a lone ESC (held ~20ms) on the choice bar
     // duration is the subject: this asserts that something does NOT happen. A condition-wait can
@@ -159,13 +142,11 @@ describe("PlanApproval component (M23 T3.1)", () => {
 
   it("streaming_a_longer_plan_keeps_the_choice_bar_responsive", async () => {
     const decisions: PlanDecision[] = [];
-    const app = render(
-      <PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />,
-    );
+    const app = render(<PlanApproval plan={PLAN} onDecision={(d) => decisions.push(d)} />);
     await app.flush();
     app.rerender(
       <PlanApproval
-        plan={PLAN + "3. Extra step streamed in later\n"}
+        plan={`${PLAN}3. Extra step streamed in later\n`}
         onDecision={(d) => decisions.push(d)}
       />,
     );

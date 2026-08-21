@@ -1,15 +1,15 @@
+import spinners from "cli-spinners";
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
-import spinners from "cli-spinners";
 import stringWidth from "string-width";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { preloadHighlighter } from "../markdown/code-block.js";
-import { ToolCall, formatArgs, formatToolName } from "./tool-call.js";
-import { ToolCallCard } from "./tool-call-card.js";
-import { TheoTUIProvider } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { preloadHighlighter } from "../markdown/code-block.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { formatArgs, formatToolName, ToolCall } from "./tool-call.js";
+import { ToolCallCard } from "./tool-call-card.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
 const DOTS_FRAME_0 = "⠋";
@@ -53,9 +53,7 @@ describe("formatToolName (PascalCase display standard)", () => {
   });
 
   it("header_renders_the_pascalized_name", async () => {
-    const frame = await renderFrame(
-      <ToolCall name="git_diff" status="success" summary="src/**" />,
-    );
+    const frame = await renderFrame(<ToolCall name="git_diff" status="success" summary="src/**" />);
     expect(stripAnsi(frame)).toContain("GitDiff(src/**)");
     expect(stripAnsi(frame)).not.toContain("git_diff");
   });
@@ -63,18 +61,14 @@ describe("formatToolName (PascalCase display standard)", () => {
 
 describe("ToolCall — status lifecycle (T1.1)", () => {
   it("renders_pending_with_status_bullet", async () => {
-    const frame = await renderFrame(
-      <ToolCall name="search" status="pending" />,
-    );
+    const frame = await renderFrame(<ToolCall name="search" status="pending" />);
     // M26: the status bullet `⏺` is the INDICATOR (positional oracle, SEPA F3).
     expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
     expect(frame).toContain("Search");
   });
 
   it("renders_success_with_status_bullet", async () => {
-    const frame = await renderFrame(
-      <ToolCall name="search" status="success" />,
-    );
+    const frame = await renderFrame(<ToolCall name="search" status="success" />);
     expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
   });
 
@@ -86,9 +80,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
   it("running_shows_spinner_first_frame", async () => {
     // EC-14 canary: pins the coupling between renderFrame's 0ms tick and
     // cli-spinners' 80ms dots interval — see tests/helpers.tsx.
-    const frame = await renderFrame(
-      <ToolCall name="search" status="running" />,
-    );
+    const frame = await renderFrame(<ToolCall name="search" status="running" />);
     expect(frame).toContain(DOTS_FRAME_0);
   });
 
@@ -113,9 +105,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
 
   it("summary_renders_as_args_in_parens_after_name", async () => {
     // M26: `name(args)` — the summary is the arg detail, in dim parens.
-    const frame = await renderFrame(
-      <ToolCall name="grep" status="success" summary="in 3 files" />,
-    );
+    const frame = await renderFrame(<ToolCall name="grep" status="success" summary="in 3 files" />);
     expect(stripAnsi(frame)).toContain("Grep(in 3 files)");
   });
 
@@ -154,18 +144,14 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
 
   it("name_with_newline_renders_single_header_line", async () => {
     // EC-8: the header is ONE line by contract — newlines sanitized to spaces.
-    const frame = await renderFrame(
-      <ToolCall name={"rm\n-rf"} status="failed" />,
-    );
+    const frame = await renderFrame(<ToolCall name={"rm\n-rf"} status="failed" />);
     expect(frame.split("\n")).toHaveLength(1);
     expect(frame).toContain("rm -rf");
   });
 
   it("summary_with_newline_renders_single_header_line", async () => {
     // EC-8 summary path (SEPA phase-1 F4) — mutation-visible without this.
-    const frame = await renderFrame(
-      <ToolCall name="grep" status="success" summary={"a\nb"} />,
-    );
+    const frame = await renderFrame(<ToolCall name="grep" status="success" summary={"a\nb"} />);
     expect(frame.split("\n")).toHaveLength(1);
     expect(frame).toContain("a b");
   });
@@ -207,9 +193,7 @@ describe("ToolCallCard — header + indented body (T1.2)", () => {
   });
 
   it("bodyless_card_omits_the_connector", async () => {
-    const frame = await renderFrame(
-      <ToolCallCard name="grep" status="success" />,
-    );
+    const frame = await renderFrame(<ToolCallCard name="grep" status="success" />);
     expect(frame).not.toContain("⎿");
   });
 
@@ -253,12 +237,8 @@ describe("ToolCallCard — header + indented body (T1.2)", () => {
   });
 
   it("card_without_children_equals_row", async () => {
-    const rowFrame = await renderFrame(
-      <ToolCall name="grep" status="success" />,
-    );
-    const cardFrame = await renderFrame(
-      <ToolCallCard name="grep" status="success" />,
-    );
+    const rowFrame = await renderFrame(<ToolCall name="grep" status="success" />);
+    const cardFrame = await renderFrame(<ToolCallCard name="grep" status="success" />);
     expect(cardFrame).toBe(rowFrame);
   });
 
@@ -351,43 +331,37 @@ describe("ToolCall — animation + transitions (T3.1, ADR D6)", () => {
     expect(stripAnsi(frame).startsWith("⏺")).toBe(true);
   });
 
-  it(
-    "same_status_rerender_does_not_reset_spinner",
-    { timeout: 5000 },
-    async () => {
-      // EC-10: identical props must not remount/reset the interval — the
-      // spinner cell immediately after the same-props rerender must be the
-      // MID-CYCLE cell it was before, not frame[0] again (review tests-2).
-      const instance = render(<ToolCall name="fetch" status="running" />);
-      const half = Math.ceil(spinners.dots.frames.length / 2);
-      await delay(half * spinners.dots.interval + 20);
-      const cellBefore = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
-      instance.rerender(<ToolCall name="fetch" status="running" />);
-      const cellAfter = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
-      expect(cellBefore).toBeDefined();
-      // B-020 — this asserted `cellAfter === cellBefore`, i.e. that the frame had not CHANGED.
-      // That conflates two things: "the rerender did not reset the interval", which is the
-      // behaviour under test, and "no wall-clock time passed", which is not ours to guarantee.
-      // Under contention the interval legitimately fires between the two reads and the test failed
-      // with `expected '⠴' to be '⠼'` — one frame apart, which is time passing, not a defect.
-      //
-      // The invariant is the line below and always was: a reset would show frame[0]. Adding the
-      // membership check keeps the rest of the coverage — a rerender that broke the spinner
-      // entirely would produce a cell that is not a `dots` frame at all.
-      expect(spinners.dots.frames).toContain(cellAfter);
-      expect(cellAfter).not.toBe(spinners.dots.frames[0]);
-      instance.unmount();
-    },
-  );
+  it("same_status_rerender_does_not_reset_spinner", { timeout: 5000 }, async () => {
+    // EC-10: identical props must not remount/reset the interval — the
+    // spinner cell immediately after the same-props rerender must be the
+    // MID-CYCLE cell it was before, not frame[0] again (review tests-2).
+    const instance = render(<ToolCall name="fetch" status="running" />);
+    const half = Math.ceil(spinners.dots.frames.length / 2);
+    await delay(half * spinners.dots.interval + 20);
+    const cellBefore = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
+    instance.rerender(<ToolCall name="fetch" status="running" />);
+    const cellAfter = uniqueSpinnerCells([instance.lastFrame() ?? ""])[0];
+    expect(cellBefore).toBeDefined();
+    // B-020 — this asserted `cellAfter === cellBefore`, i.e. that the frame had not CHANGED.
+    // That conflates two things: "the rerender did not reset the interval", which is the
+    // behaviour under test, and "no wall-clock time passed", which is not ours to guarantee.
+    // Under contention the interval legitimately fires between the two reads and the test failed
+    // with `expected '⠴' to be '⠼'` — one frame apart, which is time passing, not a defect.
+    //
+    // The invariant is the line below and always was: a reset would show frame[0]. Adding the
+    // membership check keeps the rest of the coverage — a rerender that broke the spinner
+    // entirely would produce a cell that is not a `dots` frame at all.
+    expect(spinners.dots.frames).toContain(cellAfter);
+    expect(cellAfter).not.toBe(spinners.dots.frames[0]);
+    instance.unmount();
+  });
 });
 
 // M6 T2.1: STATUS_VISUALS migrated to theme.toolStatus — tokens drive render.
 describe("ToolCall — toolStatus tokens (M6 T2.1)", () => {
   it("tool_status_tokens_drive_render", async () => {
     const frame = await renderFrame(
-      <TheoTUIProvider
-        theme={{ toolStatus: { failed: { glyph: "✗", color: "magenta" } } }}
-      >
+      <TheoTUIProvider theme={{ toolStatus: { failed: { glyph: "✗", color: "magenta" } } }}>
         <ToolCall name="t" status="failed" />
       </TheoTUIProvider>,
     );
@@ -429,11 +403,7 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
   it("diff_result_renders_patch_inside_card_indent", async () => {
     const frame = await renderFrame(
       <Box width={70}>
-        <ToolCallCard
-          name="edit"
-          status="success"
-          result={{ kind: "diff", patch: VALID_PATCH }}
-        />
+        <ToolCallCard name="edit" status="success" result={{ kind: "diff", patch: VALID_PATCH }} />
       </Box>,
     );
     const stripped = m16plain(frame);
@@ -441,13 +411,9 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
     // content (the sign is not adjacent to the text).
     // DiffViewer's REAL row shape (probed): number gutter, THEN the sign,
     // then content — `2 + added line`.
-    const addedLine = stripped
-      .split("\n")
-      .find((line) => line.includes("added line"));
+    const addedLine = stripped.split("\n").find((line) => line.includes("added line"));
     expect(addedLine).toMatch(/\d+ \+ added line/);
-    const removedLine = stripped
-      .split("\n")
-      .find((line) => line.includes("removed line"));
+    const removedLine = stripped.split("\n").find((line) => line.includes("removed line"));
     expect(removedLine).toMatch(/\d+ - removed line/);
     // Diff rows sit inside the card indent (not at column 0).
     expect(addedLine?.startsWith("  ")).toBe(true);
@@ -478,10 +444,7 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
   });
 
   it("preview_result_caps_with_language_routing", async () => {
-    const twenty = Array.from(
-      { length: 20 },
-      (_, i) => `const line${i} = ${i};`,
-    ).join("\n");
+    const twenty = Array.from({ length: 20 }, (_, i) => `const line${i} = ${i};`).join("\n");
     const frame = await renderFrame(
       <Box width={70}>
         <ToolCallCard
@@ -530,9 +493,7 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
           result={{
             kind: "output",
             shell: {
-              stdout: Array.from({ length: 8 }, (_, i) => `row ${i}`).join(
-                "\n",
-              ),
+              stdout: Array.from({ length: 8 }, (_, i) => `row ${i}`).join("\n"),
               stderr: "",
               exitCode: 0,
             },
@@ -567,9 +528,7 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
       </ToolCallCard>,
     );
     const stripped = m16plain(frame);
-    expect(stripped.indexOf("the preview body")).toBeLessThan(
-      stripped.indexOf("a child note"),
-    );
+    expect(stripped.indexOf("the preview body")).toBeLessThan(stripped.indexOf("a child note"));
   });
 
   it("malformed_patch_error_propagates", () => {
@@ -614,19 +573,12 @@ describe("ToolCallCard result variants (M16 T1.1)", () => {
         </Box>
       </TheoTUIProvider>,
     );
-    const colorSgr = frame.match(
-      // eslint-disable-next-line no-control-regex
-      /\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g,
-    );
+    const colorSgr = frame.match(/\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g);
     expect(colorSgr).toBeNull();
     const stripped = m16plain(frame);
-    const monoAdded = stripped
-      .split("\n")
-      .find((line) => line.includes("added line"));
+    const monoAdded = stripped.split("\n").find((line) => line.includes("added line"));
     expect(monoAdded).toMatch(/\d+ \+ added line/);
-    const monoRemoved = stripped
-      .split("\n")
-      .find((line) => line.includes("removed line"));
+    const monoRemoved = stripped.split("\n").find((line) => line.includes("removed line"));
     expect(monoRemoved).toMatch(/\d+ - removed line/);
   });
 

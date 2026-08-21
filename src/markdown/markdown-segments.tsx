@@ -2,13 +2,7 @@ import { Text } from "ink";
 
 import type { InlineSegment } from "./markdown.js";
 
-export function Segments({
-  segments,
-  accent,
-}: {
-  segments: InlineSegment[];
-  accent: string;
-}) {
+export function Segments({ segments, accent }: { segments: InlineSegment[]; accent: string }) {
   return (
     <>
       {segments.map((segment, index) => {

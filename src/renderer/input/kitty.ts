@@ -8,13 +8,13 @@
 const ESC = String.fromCharCode(27);
 
 /** Push flag 1 (disambiguate), query flags, DA sentinel — written on start. */
-export const KITTY_ENABLE = ESC + "[>1u" + ESC + "[?u" + ESC + "[c";
+export const KITTY_ENABLE = `${ESC}[>1u${ESC}[?u${ESC}[c`;
 
 /** Pop the kitty flag stack — written on teardown. */
-export const KITTY_DISABLE = ESC + "[<u";
+export const KITTY_DISABLE = `${ESC}[<u`;
 
 // A `\x1b[?<flags>u` reply; kitty is active when <flags> is a non-zero number.
-const kittyReplyRe = new RegExp(ESC + "\\[\\?(\\d+)u");
+const kittyReplyRe = new RegExp(`${ESC}\\[\\?(\\d+)u`);
 
 /** True when a terminal reply indicates kitty keyboard support is active. */
 export function detectKittyActive(reply: string): boolean {

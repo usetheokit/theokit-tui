@@ -1,11 +1,11 @@
-import { Box, Text, render } from "ink";
+import { Box, render, Text } from "ink";
 
 import {
   Banner,
+  renderFigletArt,
   TheoTUIProvider,
   VERSION,
   WelcomeBanner,
-  renderFigletArt,
 } from "../../src/index.js";
 
 // Banner demos (plan m9 WelcomeBanner + m27 <Banner>): the startup header every

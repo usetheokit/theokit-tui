@@ -21,10 +21,7 @@ const withMetadata = (metadata: unknown): UIMessageLike => ({
 // A gated tool pauses the run: ai-sdk reconstructs a tool part with `state: "approval-requested"` +
 // `approval: { id }` (verified against readUIMessageStream). `findPendingApproval` surfaces it so the
 // App renders an ApprovalPrompt and settles via `useAgent().approve(approvalId, decision)`.
-const approvalRequestedMsg = (
-  approvalId: string,
-  toolName: string,
-): UIMessageLike => ({
+const approvalRequestedMsg = (approvalId: string, toolName: string): UIMessageLike => ({
   id: "a2",
   role: "assistant",
   parts: [
@@ -121,17 +118,13 @@ describe("readTurnUsage", () => {
   });
 
   it("returns undefined for a message with no metadata (a user turn, or a run without done)", () => {
-    expect(
-      readTurnUsage({ id: "u1", role: "user", parts: [] }),
-    ).toBeUndefined();
+    expect(readTurnUsage({ id: "u1", role: "user", parts: [] })).toBeUndefined();
     expect(readTurnUsage(withMetadata(undefined))).toBeUndefined();
   });
 
   it("returns undefined for malformed metadata (defensive — never throws)", () => {
     expect(readTurnUsage(withMetadata({ usage: "nope" }))).toBeUndefined();
-    expect(
-      readTurnUsage(withMetadata({ usage: { inputTokens: "x" } })),
-    ).toBeUndefined();
+    expect(readTurnUsage(withMetadata({ usage: { inputTokens: "x" } }))).toBeUndefined();
     expect(readTurnUsage(withMetadata(42))).toBeUndefined();
   });
 });
@@ -141,10 +134,7 @@ describe("readTurnUsage", () => {
 // {stdout,stderr,exitCode} to a JSON STRING — so without routing it to the
 // `shell` field the timeline dumps raw `{"stdout":...}` instead of firing
 // ToolResult's shell renderer (the observed UX gap vs Codex).
-const toolMsg = (
-  output: unknown,
-  state = "output-available",
-): UIMessageLike => ({
+const toolMsg = (output: unknown, state = "output-available"): UIMessageLike => ({
   id: "a1",
   role: "assistant",
   parts: [{ type: "tool-run_shell", toolCallId: "c1", state, output }],
@@ -158,9 +148,7 @@ const firstTool = (msg: UIMessageLike) => {
 
 describe("messagesToAgentEvents tool-result routing", () => {
   it("routes a JSON-string shell envelope to the shell field", () => {
-    const ev = firstTool(
-      toolMsg('{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'),
-    );
+    const ev = firstTool(toolMsg('{"stdout":"MCP_SUM=111","stderr":"","exitCode":0}'));
     expect(ev.shell).toEqual({
       stdout: "MCP_SUM=111",
       stderr: "",
@@ -170,9 +158,7 @@ describe("messagesToAgentEvents tool-result routing", () => {
   });
 
   it("routes a shell-envelope OBJECT to the shell field", () => {
-    const ev = firstTool(
-      toolMsg({ stdout: "", stderr: "boom\n", exitCode: 127 }),
-    );
+    const ev = firstTool(toolMsg({ stdout: "", stderr: "boom\n", exitCode: 127 }));
     expect(ev.shell).toEqual({ stdout: "", stderr: "boom\n", exitCode: 127 });
     expect(ev.output).toBeUndefined();
   });
@@ -193,11 +179,8 @@ describe("messagesToAgentEvents tool-result routing", () => {
     // apply_patch returns a unified diff; the SDK wraps it in the shell envelope
     // JSON string. A clean diff (no stderr, exit 0) renders as a colored inline
     // diff — not shell output, not raw JSON.
-    const diff =
-      "Index: a.ts\n===\n--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
-    const ev = firstTool(
-      toolMsg(JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 })),
-    );
+    const diff = "Index: a.ts\n===\n--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new\n";
+    const ev = firstTool(toolMsg(JSON.stringify({ stdout: diff, stderr: "", exitCode: 0 })));
     expect(ev.diff).toContain("@@");
     expect(ev.diff).toContain("-old");
     expect(ev.diff).toContain("+new");
@@ -264,11 +247,7 @@ describe("messagesToAgentEvents tool-result routing", () => {
       tools: { name: string; input?: unknown }[];
     };
     expect(grouped.kind).toBe("explored");
-    expect(grouped.tools.map((t) => t.name)).toEqual([
-      "list_dir",
-      "grep",
-      "read_file",
-    ]);
+    expect(grouped.tools.map((t) => t.name)).toEqual(["list_dir", "grep", "read_file"]);
     expect(grouped.tools[2]?.input).toEqual({ path: "chat.ts" }); // input captured for the summary
   });
 
@@ -441,10 +420,9 @@ describe("messagesToAgentEvents tool-result routing", () => {
         input: { path: "b" },
       },
     ];
-    const events = messagesToAgentEvents(
-      [{ id: "m1", role: "assistant", parts }],
-      { exploreTools: [] },
-    );
+    const events = messagesToAgentEvents([{ id: "m1", role: "assistant", parts }], {
+      exploreTools: [],
+    });
     expect(events.filter((e) => e.kind === "explored")).toHaveLength(0);
     expect(events.filter((e) => e.kind === "tool")).toHaveLength(2);
   });
@@ -490,8 +468,7 @@ describe("messagesToAgentEvents — formatToolResult (result-body seam)", () => 
     });
     const [ev] = messagesToAgentEvents([jsonMsg("write_stdin", raw)], {
       formatToolResult: (_e, r) => {
-        const p =
-          typeof r === "string" ? JSON.parse(r) : (r as { output?: unknown });
+        const p = typeof r === "string" ? JSON.parse(r) : (r as { output?: unknown });
         return typeof p?.output === "string" ? { output: p.output } : undefined;
       },
     });
@@ -511,12 +488,9 @@ describe("messagesToAgentEvents — formatToolResult (result-body seam)", () => 
   });
 
   it("clears the exclusive output/shell/diff before applying the override (display-only)", () => {
-    const [ev] = messagesToAgentEvents(
-      [jsonMsg("interactive_shell", "plain\nlines")],
-      {
-        formatToolResult: () => ({ output: "OVERRIDDEN" }),
-      },
-    );
+    const [ev] = messagesToAgentEvents([jsonMsg("interactive_shell", "plain\nlines")], {
+      formatToolResult: () => ({ output: "OVERRIDDEN" }),
+    });
     expect((ev as { output?: string }).output).toBe("OVERRIDDEN");
   });
 });

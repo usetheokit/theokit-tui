@@ -19,7 +19,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { routeThroughLayers, type KeyLayer } from "./layer-router.js";
+import { type KeyLayer, routeThroughLayers } from "./layer-router.js";
 
 interface State {
   readonly helpOpen: boolean;
@@ -92,10 +92,9 @@ describe("routeThroughLayers — claiming and producing nothing are different", 
       helpOpen: true,
     });
 
-    expect(
-      out.layer,
-      "the key fell through a layer that was supposed to swallow it",
-    ).toBe("locked");
+    expect(out.layer, "the key fell through a layer that was supposed to swallow it").toBe(
+      "locked",
+    );
     expect(out.actions).toEqual([]);
   });
 
@@ -119,9 +118,9 @@ describe("routeThroughLayers — what the layers are given", () => {
       },
     ];
 
-    expect(
-      routeThroughLayers(layers, "c", { ...IDLE, streaming: true }).actions,
-    ).toEqual(["interrupt"]);
+    expect(routeThroughLayers(layers, "c", { ...IDLE, streaming: true }).actions).toEqual([
+      "interrupt",
+    ]);
     expect(routeThroughLayers(layers, "c", IDLE).actions).toEqual(["type"]);
   });
 

@@ -1,11 +1,11 @@
-import cliBoxes, { type BoxStyle } from "cli-boxes";
 import chalk from "chalk";
+import cliBoxes, { type BoxStyle } from "cli-boxes";
 import widestLine from "widest-line";
 import Yoga, { type Node as YogaNode } from "yoga-layout";
 
 import type { RendererNode } from "../host-config.js";
-import type { Output } from "./output-grid.js";
 import { squashTextNodes, wrapText } from "../text-measure.js";
+import type { Output } from "./output-grid.js";
 
 // M18 render-node (plan m18-yoga-layout, ADR D2): the laid-out-tree → cell-grid
 // walk — a faithful port of Ink's render-node-to-output.js + render-border.js +
@@ -40,17 +40,12 @@ function getMaxWidth(yogaNode: YogaNode): number {
 }
 
 /** Apply a foreground color via chalk (named / #hex / ansi256 / rgb) — Ink colorize.js. */
-export function colorizeForeground(
-  str: string,
-  color: string | undefined,
-): string {
+export function colorizeForeground(str: string, color: string | undefined): string {
   if (!color) {
     return str;
   }
   if (color in chalk) {
-    return (chalk as unknown as Record<string, (s: string) => string>)[color]!(
-      str,
-    );
+    return (chalk as unknown as Record<string, (s: string) => string>)[color]!(str);
   }
   if (color.startsWith("#")) {
     return chalk.hex(color)(str);
@@ -90,11 +85,7 @@ interface BorderPlan {
 }
 
 /** Resolve the border geometry + toggles from a box's style + computed size. */
-function borderPlan(
-  style: BoxBorderStyle,
-  width: number,
-  height: number,
-): BorderPlan {
+function borderPlan(style: BoxBorderStyle, width: number, height: number): BorderPlan {
   const showTop = style.borderTop !== false;
   const showBottom = style.borderBottom !== false;
   const showLeft = style.borderLeft !== false;
@@ -115,38 +106,20 @@ function borderPlan(
 }
 
 /** A horizontal border edge (top or bottom): corner + repeated mid + corner. */
-function horizontalEdge(
-  p: BorderPlan,
-  left: string,
-  mid: string,
-  right: string,
-): string {
-  return (
-    (p.showLeft ? left : "") +
-    mid.repeat(p.contentWidth) +
-    (p.showRight ? right : "")
-  );
+function horizontalEdge(p: BorderPlan, left: string, mid: string, right: string): string {
+  return (p.showLeft ? left : "") + mid.repeat(p.contentWidth) + (p.showRight ? right : "");
 }
 
 /** Draw a box border into the grid (Ink render-border.js, reduced to fg color). */
-function renderBorder(
-  x: number,
-  y: number,
-  node: RendererNode,
-  output: Output,
-): void {
+function renderBorder(x: number, y: number, node: RendererNode, output: Output): void {
   const style = (node.props.style as BoxBorderStyle | undefined) ?? {};
   if (!style.borderStyle || !node.yogaNode) {
     return;
   }
-  const p = borderPlan(
-    style,
-    node.yogaNode.getComputedWidth(),
-    node.yogaNode.getComputedHeight(),
-  );
+  const p = borderPlan(style, node.yogaNode.getComputedWidth(), node.yogaNode.getComputedHeight());
   const noTx = { transformers: [] as Transformer[] };
   const vertical = (glyph: string): string =>
-    (colorizeForeground(glyph, p.color) + "\n").repeat(p.verticalHeight);
+    `${colorizeForeground(glyph, p.color)}\n`.repeat(p.verticalHeight);
 
   if (p.showTop) {
     const top = horizontalEdge(p, p.box.topLeft, p.box.top, p.box.topRight);
@@ -159,18 +132,8 @@ function renderBorder(
     output.write(x + p.width - 1, y + p.offsetY, vertical(p.box.right), noTx);
   }
   if (p.showBottom) {
-    const bottom = horizontalEdge(
-      p,
-      p.box.bottomLeft,
-      p.box.bottom,
-      p.box.bottomRight,
-    );
-    output.write(
-      x,
-      y + p.height - 1,
-      colorizeForeground(bottom, p.color),
-      noTx,
-    );
+    const bottom = horizontalEdge(p, p.box.bottomLeft, p.box.bottom, p.box.bottomRight);
+    output.write(x, y + p.height - 1, colorizeForeground(bottom, p.color), noTx);
   }
 }
 
@@ -200,11 +163,7 @@ function renderTextNode(
  * A node is skipped when it is display:none, or (in the live pass) when it is
  * graduated scrollback — the latter is emitted once by the engine's writeStatic.
  */
-function isSkipped(
-  node: RendererNode,
-  yogaNode: YogaNode,
-  options: WalkOptions,
-): boolean {
+function isSkipped(node: RendererNode, yogaNode: YogaNode, options: WalkOptions): boolean {
   return (
     yogaNode.getDisplay() === Yoga.DISPLAY_NONE ||
     (options.skipStaticElements === true && node.props.internal_static === true)
@@ -229,11 +188,7 @@ function renderImageNode(node: RendererNode, y: number, output: Output): void {
 }
 
 /** Walk the laid-out tree, writing each node's output to the cell grid. */
-export function renderNodeToOutput(
-  node: RendererNode,
-  output: Output,
-  options: WalkOptions,
-): void {
+export function renderNodeToOutput(node: RendererNode, output: Output, options: WalkOptions): void {
   const { yogaNode } = node;
   if (!yogaNode || isSkipped(node, yogaNode, options)) {
     return;

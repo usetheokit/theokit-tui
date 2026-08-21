@@ -1,5 +1,5 @@
-import { Box, Text, render } from "ink";
-
+import { Box, render, Text } from "ink";
+import type { TheoBuiltinThemeName } from "../../src/index.js";
 import {
   ChatMessage,
   ContextWindowBar,
@@ -7,7 +7,6 @@ import {
   ToolCall,
   themes,
 } from "../../src/index.js";
-import type { TheoBuiltinThemeName } from "../../src/index.js";
 
 // Theme showcase (plan T3.2 — TTFATT caller for the built-ins): the same
 // scene under the dark and light themes. Static; piped output is clean.

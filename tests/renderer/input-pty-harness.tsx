@@ -1,12 +1,12 @@
 import {
+  type EditorState,
   editorActionForChord,
   editorReducer,
   initialEditorState,
-  type EditorState,
 } from "../../src/chat/composer-editor.js";
+import type { TextBufferAction } from "../../src/chat/text-buffer.js";
 import { createInputSource } from "../../src/renderer/input/input-source.js";
 import type { Key } from "../../src/renderer/input/key.js";
-import type { TextBufferAction } from "../../src/chat/text-buffer.js";
 
 // M19 T3.1 PTY harness (plan §6): a standalone program node-pty spawns in a REAL
 // pseudo-terminal. It reads process.stdin through OUR InputSource in RAW MODE
@@ -20,15 +20,12 @@ function bufferAction(input: string, key: Key): TextBufferAction | undefined {
   if (key.rightArrow) return { type: "move-right" };
   if (key.backspace || key.delete) return { type: "delete-backward" };
   if (input === "\n") return { type: "newline" };
-  if (input.length > 0 && !key.ctrl && !key.meta)
-    return { type: "insert", text: input };
+  if (input.length > 0 && !key.ctrl && !key.meta) return { type: "insert", text: input };
   return undefined;
 }
 
 let state: EditorState = initialEditorState;
-const stdin = process.stdin as unknown as Parameters<
-  typeof createInputSource
->[0];
+const stdin = process.stdin as unknown as Parameters<typeof createInputSource>[0];
 const source = createInputSource(stdin);
 source.setRawMode(true);
 source.start();

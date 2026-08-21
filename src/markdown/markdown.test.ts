@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-
-import { parseInlineSegments, parseMarkdown } from "./markdown.js";
 import type { MarkdownNode } from "./markdown.js";
+import { parseInlineSegments, parseMarkdown } from "./markdown.js";
 
 // M13 T1.1 (plan m13-markdown-renderer, ADR D1): grammar unit oracles for
 // the PURE parser — the gemini-proven line-scanner + inline tokenizer
@@ -12,9 +11,7 @@ const kindsOf = (nodes: MarkdownNode[]): string[] => nodes.map((n) => n.kind);
 
 describe("markdown-model blocks (M13 T1.1)", () => {
   it("parses_each_block_kind", () => {
-    const nodes = parseMarkdown(
-      "# H1\n## H2\n### H3\n#### H4\n- a\n1. b\n---\npara",
-    );
+    const nodes = parseMarkdown("# H1\n## H2\n### H3\n#### H4\n- a\n1. b\n---\npara");
     expect(kindsOf(nodes)).toEqual([
       "heading",
       "heading",
@@ -99,10 +96,7 @@ describe("markdown-model blocks (M13 T1.1)", () => {
   });
 
   it("model_module_is_pure_no_ink_import", () => {
-    const source = readFileSync(
-      new URL("./markdown.ts", import.meta.url),
-      "utf8",
-    );
+    const source = readFileSync(new URL("./markdown.ts", import.meta.url), "utf8");
     const inkImports = source.match(/from "ink"/g) ?? [];
     expect(inkImports).toHaveLength(0);
   });
@@ -163,16 +157,14 @@ describe("markdown-model inline (M13 T1.1)", () => {
     // Negative case (testing.md § 4.1): unclosed markers never style and
     // never crash — the text survives verbatim.
     const segs = parseInlineSegments("**unclosed and ~~half");
-    const styled = segs.filter(
-      (s) => s.styles.bold || s.styles.strikethrough || s.styles.italic,
-    );
+    const styled = segs.filter((s) => s.styles.bold || s.styles.strikethrough || s.styles.italic);
     expect(styled).toHaveLength(0);
     expect(segs.map((s) => s.text).join("")).toBe("**unclosed and ~~half");
   });
 
   it("pathological_input_stays_linear", () => {
     // Backtracking guard: a long marker soup parses in bounded time.
-    const soup = "*a".repeat(2000) + "`" + "b*".repeat(2000);
+    const soup = `${"*a".repeat(2000)}\`${"b*".repeat(2000)}`;
     const started = performance.now();
     const segs = parseInlineSegments(soup);
     const elapsed = performance.now() - started;
@@ -183,9 +175,7 @@ describe("markdown-model inline (M13 T1.1)", () => {
 
 describe("markdown-model tables (M25 T1.1)", () => {
   it("parses_a_gfm_table_into_a_table_node", () => {
-    const nodes = parseMarkdown(
-      "| name | age |\n| --- | ---: |\n| alice | 30 |\n| bob | 9 |",
-    );
+    const nodes = parseMarkdown("| name | age |\n| --- | ---: |\n| alice | 30 |\n| bob | 9 |");
     expect(nodes).toHaveLength(1);
     const table = nodes[0]!;
     expect(table.kind).toBe("table");
@@ -220,9 +210,7 @@ describe("markdown-model tables (M25 T1.1)", () => {
   });
 
   it("pads_a_ragged_row_to_the_header_column_count", () => {
-    const nodes = parseMarkdown(
-      "| a | b | c |\n| --- | --- | --- |\n| x | y |",
-    );
+    const nodes = parseMarkdown("| a | b | c |\n| --- | --- | --- |\n| x | y |");
     const table = nodes[0]!;
     if (table.kind !== "table") throw new Error("not a table");
     expect(table.rows[0]).toEqual(["x", "y", ""]); // 3rd cell padded empty

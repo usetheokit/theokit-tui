@@ -204,10 +204,7 @@ describe("M92 + explored — prefix stability across graduation", () => {
     const closed = messagesToAgentEvents([m1, m2, m3]);
     const later = messagesToAgentEvents([m1, m2, m3, msg("m4", "and more")]);
     expect(closed.map((e) => e.id)).toEqual(["explored-c1", "m3::m0"]);
-    expect(later.map((e) => e.id).slice(0, 2)).toEqual([
-      "explored-c1",
-      "m3::m0",
-    ]);
+    expect(later.map((e) => e.id).slice(0, 2)).toEqual(["explored-c1", "m3::m0"]);
     // The NON-explored event in the prefix is stable by identity — the contrast that
     // localises the #66 gap in the block's wrapper rather than in the memoisation.
     expect(later[1]).toBe(closed[1]);

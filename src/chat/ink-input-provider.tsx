@@ -1,5 +1,5 @@
 import { useStdin } from "ink";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 
 import { FocusProvider } from "../renderer/hooks/use-focus.js";
 import {
@@ -34,9 +34,7 @@ export function InkInputProvider({ children }: InkInputProviderProps) {
       // systems share ONE terminal-mode owner and never fight over it. When raw
       // mode is unsupported (non-TTY), leave it unset — the source skips it and
       // interactive input is simply inert, as it must be off a TTY.
-      ...(isRawModeSupported
-        ? { setRawMode: (enabled: boolean) => setRawMode(enabled) }
-        : {}),
+      ...(isRawModeSupported ? { setRawMode: (enabled: boolean) => setRawMode(enabled) } : {}),
       on: (event, listener) => {
         stdin.on(event, listener);
       },

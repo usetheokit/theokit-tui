@@ -71,8 +71,7 @@ export function StatusFooter({
   const showsMode = modeLabel !== undefined || mode !== "default";
   // `=== undefined`, never falsiness: `footerHintFor({})` returns `""`, and `||` would restore the
   // full default — this item's own defect, re-created by the fix for it (ADR D4).
-  const resolvedHint =
-    affordances === undefined ? hint : footerHintFor(affordances);
+  const resolvedHint = affordances === undefined ? hint : footerHintFor(affordances);
   const showsAgents = affordances === undefined || affordances.agents === true;
   return (
     // width 100% so the top row can space-between to the terminal edges.
@@ -85,10 +84,7 @@ export function StatusFooter({
         <Box>
           {/* `mode` is forwarded even alongside `modeLabel` so its closed-union check still
               runs — a caller that passes both a label and a typo'd mode hears about the typo. */}
-          <ModeIndicator
-            mode={mode}
-            {...(modeLabel === undefined ? {} : { label: modeLabel })}
-          />
+          <ModeIndicator mode={mode} {...(modeLabel === undefined ? {} : { label: modeLabel })} />
           {/* The separator belongs to the affordance, not to the row: blanking only the text
               would leave `⏵⏵ auto-accept edits on · `, a trailing middot that reads as a
               truncated line rather than a deliberate absence (ADR D5). */}

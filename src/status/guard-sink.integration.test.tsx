@@ -1,10 +1,4 @@
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -13,10 +7,9 @@ import React from "react";
 import { describe, expect, it } from "vitest";
 
 import { UsagePanel } from "../metrics/usage-panel.js";
-
+import { installStderrGuard } from "../terminal/stderr-guard.js";
 import type { GuardSink } from "./guard-sink.js";
 import { lostGuardRecords, reportGuardFailure } from "./guard-sink.js";
-import { installStderrGuard } from "../terminal/stderr-guard.js";
 
 // B-025 v2 T2.4 and T3.1 — the two things v1 could not know, because it never drove a real render.
 //

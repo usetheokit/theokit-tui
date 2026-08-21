@@ -26,8 +26,8 @@ function spawnProbe(extraEnv: Record<string, string>): string {
     // that is the better fix and it is deferred as B-034 Q2, not overlooked.
     timeout: 60000,
     env: {
-      PATH: process.env["PATH"] ?? "",
-      HOME: process.env["HOME"] ?? "",
+      PATH: process.env.PATH ?? "",
+      HOME: process.env.HOME ?? "",
       ...extraEnv,
     },
   });
@@ -94,45 +94,40 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
     expect(out).not.toContain("╭");
   });
 
-  it(
-    "term_dumb_scene_matches_no_color_bytes_modulo_marker",
-    // TWO sequential spawns, each with its own 20s deadline — the it-level
-    // budget must exceed the worst case (review dom-testing-3; house
-    // subprocess-flake history under load).
-    { timeout: 150000 },
-    () => {
-      // TERM=dumb resolves the DARK theme at chalk level 0 — no marker by
-      // design (EC-1); the composer cursor cell is the inverse-stripped
-      // space, so the normalization maps marker → space.
-      const outDumb = spawnProbe({ TERM: "dumb" });
-      assertDegradedScene(outDumb);
-      expect(outDumb).not.toContain("▏");
-      // M9 EC-3: dumb resolves the DARK theme at level 0 → round border.
-      expect(outDumb).toContain("╭");
-      expect(outDumb).not.toContain("┌");
-      const outNoColor = spawnProbe({ NO_COLOR: "1" });
-      // Exactly ONE marker (review tests-3 — a duplicated-marker regression
-      // must not hide inside the global replaceAll wherever dumb has spaces).
-      expect(outNoColor.split("▏")).toHaveLength(2);
-      // M9 EC-3: the banner border differs BY DESIGN between the scenes
-      // (dark→round vs no-color→single) — normalize the 4 corner glyphs
-      // alongside the marker (─/│ are shared between round and single).
-      // M10: with ink7's single-final-frame pipe contract, the running
-      // spinner's PHASE at unmount is process-timing-dependent — the two
-      // spawns may freeze different dots glyphs. The phase was never the
-      // oracle; normalize all cli-spinners dots glyphs on BOTH sides.
-      const SPINNER = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/g;
-      const outDumbNorm = outDumb.replace(SPINNER, "⠿");
-      const normalized = outNoColor
-        .replace(SPINNER, "⠿")
-        .replaceAll("▏", " ")
-        .replaceAll("┌", "╭")
-        .replaceAll("┐", "╮")
-        .replaceAll("└", "╰")
-        .replaceAll("┘", "╯");
-      expect(outDumbNorm).toBe(normalized);
-    },
-  );
+  // TWO sequential spawns, each with its own 20s deadline — so the it-level budget must exceed
+  // the worst case (review dom-testing-3; house subprocess-flake history under load).
+  it("term_dumb_scene_matches_no_color_bytes_modulo_marker", { timeout: 150000 }, () => {
+    // TERM=dumb resolves the DARK theme at chalk level 0 — no marker by
+    // design (EC-1); the composer cursor cell is the inverse-stripped
+    // space, so the normalization maps marker → space.
+    const outDumb = spawnProbe({ TERM: "dumb" });
+    assertDegradedScene(outDumb);
+    expect(outDumb).not.toContain("▏");
+    // M9 EC-3: dumb resolves the DARK theme at level 0 → round border.
+    expect(outDumb).toContain("╭");
+    expect(outDumb).not.toContain("┌");
+    const outNoColor = spawnProbe({ NO_COLOR: "1" });
+    // Exactly ONE marker (review tests-3 — a duplicated-marker regression
+    // must not hide inside the global replaceAll wherever dumb has spaces).
+    expect(outNoColor.split("▏")).toHaveLength(2);
+    // M9 EC-3: the banner border differs BY DESIGN between the scenes
+    // (dark→round vs no-color→single) — normalize the 4 corner glyphs
+    // alongside the marker (─/│ are shared between round and single).
+    // M10: with ink7's single-final-frame pipe contract, the running
+    // spinner's PHASE at unmount is process-timing-dependent — the two
+    // spawns may freeze different dots glyphs. The phase was never the
+    // oracle; normalize all cli-spinners dots glyphs on BOTH sides.
+    const SPINNER = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/g;
+    const outDumbNorm = outDumb.replace(SPINNER, "⠿");
+    const normalized = outNoColor
+      .replace(SPINNER, "⠿")
+      .replaceAll("▏", " ")
+      .replaceAll("┌", "╭")
+      .replaceAll("┐", "╮")
+      .replaceAll("└", "╰")
+      .replaceAll("┘", "╯");
+    expect(outDumbNorm).toBe(normalized);
+  });
 
   it("bare_pipe_degrades_without_env", { timeout: 90000 }, () => {
     // NO color env at all — the pipe itself forces chalk level 0
@@ -167,8 +162,8 @@ describe("degrade matrix (M6 T3.2, plan D6)", () => {
       encoding: "utf8",
       timeout: 60000,
       env: {
-        PATH: process.env["PATH"] ?? "",
-        HOME: process.env["HOME"] ?? "",
+        PATH: process.env.PATH ?? "",
+        HOME: process.env.HOME ?? "",
         TERM: "dumb",
         FORCE_COLOR: "2",
       },

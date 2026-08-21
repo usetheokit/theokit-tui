@@ -5,9 +5,7 @@ import { describe, expect, it } from "vitest";
 // M8 T1.1/T1.2 (plan m8-ga-publish): the publish contract — manifest fields,
 // publint strictness, README public-copy compliance, snapshot-coverage metric.
 
-const pkg = JSON.parse(
-  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-) as {
+const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
   description?: string;
   keywords?: string[];
   files?: string[];
@@ -17,29 +15,20 @@ const pkg = JSON.parse(
 
 describe("package publish contract (M8 T1.1)", () => {
   it("manifest_declares_publish_fields", () => {
-    expect(pkg.description ?? "").toSatisfy(
-      (d: string) => d.length > 20,
-      "description too short",
-    );
-    expect(pkg.keywords ?? []).toSatisfy(
-      (k: string[]) => k.length >= 5,
-      "needs >= 5 keywords",
-    );
+    expect(pkg.description ?? "").toSatisfy((d: string) => d.length > 20, "description too short");
+    expect(pkg.keywords ?? []).toSatisfy((k: string[]) => k.length >= 5, "needs >= 5 keywords");
     expect(pkg.files).toContain("dist");
-    expect(pkg.scripts["prepublishOnly"] ?? "").toContain("gates");
-    expect(pkg.devDependencies["publint"]).toBeDefined();
+    expect(pkg.scripts.prepublishOnly ?? "").toContain("gates");
+    expect(pkg.devDependencies.publint).toBeDefined();
   });
 
   it("react_peer_range_is_honest", () => {
     // M10: ink7 requires react >=19.2.0 exactly (blueprint Corner 2) —
     // the peer mirrors that floor; engines follow ink7 (node >=22).
-    const peers = (
-      pkg as unknown as { peerDependencies: Record<string, string> }
-    ).peerDependencies;
-    expect(peers["react"]).toBe("^19.2.0");
-    const engines = (pkg as unknown as { engines: Record<string, string> })
-      .engines;
-    expect(engines["node"]).toBe(">=22");
+    const peers = (pkg as unknown as { peerDependencies: Record<string, string> }).peerDependencies;
+    expect(peers.react).toBe("^19.2.0");
+    const engines = (pkg as unknown as { engines: Record<string, string> }).engines;
+    expect(engines.node).toBe(">=22");
   });
 
   it("publint_reports_zero_errors", { timeout: 60000 }, () => {
@@ -91,13 +80,8 @@ describe("README public-copy contract (M8 T1.2)", () => {
    */
   it("readme_quickstart_symbols_resolve", { timeout: 30_000 }, async () => {
     const codeBlock = /```tsx?\n([\s\S]*?)```/.exec(md)?.[1] ?? "";
-    const importMatch = /import \{([^}]+)\} from "@theokit\/tui"/.exec(
-      codeBlock,
-    );
-    expect(
-      importMatch,
-      "quickstart must import from @theokit/tui",
-    ).not.toBeNull();
+    const importMatch = /import \{([^}]+)\} from "@theokit\/tui"/.exec(codeBlock);
+    expect(importMatch, "quickstart must import from @theokit/tui").not.toBeNull();
     const names = (importMatch?.[1] ?? "")
       .split(",")
       .map((n) => n.trim())
@@ -112,10 +96,7 @@ describe("README public-copy contract (M8 T1.2)", () => {
 
 describe("TTFATT record (M8 T2.2)", () => {
   it("ttfatt_record_exists_with_measurement", () => {
-    const md = readFileSync(
-      new URL("../../wiki/benchmarks/ttfatt.md", import.meta.url),
-      "utf8",
-    );
+    const md = readFileSync(new URL("../../wiki/benchmarks/ttfatt.md", import.meta.url), "utf8");
     expect(md).toMatch(/@theokit\/tui@0\.10\.0/);
     expect(md).toMatch(/@theokit\/tui@0\.11\.0/);
     expect(md).toMatch(/\d+(\.\d+)?\s?(s|seconds|min)/);
@@ -134,8 +115,7 @@ const M10_BASE = "035ae09";
 const RENAMED_SINCE_M10: Record<string, string> = {
   // ADR 0003 — milestone prefixes dropped, subject-named instead.
   "m92-assert-valid-events.test.ts": "agent-events-validation.test.ts",
-  "m92-incremental-derivation.test.ts":
-    "agent-events-incremental-derivation.test.ts",
+  "m92-incremental-derivation.test.ts": "agent-events-incremental-derivation.test.ts",
   // ADR 0003 — qualifier segment removed from the filename.
   "use-agent-stream.reconnect.test.tsx": "use-agent-stream-reconnect.test.tsx",
   "welcome-banner.animated.test.tsx": "welcome-banner-animation.test.tsx",
@@ -145,8 +125,7 @@ const RENAMED_SINCE_M10: Record<string, string> = {
   "chat-composer.onchange.test.tsx": "chat-composer.test.tsx",
 };
 
-const countIts = (source: string): number =>
-  (source.match(/\bit\(/g) ?? []).length;
+const countIts = (source: string): number => (source.match(/\bit\(/g) ?? []).length;
 
 const testFilesIn = (output: string): string[] =>
   output
@@ -192,28 +171,19 @@ function itCountAtBase(path: string): number | null {
 /** Where a base-commit test file lives today: same basename, an explicit
  * rename, or the tests/ split that moved the `example-`/`bench-` prefix into a
  * folder. Undefined = genuinely gone. */
-function currentPathFor(
-  basePath: string,
-  byBase: Map<string, string>,
-): string | undefined {
+function currentPathFor(basePath: string, byBase: Map<string, string>): string | undefined {
   const original = basePath.slice(basePath.lastIndexOf("/") + 1);
   const stripped = original.replace(/^example-/, "").replace(/^bench-/, "");
-  return (
-    byBase.get(RENAMED_SINCE_M10[original] ?? original) ?? byBase.get(stripped)
-  );
+  return byBase.get(RENAMED_SINCE_M10[original] ?? original) ?? byBase.get(stripped);
 }
 
 describe("never-weaken migration guard (M10 D2)", () => {
   it("it_count_never_decreases", () => {
     const byBase = indexCurrentTestsByBasename();
     const changed = testFilesIn(
-      execFileSync(
-        "git",
-        ["diff", "--name-only", M10_BASE, "--", "src", "tests"],
-        {
-          encoding: "utf8",
-        },
-      ),
+      execFileSync("git", ["diff", "--name-only", M10_BASE, "--", "src", "tests"], {
+        encoding: "utf8",
+      }),
     );
     for (const path of changed) {
       const before = itCountAtBase(path);
@@ -222,12 +192,9 @@ describe("never-weaken migration guard (M10 D2)", () => {
       // Absent from the tree = deleted, which IS a weakening. Report it as a
       // count of zero so the assertion says so, instead of crashing on ENOENT.
       const after = current
-        ? countIts(
-            readFileSync(new URL(`../../${current}`, import.meta.url), "utf8"),
-          )
+        ? countIts(readFileSync(new URL(`../../${current}`, import.meta.url), "utf8"))
         : 0;
-      const label =
-        current && current !== path ? `${path} -> ${current}` : path;
+      const label = current && current !== path ? `${path} -> ${current}` : path;
       expect(after, label).toBeGreaterThanOrEqual(before);
     }
   });
@@ -235,16 +202,10 @@ describe("never-weaken migration guard (M10 D2)", () => {
 
 describe("platform coherence (M10 T2.3)", () => {
   it("readme_and_ci_declare_new_platform", () => {
-    const ci = readFileSync(
-      new URL("../../.github/workflows/ci.yml", import.meta.url),
-      "utf8",
-    );
+    const ci = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
     expect(ci).toContain("22.x");
     expect(ci).not.toContain("20.x");
-    const md = readFileSync(
-      new URL("../../README.md", import.meta.url),
-      "utf8",
-    );
+    const md = readFileSync(new URL("../../README.md", import.meta.url), "utf8");
     expect(md).toMatch(/Node ≥ 22|node >= ?22|Node 22/i);
     expect(md).toContain("react@19");
   });
@@ -277,14 +238,7 @@ describe("snapshot re-record review guard (M10 T1.4)", () => {
     // additions-only diffs are NEW snapshots from later milestones.
     const numstat = execFileSync(
       "git",
-      [
-        "diff",
-        "--numstat",
-        M10_BASE,
-        "--",
-        "src/__snapshots__",
-        "tests/__snapshots__",
-      ],
+      ["diff", "--numstat", M10_BASE, "--", "src/__snapshots__", "tests/__snapshots__"],
       { encoding: "utf8" },
     )
       .trim()

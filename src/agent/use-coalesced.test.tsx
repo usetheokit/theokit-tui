@@ -46,16 +46,10 @@ describe("useCoalesced", () => {
   it("changes_inside_one_window_produce_one_recomputation", async () => {
     const clock = fakeClock();
     const compute = vi.fn(() => "v");
-    const app = render(
-      <Probe compute={compute} value={1} windowMs={100} now={clock.now} />,
-    );
+    const app = render(<Probe compute={compute} value={1} windowMs={100} now={clock.now} />);
     await tick();
-    app.rerender(
-      <Probe compute={compute} value={2} windowMs={100} now={clock.now} />,
-    );
-    app.rerender(
-      <Probe compute={compute} value={3} windowMs={100} now={clock.now} />,
-    );
+    app.rerender(<Probe compute={compute} value={2} windowMs={100} now={clock.now} />);
+    app.rerender(<Probe compute={compute} value={3} windowMs={100} now={clock.now} />);
     await tick();
     // The clock never advanced, so every change fell inside the first window.
     expect(compute).toHaveBeenCalledTimes(1);
@@ -67,14 +61,10 @@ describe("useCoalesced", () => {
   it("the_budget_survives_a_rerender_and_still_coalesces", async () => {
     const clock = fakeClock();
     const compute = vi.fn(() => "v");
-    const app = render(
-      <Probe compute={compute} value={1} windowMs={100} now={clock.now} />,
-    );
+    const app = render(<Probe compute={compute} value={1} windowMs={100} now={clock.now} />);
     await tick();
     clock.advance(10);
-    app.rerender(
-      <Probe compute={compute} value={2} windowMs={100} now={clock.now} />,
-    );
+    app.rerender(<Probe compute={compute} value={2} windowMs={100} now={clock.now} />);
     await tick();
     expect(compute).toHaveBeenCalledTimes(1);
   });
@@ -119,24 +109,10 @@ describe("useCoalesced", () => {
     const clock = fakeClock();
     const compute = vi.fn(() => "v");
     const app = render(
-      <Probe
-        compute={compute}
-        value={1}
-        windowMs={100}
-        now={clock.now}
-        screenReader
-      />,
+      <Probe compute={compute} value={1} windowMs={100} now={clock.now} screenReader />,
     );
     await tick();
-    app.rerender(
-      <Probe
-        compute={compute}
-        value={2}
-        windowMs={100}
-        now={clock.now}
-        screenReader
-      />,
-    );
+    app.rerender(<Probe compute={compute} value={2} windowMs={100} now={clock.now} screenReader />);
     await tick();
     // Coalescing drops intermediate states, which is exactly what a screen reader must announce.
     expect(compute).toHaveBeenCalledTimes(2);
@@ -145,13 +121,9 @@ describe("useCoalesced", () => {
   it("a_zero_window_never_coalesces", async () => {
     const clock = fakeClock();
     const compute = vi.fn(() => "v");
-    const app = render(
-      <Probe compute={compute} value={1} windowMs={0} now={clock.now} />,
-    );
+    const app = render(<Probe compute={compute} value={1} windowMs={0} now={clock.now} />);
     await tick();
-    app.rerender(
-      <Probe compute={compute} value={2} windowMs={0} now={clock.now} />,
-    );
+    app.rerender(<Probe compute={compute} value={2} windowMs={0} now={clock.now} />);
     await tick();
     expect(compute).toHaveBeenCalledTimes(2);
   });
@@ -160,13 +132,9 @@ describe("useCoalesced", () => {
   // of a stream, the closing state of a turn. Everything looks right until the stream stops.
   it("the_last_change_is_delivered_by_a_trailing_update", async () => {
     const clock = fakeClock();
-    const app = render(
-      <Probe compute={() => "first"} value={1} windowMs={20} now={clock.now} />,
-    );
+    const app = render(<Probe compute={() => "first"} value={1} windowMs={20} now={clock.now} />);
     await tick();
-    app.rerender(
-      <Probe compute={() => "last"} value={2} windowMs={20} now={clock.now} />,
-    );
+    app.rerender(<Probe compute={() => "last"} value={2} windowMs={20} now={clock.now} />);
     // Nothing further arrives; only the trailing update can deliver "last".
     clock.advance(30);
     // B-033 — was a fixed 40 ms sleep. The condition is the assertion below.
@@ -211,14 +179,7 @@ describe("the hook inherits the primitive guard", () => {
 
   it("test_the_hook_reaches_the_primitives_guard", async () => {
     const clock = fakeClock();
-    render(
-      <Probe
-        compute={() => "v"}
-        value={1}
-        windowMs={Number.NaN}
-        now={clock.now}
-      />,
-    );
+    render(<Probe compute={() => "v"} value={1} windowMs={Number.NaN} now={clock.now} />);
     await tick();
     expect(guardRecords.join("")).toContain("createFrameBudget: frameBudgetMs");
     expect(guardRecords.join("")).toContain("got NaN");

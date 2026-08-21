@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-
-import { CodeBlock, ensureHighlighter } from "../../src/markdown/code-block.js";
-
-import { renderFrame } from "./helpers.js";
 import { stripAnsi } from "../../src/format/ansi.js";
+import { CodeBlock, ensureHighlighter } from "../../src/markdown/code-block.js";
+import { renderFrame } from "./helpers.js";
 
 // B-020 — what `renderFrame` actually guarantees, asserted by properties a mutation can reach.
 //
@@ -53,9 +51,7 @@ describe("renderFrame (B-020)", () => {
     // so work React queued for this render completes before the frame is read. Highlighting is
     // asynchronous, so a helper that reads earlier returns the same TEXT with no colour.
     await ensureHighlighter();
-    const frame = await renderFrame(
-      <CodeBlock code={SNIPPET} language="typescript" />,
-    );
+    const frame = await renderFrame(<CodeBlock code={SNIPPET} language="typescript" />);
 
     // The TEXT is unchanged by highlighting — only colour bytes are added, which is the invariant
     // `code-block.test.tsx` calls D8 text invariance.

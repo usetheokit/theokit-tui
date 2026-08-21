@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { parseUnifiedDiff } from "../diff/diff.js";
 import { omitMargin, pickMargin } from "../layout/layout-props.js";
 import { ResultBody } from "./result-body.js";
-import { assertToolCardResult } from "./tool-card-result.js";
-import type { ToolCardResult } from "./tool-card-result.js";
-import { ToolCall } from "./tool-call.js";
 import type { ToolCallProps } from "./tool-call.js";
+import { ToolCall } from "./tool-call.js";
+import type { ToolCardResult } from "./tool-card-result.js";
+import { assertToolCardResult } from "./tool-card-result.js";
 
 export interface ToolCallCardProps extends ToolCallProps {
   /** M16: per-kind result body — `{kind:"diff"}` renders the patch via
@@ -50,10 +50,7 @@ function assertResultBoundary(result: ToolCardResult | undefined): void {
  * the `{cond && <X/>}` idiom's residue). SEPA phase-1 F5. */
 function hasRenderableBody(children: ReactNode): boolean {
   return (
-    children !== undefined &&
-    children !== null &&
-    children !== "" &&
-    typeof children !== "boolean"
+    children !== undefined && children !== null && children !== "" && typeof children !== "boolean"
   );
 }
 

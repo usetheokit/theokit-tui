@@ -1,5 +1,5 @@
-import Yoga from "yoga-layout";
 import { describe, expect, it } from "vitest";
+import Yoga from "yoga-layout";
 
 import { applyStyles } from "./yoga-style.js";
 

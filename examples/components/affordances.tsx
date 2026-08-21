@@ -1,10 +1,10 @@
 import { Box, render, Text } from "ink";
 
 import {
+  composerShortcutsFor,
   KeyboardHelp,
   StatusFooter,
   TheoTUIProvider,
-  composerShortcutsFor,
 } from "../../src/index.js";
 
 // B-005 example: what an app says it can do, when it says only what it wired.

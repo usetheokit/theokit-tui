@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 
 import { Box, render, useApp } from "ink";
 import { useEffect, useRef, useState } from "react";
-
+import type { ChatThreadMessage } from "../../src/index.js";
 import {
   AgentStreaming,
   AppStatusBar,
@@ -11,11 +11,10 @@ import {
   DEFAULT_COMPOSER_SHORTCUTS,
   KeyboardHelp,
   TheoTUIProvider,
+  useTurnElapsed,
   VERSION,
   WelcomeBanner,
-  useTurnElapsed,
 } from "../../src/index.js";
-import type { ChatThreadMessage } from "../../src/index.js";
 
 // Interactive M1 demo (plan T4.2, ADR D8): thread + composer + fake streaming.
 // M15: the composer registers slash commands — the menu is INTERACTIVE-only
@@ -26,8 +25,7 @@ import type { ChatThreadMessage } from "../../src/index.js";
 // streaming reply plays instead, so the piped smoke stays honest.
 const interactive = Boolean(process.stdin.isTTY);
 
-const REPLY =
-  "Streaming reply: tokens arrive one at a time, appended in place.";
+const REPLY = "Streaming reply: tokens arrive one at a time, appended in place.";
 
 let nextId = 0;
 const makeId = () => `msg-${nextId++}`;
@@ -51,9 +49,7 @@ const initialMessages: ChatThreadMessage[] = [
   },
 ];
 
-function useFakeStreaming(
-  setMessages: React.Dispatch<React.SetStateAction<ChatThreadMessage[]>>,
-) {
+function useFakeStreaming(setMessages: React.Dispatch<React.SetStateAction<ChatThreadMessage[]>>) {
   // Per-stream handles in a Set: overlapping submits each clear their OWN
   // interval (review F-arch-1/F-dom-1 — a shared ref froze the second reply
   // and leaked the first interval).
@@ -63,10 +59,7 @@ function useFakeStreaming(
     const id = makeId();
     const tokens = REPLY.split(" ");
     let index = 0;
-    setMessages((current) => [
-      ...current,
-      { id, role: "assistant", content: "" },
-    ]);
+    setMessages((current) => [...current, { id, role: "assistant", content: "" }]);
     const handle = setInterval(() => {
       index += 1;
       const content = tokens.slice(0, index).join(" ");
@@ -115,19 +108,17 @@ function App() {
   // spawns a process). The `!`-prefix + Enter routes here via onShellCommand;
   // we echo the command and append its captured output to the thread.
   const runShell = (command: string) => {
-    setMessages((current) => [
-      ...current,
-      { id: makeId(), role: "user", content: `! ${command}` },
-    ]);
+    setMessages((current) => [...current, { id: makeId(), role: "user", content: `! ${command}` }]);
     const result = spawnSync(command, { shell: true, encoding: "utf8" });
-    const output =
-      `${result.stdout ?? ""}${result.stderr ?? ""}`.trimEnd() || "(no output)";
-    setMessages((current) => [
-      ...current,
-      { id: makeId(), role: "system", content: output },
-    ]);
+    const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trimEnd() || "(no output)";
+    setMessages((current) => [...current, { id: makeId(), role: "system", content: output }]);
   };
 
+  // Runs ONCE on mount, with an EMPTY dependency list on purpose. `stream` is re-created on every
+  // render (it is a plain closure, not a `useCallback`), so depending on it re-runs this effect
+  // every render — measured: Biome's "unsafe" autofix added `[stream, exit]` here and the example
+  // died with `Maximum update depth exceeded` before printing a single token.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-once scripted demo.
   useEffect(() => {
     if (!interactive) {
       // Scripted demo: one streamed reply, then exit cleanly (piped smoke).
@@ -139,7 +130,6 @@ function App() {
         }, 100);
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   return (
@@ -147,20 +137,12 @@ function App() {
       <Box flexDirection="column">
         <ChatThread
           header={
-            <WelcomeBanner
-              name="Theo TUI"
-              version={VERSION}
-              hints={["/help for commands"]}
-            />
+            <WelcomeBanner name="Theo TUI" version={VERSION} hints={["/help for commands"]} />
           }
           messages={messages}
         />
         {streaming && (
-          <AgentStreaming
-            thought="composing the reply"
-            elapsedSeconds={elapsed}
-            showCancelHint
-          />
+          <AgentStreaming thought="composing the reply" elapsedSeconds={elapsed} showCancelHint />
         )}
         <AppStatusBar
           model="theokit-demo"
@@ -179,19 +161,14 @@ function App() {
             hint="? toggles shortcuts · @ browses files · ! runs a shell command"
             bordered
             onSubmit={(text) => {
-              setMessages((current) => [
-                ...current,
-                { id: makeId(), role: "user", content: text },
-              ]);
+              setMessages((current) => [...current, { id: makeId(), role: "user", content: text }]);
               stream();
             }}
             onShellCommand={runShell}
             onHelpToggle={() => setHelpOpen((open) => !open)}
           />
         )}
-        {interactive && helpOpen && (
-          <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />
-        )}
+        {interactive && helpOpen && <KeyboardHelp shortcuts={DEFAULT_COMPOSER_SHORTCUTS} />}
       </Box>
     </TheoTUIProvider>
   );

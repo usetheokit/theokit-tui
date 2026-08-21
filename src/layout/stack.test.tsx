@@ -2,8 +2,8 @@ import { Text } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { Stack } from "./stack.js";
 import { stripAnsi } from "../format/ansi.js";
+import { Stack } from "./stack.js";
 
 describe("Stack (vertical rhythm)", () => {
   it("inserts_one_blank_line_between_children_by_default", async () => {

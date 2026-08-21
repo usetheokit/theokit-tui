@@ -18,18 +18,17 @@
 // not being re-exported from the root — so zero importers is the expected state here, not a defect.
 // knip is told that by the src/**/index.ts entry rule rather than by a list of file names.
 
-export {
-  isPathQuery,
-  nodeFileSystem,
-  searchFiles,
-  splitMentionPath,
-} from "./file-search.js";
 export type {
   DirEntryLike,
   FileSystemLike,
   MentionPath,
   SearchOptions,
 } from "./file-search.js";
-
-export { fuzzyMatch, fuzzyRank } from "./fuzzy.js";
+export {
+  isPathQuery,
+  nodeFileSystem,
+  searchFiles,
+  splitMentionPath,
+} from "./file-search.js";
 export type { FuzzyMatch } from "./fuzzy.js";
+export { fuzzyMatch, fuzzyRank } from "./fuzzy.js";

@@ -1,11 +1,6 @@
 import { Box, render } from "ink";
 
-import {
-  CodeBlock,
-  DiffViewer,
-  TheoTUIProvider,
-  preloadHighlighter,
-} from "../../src/index.js";
+import { CodeBlock, DiffViewer, preloadHighlighter, TheoTUIProvider } from "../../src/index.js";
 
 // Code-surface demo (plan T3.2 — TTFATT caller): a unified diff + a
 // highlighted code block. Non-TTY-safe by design: the scene is static, so
@@ -25,9 +20,7 @@ const patch = [
   "",
 ].join("\n");
 
-const snippet = ['const result = greet("theo");', "console.log(result);"].join(
-  "\n",
-);
+const snippet = ['const result = greet("theo");', "console.log(result);"].join("\n");
 
 // Public readiness seam (DV-5): without this await, a one-shot piped render
 // captures the PLAIN first frame — dynamic apps instead see a one-frame pop.

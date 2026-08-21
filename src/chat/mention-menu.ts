@@ -1,9 +1,5 @@
 import { windowFor } from "../prompts/select-list-model.js";
-import {
-  CLOSED_MENU,
-  SLASH_MENU_WINDOW,
-  type SlashMenu,
-} from "./slash-menu.js";
+import { CLOSED_MENU, SLASH_MENU_WINDOW, type SlashMenu } from "./slash-menu.js";
 
 // M21 mention-menu (plan m21-premium-capabilities T4.1, Feature C / ADR C2/C3):
 // the `@`-file-mention menu — a SIBLING of the `/`-command menu, sharing the
@@ -27,10 +23,7 @@ export interface MentionToken {
  * path with spaces (`@~/Área de Trabalho/`) stays one token (Claude Code parity).
  * `review @src/foo and …` still mentions `src/foo`.
  */
-export function findMentionToken(
-  text: string,
-  cursor: number,
-): MentionToken | null {
+export function findMentionToken(text: string, cursor: number): MentionToken | null {
   let sawSlash = false;
   for (let i = cursor - 1; i >= 0; i--) {
     const ch = text[i]!;

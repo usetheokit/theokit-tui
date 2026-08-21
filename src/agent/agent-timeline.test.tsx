@@ -3,15 +3,14 @@ import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import type { AgentEvent, AgentMessageEvent } from "./agent-event.js";
 import { stripAnsi } from "../format/ansi.js";
+import type { AgentEvent, AgentMessageEvent } from "./agent-event.js";
 
 // Row-render spy (M1 idiom): wrap the real ChatMessage so repaint-scope
 // assertions can count message-row renders (plan T1.2, D2).
 const rowRenders = vi.hoisted(() => ({ count: 0 }));
 vi.mock("../chat/chat-message.js", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("../chat/chat-message.js")>();
+  const actual = await importOriginal<typeof import("../chat/chat-message.js")>();
   return {
     ...actual,
     ChatMessage: (props: Parameters<typeof actual.ChatMessage>[0]) => {
@@ -36,9 +35,7 @@ const message = (id: string, text: string): AgentMessageEvent => ({
 
 describe("AgentTimeline — event dispatch (T1.1)", () => {
   it("message_event_dispatches_to_chat_message", async () => {
-    const frame = await renderFrame(
-      <AgentTimeline events={[message("m1", "hello there")]} />,
-    );
+    const frame = await renderFrame(<AgentTimeline events={[message("m1", "hello there")]} />);
     expect(frame).toContain("⏺");
     expect(frame).toContain("hello there");
   });
@@ -47,9 +44,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     // Claude Code cadence: every ⏺ block (message / thinking / tool) has one
     // blank line above it — except the very first rendered block.
     const raw = await renderFrame(
-      <AgentTimeline
-        events={[message("a", "first block"), message("b", "second block")]}
-      />,
+      <AgentTimeline events={[message("a", "first block"), message("b", "second block")]} />,
     );
 
     const frame = stripAnsi(raw);
@@ -58,16 +53,12 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     const iSecond = lines.findIndex((l) => l.includes("second block"));
     expect(iFirst).toBe(0); // no leading blank above the first block
     expect(iSecond - iFirst).toBeGreaterThanOrEqual(2);
-    expect(lines.slice(iFirst + 1, iSecond).some((l) => l.trim() === "")).toBe(
-      true,
-    );
+    expect(lines.slice(iFirst + 1, iSecond).some((l) => l.trim() === "")).toBe(true);
   });
 
   it("thinking_event_renders_dim_italic_text", async () => {
     const frame = await renderFrame(
-      <AgentTimeline
-        events={[{ id: "t1", kind: "thinking", text: "planning the diff" }]}
-      />,
+      <AgentTimeline events={[{ id: "t1", kind: "thinking", text: "planning the diff" }]} />,
     );
     // Line-anchored (tests-6 — M2 lesson): the leading glyph, not a substring.
     expect(stripAnsi(frame)).toMatch(/^•\s+planning the diff/m);
@@ -162,9 +153,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
 
   it("tool_event_without_output_renders_bare_row", async () => {
     const frame = await renderFrame(
-      <AgentTimeline
-        events={[{ id: "x1", kind: "tool", name: "grep", status: "success" }]}
-      />,
+      <AgentTimeline events={[{ id: "x1", kind: "tool", name: "grep", status: "success" }]} />,
     );
     expect(frame).toContain("⏺");
     expect(frame.split("\n")).toHaveLength(1);
@@ -176,8 +165,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
   });
 
   it("duplicate_event_ids_throw_typed_error", () => {
-    const call = () =>
-      AgentTimeline({ events: [message("e1", "a"), message("e1", "b")] });
+    const call = () => AgentTimeline({ events: [message("e1", "a"), message("e1", "b")] });
     expect(call).toThrow(TypeError);
     expect(call).toThrow('AgentTimeline: duplicate event id "e1"');
   });
@@ -228,9 +216,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
         ],
       });
     expect(call).toThrow(TypeError);
-    expect(call).toThrow(
-      'AgentTimeline: tool event "x1" — provide only one of output | shell',
-    );
+    expect(call).toThrow('AgentTimeline: tool event "x1" — provide only one of output | shell');
   });
 
   it("invalid_message_role_throws_at_boundary", () => {
@@ -238,9 +224,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     // boundary owns variant-field validation (D8).
     const call = () =>
       AgentTimeline({
-        events: [
-          { id: "m1", kind: "message", role: "bot", text: "hi" } as never,
-        ],
+        events: [{ id: "m1", kind: "message", role: "bot", text: "hi" } as never],
       });
     expect(call).toThrow(TypeError);
     expect(call).toThrow(/^AgentTimeline:/);
@@ -249,9 +233,7 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
   it("invalid_tool_status_throws_at_boundary", () => {
     const call = () =>
       AgentTimeline({
-        events: [
-          { id: "x1", kind: "tool", name: "grep", status: "weird" } as never,
-        ],
+        events: [{ id: "x1", kind: "tool", name: "grep", status: "weird" } as never],
       });
     expect(call).toThrow(TypeError);
     expect(call).toThrow(/^AgentTimeline:/);
@@ -259,12 +241,9 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
 
   it("empty_string_id_is_legal_and_duplicate_empty_throws", async () => {
     // EC-5: M1 parity — empty-but-valid ids are legal, only DUPLICATES throw.
-    const frame = await renderFrame(
-      <AgentTimeline events={[message("", "solo")]} />,
-    );
+    const frame = await renderFrame(<AgentTimeline events={[message("", "solo")]} />);
     expect(frame).toContain("solo");
-    const call = () =>
-      AgentTimeline({ events: [message("", "a"), message("", "b")] });
+    const call = () => AgentTimeline({ events: [message("", "a"), message("", "b")] });
     expect(call).toThrow(TypeError);
     expect(call).toThrow('AgentTimeline: duplicate event id ""');
   });
@@ -330,13 +309,9 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     // SEPA F3: dispatching thinking → ChatMessage(system) would produce an
     // identical NO-ANSI frame — pin the styling bytes (FORCE_COLOR=1).
     const frame = await renderFrame(
-      <AgentTimeline
-        events={[{ id: "t1", kind: "thinking", text: "styled thought" }]}
-      />,
+      <AgentTimeline events={[{ id: "t1", kind: "thinking", text: "styled thought" }]} />,
     );
-    // eslint-disable-next-line no-control-regex
     expect(frame).toMatch(/\u001B\[2m/); // dim
-    // eslint-disable-next-line no-control-regex
     expect(frame).toMatch(/\u001B\[3m/); // italic
   });
 
@@ -379,16 +354,12 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
 
   it("only_tail_rows_repaint_on_identity_replace", async () => {
     let list = events(20);
-    const instance = render(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    const instance = render(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     rowRenders.count = 0;
     const last = list[list.length - 1] as AgentMessageEvent;
-    list = [...list.slice(0, -1), { ...last, text: last.text + "!" }];
-    instance.rerender(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    list = [...list.slice(0, -1), { ...last, text: `${last.text}!` }];
+    instance.rerender(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     instance.unmount();
     expect(rowRenders.count).toBe(1);
@@ -406,9 +377,7 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
         status: "running",
       },
     ];
-    const instance = render(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    const instance = render(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     rowRenders.count = 0;
     const tail = list[list.length - 1];
@@ -416,9 +385,7 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
       ...list.slice(0, -1),
       { ...(tail as Extract<AgentEvent, { kind: "tool" }>), status: "success" },
     ];
-    instance.rerender(
-      <AgentTimeline events={next} windowSize={8} windowOverscan={4} />,
-    );
+    instance.rerender(<AgentTimeline events={next} windowSize={8} windowOverscan={4} />);
     await tick();
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
@@ -428,16 +395,12 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
 
   it("static_prefix_is_frozen_after_graduation", async () => {
     let list = events(20);
-    const instance = render(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    const instance = render(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     // Mutate a GRADUATED event (index 0) via a new object, same id.
     const first = list[0] as AgentMessageEvent;
     list = [{ ...first, text: "MUTATED" }, ...list.slice(1)];
-    instance.rerender(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    instance.rerender(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
@@ -446,14 +409,10 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
 
   it("same_array_rerender_repaints_nothing", async () => {
     const list = events(20);
-    const instance = render(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    const instance = render(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     rowRenders.count = 0;
-    instance.rerender(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    instance.rerender(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     instance.unmount();
     expect(rowRenders.count).toBe(0);
@@ -461,18 +420,14 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
 
   it("window_size_zero_graduates_everything", async () => {
     let list = events(3);
-    const instance = render(
-      <AgentTimeline events={list} windowSize={0} windowOverscan={0} />,
-    );
+    const instance = render(<AgentTimeline events={list} windowSize={0} windowOverscan={0} />);
     await tick();
     const before = instance.lastFrame() ?? "";
     expect(before).toContain("event-0 body");
     expect(before).toContain("event-2 body");
     rowRenders.count = 0;
     list = [...list, message("e3", "event-3 body")];
-    instance.rerender(
-      <AgentTimeline events={list} windowSize={0} windowOverscan={0} />,
-    );
+    instance.rerender(<AgentTimeline events={list} windowSize={0} windowOverscan={0} />);
     await tick();
     instance.unmount();
     // Only the appended event renders live (then graduates) — never the
@@ -490,9 +445,7 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
         status: "success",
         output: "compiled 40 modules\nwrote dist/",
       },
-      ...Array.from({ length: 5 }, (_, i) =>
-        message(`late${i}`, `late-${i} body`),
-      ),
+      ...Array.from({ length: 5 }, (_, i) => message(`late${i}`, `late-${i} body`)),
     ];
     const frame = await renderFrame(
       <AgentTimeline events={list} windowSize={2} windowOverscan={0} />,
@@ -518,15 +471,11 @@ describe("AgentTimeline — windowed Static history (T1.2)", () => {
     // EC-8: same-ref push — pinned behavior, NOT a supported pattern
     // (JSDoc says always pass a new array).
     const list = events(3);
-    const instance = render(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    const instance = render(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     rowRenders.count = 0;
     list.push(message("pushed", "pushed body"));
-    instance.rerender(
-      <AgentTimeline events={list} windowSize={8} windowOverscan={4} />,
-    );
+    instance.rerender(<AgentTimeline events={list} windowSize={8} windowOverscan={4} />);
     await tick();
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
@@ -591,12 +540,7 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
       ...events(20).slice(6),
     ];
     const instance = render(
-      <AgentTimeline
-        header={HEADER}
-        events={list}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <AgentTimeline header={HEADER} events={list} windowSize={4} windowOverscan={2} />,
     );
     await ticks();
     const frame = instance.lastFrame() ?? "";
@@ -611,9 +555,7 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
 
   it("timeline_header_mount_freeze_mirrors_chatthread", async () => {
     // late header ignored
-    const late = render(
-      <AgentTimeline events={events(20)} windowSize={4} windowOverscan={2} />,
-    );
+    const late = render(<AgentTimeline events={events(20)} windowSize={4} windowOverscan={2} />);
     await ticks();
     late.rerender(
       <AgentTimeline
@@ -629,21 +571,12 @@ describe("AgentTimeline header slot (M11 T1.2)", () => {
     expect(lateFrame).not.toContain("LATE");
     // removal + append in ONE rerender loses no events (same-length trap)
     const inst = render(
-      <AgentTimeline
-        header={HEADER}
-        events={events(10)}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <AgentTimeline header={HEADER} events={events(10)} windowSize={4} windowOverscan={2} />,
     );
     await ticks();
-    inst.rerender(
-      <AgentTimeline events={events(11)} windowSize={4} windowOverscan={2} />,
-    );
+    inst.rerender(<AgentTimeline events={events(11)} windowSize={4} windowOverscan={2} />);
     await ticks();
-    inst.rerender(
-      <AgentTimeline events={events(14)} windowSize={4} windowOverscan={2} />,
-    );
+    inst.rerender(<AgentTimeline events={events(14)} windowSize={4} windowOverscan={2} />);
     await ticks();
     const frame = inst.lastFrame() ?? "";
     inst.unmount();

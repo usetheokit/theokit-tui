@@ -2,14 +2,10 @@ import { Text } from "ink";
 import { render } from "ink-testing-library";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-
-import { AgentTimeline } from "./agent-timeline.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
+import { AgentTimeline } from "./agent-timeline.js";
+import type { AgentStreamSource, UseAgentStreamResult } from "./use-agent-stream.js";
 import { useAgentStream } from "./use-agent-stream.js";
-import type {
-  AgentStreamSource,
-  UseAgentStreamResult,
-} from "./use-agent-stream.js";
 
 // T2.2 (plan m7-stream-adapter, ADR D5): both reconnect shapes pinned.
 // (1) producer-side exactly-once (subscribe()-style resume — the mirror's
@@ -62,13 +58,7 @@ interface Captured {
   current?: UseAgentStreamResult;
 }
 
-function Probe({
-  source,
-  captured,
-}: {
-  source?: AgentStreamSource;
-  captured: Captured;
-}) {
+function Probe({ source, captured }: { source?: AgentStreamSource; captured: Captured }) {
   const result = useAgentStream(source);
   captured.current = result;
   return <Text>{result.status}</Text>;
@@ -83,10 +73,7 @@ function requireState(captured: Captured): UseAgentStreamResult {
 }
 
 /** The clean-single-fold oracle: done, one fresh-id message, boundary-safe. */
-function expectCleanSingleFold(
-  state: UseAgentStreamResult,
-  text: string,
-): void {
+function expectCleanSingleFold(state: UseAgentStreamResult, text: string): void {
   expect(state.status).toBe("done");
   expect(finalMessageText(state)).toBe(text);
   expect(state.events).toHaveLength(1);
@@ -95,9 +82,7 @@ function expectCleanSingleFold(
   const uniqueIds = new Set(ids);
   expect(uniqueIds.size).toBe(ids.length);
   // The M3 boundary oracle re-used — the folded state renders clean.
-  const boundary = render(
-    createElement(AgentTimeline, { events: state.events }),
-  );
+  const boundary = render(createElement(AgentTimeline, { events: state.events }));
   boundary.unmount();
 }
 
@@ -110,10 +95,7 @@ describe("useAgentStream reconnect (D5)", () => {
   it("reconnect_resumes_exactly_once", async () => {
     const captured: Captured = {};
     const { unmount } = render(
-      <Probe
-        source={resumingStream(["a", "b", "c", "d", "e"], 2)}
-        captured={captured}
-      />,
+      <Probe source={resumingStream(["a", "b", "c", "d", "e"], 2)} captured={captured} />,
     );
     await ticks();
     expect(captured.current?.status).toBe("done");
@@ -142,9 +124,7 @@ describe("useAgentStream reconnect (D5)", () => {
     // state identical to one clean fold, zero duplicate ids.
     const captured: Captured = {};
     const attemptOne: AgentStreamSource = () => dropsMidway();
-    const { rerender, unmount } = render(
-      <Probe source={attemptOne} captured={captured} />,
-    );
+    const { rerender, unmount } = render(<Probe source={attemptOne} captured={captured} />);
     await ticks();
     const afterDrop = requireState(captured);
     expect(afterDrop.status).toBe("error");

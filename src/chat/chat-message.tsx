@@ -1,12 +1,11 @@
 import { Box, Text, useStdout } from "ink";
 import type { ReactNode } from "react";
-
+import { unionMessage } from "../agent/union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { horizontalMargin } from "../layout/layout-props.js";
 import { MarkdownText } from "../markdown/markdown-text.js";
-import { useTheoTheme } from "../theme/theme.js";
-import { unionMessage } from "../agent/union-message.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
 
 // Single source for the role union (M3 D8 retrofit of the M2 VALID_STATUSES
 // idiom): the type, ChatMessage's guard and AgentTimeline's boundary check
@@ -32,12 +31,7 @@ export interface ChatMessageProps extends LayoutMarginProps {
  * One chat message with a role glyph prefix (gemini-cli idiom) colored via
  * the theme tokens (plan ADR D4 — explicit role prop, no runtime context).
  */
-export function ChatMessage({
-  role,
-  children,
-  markdown,
-  ...margin
-}: ChatMessageProps) {
+export function ChatMessage({ role, children, markdown, ...margin }: ChatMessageProps) {
   // Boundary validation (EC-1, rules/error-handling.md § 2): fail fast with a
   // typed error BEFORE any hook — JS consumers get the contract, not a crash.
   if (!CHAT_ROLES.includes(role)) {
@@ -51,10 +45,7 @@ export function ChatMessage({
   if (markdown === true && typeof children !== "string") {
     reportGuardFailure(
       "ChatMessage",
-      new TypeError(
-        "ChatMessage: `markdown` requires string children — got " +
-          typeof children,
-      ),
+      new TypeError(`ChatMessage: \`markdown\` requires string children — got ${typeof children}`),
     );
   }
   const tokens = useTheoTheme().role[role];
@@ -67,10 +58,7 @@ export function ChatMessage({
   // width — subtract it or a `marginLeft` row renders `columns + margin` wide
   // and the terminal hard-wraps it mid-word again (issue #56). Floor at 1: a
   // margin wider than the terminal must still leave a renderable column.
-  const rowWidth = Math.max(
-    1,
-    (stdout?.columns ?? 80) - horizontalMargin(margin),
-  );
+  const rowWidth = Math.max(1, (stdout?.columns ?? 80) - horizontalMargin(margin));
   // `text` may be undefined (= terminal default color). Ink's `color` prop
   // forbids an explicit `undefined` under exactOptionalPropertyTypes — omit
   // the prop entirely instead (SEPA iteration-4 finding 1).

@@ -71,9 +71,7 @@ export type WindowAnchor = "trailing" | "centred";
  */
 export function assertPositiveWindow(window: number, component: string): void {
   if (!Number.isInteger(window) || window <= 0) {
-    throw new TypeError(
-      `${component}: window must be a positive integer — got ${String(window)}`,
-    );
+    throw new TypeError(`${component}: window must be a positive integer — got ${String(window)}`);
   }
 }
 
@@ -114,10 +112,7 @@ export function windowFor(
   // centred puts it in the middle, biased UP on an even window so the row keeps more context ahead
   // of it than behind — which is the direction a list is usually read.
   const lead = anchor === "centred" ? Math.floor((window - 1) / 2) : window - 1;
-  const windowStart = Math.min(
-    Math.max(clampedIndex - lead, 0),
-    Math.max(count - window, 0),
-  );
+  const windowStart = Math.min(Math.max(clampedIndex - lead, 0), Math.max(count - window, 0));
   // U-10 — the counts are what this function already computed; the booleans are derived from them
   // rather than the other way round. Reporting only the booleans threw away information the caller
   // then had to recompute, by reimplementing this same arithmetic.
@@ -131,9 +126,7 @@ export function windowFor(
   };
 }
 
-export interface SelectListView<
-  Item extends SelectListItem,
-> extends WindowView {
+export interface SelectListView<Item extends SelectListItem> extends WindowView {
   open: boolean;
   filter: string;
   matches: Item[];

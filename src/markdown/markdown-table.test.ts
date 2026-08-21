@@ -26,12 +26,7 @@ describe("computeTableLayout (M25 T1.1)", () => {
   });
 
   it("the_grid_row_width_never_exceeds_the_budget_when_not_degraded", () => {
-    const layout = computeTableLayout(
-      ["name", "age"],
-      [["alice", "30"]],
-      80,
-      LEN,
-    );
+    const layout = computeTableLayout(["name", "age"], [["alice", "30"]], 80, LEN);
     expect(gridRowWidth(layout.widths)).toBeLessThanOrEqual(80);
   });
 

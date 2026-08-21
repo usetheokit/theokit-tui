@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { pairIntraLines, segmentWords } from "./diff-word.js";
 import type { DiffLine } from "./diff.js";
+import { pairIntraLines, segmentWords } from "./diff-word.js";
 
 // M25 T2.1 — the pure intra-line word-diff core (blueprint ADR B). `segmentWords`
 // runs jsdiff over a del/add pair and marks the changed words; `pairIntraLines`
@@ -39,12 +38,7 @@ describe("segmentWords (M25 T2.1)", () => {
 
 describe("pairIntraLines (M25 T2.1)", () => {
   it("pairs_an_equal_length_del_add_run", () => {
-    const lines = [
-      ctx("a"),
-      del("the quick fox"),
-      add("the slow fox"),
-      ctx("b"),
-    ];
+    const lines = [ctx("a"), del("the quick fox"), add("the slow fox"), ctx("b")];
     const map = pairIntraLines(lines);
     expect(map.get(lines[1]!)?.some((s) => s.changed)).toBe(true); // del
     expect(map.get(lines[2]!)?.some((s) => s.changed)).toBe(true); // add

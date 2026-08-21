@@ -6,15 +6,8 @@ import { fileURLToPath } from "node:url";
 import { render } from "ink-testing-library";
 
 import { DiffViewer, TheoTUIProvider } from "../src/index.js";
-import {
-  fmt,
-  frameSampler,
-  round,
-  stats,
-  tick,
-  stackVersions,
-} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats, tick } from "./sampling.js";
 
 // M4 diff-viewer benchmark (plan T3.2, ADR D9): a unified diff GROWING
 // during the measured loop, windowed|full matrix; the wide-line hunk lands
@@ -36,8 +29,7 @@ type Mode = "windowed" | "full";
 
 function makeHunk(index: number, wide: boolean): string {
   const base = index * 100 + 1;
-  const pad = (text: string): string =>
-    wide ? text + "x".repeat(WIDE_LINE_CHARS) : text;
+  const pad = (text: string): string => (wide ? text + "x".repeat(WIDE_LINE_CHARS) : text);
   const rows: string[] = [`@@ -${base},15 +${base},25 @@`];
   for (let i = 0; i < CONTEXT_LINES_PER_HUNK; i++) {
     rows.push(` ${pad(`ctx-${index}-${i}`)}`);
@@ -62,20 +54,14 @@ function makePatch(hunkCount: number): string {
 
 // EC-17: ALL patch strings PRE-GENERATED — string concat is fixture noise;
 // parsing stays inside render (that IS the component cost).
-const patches = Array.from({ length: N_STEPS + 1 }, (_, i) =>
-  makePatch(MOUNT_HUNKS + i),
-);
+const patches = Array.from({ length: N_STEPS + 1 }, (_, i) => makePatch(MOUNT_HUNKS + i));
 
 // Fail-fast self-checks (D9): the wide hunk must land in the APPEND range.
 if (WIDE_HUNK_STEP < 1 || WIDE_HUNK_STEP > N_STEPS) {
-  throw new Error(
-    "bench: wide hunk outside the measured append range (M3 dom-testing-1 guard)",
-  );
+  throw new Error("bench: wide hunk outside the measured append range (M3 dom-testing-1 guard)");
 }
 if (!(patches[WIDE_HUNK_STEP] as string).includes("x".repeat(100))) {
-  throw new Error(
-    "bench: wide-line hunk missing from its patch — generator regressed",
-  );
+  throw new Error("bench: wide-line hunk missing from its patch — generator regressed");
 }
 // Negative half (wire-2): the wide hunk must NOT leak before its step.
 if ((patches[WIDE_HUNK_STEP - 1] as string).includes("x".repeat(100))) {
@@ -159,7 +145,7 @@ const results: {
 for (const mode of modes) {
   for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
-    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+    console.log(`${fmt(`${mode} warmup`, w)}  (discarded)`);
   }
   const runs: RunMetrics[] = [];
   for (let i = 0; i < measured; i++) {
@@ -193,7 +179,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     workload: {
       mount_hunks: MOUNT_HUNKS,
       steps: N_STEPS,
@@ -228,8 +214,6 @@ if (!smoke) {
     "diff-viewer-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/diff-viewer-baseline.json",
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log("baseline written: benchmarks/baselines/diff-viewer-baseline.json");
 }

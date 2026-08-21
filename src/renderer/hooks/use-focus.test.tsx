@@ -1,16 +1,12 @@
 import { Text } from "ink";
 import { cleanup, render } from "ink-testing-library";
-import { createElement, useState, type ReactNode } from "react";
+import { createElement, type ReactNode, useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  waitFor as waitForCondition,
-  WAIT_BUDGET_MS,
-} from "../../../tests/fixtures/wait-for.js";
+import { WAIT_BUDGET_MS, waitFor as waitForCondition } from "../../../tests/fixtures/wait-for.js";
 
 import { createFakeStdin } from "../../../tests/renderer/fake-stdin.js";
 import { createInputSource } from "../input/input-source.js";
-import { InputContext } from "../input/use-input.js";
-import { useInput } from "../input/use-input.js";
+import { InputContext, useInput } from "../input/use-input.js";
 import { FocusProvider, useFocus, useFocusManager } from "./use-focus.js";
 
 afterEach(cleanup); // unmount each tree so leftover focus arbiters don't cross-talk

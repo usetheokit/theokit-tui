@@ -2,8 +2,8 @@ import { Box } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { ModeIndicator, PERMISSION_MODES } from "./mode-indicator.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { ModeIndicator, PERMISSION_MODES } from "./mode-indicator.js";
 
 describe("ModeIndicator (#2 — permission-mode footer)", () => {
   it("renders_auto_accept_the_claude_code_way", async () => {
@@ -77,10 +77,9 @@ describe("U-8 — a custom label carries a foreign vocabulary", () => {
   it("custom_label_renders_with_the_house_styling", async () => {
     const frame = await renderFrame(<ModeIndicator label="⏵⏵ full-auto on" />);
     expect(frame).toContain("⏵⏵ full-auto on");
-    expect(
-      frame,
-      "the cycle hint belongs to the row, not to the vocabulary",
-    ).toContain("(shift+tab to cycle)");
+    expect(frame, "the cycle hint belongs to the row, not to the vocabulary").toContain(
+      "(shift+tab to cycle)",
+    );
   });
 
   it("builtin_modes_are_unchanged", async () => {

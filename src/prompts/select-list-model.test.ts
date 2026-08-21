@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { deriveSelectList, windowFor } from "./select-list-model.js";
 import type { SelectListItem } from "./select-list-model.js";
+import { deriveSelectList, windowFor } from "./select-list-model.js";
 
 // M22 T1.1 — the SelectList pure model. `windowFor` is the DRY core the M15
 // slash-menu + M21 mention-menu delegate to (byte-identical trailing window);
@@ -73,13 +72,11 @@ describe("deriveSelectList (M22 T1.1)", () => {
 
   it("empty_query_shows_all_and_a_no_match_query_closes", () => {
     expect(
-      deriveSelectList({ items, filter: "", selectionIndex: 0, window: 5 })
-        .matches.length,
+      deriveSelectList({ items, filter: "", selectionIndex: 0, window: 5 }).matches.length,
     ).toBe(3);
-    expect(
-      deriveSelectList({ items, filter: "zzz", selectionIndex: 0, window: 5 })
-        .open,
-    ).toBe(false);
+    expect(deriveSelectList({ items, filter: "zzz", selectionIndex: 0, window: 5 }).open).toBe(
+      false,
+    );
   });
 
   it("multi_select_is_carried_by_value_across_a_filter_reorder", () => {
@@ -178,10 +175,7 @@ describe("windowFor — centred anchor", () => {
   it("test_the_default_anchor_is_unchanged", () => {
     // The whole safety of adding the option. Same call, same answer as before it existed.
     expect(windowFor(10, 5, 5)).toEqual(windowFor(10, 5, 5, "trailing"));
-    expect(
-      windowFor(10, 5, 5).windowStart,
-      "trailing keeps the selection at the bottom",
-    ).toBe(1);
+    expect(windowFor(10, 5, 5).windowStart, "trailing keeps the selection at the bottom").toBe(1);
   });
 
   it("test_a_centred_selection_sits_in_the_middle_of_the_window", () => {
@@ -219,9 +213,7 @@ describe("windowFor — centred anchor", () => {
   });
 
   it("test_an_empty_list_is_a_no_op_under_either_anchor", () => {
-    expect(windowFor(0, 3, 5, "centred")).toEqual(
-      windowFor(0, 3, 5, "trailing"),
-    );
+    expect(windowFor(0, 3, 5, "centred")).toEqual(windowFor(0, 3, 5, "trailing"));
   });
 
   it("test_the_selection_is_always_inside_the_window_it_returns", () => {
@@ -233,17 +225,10 @@ describe("windowFor — centred anchor", () => {
             const view = windowFor(total, selected, size, anchor);
             if (total === 0) continue;
             const where = `total=${total} selected=${selected} size=${size} ${anchor}`;
-            expect(view.clampedIndex, where).toBeGreaterThanOrEqual(
-              view.windowStart,
-            );
-            expect(view.clampedIndex, where).toBeLessThan(
-              view.windowStart + size,
-            );
+            expect(view.clampedIndex, where).toBeGreaterThanOrEqual(view.windowStart);
+            expect(view.clampedIndex, where).toBeLessThan(view.windowStart + size);
             expect(view.windowStart, where).toBeGreaterThanOrEqual(0);
-            expect(
-              view.hiddenBefore + Math.min(size, total) + view.hiddenAfter,
-              where,
-            ).toBe(total);
+            expect(view.hiddenBefore + Math.min(size, total) + view.hiddenAfter, where).toBe(total);
           }
         }
       }
@@ -273,26 +258,13 @@ describe("windowFor — centred anchor", () => {
 
 const SWEEP_COUNTS = [0, 1, 2, 5, 20] as const;
 const VALID_WINDOWS = [1, 2, 5, 10, 25] as const;
-const INVALID_WINDOWS = [
-  0,
-  -1,
-  2.5,
-  Number.NaN,
-  Number.POSITIVE_INFINITY,
-] as const;
+const INVALID_WINDOWS = [0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY] as const;
 
 describe("windowFor invariants (B-021)", () => {
   it("test_the_counts_partition_the_list", () => {
     for (const count of SWEEP_COUNTS) {
       for (const window of VALID_WINDOWS) {
-        for (const selectionIndex of [
-          -1,
-          0,
-          1,
-          Math.floor(count / 2),
-          count - 1,
-          count,
-        ]) {
+        for (const selectionIndex of [-1, 0, 1, Math.floor(count / 2), count - 1, count]) {
           for (const anchor of ["centred", "trailing"] as const) {
             const view = windowFor(count, selectionIndex, window, anchor);
             // The oracle is INDEPENDENT of `windowStart`, and that is the whole point.
@@ -320,25 +292,15 @@ describe("windowFor invariants (B-021)", () => {
     for (const count of SWEEP_COUNTS) {
       if (count === 0) continue; // the all-zero early return is a legitimate distinct state
       for (const window of VALID_WINDOWS) {
-        for (const selectionIndex of [
-          -1,
-          0,
-          Math.floor(count / 2),
-          count - 1,
-          count,
-        ]) {
+        for (const selectionIndex of [-1, 0, Math.floor(count / 2), count - 1, count]) {
           for (const anchor of ["centred", "trailing"] as const) {
             const view = windowFor(count, selectionIndex, window, anchor);
             // BOTH anchors. The first version hardcoded "centred", and review measured a trailing
             // off-by-one violating containment 21 times with zero violations under centred — so the
             // companion test could not close the gap the sweep left.
             const label = `count=${String(count)} sel=${String(selectionIndex)} window=${String(window)} anchor=${anchor}`;
-            expect(view.clampedIndex, label).toBeGreaterThanOrEqual(
-              view.windowStart,
-            );
-            expect(view.clampedIndex, label).toBeLessThan(
-              view.windowStart + window,
-            );
+            expect(view.clampedIndex, label).toBeGreaterThanOrEqual(view.windowStart);
+            expect(view.clampedIndex, label).toBeLessThan(view.windowStart + window);
           }
         }
       }
@@ -358,13 +320,8 @@ describe("windowFor invariants (B-021)", () => {
       const view = windowFor(100, 50, window, "centred");
       const above = view.clampedIndex - view.windowStart;
       const below = window - 1 - above;
-      expect(above, `window=${String(window)}`).toBe(
-        Math.floor((window - 1) / 2),
-      );
-      expect(
-        below,
-        `window=${String(window)} — more context ahead`,
-      ).toBeGreaterThan(above);
+      expect(above, `window=${String(window)}`).toBe(Math.floor((window - 1) / 2));
+      expect(below, `window=${String(window)} — more context ahead`).toBeGreaterThan(above);
     }
   });
 

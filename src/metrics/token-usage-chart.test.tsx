@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-
-import { TokenUsageChart } from "./token-usage-chart.js";
-import { TheoTUIProvider } from "../theme/theme.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { TokenUsageChart } from "./token-usage-chart.js";
 
-const count = (haystack: string, needle: string): number =>
-  haystack.split(needle).length - 1;
+const count = (haystack: string, needle: string): number => haystack.split(needle).length - 1;
 
 // T2.2 (plan m5-metrics-surface, ADRs D2/D8): per-category comparison bars.
 describe("TokenUsageChart", () => {
@@ -35,16 +33,12 @@ describe("TokenUsageChart", () => {
   });
 
   it("values_render_k_m_formatted", async () => {
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 12_500 }} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 12_500 }} />);
     expect(stripAnsi(frame)).toContain("12.5k");
   });
 
   it("present_zero_renders_empty_bar_and_zero", async () => {
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 1000, cached: 0 }} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 1000, cached: 0 }} />);
     const rows = stripAnsi(frame).split("\n");
     const cachedRow = rows.find((r) => r.startsWith("cached")) ?? "";
     expect(count(cachedRow, "█")).toBe(0);
@@ -53,9 +47,7 @@ describe("TokenUsageChart", () => {
 
   it("all_present_zero_renders_zero_rows_without_throw", async () => {
     // EC-3: max === 0 → 0/0 would be NaN; the special case renders empty bars.
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 0, output: 0 }} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 0, output: 0 }} />);
     const rows = stripAnsi(frame).split("\n");
     expect(rows).toHaveLength(2);
     expect(count(stripAnsi(frame), "█")).toBe(0);
@@ -63,9 +55,7 @@ describe("TokenUsageChart", () => {
 
   it("tiny_category_next_to_huge_keeps_one_cell", async () => {
     // EC-8: the core's endpoint guard must be reached unmangled.
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 1, output: 1_000_000 }} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 1, output: 1_000_000 }} />);
     const rows = stripAnsi(frame).split("\n");
     const inputRow = rows.find((r) => r.startsWith("input")) ?? "";
     expect(count(inputRow, "█")).toBeGreaterThanOrEqual(1);
@@ -75,9 +65,7 @@ describe("TokenUsageChart", () => {
     // D8: bars scale to the LARGEST category — alone, it is the largest.
     // Literal fill-count at a pinned width (review tests-1): label "input"
     // (5) + value "500" (3) + 2 spacers → width 20 leaves EXACTLY 10 cells.
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 500 }} width={20} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 500 }} width={20} />);
     const plain = stripAnsi(frame);
     expect(count(plain, "█")).toBe(10);
     expect(count(plain, "░")).toBe(0);
@@ -88,9 +76,7 @@ describe("TokenUsageChart", () => {
   });
 
   it("rows_align_on_shared_label_column", async () => {
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 1, reasoning: 1 }} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 1, reasoning: 1 }} />);
     const rows = stripAnsi(frame).split("\n");
     expect(rows[0]?.indexOf("█")).toBe(rows[1]?.indexOf("█"));
   });
@@ -98,10 +84,7 @@ describe("TokenUsageChart", () => {
   it("width_matrix_lines_fit", async () => {
     for (const w of [60, 30, 20]) {
       const frame = await renderFrame(
-        <TokenUsageChart
-          usage={{ input: 12_500, output: 4_000, cached: 800 }}
-          width={w}
-        />,
+        <TokenUsageChart usage={{ input: 12_500, output: 4_000, cached: 800 }} width={w} />,
       );
       for (const row of stripAnsi(frame).split("\n")) {
         expect(row.length, `width ${w}`).toBeLessThanOrEqual(w);
@@ -111,9 +94,7 @@ describe("TokenUsageChart", () => {
 
   it("narrow_width_drops_bars_keeps_values", async () => {
     // Label-only degrade boundary (D4): bar cells < 3 → label + value only.
-    const frame = await renderFrame(
-      <TokenUsageChart usage={{ input: 12_500 }} width={14} />,
-    );
+    const frame = await renderFrame(<TokenUsageChart usage={{ input: 12_500 }} width={14} />);
     const plain = stripAnsi(frame);
     expect(plain).toContain("12.5k");
     expect(plain).not.toContain("█");
@@ -150,12 +131,8 @@ describe("TokenUsageChart", () => {
     expect(() => TokenUsageChart({ usage: { input: -5 } })).toThrow(
       "TokenUsageChart: usage.input must be a finite number >= 0",
     );
-    expect(() => TokenUsageChart({ usage: { output: Number.NaN } })).toThrow(
-      TypeError,
-    );
-    expect(() => TokenUsageChart({ usage: { input: 1 }, width: 1.5 })).toThrow(
-      TypeError,
-    );
+    expect(() => TokenUsageChart({ usage: { output: Number.NaN } })).toThrow(TypeError);
+    expect(() => TokenUsageChart({ usage: { input: 1 }, width: 1.5 })).toThrow(TypeError);
   });
 });
 

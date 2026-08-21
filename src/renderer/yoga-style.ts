@@ -35,8 +35,7 @@ export interface Style {
   // number → point, string → percent, undefined → auto (Ink's dimension model).
   flexBasis?: number | string | undefined;
   alignItems?: "stretch" | "flex-start" | "center" | "flex-end" | "baseline";
-  alignSelf?:
-    "auto" | "flex-start" | "center" | "flex-end" | "stretch" | "baseline";
+  alignSelf?: "auto" | "flex-start" | "center" | "flex-end" | "stretch" | "baseline";
   justifyContent?:
     | "flex-start"
     | "center"
@@ -196,16 +195,10 @@ function applyFlexBasis(node: YogaNode, style: Style): void {
 function applyFlex(node: YogaNode, style: Style): void {
   if ("flexGrow" in style) node.setFlexGrow(style.flexGrow ?? 0);
   if ("flexShrink" in style) {
-    node.setFlexShrink(
-      typeof style.flexShrink === "number" ? style.flexShrink : 1,
-    );
+    node.setFlexShrink(typeof style.flexShrink === "number" ? style.flexShrink : 1);
   }
-  applyEnum(
-    !!style.flexWrap,
-    style.flexWrap,
-    flexWraps,
-    Yoga.WRAP_NO_WRAP,
-    (v) => node.setFlexWrap(v),
+  applyEnum(!!style.flexWrap, style.flexWrap, flexWraps, Yoga.WRAP_NO_WRAP, (v) =>
+    node.setFlexWrap(v),
   );
   applyEnum(
     !!style.flexDirection,
@@ -215,19 +208,11 @@ function applyFlex(node: YogaNode, style: Style): void {
     (v) => node.setFlexDirection(v),
   );
   applyFlexBasis(node, style);
-  applyEnum(
-    "alignItems" in style,
-    style.alignItems,
-    alignItemsMap,
-    Yoga.ALIGN_STRETCH,
-    (v) => node.setAlignItems(v),
+  applyEnum("alignItems" in style, style.alignItems, alignItemsMap, Yoga.ALIGN_STRETCH, (v) =>
+    node.setAlignItems(v),
   );
-  applyEnum(
-    "alignSelf" in style,
-    style.alignSelf,
-    alignSelfMap,
-    Yoga.ALIGN_AUTO,
-    (v) => node.setAlignSelf(v),
+  applyEnum("alignSelf" in style, style.alignSelf, alignSelfMap, Yoga.ALIGN_AUTO, (v) =>
+    node.setAlignSelf(v),
   );
   applyEnum(
     "justifyContent" in style,
@@ -315,9 +300,7 @@ function applyDimensions(node: YogaNode, style: Style): void {
 
 function applyDisplay(node: YogaNode, style: Style): void {
   if ("display" in style) {
-    node.setDisplay(
-      style.display === "none" ? Yoga.DISPLAY_NONE : Yoga.DISPLAY_FLEX,
-    );
+    node.setDisplay(style.display === "none" ? Yoga.DISPLAY_NONE : Yoga.DISPLAY_FLEX);
   }
 }
 
@@ -329,8 +312,7 @@ const borderEdges: [keyof Style, number][] = [
 ];
 
 function applyBorder(node: YogaNode, style: Style, currentStyle: Style): void {
-  const hasBorderChanges =
-    "borderStyle" in style || borderEdges.some(([prop]) => prop in style);
+  const hasBorderChanges = "borderStyle" in style || borderEdges.some(([prop]) => prop in style);
   if (!hasBorderChanges) {
     return;
   }
@@ -342,8 +324,7 @@ function applyBorder(node: YogaNode, style: Style, currentStyle: Style): void {
 
 function applyGap(node: YogaNode, style: Style): void {
   if ("gap" in style) node.setGap(Yoga.GUTTER_ALL, style.gap ?? 0);
-  if ("columnGap" in style)
-    node.setGap(Yoga.GUTTER_COLUMN, style.columnGap ?? 0);
+  if ("columnGap" in style) node.setGap(Yoga.GUTTER_COLUMN, style.columnGap ?? 0);
   if ("rowGap" in style) node.setGap(Yoga.GUTTER_ROW, style.rowGap ?? 0);
 }
 
@@ -352,11 +333,7 @@ function applyGap(node: YogaNode, style: Style): void {
  * style used for border-width computation (Ink passes the full style on update
  * so a border toggle reads the whole picture); it defaults to `style`.
  */
-export function applyStyles(
-  node: YogaNode,
-  style: Style = {},
-  currentStyle: Style = style,
-): void {
+export function applyStyles(node: YogaNode, style: Style = {}, currentStyle: Style = style): void {
   applyPosition(node, style);
   applyMargin(node, style);
   applyPadding(node, style);

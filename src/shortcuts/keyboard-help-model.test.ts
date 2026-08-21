@@ -16,9 +16,9 @@ import { keyboardHelpFor } from "./keyboard-help-model.js";
 
 describe("keyboardHelpFor", () => {
   it("test_a_capability_with_a_bound_key_is_listed", () => {
-    expect(
-      keyboardHelpFor([{ id: "select", label: "select", key: "enter" }]),
-    ).toEqual([{ key: "enter", label: "select" }]);
+    expect(keyboardHelpFor([{ id: "select", label: "select", key: "enter" }])).toEqual([
+      { key: "enter", label: "select" },
+    ]);
   });
 
   it("test_a_capability_with_no_bound_key_is_omitted_not_rendered_blank", () => {

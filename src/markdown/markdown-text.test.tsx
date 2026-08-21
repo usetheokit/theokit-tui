@@ -1,9 +1,8 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-
+import { stripAnsi } from "../format/ansi.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { MarkdownText } from "./markdown-text.js";
-import { stripAnsi } from "../format/ansi.js";
 
 // M13 T2.1 (plan m13-markdown-renderer, ADR D2): render oracles — nodes →
 // ink tree with THEME tokens (blueprint Corner 1 d/e/f). Snapshot budget
@@ -77,10 +76,7 @@ describe("MarkdownText (M13 T2.1)", () => {
     );
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
-    const colorSgr = frame.match(
-      // eslint-disable-next-line no-control-regex
-      /\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g,
-    );
+    const colorSgr = frame.match(/\u001B\[(3[0-8]|4[0-8]|9[0-7]|10[0-7])m/g);
     expect(colorSgr).toBeNull();
     expect(frame).toContain("\u001B[1m"); // bold survives
     expect(frame).toMatchSnapshot("markdown-monochrome");

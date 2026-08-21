@@ -12,22 +12,18 @@ vi.mock("lowlight", () => {
 });
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { CodeBlock, ensureHighlighter } from "./code-block.js";
 import { stripAnsi } from "../format/ansi.js";
+import { CodeBlock, ensureHighlighter } from "./code-block.js";
 
 describe("CodeBlock — optional peer absent (T2.1, ADR D2)", () => {
   it("absent_module_degrades_plain_warns_once_and_resolves_undefined", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const first = await renderFrame(
-        <CodeBlock code={"const x = 1;"} language="typescript" />,
-      );
+      const first = await renderFrame(<CodeBlock code={"const x = 1;"} language="typescript" />);
       expect(stripAnsi(first)).toContain("const x = 1;");
       expect(first).not.toMatch(/\[3[0-9]m/);
 
-      await renderFrame(
-        <CodeBlock code={"const y = 2;"} language="typescript" />,
-      );
+      await renderFrame(<CodeBlock code={"const y = 2;"} language="typescript" />);
       const lowlightWarnings = warnSpy.mock.calls.filter((call) =>
         String(call[0]).includes("lowlight"),
       );

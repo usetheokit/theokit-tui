@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -164,11 +164,7 @@ async function walk(
 }
 
 /** The cwd-relative path for `entry`, or null when skipped / gitignored. */
-function includedRelPath(
-  entry: DirEntryLike,
-  ig: Ignore,
-  prefix: string,
-): string | null {
+function includedRelPath(entry: DirEntryLike, ig: Ignore, prefix: string): string | null {
   if (DEFAULT_SKIP.has(entry.name) || isHidden(entry.name)) {
     return null; // skip build/vcs dirs AND hidden dotfiles/dot-directories
   }
@@ -203,11 +199,7 @@ export function isPathQuery(query: string): boolean {
 }
 
 /** Split a path-like `@`-query into `{ absDir, partial, displayDir }`. */
-export function splitMentionPath(
-  query: string,
-  cwd: string,
-  home: string,
-): MentionPath {
+export function splitMentionPath(query: string, cwd: string, home: string): MentionPath {
   // A bare `~` means "list the home directory".
   const q = query === "~" ? "~/" : query;
   const slash = q.lastIndexOf("/");
@@ -244,11 +236,7 @@ async function listPathEntries(
     .filter((e) => showHidden || !isHidden(e.name))
     .filter((e) => e.name.toLowerCase().startsWith(lower))
     // Directories first, then files; alphabetical within each group.
-    .sort(
-      (a, b) =>
-        Number(b.isDirectory) - Number(a.isDirectory) ||
-        a.name.localeCompare(b.name),
-    );
+    .sort((a, b) => Number(b.isDirectory) - Number(a.isDirectory) || a.name.localeCompare(b.name));
   return matched
     .slice(0, maxResults)
     .map((e) => `${displayDir}${e.name}${e.isDirectory ? "/" : ""}`);
@@ -261,10 +249,7 @@ async function listPathEntries(
  * paths fuzzy-ranked against `query`. Honors `.gitignore` + a default skip-list;
  * bounded + abortable so a huge repo never blocks. Never throws.
  */
-export async function searchFiles(
-  query: string,
-  options: SearchOptions = {},
-): Promise<string[]> {
+export async function searchFiles(query: string, options: SearchOptions = {}): Promise<string[]> {
   const cwd = options.cwd ?? process.cwd();
   const fs = options.fs ?? nodeFileSystem;
   const maxResults = options.maxResults ?? DEFAULT_MAX_RESULTS;

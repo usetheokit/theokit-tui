@@ -1,14 +1,14 @@
-import { createElement } from "react";
-import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 import { render as inkRender } from "ink-testing-library";
+import { createElement } from "react";
 import { describe, expect, it } from "vitest";
+import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
-import { SelectList } from "./select-list.js";
-import { windowFor } from "./select-list-model.js";
-import type { SelectListItem } from "./select-list-model.js";
-import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { SelectList } from "./select-list.js";
+import type { SelectListItem } from "./select-list-model.js";
+import { windowFor } from "./select-list-model.js";
 
 // M22 T1.1 — the SelectList component driven through the itl-adapter (OUR
 // renderer + InputSource + FocusProvider). Deterministic keyboard oracle.
@@ -20,16 +20,11 @@ const items: SelectListItem[] = [
 ];
 
 /** `ESC [ 30m` .. `ESC [ 37m` — the eight basic foreground colours (B-087). */
-const SGR_COLOURS = Array.from(
-  { length: 8 },
-  (_, n) => `\u001B[3${String(n)}m`,
-);
+const SGR_COLOURS = Array.from({ length: 8 }, (_, n) => `\u001B[3${String(n)}m`);
 
 describe("SelectList component (M22 T1.1)", () => {
   it("renders_items_with_the_active_marker_and_counter", async () => {
-    const app = render(
-      createElement(SelectList, { items, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, onSubmit: () => {} }));
     await app.flush();
     const frame = app.lastFrame();
     expect(frame).toContain("❯ apple"); // first row active
@@ -39,9 +34,7 @@ describe("SelectList component (M22 T1.1)", () => {
   });
 
   it("down_arrow_moves_the_selection", async () => {
-    const app = render(
-      createElement(SelectList, { items, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, onSubmit: () => {} }));
     await app.flush();
     app.stdin.write("\x1b[B"); // down
     await app.flush();
@@ -51,9 +44,7 @@ describe("SelectList component (M22 T1.1)", () => {
   });
 
   it("up_arrow_wraps_to_the_last_row", async () => {
-    const app = render(
-      createElement(SelectList, { items, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, onSubmit: () => {} }));
     await app.flush();
     app.stdin.write("\x1b[A"); // up from row 0 → wraps to last
     await app.flush();
@@ -63,9 +54,7 @@ describe("SelectList component (M22 T1.1)", () => {
   });
 
   it("multi_select_space_toggles_off_as_well_as_on", async () => {
-    const app = render(
-      createElement(SelectList, { items, multi: true, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, multi: true, onSubmit: () => {} }));
     await app.flush();
     app.stdin.write(" "); // toggle apple ON
     await app.flush();
@@ -79,9 +68,7 @@ describe("SelectList component (M22 T1.1)", () => {
   it("multi_select_renders_the_small_circle_checkbox_glyph", async () => {
     // The multi-select checkbox is the small ○ (empty) / ● (selected) circle —
     // NOT the bulky ◯ / ◉ LARGE CIRCLE, which reads as cramped in a dense list.
-    const app = render(
-      createElement(SelectList, { items, multi: true, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, multi: true, onSubmit: () => {} }));
     await app.flush();
     expect(app.lastFrame()).toContain("○ apple"); // unselected → small empty circle
     expect(app.lastFrame()).not.toContain("◯"); // never the LARGE CIRCLE
@@ -93,9 +80,7 @@ describe("SelectList component (M22 T1.1)", () => {
   });
 
   it("typing_filters_the_list", async () => {
-    const app = render(
-      createElement(SelectList, { items, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, onSubmit: () => {} }));
     await app.flush();
     app.stdin.write("ap"); // prefix "ap"
     await app.flush();
@@ -107,9 +92,7 @@ describe("SelectList component (M22 T1.1)", () => {
   });
 
   it("backspace_shrinks_the_filter_and_restores_matches", async () => {
-    const app = render(
-      createElement(SelectList, { items, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items, onSubmit: () => {} }));
     await app.flush();
     app.stdin.write("xyz"); // no matches
     await app.flush();
@@ -123,9 +106,7 @@ describe("SelectList component (M22 T1.1)", () => {
 
   it("enter_with_no_matches_submits_nothing", async () => {
     const chosen: string[][] = [];
-    const app = render(
-      createElement(SelectList, { items, onSubmit: (v) => chosen.push(v) }),
-    );
+    const app = render(createElement(SelectList, { items, onSubmit: (v) => chosen.push(v) }));
     await app.flush();
     app.stdin.write("zzz"); // no matches
     await app.flush();
@@ -168,9 +149,7 @@ describe("SelectList component (M22 T1.1)", () => {
       await waitForCondition(() => (app.lastFrame() ?? "").includes("apple"), {
         describe: "the select list to render its first item",
       });
-      const line =
-        (app.lastFrame() ?? "").split("\n").find((l) => l.includes("apple")) ??
-        "";
+      const line = (app.lastFrame() ?? "").split("\n").find((l) => l.includes("apple")) ?? "";
       app.unmount();
       return line;
     };
@@ -184,8 +163,7 @@ describe("SelectList component (M22 T1.1)", () => {
     // A colour SGR is `ESC [ 3n m`. Probed as a substring set rather than a RegExp literal: an
     // escape byte inside a RegExp trips `no-control-regex`, and the disable comment would be a
     // suppression where a plainer expression does the same job.
-    const hasColour = (frame: string): boolean =>
-      SGR_COLOURS.some((code) => frame.includes(code));
+    const hasColour = (frame: string): boolean => SGR_COLOURS.some((code) => frame.includes(code));
     expect(hasColour(mono)).toBe(false);
     expect(hasColour(dark)).toBe(true);
   });
@@ -229,8 +207,7 @@ describe("SelectList window validation (B-021)", () => {
     it(`test_a_window_of_${String(window)}_is_refused_naming_SelectList`, () => {
       // Called as a function, which is how this package tests boundary guards placed before hooks
       // (the F10 idiom). Rendering would send the throw to ink's error boundary instead.
-      const refuse = () =>
-        SelectList({ items, onSubmit: () => undefined, window });
+      const refuse = () => SelectList({ items, onSubmit: () => undefined, window });
 
       expect(refuse).toThrow(TypeError);
       expect(refuse).toThrow("SelectList: window");
@@ -270,9 +247,7 @@ describe("the SelectList guard leaves a record (B-021 review)", () => {
     }) as typeof process.stderr.write;
 
     try {
-      expect(() =>
-        SelectList({ items, onSubmit: () => undefined, window: 0 }),
-      ).toThrow(TypeError);
+      expect(() => SelectList({ items, onSubmit: () => undefined, window: 0 })).toThrow(TypeError);
     } finally {
       process.stderr.write = realWrite;
     }
@@ -303,9 +278,7 @@ describe("SelectList hidden-row counts (B-022)", () => {
   }));
 
   it("test_a_windowed_menu_shows_the_hidden_count_below", async () => {
-    const app = render(
-      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }));
     await app.flush();
     const frame = app.lastFrame() ?? "";
     app.unmount();
@@ -342,9 +315,7 @@ describe("SelectList hidden-row counts (B-022)", () => {
     //
     // A window of two keeps an arrow on both sides of the filter, so the assertion can be what the
     // name claims: a number that goes DOWN.
-    const app = render(
-      createElement(SelectList, { items: many, window: 2, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items: many, window: 2, onSubmit: () => {} }));
     await app.flush();
     expect(app.lastFrame() ?? "").toContain("▼ 10");
 
@@ -375,12 +346,10 @@ describe("SelectList hidden-row counts (B-022)", () => {
   // Model values, measured: windowFor(12, 6, 4) -> 3 above / 5 below; windowFor(12, 11, 4) -> 8 / 0.
 
   /** Trimmed rows — the unit every assertion here compares, so `▲ 3` is a whole row or it is not. */
-  const rowsOf = (frame: string): string[] =>
-    frame.split("\n").map((line) => line.trim());
+  const rowsOf = (frame: string): string[] => frame.split("\n").map((line) => line.trim());
 
   /** Where a row sits, and `-1` when it is absent. Position is what membership cannot see. */
-  const indexOf = (frame: string, row: string): number =>
-    rowsOf(frame).indexOf(row);
+  const indexOf = (frame: string, row: string): number => rowsOf(frame).indexOf(row);
 
   /** How many rows start with a marker — an arrow rendered twice is a defect membership misses. */
   const countStartingWith = (frame: string, marker: string): number =>
@@ -548,9 +517,7 @@ describe("SelectList layout (B-022 D2)", () => {
   }));
 
   it("windowed_menu_layout", async () => {
-    const app = render(
-      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }));
     await app.flush();
     const frame = app.lastFrame() ?? "";
     app.unmount();
@@ -562,9 +529,7 @@ describe("SelectList layout (B-022 D2)", () => {
     // REVIEW FIX (F-arch-5). The two original snapshots both rendered at selection 0, so the `▲`
     // row appeared in NEITHER and they killed none of the upper-edge mutants. The reference
     // component's snapshot (`windowed-list-centred`) pins both edges; this one now does too.
-    const app = render(
-      createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }),
-    );
+    const app = render(createElement(SelectList, { items: many, window: 4, onSubmit: () => {} }));
     await app.flush();
     for (let i = 0; i < 6; i++) {
       app.stdin.write("\u001B[B");

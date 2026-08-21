@@ -1,16 +1,10 @@
 import { Box, Text } from "ink";
 import { useEffect, useReducer } from "react";
-
-import type { LayoutMarginProps } from "./layout-props.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";
-import { useInput } from "../renderer/input/use-input.js";
 import { useStdout } from "../renderer/hooks/use-stdout.js";
-import {
-  pagerReducer,
-  scrollPercent,
-  visibleRange,
-  type PagerAction,
-} from "./pager-model.js";
+import { useInput } from "../renderer/input/use-input.js";
+import type { LayoutMarginProps } from "./layout-props.js";
+import { type PagerAction, pagerReducer, scrollPercent, visibleRange } from "./pager-model.js";
 
 // M22 Pager (plan m22-interaction-primitives T3.1, ADR C1/C2/C3): a full-screen
 // scrollable viewport over pre-wrapped `content`. Reads the terminal height from
@@ -46,10 +40,7 @@ const CHAR_ACTIONS: Record<string, PagerAction> = {
 };
 
 /** Resolve a keypress to a scroll action, `"close"`, or nothing (pure). */
-function resolvePagerKey(
-  input: string,
-  key: PagerKey,
-): PagerAction | "close" | undefined {
+function resolvePagerKey(input: string, key: PagerKey): PagerAction | "close" | undefined {
   if (key.upArrow) return { type: "line-up" };
   if (key.downArrow) return { type: "line-down" };
   if (key.pageUp) return { type: "page-up" };
@@ -60,12 +51,7 @@ function resolvePagerKey(
   return CHAR_ACTIONS[input];
 }
 
-export function Pager({
-  content,
-  onClose,
-  autoFocus = true,
-  ...margin
-}: PagerProps) {
+export function Pager({ content, onClose, autoFocus = true, ...margin }: PagerProps) {
   const { isFocused } = useFocus({ autoFocus });
   const { stdout } = useStdout();
   const lines = content.split("\n");
@@ -101,11 +87,10 @@ export function Pager({
   // Clip the status to ONE row: a wrapped status would consume rows the layout
   // reserved for content, pushing content off the top (review M1).
   const columns = stdout?.columns ?? 80;
-  const status =
-    `line ${start + 1}–${bottom} of ${lines.length} · ${percent}% · q to close`.slice(
-      0,
-      Math.max(1, columns),
-    );
+  const status = `line ${start + 1}–${bottom} of ${lines.length} · ${percent}% · q to close`.slice(
+    0,
+    Math.max(1, columns),
+  );
 
   return (
     <Box flexDirection="column" {...margin}>

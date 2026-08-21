@@ -8,19 +8,18 @@
 
 export const VERSION = "0.76.1";
 
-export * from "./theme/index.js";
-export * from "./layout/index.js";
-export * from "./chat/index.js";
-export * from "./tools/index.js";
-export * from "./markdown/index.js";
-export * from "./diff/index.js";
 export * from "./agent/index.js";
-export * from "./metrics/index.js";
-export * from "./status/index.js";
-export * from "./prompts/index.js";
 export * from "./branding/index.js";
-export * from "./shortcuts/index.js";
+export * from "./chat/index.js";
+export * from "./diff/index.js";
 export * from "./format/index.js";
-
+export * from "./layout/index.js";
+export * from "./markdown/index.js";
+export * from "./metrics/index.js";
+export * from "./prompts/index.js";
 // Overlay hook ships from the renderer subsystem, not from a UI domain.
 export { OverlayProvider, useOverlay } from "./renderer/hooks/use-overlay.js";
+export * from "./shortcuts/index.js";
+export * from "./status/index.js";
+export * from "./theme/index.js";
+export * from "./tools/index.js";

@@ -1,6 +1,6 @@
-import { Box, Text, render } from "ink";
-import { createElement } from "react";
+import { Box, render, Text } from "ink";
 import type React from "react";
+import { createElement } from "react";
 
 import { ComponentBoundary } from "../../src/status/component-boundary.js";
 
@@ -29,20 +29,18 @@ function HealthyComponent(): React.ReactElement {
   return <Text>MIDDLE-RENDERED</Text>;
 }
 
-const middle = createElement(
-  process.env["THROW"] === "0" ? HealthyComponent : ThrowingComponent,
-);
+const middle = createElement(process.env.THROW === "0" ? HealthyComponent : ThrowingComponent);
 
 // PRESET_EXIT lets a test set a NARROWER code before rendering, the way a CLI reports a usage error
 // before it draws anything. A boundary that assigns unconditionally destroys it (F-arch-1).
-if (process.env["PRESET_EXIT"]) {
-  process.exitCode = Number(process.env["PRESET_EXIT"]);
+if (process.env.PRESET_EXIT) {
+  process.exitCode = Number(process.env.PRESET_EXIT);
 }
 
 const app = render(
   <Box flexDirection="column">
     <Text>ABOVE-SURVIVED</Text>
-    {process.env["WRAPPED"] === "1" ? (
+    {process.env.WRAPPED === "1" ? (
       <ComponentBoundary component="SelectList">{middle}</ComponentBoundary>
     ) : (
       middle

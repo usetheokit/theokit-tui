@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-
+import type { TextBufferState } from "./text-buffer.js";
 import {
   graphemeAt,
   initialTextBuffer,
@@ -9,7 +9,6 @@ import {
   killWordForward,
   textBufferReducer,
 } from "./text-buffer.js";
-import type { TextBufferState } from "./text-buffer.js";
 
 const state = (text: string, cursorOffset: number): TextBufferState => ({
   text,
@@ -52,19 +51,21 @@ describe("M21 kill primitives + word motions (T3.1)", () => {
   });
 
   it("move_word_left_and_right_reposition_the_cursor", () => {
-    expect(
-      textBufferReducer(state("hello world", 11), { type: "move-word-left" }),
-    ).toEqual({ text: "hello world", cursorOffset: 6 });
-    expect(
-      textBufferReducer(state("hello world", 0), { type: "move-word-right" }),
-    ).toEqual({ text: "hello world", cursorOffset: 5 });
+    expect(textBufferReducer(state("hello world", 11), { type: "move-word-left" })).toEqual({
+      text: "hello world",
+      cursorOffset: 6,
+    });
+    expect(textBufferReducer(state("hello world", 0), { type: "move-word-right" })).toEqual({
+      text: "hello world",
+      cursorOffset: 5,
+    });
   });
 
   it("set_replaces_the_whole_state_for_undo_restore", () => {
     const restored = state("recovered", 3);
-    expect(
-      textBufferReducer(state("current", 2), { type: "set", state: restored }),
-    ).toEqual(restored);
+    expect(textBufferReducer(state("current", 2), { type: "set", state: restored })).toEqual(
+      restored,
+    );
   });
 });
 
@@ -129,10 +130,7 @@ describe("textBufferReducer (T3.1)", () => {
   it("out_of_range_cursor_is_clamped_at_the_reducer_boundary", () => {
     // Review F-arch-4: the reducer is public API — malformed caller state is
     // clamped to a grapheme-safe range instead of silently corrupting text.
-    const next = textBufferReducer(
-      { text: "ab", cursorOffset: 99 },
-      { type: "insert", text: "X" },
-    );
+    const next = textBufferReducer({ text: "ab", cursorOffset: 99 }, { type: "insert", text: "X" });
     expect(next.text).toBe("abX");
     expect(next.cursorOffset).toBe(3);
   });

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-
-import { Banner } from "./banner.js";
-import { TheoTUIProvider, themes } from "../theme/theme.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../format/ansi.js";
+import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { Banner } from "./banner.js";
 
 // M27 T1.1 — <Banner> art path + name degrade over the ink renderFrame harness.
 
@@ -11,22 +10,16 @@ const ART = ["  ___", " |_ _|", "  | |", " |___|"].join("\n");
 
 describe("Banner — art path + name degrade (T1.1)", () => {
   it("renders_provided_art_verbatim", async () => {
-    const frame = stripAnsi(
-      await renderFrame(<Banner name="Theo" art={ART} />),
-    );
+    const frame = stripAnsi(await renderFrame(<Banner name="Theo" art={ART} />));
     for (const line of ART.split("\n")) {
       expect(frame).toContain(line.trimEnd());
     }
   });
 
   it("multiline_art_keeps_every_line", async () => {
-    const frame = stripAnsi(
-      await renderFrame(<Banner name="Theo" art={ART} />),
-    );
+    const frame = stripAnsi(await renderFrame(<Banner name="Theo" art={ART} />));
     // Every art line appears (no wrap/truncation collapsing rows).
-    const present = ART.split("\n").filter((l) =>
-      frame.includes(l.trimEnd()),
-    ).length;
+    const present = ART.split("\n").filter((l) => frame.includes(l.trimEnd())).length;
     expect(present).toBe(ART.split("\n").length);
   });
 
@@ -52,9 +45,7 @@ const STATUS = [
 describe("Banner — framed status panel + layout (T2.1)", () => {
   it("renders_each_label_value_row_in_a_bordered_box", async () => {
     const frame = stripAnsi(
-      await renderFrame(
-        <Banner name="Theo" layout="banner" art={ART} status={STATUS} />,
-      ),
+      await renderFrame(<Banner name="Theo" layout="banner" art={ART} status={STATUS} />),
     );
     expect(frame).toContain("model");
     expect(frame).toContain("theo-demo-1");
@@ -64,9 +55,7 @@ describe("Banner — framed status panel + layout (T2.1)", () => {
 
   it("banner_layout_stacks_the_art_above_the_status_panel", async () => {
     const frame = stripAnsi(
-      await renderFrame(
-        <Banner name="Theo" layout="banner" art={ART} status={STATUS} />,
-      ),
+      await renderFrame(<Banner name="Theo" layout="banner" art={ART} status={STATUS} />),
     );
     const lines = frame.split("\n");
     const artLine = lines.findIndex((l) => l.includes("|_ _|"));
@@ -77,9 +66,7 @@ describe("Banner — framed status panel + layout (T2.1)", () => {
 
   it("minimal_layout_omits_the_status_panel", async () => {
     const frame = stripAnsi(
-      await renderFrame(
-        <Banner name="Theo" layout="minimal" status={STATUS} />,
-      ),
+      await renderFrame(<Banner name="Theo" layout="minimal" status={STATUS} />),
     );
     expect(frame).toContain("Theo");
     expect(frame).not.toContain("theo-demo-1"); // no status panel in minimal

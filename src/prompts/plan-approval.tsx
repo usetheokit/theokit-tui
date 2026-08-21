@@ -2,10 +2,10 @@ import { Box } from "ink";
 import { useState } from "react";
 
 import type { ApprovalChoice, PlanDecision } from "../agent/agent-decision.js";
-import { ChoiceRow } from "./choice-row.js";
 import { FreeTextInput } from "../chat/free-text-input.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { MarkdownText } from "../markdown/markdown-text.js";
+import { ChoiceRow } from "./choice-row.js";
 
 // M23 PlanApproval (plan m23-agent-decision-surfaces T3.1, ADR D2): the Claude
 // Code plan-mode idiom — a proposed-plan markdown body (M13 MarkdownText,
@@ -26,12 +26,7 @@ export interface PlanApprovalProps extends LayoutMarginProps {
   autoFocus?: boolean;
 }
 
-export function PlanApproval({
-  plan,
-  onDecision,
-  autoFocus = true,
-  ...margin
-}: PlanApprovalProps) {
+export function PlanApproval({ plan, onDecision, autoFocus = true, ...margin }: PlanApprovalProps) {
   const [revising, setRevising] = useState(false);
 
   const handleCommit = (value: string): void => {

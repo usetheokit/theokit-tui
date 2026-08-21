@@ -1,11 +1,9 @@
 import { Box, Text } from "ink";
-import { useState, type ReactNode } from "react";
-
-import type { LayoutMarginProps } from "./layout-props.js";
-
+import { type ReactNode, useState } from "react";
 import { useFocus } from "../renderer/hooks/use-focus.js";
 import type { Key } from "../renderer/input/key.js";
 import { useInput } from "../renderer/input/use-input.js";
+import type { LayoutMarginProps } from "./layout-props.js";
 
 // M24 CollapsibleBlock (plan m24-live-progress-surfaces T3.1, ADR D3): a collapsed
 // summary line + an expandable body, controlled OR key-toggled. When `expanded`

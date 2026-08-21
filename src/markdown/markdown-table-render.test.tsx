@@ -22,12 +22,7 @@ function renderAtWidth(text: string, columns: number) {
   return instance;
 }
 
-const TABLE = [
-  "| name | age |",
-  "| --- | ---: |",
-  "| alice | 30 |",
-  "| bob | 9 |",
-].join("\n");
+const TABLE = ["| name | age |", "| --- | ---: |", "| alice | 30 |", "| bob | 9 |"].join("\n");
 
 const WIDE_TABLE = [
   "| a fairly wide header | another wide column |",

@@ -1,15 +1,15 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 
 import { render as inkRender } from "ink-testing-library";
 
 import { ChatThread } from "../src/index.js";
 import { createRenderer } from "../src/renderer/renderer.js";
 import type { Terminal } from "../src/renderer/terminal.js";
-import { round, stats, stackVersions, tick } from "./sampling.js";
+import { round, stackVersions, stats, tick } from "./sampling.js";
 
 // M18 renderer-layout bench (plan T3.1, ADR D4): the FULL layout+render pipeline
 // (yoga calculateLayout → renderNodeToOutput → cell grid → OutputEngine) vs Ink
@@ -37,8 +37,7 @@ function scene(n: number, step: number): React.ReactElement {
   const messages = Array.from({ length: n }, (_, i) => ({
     id: String(i),
     role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
-    content:
-      i === n - 1 ? `streaming ${"·".repeat(step)}` : `message ${i} content`,
+    content: i === n - 1 ? `streaming ${"·".repeat(step)}` : `message ${i} content`,
   }));
   return <ChatThread messages={messages} />;
 }
@@ -104,7 +103,7 @@ async function main(): Promise<void> {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "" },
     load_1min_at_start: round(loadAtStart),
     workload: { messages: MESSAGES, update_frames: UPDATE_FRAMES },
     protocol: {
@@ -118,7 +117,7 @@ async function main(): Promise<void> {
   const outDir = join(dirname(fileURLToPath(import.meta.url)), "baselines");
   mkdirSync(outDir, { recursive: true });
   const outFile = join(outDir, "renderer-layout-baseline.json");
-  writeFileSync(outFile, JSON.stringify(baseline, null, 2) + "\n");
+  writeFileSync(outFile, `${JSON.stringify(baseline, null, 2)}\n`);
   process.stdout.write(
     `\nrenderer-layout bench (load ${round(loadAtStart)}):\n` +
       `  own → ${own.aggregate.mean_ms_per_frame.mean} ms/frame\n` +

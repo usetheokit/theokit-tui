@@ -2,8 +2,8 @@ import { Box, Text } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { StatusFooter } from "./status-footer.js";
 import { stripAnsi } from "../format/ansi.js";
+import { StatusFooter } from "./status-footer.js";
 
 const strip = (v: string): string => stripAnsi(v);
 
@@ -39,17 +39,13 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   });
 
   it("renders_two_rows", async () => {
-    const frame = strip(
-      await renderFrame(<StatusFooter left={<Text>L</Text>} mode="plan" />),
-    );
+    const frame = strip(await renderFrame(<StatusFooter left={<Text>L</Text>} mode="plan" />));
     const lines = frame.split("\n").filter((l) => l.trim() !== "");
     expect(lines.length).toBe(2);
   });
 
   it("accepts_a_custom_hint", async () => {
-    const frame = strip(
-      await renderFrame(<StatusFooter hint="press ? for help" />),
-    );
+    const frame = strip(await renderFrame(<StatusFooter hint="press ? for help" />));
     expect(frame).toContain("press ? for help");
   });
 
@@ -71,34 +67,25 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   it("forwards_a_custom_mode_label_to_the_mode_row", async () => {
     const frame = strip(
       await renderFrame(
-        <StatusFooter
-          left={<Text>main</Text>}
-          modeLabel="\u23f5\u23f5 full-auto on"
-        />,
+        <StatusFooter left={<Text>main</Text>} modeLabel="\u23f5\u23f5 full-auto on" />,
       ),
     );
 
     expect(frame).toContain("full-auto on");
-    expect(
-      frame,
-      "the cycle hint belongs to the row, not the vocabulary",
-    ).toContain("shift+tab to cycle");
-    expect(frame, "the agents hint is part of the mode row").toContain(
-      "for agents",
+    expect(frame, "the cycle hint belongs to the row, not the vocabulary").toContain(
+      "shift+tab to cycle",
     );
+    expect(frame, "the agents hint is part of the mode row").toContain("for agents");
   });
 
   it("a_custom_mode_label_replaces_the_default_hint_row", async () => {
     const frame = strip(
-      await renderFrame(
-        <StatusFooter left={<Text>main</Text>} modeLabel="suggest on" />,
-      ),
+      await renderFrame(<StatusFooter left={<Text>main</Text>} modeLabel="suggest on" />),
     );
 
-    expect(
-      frame,
-      "the shortcuts hint still occupied the mode row",
-    ).not.toContain("? for shortcuts");
+    expect(frame, "the shortcuts hint still occupied the mode row").not.toContain(
+      "? for shortcuts",
+    );
   });
 
   it("a_label_does_not_switch_off_the_closed_union_check_on_mode", async () => {
@@ -112,25 +99,18 @@ describe("StatusFooter (#45 — two-line footer)", () => {
     // precisely the silent-degradation `modeLabel` must not introduce.
     const frame = strip(
       await renderFrame(
-        <StatusFooter
-          left={<Text>main</Text>}
-          mode={"plna" as never}
-          modeLabel="suggest on"
-        />,
+        <StatusFooter left={<Text>main</Text>} mode={"plna" as never} modeLabel="suggest on" />,
       ),
     );
 
-    expect(
-      frame,
-      "a typo'd mode rendered anyway once a label was passed",
-    ).not.toContain("suggest on");
+    expect(frame, "a typo'd mode rendered anyway once a label was passed").not.toContain(
+      "suggest on",
+    );
   });
 
   it("footer_without_the_new_prop_is_unchanged", async () => {
     // Backward-compatibility guard: `modeLabel` is opt-in.
-    const frame = strip(
-      await renderFrame(<StatusFooter left={<Text>main</Text>} />),
-    );
+    const frame = strip(await renderFrame(<StatusFooter left={<Text>main</Text>} />));
 
     expect(frame).toContain("? for shortcuts");
   });
@@ -156,11 +136,7 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   it("the_mode_row_leaves_no_dangling_separator_when_agents_is_undeclared", async () => {
     const frame = strip(
       await renderFrame(
-        <StatusFooter
-          left={<Text>main</Text>}
-          mode="auto-accept"
-          affordances={{}}
-        />,
+        <StatusFooter left={<Text>main</Text>} mode="auto-accept" affordances={{}} />,
       ),
     );
     const modeRow = frame.split("\n").find((l) => l.includes("auto-accept"));
@@ -170,9 +146,7 @@ describe("StatusFooter (#45 — two-line footer)", () => {
 
   // D1 — the whole point of adding a prop instead of changing a default.
   it("a_footer_with_no_affordances_prop_renders_exactly_as_before", async () => {
-    const withoutProp = strip(
-      await renderFrame(<StatusFooter left={<Text>main</Text>} />),
-    );
+    const withoutProp = strip(await renderFrame(<StatusFooter left={<Text>main</Text>} />));
     expect(withoutProp).toContain("? for shortcuts");
     expect(withoutProp).toContain("← for agents");
   });
@@ -180,9 +154,7 @@ describe("StatusFooter (#45 — two-line footer)", () => {
   // D4 / EC-2 — `footerHintFor({})` is `""`, and `hint || DEFAULT` would restore everything.
   it("an_empty_declaration_renders_an_empty_hint_not_the_default", async () => {
     const frame = strip(
-      await renderFrame(
-        <StatusFooter left={<Text>main</Text>} affordances={{}} />,
-      ),
+      await renderFrame(<StatusFooter left={<Text>main</Text>} affordances={{}} />),
     );
     expect(frame).not.toContain("shortcuts");
     expect(frame).not.toContain("agents");

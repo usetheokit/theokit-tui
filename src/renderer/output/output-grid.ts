@@ -72,12 +72,7 @@ export class Output {
     this.height = options.height;
   }
 
-  write(
-    x: number,
-    y: number,
-    text: string,
-    options: { transformers: Transformer[] },
-  ): void {
+  write(x: number, y: number, text: string, options: { transformers: Transformer[] }): void {
     if (!text) {
       return;
     }
@@ -106,9 +101,7 @@ export class Output {
 
     const output = grid
       .map((line, y) =>
-        this.rawLines.has(y)
-          ? this.rawLines.get(y)!
-          : styledCharsToString(line).trimEnd(),
+        this.rawLines.has(y) ? this.rawLines.get(y)! : styledCharsToString(line).trimEnd(),
       )
       .join("\n");
     return { output, height: grid.length };
@@ -152,10 +145,7 @@ export class Output {
   }
 
   /** Blank a wide char's leading cell when a write lands on its trailing half. */
-  private cleanOverwrittenWideLead(
-    currentLine: StyledChar[],
-    offsetX: number,
-  ): void {
+  private cleanOverwrittenWideLead(currentLine: StyledChar[], offsetX: number): void {
     if (
       currentLine[offsetX]?.value === "" &&
       offsetX > 0 &&
@@ -166,11 +156,7 @@ export class Output {
   }
 
   /** Write one styled char (+ trailing placeholders for wide chars); return next x. */
-  private placeChar(
-    currentLine: StyledChar[],
-    offsetX: number,
-    character: StyledChar,
-  ): number {
+  private placeChar(currentLine: StyledChar[], offsetX: number, character: StyledChar): number {
     currentLine[offsetX] = character;
     const characterWidth = Math.max(1, this.caches.width(character.value));
     for (let i = 1; i < characterWidth; i++) {

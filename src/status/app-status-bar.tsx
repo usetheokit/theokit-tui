@@ -1,12 +1,12 @@
-import { Box, Text } from "ink";
 import { homedir } from "node:os";
+import { Box, Text } from "ink";
 import { Fragment } from "react";
 
 import { formatCost, formatTokens } from "../format/format.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { useTheoTheme } from "../theme/theme.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
 
 // M14 AppStatusBar (plan m14-status-bar, ADR D1): the persistent AI-native
 // status line — model · cwd · tokens · cost · state — gemini's FooterRow recipe
@@ -81,10 +81,7 @@ function isRenderableCost(cost: number | undefined): cost is number {
  * separator). Extracted from the component so each stays within the complexity
  * budget — behaviour is identical to the inline construction.
  */
-function buildSlots(
-  props: AppStatusBarProps,
-  theme: ReturnType<typeof useTheoTheme>,
-): Slot[] {
+function buildSlots(props: AppStatusBarProps, theme: ReturnType<typeof useTheoTheme>): Slot[] {
   const model = props.model === "" ? undefined : props.model;
   const cwd = props.cwd === "" ? undefined : props.cwd;
   const state = props.state === "" ? undefined : props.state;
@@ -119,9 +116,7 @@ function buildSlots(
   if (isRenderableCost(props.cost)) {
     slots.push({
       key: "cost",
-      node: (
-        <Text dimColor>cost {formatCost(props.cost, { approx: true })}</Text>
-      ),
+      node: <Text dimColor>cost {formatCost(props.cost, { approx: true })}</Text>,
       shrinks: false,
     });
   }

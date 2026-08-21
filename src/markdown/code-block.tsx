@@ -1,14 +1,13 @@
 import { Box, Text } from "ink";
-import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-
-import { ExpandableOutput } from "../tools/expandable-output.js";
+import { useEffect, useState } from "react";
+import { sanitizeUntrusted } from "../format/ansi.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { useTheoTheme } from "../theme/theme.js";
-import type { CodeTokens } from "../theme/theme.js";
-import { sanitizeUntrusted } from "../format/ansi.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import type { CodeTokens } from "../theme/theme.js";
+import { useTheoTheme } from "../theme/theme.js";
+import { ExpandableOutput } from "../tools/expandable-output.js";
 
 // Minimal structural types for lowlight's hast output — the real package
 // types live behind the OPTIONAL peer (plan ADR D2), so we keep a local
@@ -136,9 +135,7 @@ function renderHast(
         }
       }
       return (
-        <Text key={key}>
-          {renderHast(element.children, color ?? inherited, key, codeColors)}
-        </Text>
+        <Text key={key}>{renderHast(element.children, color ?? inherited, key, codeColors)}</Text>
       );
     }
     return null;
@@ -158,11 +155,7 @@ export function highlightLine(
   key: string,
   codeColors: CodeTokens,
 ): ReactNode {
-  if (
-    highlighter === undefined ||
-    language === undefined ||
-    !highlighter.registered(language)
-  ) {
+  if (highlighter === undefined || language === undefined || !highlighter.registered(language)) {
     return line;
   }
   try {
@@ -186,10 +179,7 @@ export function highlightLine(
  * inside a de-duplication.
  */
 function toCodeLines(code: string): string[] {
-  const sanitized = sanitizeUntrusted(code).replaceAll(
-    "\t",
-    " ".repeat(TAB_WIDTH),
-  );
+  const sanitized = sanitizeUntrusted(code).replaceAll("\t", " ".repeat(TAB_WIDTH));
   if (sanitized === "") {
     return [];
   }
@@ -226,9 +216,7 @@ function assertPositiveMaxLines(maxLines: number | undefined): void {
   if (maxLines !== undefined && (!Number.isInteger(maxLines) || maxLines < 1)) {
     reportGuardFailure(
       "CodeBlock",
-      new TypeError(
-        `CodeBlock: maxLines must be an integer >= 1 — got ${String(maxLines)}`,
-      ),
+      new TypeError(`CodeBlock: maxLines must be an integer >= 1 — got ${String(maxLines)}`),
     );
   }
 }
@@ -245,9 +233,7 @@ export function CodeBlock({
   assertPositiveMaxLines(maxLines);
   const m = pickMargin(marginProps);
   const theme = useTheoTheme();
-  const [highlighter, setHighlighter] = useState<HighlighterLike | undefined>(
-    undefined,
-  );
+  const [highlighter, setHighlighter] = useState<HighlighterLike | undefined>(undefined);
   useEffect(() => {
     let mounted = true;
     void ensureHighlighter().then((loaded) => {
@@ -281,13 +267,7 @@ export function CodeBlock({
           <Text wrap="wrap">
             {line === ""
               ? " "
-              : highlightLine(
-                  line,
-                  language,
-                  highlighter,
-                  `h${index}`,
-                  theme.code,
-                )}
+              : highlightLine(line, language, highlighter, `h${index}`, theme.code)}
           </Text>
         </Box>
       ))}

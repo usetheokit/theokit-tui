@@ -70,10 +70,7 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatch {
 }
 
 /** Rank `candidates` by fuzzy score against `query` (best first); drop non-matches. */
-export function fuzzyRank(
-  query: string,
-  candidates: readonly string[],
-): string[] {
+export function fuzzyRank(query: string, candidates: readonly string[]): string[] {
   return candidates
     .map((text) => ({ text, match: fuzzyMatch(query, text) }))
     .filter((entry) => entry.match.matches)

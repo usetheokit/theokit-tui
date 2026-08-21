@@ -30,9 +30,7 @@ export interface OscSink {
 }
 
 const underMultiplexer = (env: NodeJS.ProcessEnv): boolean =>
-  env["TMUX"] !== undefined ||
-  env["STY"] !== undefined ||
-  env["ZELLIJ"] !== undefined;
+  env.TMUX !== undefined || env.STY !== undefined || env.ZELLIJ !== undefined;
 
 /**
  * Refuses a caller value that could close the OSC and open a new one.
@@ -72,10 +70,7 @@ function refuseControlBytes(value: string, argument: string): void {
  *
  * @throws RangeError via `reportGuardFailure` when `title` contains a C0/C1 control byte.
  */
-export function setTerminalTitle(
-  title: string,
-  out: OscSink = process.stdout,
-): void {
+export function setTerminalTitle(title: string, out: OscSink = process.stdout): void {
   refuseControlBytes(title, "title");
   if (out.isTTY !== true) return;
   out.write(`\x1b]0;${title}\x07`);

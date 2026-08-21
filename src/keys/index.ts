@@ -18,7 +18,7 @@
  */
 
 export {
-  routeThroughLayers,
   type KeyLayer,
   type RoutedKey,
+  routeThroughLayers,
 } from "./layer-router.js";

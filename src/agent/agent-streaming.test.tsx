@@ -1,22 +1,12 @@
 import { Box, Text } from "ink";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-
-import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { AgentStreaming } from "./agent-streaming.js";
-import { formatElapsed } from "../format/format.js";
-import { TheoTUIProvider } from "../theme/theme.js";
 import { render } from "ink-testing-library";
 import type { ReactElement } from "react";
 import { act } from "react";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderFrame } from "../../tests/fixtures/helpers.js";
+import { formatElapsed } from "../format/format.js";
+import { TheoTUIProvider } from "../theme/theme.js";
+import { AgentStreaming } from "./agent-streaming.js";
 
 /** The sparkle's static frame — motion is off in a non-TTY test env. */
 const SPARKLE_FRAME_0 = "✳";
@@ -73,17 +63,13 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
   });
 
   it("streaming_renders_thought_subject", async () => {
-    const frame = await renderFrame(
-      <AgentStreaming thought="Analyzing the failure" />,
-    );
+    const frame = await renderFrame(<AgentStreaming thought="Analyzing the failure" />);
     expect(frame).toContain("Analyzing the failure");
     expect(frame).not.toContain("Thinking…");
   });
 
   it("streaming_suffix_exact_with_elapsed", async () => {
-    const frame = await renderFrame(
-      <AgentStreaming showCancelHint elapsedSeconds={125} />,
-    );
+    const frame = await renderFrame(<AgentStreaming showCancelHint elapsedSeconds={125} />);
     expect(frame).toContain("(2m 5s · esc to interrupt)");
   });
 
@@ -95,12 +81,7 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
   it("streaming_suffix_with_tokens_is_claude_code_shaped", async () => {
     // #1 Claude Code parity: `✳ Searching… (27s · 47k tokens · esc to interrupt)`.
     const frame = await renderFrame(
-      <AgentStreaming
-        thought="Searching"
-        showCancelHint
-        elapsedSeconds={27}
-        tokens={47_000}
-      />,
+      <AgentStreaming thought="Searching" showCancelHint elapsedSeconds={27} tokens={47_000} />,
     );
     expect(frame).toContain("(27s · 47k tokens · esc to interrupt)");
   });
@@ -121,18 +102,14 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
   });
 
   it("no_token_direction_renders_the_bare_count", async () => {
-    const frame = await renderFrame(
-      <AgentStreaming showCancelHint tokens={47_000} />,
-    );
+    const frame = await renderFrame(<AgentStreaming showCancelHint tokens={47_000} />);
     expect(frame).toContain("47k tokens");
     expect(frame).not.toContain("↓");
     expect(frame).not.toContain("↑");
   });
 
   it("streaming_no_suffix_without_hint", async () => {
-    const frame = await renderFrame(
-      <AgentStreaming elapsedSeconds={5} tokens={47_000} />,
-    );
+    const frame = await renderFrame(<AgentStreaming elapsedSeconds={5} tokens={47_000} />);
     expect(frame).not.toContain("esc to interrupt");
     expect(frame).not.toContain("tokens");
     expect(frame).not.toContain("5s");
@@ -154,9 +131,7 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
     // be hint-gated (direct invocation, M0 EC-1 idiom).
     const call = () => AgentStreaming({ elapsedSeconds: -1 });
     expect(call).toThrow(TypeError);
-    expect(call).toThrow(
-      "formatElapsed: seconds must be a finite number >= 0 — got -1",
-    );
+    expect(call).toThrow("formatElapsed: seconds must be a finite number >= 0 — got -1");
   });
 
   it("streaming_stays_one_line_at_narrow_width", async () => {
@@ -176,11 +151,7 @@ describe("AgentStreaming — live indicator (T2.1, ADR D4)", () => {
   it("streaming_frame_matches_snapshot", async () => {
     const frame = await renderFrame(
       <Box width={40}>
-        <AgentStreaming
-          thought="Reading files"
-          showCancelHint
-          elapsedSeconds={12}
-        />
+        <AgentStreaming thought="Reading files" showCancelHint elapsedSeconds={12} />
       </Box>,
     );
     expect(frame).toMatchSnapshot("agent-streaming");
@@ -221,13 +192,10 @@ function mountGated(isTTY: boolean, node: ReactElement) {
 
 describe("AgentStreaming animation (M24 T5.1)", () => {
   beforeAll(() => {
-    (
-      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-    ).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   });
   afterAll(() => {
-    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-      .IS_REACT_ACT_ENVIRONMENT;
+    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT;
   });
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
@@ -265,10 +233,7 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
 
   it("does_not_cycle_when_NO_MOTION_is_set", () => {
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "1");
-    const instance = mountGated(
-      true,
-      <AgentStreaming phrases={["Thinking", "Cooking"]} />,
-    );
+    const instance = mountGated(true, <AgentStreaming phrases={["Thinking", "Cooking"]} />);
     expect(instance.lastFrame()).toContain("Thinking"); // static first phrase
     act(() => vi.advanceTimersByTime(PHRASE_INTERVAL_MS * 3));
     expect(instance.lastFrame()).toContain("Thinking"); // reduced-motion → no cycle
@@ -278,10 +243,7 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
 
   it("does_not_cycle_on_a_non_tty", () => {
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "");
-    const instance = mountGated(
-      false,
-      <AgentStreaming phrases={["Thinking", "Cooking"]} />,
-    );
+    const instance = mountGated(false, <AgentStreaming phrases={["Thinking", "Cooking"]} />);
     act(() => vi.advanceTimersByTime(PHRASE_INTERVAL_MS * 3));
     expect(instance.lastFrame()).toContain("Thinking"); // piped → no cycle
     expect(instance.lastFrame()).not.toContain("Cooking");
@@ -297,10 +259,7 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
 
   it("a_single_phrase_does_not_cycle", () => {
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "");
-    const instance = mountGated(
-      true,
-      <AgentStreaming phrases={["Only one"]} />,
-    );
+    const instance = mountGated(true, <AgentStreaming phrases={["Only one"]} />);
     expect(instance.lastFrame()).toContain("Only one");
     act(() => vi.advanceTimersByTime(PHRASE_INTERVAL_MS * 3));
     expect(instance.lastFrame()).toContain("Only one"); // nothing to cycle
@@ -314,10 +273,7 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
 
   it("shimmer_pulses_the_primary_line_dim_under_a_tty", () => {
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "");
-    const instance = mountGated(
-      true,
-      <AgentStreaming thought="working" shimmer />,
-    );
+    const instance = mountGated(true, <AgentStreaming thought="working" shimmer />);
     expect(instance.lastFrame()).not.toContain(DIM); // on=false at mount
     act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS));
     expect(instance.lastFrame()).toContain(DIM); // pulsed on
@@ -328,10 +284,7 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
 
   it("shimmer_never_dims_under_reduced_motion", () => {
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "1");
-    const instance = mountGated(
-      true,
-      <AgentStreaming thought="working" shimmer />,
-    );
+    const instance = mountGated(true, <AgentStreaming thought="working" shimmer />);
     act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS * 4));
     expect(instance.lastFrame()).not.toContain(DIM); // motion off → never pulses
     act(() => instance.unmount());
@@ -339,10 +292,7 @@ describe("AgentStreaming animation (M24 T5.1)", () => {
 
   it("shimmer_does_not_dim_on_a_non_tty", () => {
     vi.stubEnv("THEOKIT_TUI_NO_MOTION", "");
-    const instance = mountGated(
-      false,
-      <AgentStreaming thought="working" shimmer />,
-    );
+    const instance = mountGated(false, <AgentStreaming thought="working" shimmer />);
     act(() => vi.advanceTimersByTime(SHIMMER_PULSE_MS * 4));
     expect(instance.lastFrame()).not.toContain(DIM); // piped → never pulses
     act(() => instance.unmount());

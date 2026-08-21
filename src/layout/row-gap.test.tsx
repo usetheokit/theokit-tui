@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { ChoiceRow } from "../prompts/choice-row.js";
 import { MultiStepProgress } from "../metrics/multi-step-progress.js";
+import { ChoiceRow } from "../prompts/choice-row.js";
 import { QuestionPrompt } from "../prompts/question-prompt.js";
 import { SelectList } from "../prompts/select-list.js";
 import { TodoList } from "../status/todo-list.js";
@@ -44,12 +44,7 @@ describe("row gap (issue #50) — opt-in inter-item spacing", () => {
     );
     expect(gapBetween(flush, "Alpha", "Beta")).toBe(0);
     const spaced = await renderFrame(
-      <SelectList
-        items={items}
-        onSubmit={() => {}}
-        autoFocus={false}
-        gap={1}
-      />,
+      <SelectList items={items} onSubmit={() => {}} autoFocus={false} gap={1} />,
     );
     expect(gapBetween(spaced, "Alpha", "Beta")).toBe(1);
   });
@@ -59,9 +54,7 @@ describe("row gap (issue #50) — opt-in inter-item spacing", () => {
       { id: "a", label: "Plan", status: "done" as const },
       { id: "b", label: "Generate", status: "active" as const },
     ];
-    const spaced = await renderFrame(
-      <MultiStepProgress steps={steps} gap={1} />,
-    );
+    const spaced = await renderFrame(<MultiStepProgress steps={steps} gap={1} />);
     expect(gapBetween(spaced, "Plan", "Generate")).toBe(1);
   });
 

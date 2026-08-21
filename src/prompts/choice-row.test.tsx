@@ -1,13 +1,12 @@
+import { render as inkRender } from "ink-testing-library";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
-import { render as inkRender } from "ink-testing-library";
-
 import { render } from "../../tests/renderer/itl-adapter.js";
-import { ChoiceRow } from "./choice-row.js";
 import { DEFAULT_APPROVAL_CHOICES } from "../agent/agent-decision.js";
-import { TheoTUIProvider, themes, type TheoThemeProp } from "../theme/theme.js";
+import { type TheoThemeProp, TheoTUIProvider, themes } from "../theme/theme.js";
+import { ChoiceRow } from "./choice-row.js";
 
 // M23 T1.1 — the ChoiceRow component over the itl-adapter (OUR renderer/input/
 // focus). A horizontal fixed choice bar: ❯ marks the active choice, ←/→ move,
@@ -17,9 +16,7 @@ const CHOICES = [...DEFAULT_APPROVAL_CHOICES];
 
 describe("ChoiceRow component (M23 T1.1)", () => {
   it("renders_choices_with_the_active_marker", async () => {
-    const app = render(
-      createElement(ChoiceRow, { choices: CHOICES, onCommit: () => {} }),
-    );
+    const app = render(createElement(ChoiceRow, { choices: CHOICES, onCommit: () => {} }));
     await app.flush();
     const frame = app.lastFrame();
     expect(frame).toContain("❯ Allow once"); // first choice active
@@ -29,9 +26,7 @@ describe("ChoiceRow component (M23 T1.1)", () => {
   });
 
   it("right_arrow_moves_the_marker", async () => {
-    const app = render(
-      createElement(ChoiceRow, { choices: CHOICES, onCommit: () => {} }),
-    );
+    const app = render(createElement(ChoiceRow, { choices: CHOICES, onCommit: () => {} }));
     await app.flush();
     app.stdin.write("\x1b[C"); // right arrow → second choice
     await app.flush();
@@ -147,14 +142,10 @@ describe("ChoiceRow component (M23 T1.1)", () => {
           }),
         }),
       );
-      await waitForCondition(
-        () => (app.lastFrame() ?? "").includes("Allow once"),
-        { describe: "the choice row to render its first choice" },
-      );
-      const line =
-        (app.lastFrame() ?? "")
-          .split("\n")
-          .find((l) => l.includes("Allow once")) ?? "";
+      await waitForCondition(() => (app.lastFrame() ?? "").includes("Allow once"), {
+        describe: "the choice row to render its first choice",
+      });
+      const line = (app.lastFrame() ?? "").split("\n").find((l) => l.includes("Allow once")) ?? "";
       app.unmount();
       return line;
     };

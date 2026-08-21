@@ -1,7 +1,7 @@
+import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
 import { extractAssistantText, routeToolResult } from "./agent-stream-event.js";
-import type { ToolCallStatus } from "../tools/tool-call.js";
 
 // Pure mapping fold (plan m7-stream-adapter ADR D2): AgentStreamEvent →
 // AgentStreamState whose `events` IS AgentTimeline's exact input. Every
@@ -49,10 +49,7 @@ function graduateThought(state: AgentStreamState): AgentStreamState {
   return {
     ...closed,
     seq,
-    events: [
-      ...closed.events,
-      { id: `think-${seq}`, kind: "thinking", text: thought },
-    ],
+    events: [...closed.events, { id: `think-${seq}`, kind: "thinking", text: thought }],
     streaming: { active: closed.streaming.active },
   };
 }
@@ -68,10 +65,7 @@ function withoutLiveMessage(state: AgentStreamState): AgentStreamState {
   return rest;
 }
 
-function foldThinkingText(
-  state: AgentStreamState,
-  event: AgentStreamEvent,
-): AgentStreamState {
+function foldThinkingText(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
   const thought = (state.streaming.thought ?? "") + (event.text ?? "");
   return {
     ...state,
@@ -80,10 +74,7 @@ function foldThinkingText(
   };
 }
 
-function foldTextDelta(
-  state: AgentStreamState,
-  event: AgentStreamEvent,
-): AgentStreamState {
+function foldTextDelta(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
   const next = graduateThought(state);
   const chunk = event.text ?? "";
   if (next.liveMessageId !== undefined) {
@@ -106,19 +97,13 @@ function foldTextDelta(
     ...next,
     seq,
     liveMessageId: id,
-    events: [
-      ...next.events,
-      { id, kind: "message", role: "assistant", text: chunk },
-    ],
+    events: [...next.events, { id, kind: "message", role: "assistant", text: chunk }],
     status: "streaming",
     streaming: { active: true },
   };
 }
 
-function foldAssistant(
-  state: AgentStreamState,
-  event: AgentStreamEvent,
-): AgentStreamState {
+function foldAssistant(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
   const next = graduateThought(state);
   const text = extractAssistantText(event.message);
   if (next.liveMessageId !== undefined) {
@@ -140,10 +125,7 @@ function foldAssistant(
   return {
     ...next,
     seq,
-    events: [
-      ...next.events,
-      { id: `msg-${seq}`, kind: "message", role: "assistant", text },
-    ],
+    events: [...next.events, { id: `msg-${seq}`, kind: "message", role: "assistant", text }],
     status: "streaming",
   };
 }
@@ -159,9 +141,7 @@ const TOOL_STATUS_MAP: Record<string, ToolCallStatus> = {
 /** Result mapping ladder: diff XOR shell XOR output — NEVER combined. The
  * routing (`routeToolResult`) is shared with the message projection — see
  * `agent-stream-event.ts`. */
-function toolContent(
-  result: unknown,
-): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
+function toolContent(result: unknown): Pick<AgentToolEvent, "output" | "shell" | "diff"> {
   if (result === undefined) {
     return {};
   }
@@ -192,10 +172,7 @@ function resolveToolContent(
   };
 }
 
-function foldToolCall(
-  state: AgentStreamState,
-  event: AgentStreamEvent,
-): AgentStreamState {
+function foldToolCall(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
   // Close-on-effectful-fold (EC-1): the live message is finalized at its
   // buffer so it is ALWAYS the tail while open — the M3 only-the-tail
   // replaceability rule holds literally.
@@ -212,11 +189,8 @@ function foldToolCall(
   // Single lookup, FULL predicate (review F-5): a producer call_id that
   // collides with a non-tool id appends instead of overwriting — the M3
   // duplicate-id throw then fails loud at the boundary, never silently.
-  const index = next.events.findIndex(
-    (item) => item.kind === "tool" && item.id === id,
-  );
-  const existing =
-    index === -1 ? undefined : (next.events[index] as AgentToolEvent);
+  const index = next.events.findIndex((item) => item.kind === "tool" && item.id === id);
+  const existing = index === -1 ? undefined : (next.events[index] as AgentToolEvent);
   const content = resolveToolContent(event.result, existing);
   const toolEvent: AgentToolEvent = {
     id,
@@ -246,8 +220,7 @@ function foldToolCall(
  * windowing is a future ADR, not a hotfix. */
 function failNonTerminalTools(events: AgentEvent[]): AgentEvent[] {
   return events.map((item) =>
-    item.kind === "tool" &&
-    (item.status === "pending" || item.status === "running")
+    item.kind === "tool" && (item.status === "pending" || item.status === "running")
       ? { ...item, status: "failed" as const }
       : item,
   );

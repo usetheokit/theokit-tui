@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 import { render } from "../../tests/renderer/itl-adapter.js";
-import { ApprovalPrompt } from "./approval-prompt.js";
 import { DiffViewer } from "../diff/diff-viewer.js";
+import { ApprovalPrompt } from "./approval-prompt.js";
 
 // M23 T1.2 — ApprovalPrompt over the itl-adapter. A titled pending-action card:
 // the preview is a `children` slot (the app composes DiffViewer / a command line

@@ -1,12 +1,7 @@
 import { Box, render } from "ink";
 import { useEffect, useState } from "react";
-
-import {
-  AgentStreaming,
-  AgentTimeline,
-  TheoTUIProvider,
-} from "../../src/index.js";
 import type { AgentEvent } from "../../src/index.js";
+import { AgentStreaming, AgentTimeline, TheoTUIProvider } from "../../src/index.js";
 
 // Agent-turn demo (plan T3.2 — TTFATT caller): a scripted turn — thinking →
 // tool running → tool success → assistant message — with a live elapsed
@@ -40,9 +35,7 @@ const runningTurn: AgentEvent[] = [
 ];
 
 function Demo() {
-  const [events, setEvents] = useState<AgentEvent[]>(
-    isInteractive ? runningTurn : finalTurn,
-  );
+  const [events, setEvents] = useState<AgentEvent[]>(isInteractive ? runningTurn : finalTurn);
   const [elapsed, setElapsed] = useState(0);
   const streaming = isInteractive && events !== finalTurn;
 

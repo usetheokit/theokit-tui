@@ -1,14 +1,12 @@
 import { Text } from "ink";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-
-import { renderFrame } from "./fixtures/helpers.js";
-import type { LayoutMarginProps } from "../src/layout/layout-props.js";
+import { stripAnsi } from "../src/format/ansi.js";
 import {
   AgentStreaming,
   AgentTimeline,
-  AppStatusBar,
   ApprovalPrompt,
+  AppStatusBar,
   Banner,
   ChatComposer,
   ChatMessage,
@@ -18,8 +16,6 @@ import {
   CollapsibleBlock,
   ContextWindowBar,
   CostMeter,
-  UsagePanel,
-  WindowedList,
   DEFAULT_APPROVAL_CHOICES,
   DiffViewer,
   ExpandableOutput,
@@ -42,9 +38,12 @@ import {
   ToolCall,
   ToolCallCard,
   ToolResult,
+  UsagePanel,
   WelcomeBanner,
+  WindowedList,
 } from "../src/index.js";
-import { stripAnsi } from "../src/format/ansi.js";
+import type { LayoutMarginProps } from "../src/layout/layout-props.js";
+import { renderFrame } from "./fixtures/helpers.js";
 
 // Universal margin contract (LayoutMarginProps). Every public visual component
 // accepts the margin family and applies it to its root layout. Oracle: passing
@@ -88,12 +87,7 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
   ],
   [
     "ChatThread",
-    (m) => (
-      <ChatThread
-        {...m}
-        messages={[{ id: "a", role: "user", content: "hi" }]}
-      />
-    ),
+    (m) => <ChatThread {...m} messages={[{ id: "a", role: "user", content: "hi" }]} />,
   ],
   ["ToolCall", (m) => <ToolCall {...m} name="read" status="success" />],
   ["ToolCallCard", (m) => <ToolCallCard {...m} name="read" status="success" />],
@@ -114,14 +108,9 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
   ["AppStatusBar", (m) => <AppStatusBar {...m} model="opus" />],
   [
     "ContextWindowBar",
-    (m) => (
-      <ContextWindowBar {...m} usedTokens={64_000} limitTokens={128_000} />
-    ),
+    (m) => <ContextWindowBar {...m} usedTokens={64_000} limitTokens={128_000} />,
   ],
-  [
-    "TokenUsageChart",
-    (m) => <TokenUsageChart {...m} usage={{ input: 1000, output: 500 }} />,
-  ],
+  ["TokenUsageChart", (m) => <TokenUsageChart {...m} usage={{ input: 1000, output: 500 }} />],
   ["CostMeter", (m) => <CostMeter {...m} costUsd={1.23} />],
   [
     "UsagePanel",
@@ -141,29 +130,14 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
   ["WelcomeBanner", (m) => <WelcomeBanner {...m} name="Theo" />],
   ["Image", (m) => <Image {...m} base64Data="AAAA" mimeType="image/png" />],
   ["Pager", (m) => <Pager {...m} content={"line1\nline2"} onClose={noop} />],
-  [
-    "WindowedList",
-    (m) => <WindowedList {...m} rows={["a", "b", "c"]} selected={1} />,
-  ],
+  ["WindowedList", (m) => <WindowedList {...m} rows={["a", "b", "c"]} selected={1} />],
   [
     "SelectList",
-    (m) => (
-      <SelectList
-        {...m}
-        items={[{ value: "a", label: "apple" }]}
-        onSubmit={noop}
-      />
-    ),
+    (m) => <SelectList {...m} items={[{ value: "a", label: "apple" }]} onSubmit={noop} />,
   ],
   [
     "ChoiceRow",
-    (m) => (
-      <ChoiceRow
-        {...m}
-        choices={[...DEFAULT_APPROVAL_CHOICES]}
-        onCommit={noop}
-      />
-    ),
+    (m) => <ChoiceRow {...m} choices={[...DEFAULT_APPROVAL_CHOICES]} onCommit={noop} />,
   ],
   [
     "ApprovalPrompt",
@@ -176,23 +150,11 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
   [
     "QuestionPrompt",
     (m) => (
-      <QuestionPrompt
-        {...m}
-        header="Q"
-        question="pick one"
-        options={OPTIONS}
-        onAnswer={noop}
-      />
+      <QuestionPrompt {...m} header="Q" question="pick one" options={OPTIONS} onAnswer={noop} />
     ),
   ],
-  [
-    "PlanApproval",
-    (m) => <PlanApproval {...m} plan="# Plan" onDecision={noop} />,
-  ],
-  [
-    "FreeTextInput",
-    (m) => <FreeTextInput {...m} label="Name" onSubmit={noop} />,
-  ],
+  ["PlanApproval", (m) => <PlanApproval {...m} plan="# Plan" onDecision={noop} />],
+  ["FreeTextInput", (m) => <FreeTextInput {...m} label="Name" onSubmit={noop} />],
   ["TodoList", (m) => <TodoList {...m} items={TODO} />],
   ["MultiStepProgress", (m) => <MultiStepProgress {...m} steps={STEPS} />],
   [
@@ -223,12 +185,7 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
       />
     ),
   ],
-  [
-    "KeyboardHelp",
-    (m) => (
-      <KeyboardHelp {...m} shortcuts={[{ keys: "?", description: "help" }]} />
-    ),
-  ],
+  ["KeyboardHelp", (m) => <KeyboardHelp {...m} shortcuts={[{ keys: "?", description: "help" }]} />],
   ["Banner", (m) => <Banner {...m} name="Theo" />],
   [
     "Stack",
@@ -239,10 +196,7 @@ const CASES: Array<[string, (m: LayoutMarginProps) => ReactElement]> = [
     ),
   ],
   ["ProgressBar", (m) => <ProgressBar {...m} percent={50} />],
-  [
-    "ProgressActivity",
-    (m) => <ProgressActivity {...m} label="Compacting…" percent={10} />,
-  ],
+  ["ProgressActivity", (m) => <ProgressActivity {...m} label="Compacting…" percent={10} />],
 ];
 
 describe("universal margin contract (LayoutMarginProps)", () => {

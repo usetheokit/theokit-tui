@@ -17,13 +17,7 @@ import type { BoxProps } from "ink";
  */
 export type LayoutMarginProps = Pick<
   BoxProps,
-  | "margin"
-  | "marginX"
-  | "marginY"
-  | "marginTop"
-  | "marginRight"
-  | "marginBottom"
-  | "marginLeft"
+  "margin" | "marginX" | "marginY" | "marginTop" | "marginRight" | "marginBottom" | "marginLeft"
 >;
 
 /** The margin keys in a stable order — the single source the sweep relies on. */
@@ -79,9 +73,7 @@ export function horizontalMargin(props: LayoutMarginProps): number {
  * forwards the remaining props to a child component uses this to avoid applying
  * the same margin twice — `<Box {...pickMargin(p)}><Child {...omitMargin(p)} /></Box>`.
  */
-export function omitMargin<T extends object>(
-  props: T,
-): Omit<T, keyof LayoutMarginProps> {
+export function omitMargin<T extends object>(props: T): Omit<T, keyof LayoutMarginProps> {
   const marginKeys = LAYOUT_MARGIN_KEYS as readonly string[];
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {

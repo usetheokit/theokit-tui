@@ -51,9 +51,7 @@ export function parseUnifiedDiff(patch: string): DiffFile[] {
   }
   const files = parseDiff(patch);
   if (files.length === 0) {
-    throw new TypeError(
-      "parseUnifiedDiff: patch did not parse as a unified diff",
-    );
+    throw new TypeError("parseUnifiedDiff: patch did not parse as a unified diff");
   }
   return files.map((file) => {
     const lines: DiffLine[] = [];
@@ -80,12 +78,8 @@ export function parseUnifiedDiff(patch: string): DiffFile[] {
       }
     }
     return {
-      ...(mapName(file.from) !== undefined
-        ? { oldName: mapName(file.from) as string }
-        : {}),
-      ...(mapName(file.to) !== undefined
-        ? { newName: mapName(file.to) as string }
-        : {}),
+      ...(mapName(file.from) !== undefined ? { oldName: mapName(file.from) as string } : {}),
+      ...(mapName(file.to) !== undefined ? { newName: mapName(file.to) as string } : {}),
       lines,
       additions: file.additions,
       deletions: file.deletions,
@@ -98,10 +92,7 @@ export function parseUnifiedDiff(patch: string): DiffFile[] {
  * into `fold` rows (plan ADR D5 — react-ink foldContext shape). Runs of
  * <= 1 hidden line are NOT folded (a one-line fold row saves nothing).
  */
-export function foldDiffLines(
-  lines: DiffLine[],
-  contextLines: number,
-): DiffRow[] {
+export function foldDiffLines(lines: DiffLine[], contextLines: number): DiffRow[] {
   if (!Number.isInteger(contextLines) || contextLines < 0) {
     throw new TypeError(
       `foldDiffLines: contextLines must be an integer >= 0 — got ${String(contextLines)}`,

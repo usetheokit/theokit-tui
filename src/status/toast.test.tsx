@@ -1,15 +1,6 @@
 import { render } from "ink-testing-library";
 import { act } from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Toast } from "./toast.js";
 
@@ -20,13 +11,10 @@ import { Toast } from "./toast.js";
 
 describe("Toast (M24 T4.1)", () => {
   beforeAll(() => {
-    (
-      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-    ).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   });
   afterAll(() => {
-    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-      .IS_REACT_ACT_ENVIRONMENT;
+    delete (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT;
   });
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
@@ -47,13 +35,7 @@ describe("Toast (M24 T4.1)", () => {
     // theme status token (green success / red error); info (default) has none.
     let instance!: ReturnType<typeof render>;
     act(() => {
-      instance = render(
-        <Toast
-          message="build finished"
-          variant="success"
-          onDismiss={() => {}}
-        />,
-      );
+      instance = render(<Toast message="build finished" variant="success" onDismiss={() => {}} />);
     });
     const frame = instance.lastFrame() ?? "";
     expect(frame).toContain("●");
@@ -64,9 +46,7 @@ describe("Toast (M24 T4.1)", () => {
   it("error_variant_shows_a_red_status_bullet", () => {
     let instance!: ReturnType<typeof render>;
     act(() => {
-      instance = render(
-        <Toast message="build broke" variant="error" onDismiss={() => {}} />,
-      );
+      instance = render(<Toast message="build broke" variant="error" onDismiss={() => {}} />);
     });
     const frame = instance.lastFrame() ?? "";
     expect(frame).toContain("●");

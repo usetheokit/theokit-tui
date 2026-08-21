@@ -1,10 +1,9 @@
 import { Box, Text } from "ink";
-
-import { renderFillBar } from "./fill-bar.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
-import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import { renderFillBar } from "./fill-bar.js";
 
 // ProgressBar — a determinate progress bar: a filled run + an empty run + an
 // optional `N%` label (`█████░░░░░ 50%`). The fill segment is the theme accent;
@@ -37,9 +36,7 @@ export function ProgressBar({
   if (typeof percent !== "number" || !Number.isFinite(percent)) {
     reportGuardFailure(
       "ProgressBar",
-      new TypeError(
-        `ProgressBar: percent must be a finite number — got ${String(percent)}`,
-      ),
+      new TypeError(`ProgressBar: percent must be a finite number — got ${String(percent)}`),
     );
   }
   const clamped = Math.max(0, Math.min(100, percent));
@@ -50,9 +47,7 @@ export function ProgressBar({
   });
   return (
     <Box {...pickMargin(margin)}>
-      <Text {...(isMonochrome(theme) ? {} : { color: theme.accent })}>
-        {seg.filled}
-      </Text>
+      <Text {...(isMonochrome(theme) ? {} : { color: theme.accent })}>{seg.filled}</Text>
       <Text dimColor>{seg.empty}</Text>
       {showPercent && <Text dimColor> {Math.round(clamped)}%</Text>}
     </Box>

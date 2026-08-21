@@ -2,8 +2,8 @@ import { Box } from "ink";
 import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { Notice, NOTICE_VARIANTS } from "./notice.js";
 import { TheoTUIProvider, themes } from "../theme/theme.js";
+import { NOTICE_VARIANTS, Notice } from "./notice.js";
 
 describe("Notice (#3 — inline banner)", () => {
   it("warning_uses_the_bang_marker", async () => {
@@ -18,9 +18,7 @@ describe("Notice (#3 — inline banner)", () => {
 
   it("info_uses_the_left_bar_marker", async () => {
     const frame = await renderFrame(
-      <Notice variant="info">
-        Opus 4.8 is now available! · /model to switch
-      </Notice>,
+      <Notice variant="info">Opus 4.8 is now available! · /model to switch</Notice>,
     );
     expect(frame).toContain("│");
     expect(frame).toContain("Opus 4.8 is now available!");
@@ -73,11 +71,6 @@ describe("Notice (#3 — inline banner)", () => {
   });
 
   it("exposes_the_variants_union", () => {
-    expect([...NOTICE_VARIANTS]).toEqual([
-      "info",
-      "warning",
-      "success",
-      "error",
-    ]);
+    expect([...NOTICE_VARIANTS]).toEqual(["info", "warning", "success", "error"]);
   });
 });

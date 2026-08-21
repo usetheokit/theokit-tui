@@ -51,17 +51,13 @@ function Demo() {
         expanded={<Text dimColor>{HIDDEN}</Text>}
         hiddenCount={11}
       />
-      <Text>
-        {osc8Link("docs", "https://github.com/usetheokit/theokit-tui")}
-      </Text>
+      <Text>{osc8Link("docs", "https://github.com/usetheokit/theokit-tui")}</Text>
     </Box>
   );
 }
 
 // Wire OUR input + focus providers (the composition root an app owns).
-const source = createInputSource(process.stdin as never, (d) =>
-  process.stdout.write(d),
-);
+const source = createInputSource(process.stdin as never, (d) => process.stdout.write(d));
 source.start();
 
 const instance = render(

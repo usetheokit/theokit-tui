@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 
-import { render, type ItlInstance } from "../../tests/renderer/itl-adapter.js";
+import { type ItlInstance, render } from "../../tests/renderer/itl-adapter.js";
 import { Pager } from "./pager.js";
 
 // M22 T3.1 — the Pager component over the itl-adapter (OUR renderer/input/focus,
@@ -31,10 +31,10 @@ describe("Pager component (M22 T3.1)", () => {
   });
 
   it("scrolls_down_with_j_and_page_down_with_f", async () => {
-    const app = render(
-      createElement(Pager, { content: CONTENT, onClose: () => {} }),
-      { columns: 40, rows: 8 },
-    );
+    const app = render(createElement(Pager, { content: CONTENT, onClose: () => {} }), {
+      columns: 40,
+      rows: 8,
+    });
     await settle(app);
     app.stdin.write("j"); // line-down → offset 1
     await settle(app);
@@ -46,10 +46,10 @@ describe("Pager component (M22 T3.1)", () => {
   });
 
   it("goto_bottom_shows_100_percent", async () => {
-    const app = render(
-      createElement(Pager, { content: CONTENT, onClose: () => {} }),
-      { columns: 40, rows: 8 },
-    );
+    const app = render(createElement(Pager, { content: CONTENT, onClose: () => {} }), {
+      columns: 40,
+      rows: 8,
+    });
     await settle(app);
     app.stdin.write("G"); // goto-bottom
     await settle(app);
@@ -60,10 +60,10 @@ describe("Pager component (M22 T3.1)", () => {
   });
 
   it("b_pages_up_and_g_goes_to_top", async () => {
-    const app = render(
-      createElement(Pager, { content: CONTENT, onClose: () => {} }),
-      { columns: 40, rows: 8 },
-    );
+    const app = render(createElement(Pager, { content: CONTENT, onClose: () => {} }), {
+      columns: 40,
+      rows: 8,
+    });
     await settle(app);
     app.stdin.write("G"); // bottom
     await settle(app);
@@ -79,10 +79,10 @@ describe("Pager component (M22 T3.1)", () => {
 
   it("ctrl_d_half_pages_down_and_blank_lines_render", async () => {
     const withBlank = "top\n\n\n\n\n\n\n\n\nbottom-ish";
-    const app = render(
-      createElement(Pager, { content: withBlank, onClose: () => {} }),
-      { columns: 40, rows: 6 },
-    );
+    const app = render(createElement(Pager, { content: withBlank, onClose: () => {} }), {
+      columns: 40,
+      rows: 6,
+    });
     await settle(app);
     app.stdin.write("\x04"); // Ctrl+D → half-down
     await settle(app);
@@ -91,10 +91,10 @@ describe("Pager component (M22 T3.1)", () => {
   });
 
   it("pageup_and_pagedown_keys_scroll_a_page", async () => {
-    const app = render(
-      createElement(Pager, { content: CONTENT, onClose: () => {} }),
-      { columns: 40, rows: 8 },
-    );
+    const app = render(createElement(Pager, { content: CONTENT, onClose: () => {} }), {
+      columns: 40,
+      rows: 8,
+    });
     await settle(app);
     app.stdin.write("\x1b[6~"); // PgDn → page-down (offset 0 → 7)
     await settle(app);
@@ -121,10 +121,10 @@ describe("Pager component (M22 T3.1)", () => {
 
   it("q_calls_onClose", async () => {
     let closed = 0;
-    const app = render(
-      createElement(Pager, { content: CONTENT, onClose: () => closed++ }),
-      { columns: 40, rows: 8 },
-    );
+    const app = render(createElement(Pager, { content: CONTENT, onClose: () => closed++ }), {
+      columns: 40,
+      rows: 8,
+    });
     await settle(app);
     app.stdin.write("q");
     await settle(app);
@@ -133,10 +133,10 @@ describe("Pager component (M22 T3.1)", () => {
   });
 
   it("up_arrow_and_ctrl_u_scroll_up", async () => {
-    const app = render(
-      createElement(Pager, { content: CONTENT, onClose: () => {} }),
-      { columns: 40, rows: 8 },
-    );
+    const app = render(createElement(Pager, { content: CONTENT, onClose: () => {} }), {
+      columns: 40,
+      rows: 8,
+    });
     await settle(app);
     app.stdin.write("G"); // bottom
     await settle(app);

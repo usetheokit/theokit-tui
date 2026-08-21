@@ -4,18 +4,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { render } from "ink-testing-library";
-
-import { AgentTimeline, TheoTUIProvider } from "../src/index.js";
 import type { AgentEvent } from "../src/index.js";
-import {
-  fmt,
-  frameSampler,
-  round,
-  stats,
-  tick,
-  stackVersions,
-} from "./sampling.js";
+import { AgentTimeline, TheoTUIProvider } from "../src/index.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats, tick } from "./sampling.js";
 
 // M3 agent-timeline benchmark (plan T3.2, ADR D7): heterogeneous event mix
 // streaming/appending under windowing; bounded|unbounded matrix quantifies
@@ -43,15 +35,13 @@ const smoke = process.argv.includes("--smoke");
 
 type Mode = "bounded" | "unbounded";
 
-const longOutput = Array.from(
-  { length: LONG_OUTPUT_LINES },
-  (_, i) => `output line ${i}`,
-).join("\n");
+const longOutput = Array.from({ length: LONG_OUTPUT_LINES }, (_, i) => `output line ${i}`).join(
+  "\n",
+);
 
 function makeEvent(i: number, mode: Mode): AgentEvent {
   const slot = i % 10;
-  const maxLines =
-    mode === "bounded" ? MAX_LINES_BOUNDED : LONG_OUTPUT_LINES + 1;
+  const maxLines = mode === "bounded" ? MAX_LINES_BOUNDED : LONG_OUTPUT_LINES + 1;
   if (slot < 5) {
     return {
       id: `e${i}`,
@@ -66,8 +56,7 @@ function makeEvent(i: number, mode: Mode): AgentEvent {
       kind: "tool",
       name: `tool-${i}`,
       status: (["running", "success", "failed"] as const)[i % 3] ?? "success",
-      output:
-        i === TALL_ITEM_INDEX ? longOutput : `result ${i}\nsecond line ${i}`,
+      output: i === TALL_ITEM_INDEX ? longOutput : `result ${i}\nsecond line ${i}`,
       maxLines,
     };
   }
@@ -81,11 +70,7 @@ function makeEvent(i: number, mode: Mode): AgentEvent {
 function App({ events }: { events: AgentEvent[] }) {
   return (
     <TheoTUIProvider>
-      <AgentTimeline
-        events={events}
-        windowSize={WINDOW_SIZE}
-        windowOverscan={WINDOW_OVERSCAN}
-      />
+      <AgentTimeline events={events} windowSize={WINDOW_SIZE} windowOverscan={WINDOW_OVERSCAN} />
     </TheoTUIProvider>
   );
 }
@@ -110,13 +95,13 @@ function assertTallItemInAppendRange(mode: Mode): void {
 /** Streaming repaint shape for the tail event, alternating by kind. */
 function replaceTail(last: AgentEvent, step: number): AgentEvent {
   if (last.kind === "message") {
-    return { ...last, text: last.text + "x" };
+    return { ...last, text: `${last.text}x` };
   }
   if (last.kind === "tool") {
     return { ...last, status: step % 2 === 0 ? "success" : "failed" };
   }
   if (last.kind === "thinking") {
-    return { ...last, text: last.text + "." };
+    return { ...last, text: `${last.text}.` };
   }
   return last; // explored — no streaming mutation in the bench
 }
@@ -138,11 +123,7 @@ async function runOnce(mode: Mode): Promise<RunMetrics> {
     }
     // Identity-replace the tail (streaming repaint), alternating shapes,
     // then append one event (graduating one per step under the window).
-    events = [
-      ...events.slice(0, -1),
-      replaceTail(last, t),
-      makeEvent(events.length, mode),
-    ];
+    events = [...events.slice(0, -1), replaceTail(last, t), makeEvent(events.length, mode)];
     instance.rerender(<App events={events} />);
     await tick();
     sampler.sample();
@@ -178,7 +159,7 @@ const results: {
 for (const mode of modes) {
   for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
-    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+    console.log(`${fmt(`${mode} warmup`, w)}  (discarded)`);
   }
   const runs: RunMetrics[] = [];
   for (let i = 0; i < measured; i++) {
@@ -212,7 +193,7 @@ if (!smoke) {
     node_version: process.version,
     stack: stackVersions(),
     hardware: { cpu: cpus()[0]?.model ?? "unknown", cores: cpus().length },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     workload: {
       events: N_EVENTS,
       steps: N_STEPS,
@@ -247,8 +228,6 @@ if (!smoke) {
     "agent-timeline-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    "baseline written: benchmarks/baselines/agent-timeline-baseline.json",
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log("baseline written: benchmarks/baselines/agent-timeline-baseline.json");
 }

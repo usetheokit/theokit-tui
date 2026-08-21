@@ -1,5 +1,5 @@
-import { Box, Text, render } from "ink";
-
+import { Box, render, Text } from "ink";
+import type { AgentEvent } from "../../src/index.js";
 import {
   AgentStreaming,
   AgentTimeline,
@@ -10,7 +10,6 @@ import {
   TheoTUIProvider,
   WelcomeBanner,
 } from "../../src/index.js";
-import type { AgentEvent } from "../../src/index.js";
 
 // The full Claude Code look composed from the library's primitives: the
 // two-column WelcomeBanner, inline Notices, an AgentTimeline transcript (which
@@ -74,9 +73,7 @@ function Scene() {
         {/* the two notices are one tight group (gap 0), spaced from the rest by
             the outer Stack */}
         <Stack gap={0}>
-          <Notice variant="info">
-            Opus 4.8 is now available! · /model to switch
-          </Notice>
+          <Notice variant="info">Opus 4.8 is now available! · /model to switch</Notice>
           <Notice variant="warning">
             Both apiKeyHelper and ANTHROPIC_API_KEY set · auth may not work
           </Notice>

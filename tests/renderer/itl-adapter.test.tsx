@@ -11,10 +11,10 @@ import { render } from "./itl-adapter.js";
 
 describe("itl-adapter over the new renderer (M20 T2.1)", () => {
   it("lastFrame_matches_the_rendered_screen", async () => {
-    const app = render(
-      createElement(Box, null, createElement(Text, {}, "hello")),
-      { columns: 20, rows: 6 },
-    );
+    const app = render(createElement(Box, null, createElement(Text, {}, "hello")), {
+      columns: 20,
+      rows: 6,
+    });
     await app.flush();
     expect(app.lastFrame()).toContain("hello");
     app.unmount();

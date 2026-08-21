@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 import { unionMessage } from "../agent/union-message.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
@@ -210,12 +210,11 @@ const noColorTheme: TheoTheme = Object.freeze({
 });
 
 /** Built-in themes (frozen module singletons — referential stability free). */
-export const themes: Readonly<Record<TheoBuiltinThemeName, TheoTheme>> =
-  Object.freeze({
-    dark: defaultTheme,
-    light: lightTheme,
-    "no-color": noColorTheme,
-  });
+export const themes: Readonly<Record<TheoBuiltinThemeName, TheoTheme>> = Object.freeze({
+  dark: defaultTheme,
+  light: lightTheme,
+  "no-color": noColorTheme,
+});
 
 const ThemeContext = createContext<TheoTheme>(defaultTheme);
 
@@ -231,10 +230,7 @@ function mergeToolStatus(
   };
 }
 
-function mergeTheme(
-  base: TheoTheme,
-  override: TheoThemeOverride | undefined,
-): TheoTheme {
+function mergeTheme(base: TheoTheme, override: TheoThemeOverride | undefined): TheoTheme {
   // Empty object ≡ no override — the theme identity stays the base's
   // (form-based `name` semantics: "custom" only for a NON-EMPTY override).
   if (override === undefined || Object.keys(override).length === 0) {
@@ -280,9 +276,7 @@ function assertBuiltinName(name: string): void {
   if (!isBuiltinName(name)) {
     reportGuardFailure(
       "TheoTUIProvider",
-      new TypeError(
-        `TheoTUIProvider: unknown theme "${name}" — expected ${BUILTIN_UNION_MESSAGE}`,
-      ),
+      new TypeError(`TheoTUIProvider: unknown theme "${name}" — expected ${BUILTIN_UNION_MESSAGE}`),
     );
   }
 }
@@ -291,17 +285,12 @@ function isPlainObject(value: unknown): boolean {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function assertPairForm(pair: {
-  base?: TheoBuiltinThemeName;
-  override?: TheoThemeOverride;
-}): void {
+function assertPairForm(pair: { base?: TheoBuiltinThemeName; override?: TheoThemeOverride }): void {
   for (const key of Object.keys(pair)) {
     if (key !== "base" && key !== "override") {
       reportGuardFailure(
         "TheoTUIProvider",
-        new TypeError(
-          `TheoTUIProvider: unknown key "${key}" in {base, override} theme form`,
-        ),
+        new TypeError(`TheoTUIProvider: unknown key "${key}" in {base, override} theme form`),
       );
     }
   }
@@ -353,7 +342,7 @@ function assertThemeProp(theme: TheoThemeProp | undefined): void {
  * it, so provider-less usage gets no NO_COLOR support (documented).
  */
 function resolveTheme(theme: TheoThemeProp | undefined): TheoTheme {
-  if (process.env["NO_COLOR"]) {
+  if (process.env.NO_COLOR) {
     return noColorTheme;
   }
   if (theme === undefined) {
@@ -392,9 +381,7 @@ export function TheoTUIProvider({
   // resolveTheme reads NO_COLOR here (once per mount/prop-change — never
   // per frame; the swap is testable in-process via a fresh mount).
   const value = useMemo(() => resolveTheme(theme), [theme]);
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 /** Never returns `undefined` — falls back to `defaultTheme` without a provider. */

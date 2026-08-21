@@ -44,11 +44,16 @@ if (label === undefined || command.length === 0) {
 /** How each gate's own output reveals what it looked at. Counting, never guessing. */
 const counters = {
   typecheck: (stdout) =>
-    stdout.split("\n").filter((l) => l !== "" && !l.includes("node_modules"))
-      .length,
+    stdout.split("\n").filter((l) => l !== "" && !l.includes("node_modules")).length,
+  // Biome's JSON reporter: `{ summary: { changed, unchanged, ... }, diagnostics: [...] }`.
+  // The inspected set is `changed + unchanged`; `diagnostics` counts PROBLEMS and is empty on a
+  // clean run, so counting it would make every green run trip RULE 2 below.
   lint: (stdout) => {
     try {
-      return JSON.parse(stdout).length;
+      const report = JSON.parse(stdout);
+      const summary = report?.summary;
+      if (summary === undefined) return null;
+      return (summary.changed ?? 0) + (summary.unchanged ?? 0);
     } catch {
       return null;
     }
@@ -80,11 +85,10 @@ function unInspectedSourceFiles(inspected) {
   );
   if (extensions.size === 0) return [];
 
-  const listed = spawnSync(
-    "git",
-    ["ls-files", "--others", "--exclude-standard"],
-    { encoding: "utf8", shell: false },
-  );
+  const listed = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], {
+    encoding: "utf8",
+    shell: false,
+  });
   if (listed.error || listed.status !== 0) return [];
 
   const handed = new Set(inspected);
@@ -100,9 +104,7 @@ const result = spawnSync(command[0], command.slice(1), {
 });
 
 if (result.error) {
-  console.error(
-    `gate-scope: ${label}: could not run ${command[0]}: ${result.error.message}`,
-  );
+  console.error(`gate-scope: ${label}: could not run ${command[0]}: ${result.error.message}`);
   process.exit(2);
 }
 
@@ -119,9 +121,7 @@ if (status !== 0) {
 
 const count = (counters[label] ?? (() => null))(result.stdout);
 if (count === null) {
-  console.error(
-    `gate-scope: ${label}: passed, but its output could not be counted`,
-  );
+  console.error(`gate-scope: ${label}: passed, but its output could not be counted`);
   process.exit(2);
 }
 
@@ -140,8 +140,7 @@ console.log(`${label}: ${String(count)} files inspected`);
 const missed = unInspectedSourceFiles(command.slice(command.indexOf("--") + 1));
 if (missed.length > 0) {
   const shown = missed.slice(0, 5).join(", ");
-  const rest =
-    missed.length > 5 ? `, and ${String(missed.length - 5)} more` : "";
+  const rest = missed.length > 5 ? `, and ${String(missed.length - 5)} more` : "";
   console.log(
     `${label}: ${String(missed.length)} untracked source file(s) NOT inspected — ` +
       `${shown}${rest}. This gate reads the index; stage them to have them checked.`,

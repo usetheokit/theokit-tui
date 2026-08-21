@@ -2,15 +2,15 @@ import { Box, Text } from "ink";
 import { useState } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
-import { useInput } from "../renderer/input/use-input.js";
 import { useFocus } from "../renderer/hooks/use-focus.js";
+import { useInput } from "../renderer/input/use-input.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
+import { useTheoTheme } from "../theme/theme.js";
 import {
   assertPositiveWindow,
   deriveSelectList,
   type SelectListItem,
 } from "./select-list-model.js";
-import { reportGuardFailure } from "../status/guard-sink.js";
-import { useTheoTheme } from "../theme/theme.js";
 
 // M22 SelectList (plan m22-interaction-primitives T1.1, ADR A3): a windowed
 // list with prefix|fuzzy filter, single OR multi-select, over the shared pure
@@ -51,8 +51,7 @@ export interface SelectListProps extends LayoutMarginProps {
 
 const DEFAULT_WINDOW = 5;
 
-type SelectKeyAction =
-  "up" | "down" | "submit" | "toggle" | "backspace" | "insert";
+type SelectKeyAction = "up" | "down" | "submit" | "toggle" | "backspace" | "insert";
 
 interface SelectKey {
   upArrow: boolean;
@@ -228,8 +227,7 @@ export function SelectList({
     (input, key) => {
       switch (resolveSelectAction(input, key, multi)) {
         case "up":
-          if (count > 0)
-            setSelectionIndex((view.clampedIndex - 1 + count) % count);
+          if (count > 0) setSelectionIndex((view.clampedIndex - 1 + count) % count);
           break;
         case "down":
           if (count > 0) setSelectionIndex((view.clampedIndex + 1) % count);
@@ -253,10 +251,7 @@ export function SelectList({
     { isActive: isFocused },
   );
 
-  const visible = view.matches.slice(
-    view.windowStart,
-    view.windowStart + window,
-  );
+  const visible = view.matches.slice(view.windowStart, view.windowStart + window);
   const counter = counterLabel(multi, selected.size, view.clampedIndex, count);
 
   return (
@@ -267,9 +262,7 @@ export function SelectList({
           back into a number. This view had been consuming `overflowUp` — derived FROM the
           `hiddenBefore` sitting unused beside it. In a filtered menu the count is worth more than
           in a scrubber: it changes as the user types, which is how they learn narrowing works. */}
-      {view.hiddenBefore > 0 ? (
-        <Text dimColor>▲ {view.hiddenBefore}</Text>
-      ) : null}
+      {view.hiddenBefore > 0 ? <Text dimColor>▲ {view.hiddenBefore}</Text> : null}
       {/* Only the item rows are gapped — the filter / overflow / counter chrome
           stays flush against the list (issue #50). */}
       <Box flexDirection="column" gap={gap}>

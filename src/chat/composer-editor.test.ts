@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
-
+import type { Key } from "../renderer/input/key.js";
+import { projectKey } from "../renderer/input/key.js";
 import {
+  type EditorAction,
+  type EditorState,
   editorActionForChord,
   editorReducer,
   initialEditorState,
   seedEditorState,
-  type EditorAction,
-  type EditorState,
 } from "./composer-editor.js";
-import type { Key } from "../renderer/input/key.js";
-import { projectKey } from "../renderer/input/key.js";
 
 // M21 T3.1 — the pure editor reducer: kill-ring coalescing, yank/yank-pop, undo
 // (coalesced), and history recall. Fully deterministic (no refs, no timers).

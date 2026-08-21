@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { deriveSlashMenu } from "./slash-menu.js";
 import type { SlashCommand } from "./slash-menu.js";
+import { deriveSlashMenu } from "./slash-menu.js";
 
 // M15 T1.1 (plan m15-composer-autocomplete, ADR D1): the PURE derivation —
 // trigger/filter (codex command_popup.rs:93-117 token contract), prefix
@@ -151,10 +150,7 @@ describe("slash-menu-model (M15 T1.1)", () => {
 
   it("model_module_is_pure_no_ink_import", async () => {
     const { readFileSync } = await import("node:fs");
-    const source = readFileSync(
-      new URL("./slash-menu.ts", import.meta.url),
-      "utf8",
-    );
+    const source = readFileSync(new URL("./slash-menu.ts", import.meta.url), "utf8");
     expect(source.match(/from "ink"/g)).toBeNull();
   });
 });
@@ -178,9 +174,7 @@ describe("deriveSlashMenu — an argument closes the menu", () => {
   ];
 
   it("closes_once_a_space_follows_the_command", () => {
-    expect(deriveSlashMenu("/sandbox read-only", commands, 0, false).open).toBe(
-      false,
-    );
+    expect(deriveSlashMenu("/sandbox read-only", commands, 0, false).open).toBe(false);
   });
 
   it("closes_on_the_trailing_space_that_starts_the_argument", () => {
@@ -201,8 +195,6 @@ describe("deriveSlashMenu — an argument closes the menu", () => {
   it("still_reports_the_filter_when_closed_by_an_argument", () => {
     // The dismissal latch reads `filter`; dropping it would make the menu reopen on the next
     // keystroke of the argument.
-    expect(
-      deriveSlashMenu("/sandbox read-only", commands, 0, false).filter,
-    ).toBe("sandbox");
+    expect(deriveSlashMenu("/sandbox read-only", commands, 0, false).filter).toBe("sandbox");
   });
 });

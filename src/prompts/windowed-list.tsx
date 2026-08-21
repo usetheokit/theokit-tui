@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
+import { reportGuardFailure } from "../status/guard-sink.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { windowFor } from "./select-list-model.js";
-import { reportGuardFailure } from "../status/guard-sink.js";
 
 /** No selection. Rendering then marks no row active. */
 const NO_SELECTION = -1;
@@ -58,9 +58,7 @@ function assertWindow(window: number): void {
   if (typeof window !== "number" || !Number.isInteger(window) || window < 1) {
     reportGuardFailure(
       "WindowedList",
-      new TypeError(
-        `WindowedList: window must be a finite integer >= 1 — got ${String(window)}`,
-      ),
+      new TypeError(`WindowedList: window must be a finite integer >= 1 — got ${String(window)}`),
     );
   }
 }
@@ -143,9 +141,7 @@ export function WindowedList({
   return (
     <Box flexDirection="column" {...pickMargin(margin)}>
       {header === undefined ? null : <Box>{header}</Box>}
-      {view.hiddenBefore > 0 ? (
-        <Text dimColor>▲ {view.hiddenBefore}</Text>
-      ) : null}
+      {view.hiddenBefore > 0 ? <Text dimColor>▲ {view.hiddenBefore}</Text> : null}
       {visible.map((row, index) => (
         <WindowedRow
           key={`${String(view.windowStart + index)}:${row}`}

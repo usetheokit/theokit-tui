@@ -188,21 +188,15 @@ afterEach(() => {
 describe("an invalid budget is refused at construction", () => {
   it("test_a_NaN_budget_is_refused_at_construction", () => {
     // The worst input measured: not a frozen last frame, but a surface that never paints once.
-    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(
-      TypeError,
-    );
+    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(TypeError);
     expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(
       "createFrameBudget: frameBudgetMs must be a finite number >= 0 — got NaN",
     );
   });
 
   it("test_an_infinite_budget_is_refused_at_construction", () => {
-    expect(() =>
-      createFrameBudget({ frameBudgetMs: Number.POSITIVE_INFINITY }),
-    ).toThrow(TypeError);
-    expect(() =>
-      createFrameBudget({ frameBudgetMs: Number.POSITIVE_INFINITY }),
-    ).toThrow(
+    expect(() => createFrameBudget({ frameBudgetMs: Number.POSITIVE_INFINITY })).toThrow(TypeError);
+    expect(() => createFrameBudget({ frameBudgetMs: Number.POSITIVE_INFINITY })).toThrow(
       "createFrameBudget: frameBudgetMs must be a finite number >= 0 — got Infinity",
     );
   });
@@ -221,9 +215,7 @@ describe("an invalid budget is refused at construction", () => {
     // The other half of `rules/error-handling.md` § 3.1, and the half a `toThrow` cannot see.
     // Mutation-measured below: downgrading `reportGuardFailure` to a bare `throw` fails THIS
     // test and only this test.
-    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(
-      TypeError,
-    );
+    expect(() => createFrameBudget({ frameBudgetMs: Number.NaN })).toThrow(TypeError);
     expect(guardRecords.join("")).toContain("createFrameBudget: frameBudgetMs");
   });
 });

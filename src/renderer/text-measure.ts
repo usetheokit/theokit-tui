@@ -38,10 +38,7 @@ export function squashTextNodes(node: RendererNode): string {
       nodeText = squashTextNodes(child);
       const transform = child.props.internal_transform;
       if (nodeText.length > 0 && typeof transform === "function") {
-        nodeText = (transform as (t: string, i: number) => string)(
-          nodeText,
-          index,
-        );
+        nodeText = (transform as (t: string, i: number) => string)(nodeText, index);
       }
     }
     text += nodeText;
@@ -58,11 +55,7 @@ export function measureText(text: string): Dimensions {
 }
 
 /** Wrap or truncate `text` to `maxWidth` per `wrapType` (Ink's wrap-text.js). */
-export function wrapText(
-  text: string,
-  maxWidth: number,
-  wrapType: string,
-): string {
+export function wrapText(text: string, maxWidth: number, wrapType: string): string {
   if (wrapType === "wrap") {
     return wrapAnsi(text, maxWidth, { trim: false, hard: true });
   }
@@ -75,11 +68,7 @@ export function wrapText(
   }
   if (wrapType.startsWith("truncate")) {
     const position =
-      wrapType === "truncate-middle"
-        ? "middle"
-        : wrapType === "truncate-start"
-          ? "start"
-          : "end";
+      wrapType === "truncate-middle" ? "middle" : wrapType === "truncate-start" ? "start" : "end";
     return cliTruncate(text, maxWidth, { position });
   }
   return text;
@@ -91,8 +80,7 @@ export function wrapText(
  * Port of Ink's dom.js:measureTextNode.
  */
 export function measureTextNode(node: RendererNode, width: number): Dimensions {
-  const text =
-    node.type === "#text" ? (node.text ?? "") : squashTextNodes(node);
+  const text = node.type === "#text" ? (node.text ?? "") : squashTextNodes(node);
   const dimensions = measureText(text);
   // Fits — no wrap needed.
   if (dimensions.width <= width) {

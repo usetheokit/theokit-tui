@@ -1,16 +1,15 @@
 import { Box, render, useApp } from "ink";
 import { useEffect } from "react";
-
+import type { AgentStreamEvent } from "../../src/index.js";
 import {
   AgentStreaming,
   AgentTimeline,
   TheoTUIProvider,
   ToolCallCard,
+  useAgentStream,
   VERSION,
   WelcomeBanner,
-  useAgentStream,
 } from "../../src/index.js";
-import type { AgentStreamEvent } from "../../src/index.js";
 
 // Stream-adapter demo (plan m7-stream-adapter T3.2 — TTFATT caller): a
 // scripted agent turn folded through the REAL useAgentStream hook —
@@ -121,10 +120,7 @@ function Demo() {
               summary="retry.ts"
               result={{
                 kind: "preview",
-                text: Array.from(
-                  { length: 12 },
-                  (_, i) => `line ${i} of the file`,
-                ).join("\n"),
+                text: Array.from({ length: 12 }, (_, i) => `line ${i} of the file`).join("\n"),
                 maxLines: 4,
               }}
             />
@@ -132,9 +128,7 @@ function Demo() {
         )}
         {streaming.active ? (
           <AgentStreaming
-            {...(streaming.thought === undefined
-              ? {}
-              : { thought: streaming.thought })}
+            {...(streaming.thought === undefined ? {} : { thought: streaming.thought })}
           />
         ) : undefined}
       </Box>

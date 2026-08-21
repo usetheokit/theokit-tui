@@ -3,8 +3,8 @@ import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
-import type { ChatThreadMessage } from "./chat-thread.js";
 import { stripAnsi } from "../format/ansi.js";
+import type { ChatThreadMessage } from "./chat-thread.js";
 
 // Row-render spy: wrap the real ChatMessage so repaint-scope assertions can
 // count row renders without polluting the public API (plan T2.1/T2.2, D2).
@@ -29,9 +29,7 @@ const msg = (
 ): ChatThreadMessage => ({ id: `m${i}`, role, content });
 
 const thread = (n: number): ChatThreadMessage[] =>
-  Array.from({ length: n }, (_, i) =>
-    msg(i, i % 2 === 0 ? "user" : "assistant"),
-  );
+  Array.from({ length: n }, (_, i) => msg(i, i % 2 === 0 ? "user" : "assistant"));
 
 describe("ChatThread (T2.1)", () => {
   it("renders_all_roles_in_order", async () => {
@@ -52,9 +50,7 @@ describe("ChatThread (T2.1)", () => {
 
   it("long_thread_splits_history_into_static_prefix", async () => {
     rowRenders.count = 0;
-    const instance = render(
-      <ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />,
-    );
+    const instance = render(<ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     const frame = instance.lastFrame() ?? "";
     // Static output accumulates into the frame (ink test contract).
@@ -64,11 +60,7 @@ describe("ChatThread (T2.1)", () => {
     // prefix rows never re-render; memoized live rows also skip.
     rowRenders.count = 0;
     instance.rerender(
-      <ChatThread
-        messages={instance ? thread(20) : []}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <ChatThread messages={instance ? thread(20) : []} windowSize={4} windowOverscan={2} />,
     );
     await new Promise((r) => setTimeout(r, 0));
     // New objects → ONLY the live tail (4+2) repaints; the 14 static rows do not.
@@ -91,18 +83,14 @@ describe("ChatThread (T2.1)", () => {
 
   it("window_boundary_row_count_is_exact", async () => {
     rowRenders.count = 0;
-    const instance = render(
-      <ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />,
-    );
+    const instance = render(<ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     // Static prefix rows render ONCE (14) + live tail rows (6) = 20 on mount;
     // the boundary assertion: live tail is exactly windowSize + overscan.
     const mountRenders = rowRenders.count;
     expect(mountRenders).toBe(20);
     rowRenders.count = 0;
-    instance.rerender(
-      <ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />,
-    );
+    instance.rerender(<ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     // thread(20) builds NEW message objects → all 6 live rows repaint; the 14
     // static-prefix rows never re-render (Static watermark).
@@ -131,14 +119,10 @@ describe("ChatThread (T2.1)", () => {
   it("window_size_zero_keeps_overscan_tail_live", async () => {
     // Review F-tests-5: overscan-only live tail.
     rowRenders.count = 0;
-    const instance = render(
-      <ChatThread messages={thread(10)} windowSize={0} windowOverscan={2} />,
-    );
+    const instance = render(<ChatThread messages={thread(10)} windowSize={0} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     rowRenders.count = 0;
-    instance.rerender(
-      <ChatThread messages={thread(10)} windowSize={0} windowOverscan={2} />,
-    );
+    instance.rerender(<ChatThread messages={thread(10)} windowSize={0} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     // New objects → the overscan-only live tail (2 rows) repaints.
     expect(rowRenders.count).toBe(2);
@@ -148,9 +132,7 @@ describe("ChatThread (T2.1)", () => {
   it("empty_string_id_is_legal", async () => {
     // Review F-tests-5 / EC-4: only DUPLICATES throw.
     const frame = await renderFrame(
-      <ChatThread
-        messages={[{ id: "", role: "user", content: "anonymous id" }]}
-      />,
+      <ChatThread messages={[{ id: "", role: "user", content: "anonymous id" }]} />,
     );
     expect(frame).toContain("anonymous id");
   });
@@ -175,9 +157,7 @@ describe("ChatThread (T2.1)", () => {
     expect(iFirst).toBe(0); // no leading blank before the first turn
     // A blank line sits between the two turns.
     expect(iSecond - iFirst).toBeGreaterThanOrEqual(2);
-    expect(lines.slice(iFirst + 1, iSecond).some((l) => l.trim() === "")).toBe(
-      true,
-    );
+    expect(lines.slice(iFirst + 1, iSecond).some((l) => l.trim() === "")).toBe(true);
   });
 
   it("negative_window_values_clamp_to_zero", async () => {
@@ -216,10 +196,7 @@ describe("ChatThread streaming (T2.2)", () => {
     for (const token of [" a", " b", " c"]) {
       const last = current[current.length - 1];
       if (last === undefined) throw new Error("unreachable");
-      current = [
-        ...current.slice(0, -1),
-        { ...last, content: last.content + token },
-      ];
+      current = [...current.slice(0, -1), { ...last, content: last.content + token }];
       rowRenders.count = 0;
       instance.rerender(<ChatThread messages={current} />);
       await new Promise((r) => setTimeout(r, 0));
@@ -231,17 +208,11 @@ describe("ChatThread streaming (T2.2)", () => {
 
   it("static_prefix_is_frozen_after_graduation", async () => {
     const base = thread(20);
-    const instance = render(
-      <ChatThread messages={base} windowSize={4} windowOverscan={2} />,
-    );
+    const instance = render(<ChatThread messages={base} windowSize={4} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     // Replace a PREFIX message (id m1) with edited content — tail unchanged.
-    const edited = base.map((m) =>
-      m.id === "m1" ? { ...m, content: "EDITED CONTENT" } : m,
-    );
-    instance.rerender(
-      <ChatThread messages={edited} windowSize={4} windowOverscan={2} />,
-    );
+    const edited = base.map((m) => (m.id === "m1" ? { ...m, content: "EDITED CONTENT" } : m));
+    instance.rerender(<ChatThread messages={edited} windowSize={4} windowOverscan={2} />);
     await new Promise((r) => setTimeout(r, 0));
     const frame = instance.lastFrame() ?? "";
     // ADR D1 contract: graduated messages are FROZEN — the edit is invisible.
@@ -267,22 +238,12 @@ describe("ChatThread header slot (M11 T1.1)", () => {
     // header lives in the Static segment, above EVERY graduated row, even
     // though the prefix only grows after mount.
     const instance = render(
-      <ChatThread
-        header={HEADER}
-        messages={thread(6)}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <ChatThread header={HEADER} messages={thread(6)} windowSize={4} windowOverscan={2} />,
     );
     await ticks();
     for (const n of [12, 20]) {
       instance.rerender(
-        <ChatThread
-          header={HEADER}
-          messages={thread(n)}
-          windowSize={4}
-          windowOverscan={2}
-        />,
+        <ChatThread header={HEADER} messages={thread(n)} windowSize={4} windowOverscan={2} />,
       );
       await ticks();
     }
@@ -291,9 +252,7 @@ describe("ChatThread header slot (M11 T1.1)", () => {
     const iBanner = frame.indexOf("BANNER");
     expect(iBanner).toBeGreaterThanOrEqual(0);
     expect(iBanner).toBeLessThan(frame.indexOf("msg-0 content"));
-    expect(frame.indexOf("msg-0 content")).toBeLessThan(
-      frame.indexOf("msg-19 content"),
-    );
+    expect(frame.indexOf("msg-0 content")).toBeLessThan(frame.indexOf("msg-19 content"));
     // print-once across successive graduation batches (oracle b).
     expect(frame.split("BANNER").length - 1).toBe(1);
   });
@@ -303,12 +262,7 @@ describe("ChatThread header slot (M11 T1.1)", () => {
     // object identity would legitimately repaint on fresh objects).
     const msgs = thread(20);
     const instance = render(
-      <ChatThread
-        header={HEADER}
-        messages={msgs}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <ChatThread header={HEADER} messages={msgs} windowSize={4} windowOverscan={2} />,
     );
     await ticks();
     const rowsBefore = rowRenders.count;
@@ -334,21 +288,12 @@ describe("ChatThread header slot (M11 T1.1)", () => {
     // ONE rerender keeps items.length constant — a non-frozen design skips
     // the newly graduated row permanently.
     const instance = render(
-      <ChatThread
-        header={HEADER}
-        messages={thread(10)}
-        windowSize={4}
-        windowOverscan={2}
-      />,
+      <ChatThread header={HEADER} messages={thread(10)} windowSize={4} windowOverscan={2} />,
     );
     await ticks();
-    instance.rerender(
-      <ChatThread messages={thread(11)} windowSize={4} windowOverscan={2} />,
-    );
+    instance.rerender(<ChatThread messages={thread(11)} windowSize={4} windowOverscan={2} />);
     await ticks();
-    instance.rerender(
-      <ChatThread messages={thread(14)} windowSize={4} windowOverscan={2} />,
-    );
+    instance.rerender(<ChatThread messages={thread(14)} windowSize={4} windowOverscan={2} />);
     await ticks();
     const frame = instance.lastFrame() ?? "";
     instance.unmount();
@@ -362,9 +307,7 @@ describe("ChatThread header slot (M11 T1.1)", () => {
   it("late_header_is_ignored", async () => {
     // Mount-freeze contract: a header arriving AFTER mount never prepends
     // (the blueprint's late-arrival duplication trap).
-    const instance = render(
-      <ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />,
-    );
+    const instance = render(<ChatThread messages={thread(20)} windowSize={4} windowOverscan={2} />);
     await ticks();
     instance.rerender(
       <ChatThread
@@ -387,9 +330,7 @@ describe("ChatThread header slot (M11 T1.1)", () => {
     const bad = () =>
       ChatThread({
         header: HEADER,
-        messages: [
-          { id: "__theokit_tui_header__", role: "user", content: "x" },
-        ],
+        messages: [{ id: "__theokit_tui_header__", role: "user", content: "x" }],
       });
     expect(bad).toThrow(TypeError);
     expect(bad).toThrow("__theokit_tui_header__");

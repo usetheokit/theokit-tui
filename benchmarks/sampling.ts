@@ -5,8 +5,7 @@ import { performance } from "node:perf_hooks";
 // M0/M1/M2 benches; plan T3.2 REFACTOR). Methodology stays in each bench's
 // baseline JSON.
 
-export const tick = async (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 0));
+export const tick = async (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 export const round = (n: number): number => Math.round(n * 1000) / 1000;
 
@@ -18,8 +17,7 @@ export interface RunMetrics {
 
 export const stats = (values: number[]): { mean: number; std_dev: number } => {
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const variance =
-    values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
+  const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
   return { mean: round(mean), std_dev: round(Math.sqrt(variance)) };
 };
 
@@ -79,10 +77,7 @@ export function stackVersions(): {
   const read = (pkg: string): string =>
     (
       JSON.parse(
-        readFileSync(
-          new URL(`../node_modules/${pkg}/package.json`, import.meta.url),
-          "utf8",
-        ),
+        readFileSync(new URL(`../node_modules/${pkg}/package.json`, import.meta.url), "utf8"),
       ) as { version: string }
     ).version;
   return {

@@ -2,7 +2,8 @@ import { Box, Text } from "ink";
 import { render as inkRender } from "ink-testing-library";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-
+import Yoga from "yoga-layout";
+import { stripAnsi } from "../../src/format/ansi.js";
 import {
   AppStatusBar,
   ChatMessage,
@@ -12,16 +13,11 @@ import {
   ToolCallCard,
   WelcomeBanner,
 } from "../../src/index.js";
-import {
-  createHostReconciler,
-  createRootNode,
-} from "../../src/renderer/host-config.js";
+import { createHostReconciler, createRootNode } from "../../src/renderer/host-config.js";
 import { createRenderer } from "../../src/renderer/index.js";
 import { Output } from "../../src/renderer/output/output-grid.js";
 import { renderNodeToOutput } from "../../src/renderer/output/render-node.js";
-import Yoga from "yoga-layout";
 import { VirtualTerminal } from "./virtual-terminal.js";
-import { stripAnsi } from "../../src/format/ansi.js";
 
 // M18 T3.1 (plan m18-yoga-layout, ADR D5): the parity gate. Each corpus scene is
 // rendered through Ink (the baseline) AND our renderer, and the PLAIN-TEXT
@@ -46,11 +42,7 @@ async function tick(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-async function ourLines(
-  element: ReactElement,
-  cols: number,
-  rows: number,
-): Promise<string[]> {
+async function ourLines(element: ReactElement, cols: number, rows: number): Promise<string[]> {
   const term = new VirtualTerminal(cols, rows);
   const r = createRenderer(term);
   r.render(element);
@@ -180,9 +172,7 @@ const scenes: Scene[] = [
   { name: "app status bar", element: <AppStatusBar model="gpt-5" /> },
   {
     name: "welcome banner",
-    element: (
-      <WelcomeBanner name="Theo" version="0.18.0" tagline="terminal AI" />
-    ),
+    element: <WelcomeBanner name="Theo" version="0.18.0" tagline="terminal AI" />,
     rows: 16,
   },
   {
@@ -225,11 +215,7 @@ describe("M18 parity corpus vs Ink (T3.1)", () => {
     const results: { name: string; match: boolean }[] = [];
     for (const scene of scenes) {
       const ink = inkLines(scene.element);
-      const ours = await ourLines(
-        scene.element,
-        scene.cols ?? 60,
-        scene.rows ?? 12,
-      );
+      const ours = await ourLines(scene.element, scene.cols ?? 60, scene.rows ?? 12);
       // Vacuity guard (review HIGH-1): a scene that renders NOTHING must not
       // count as a match — every scene must produce real output on BOTH sides.
       expect(ink.length).toBeGreaterThan(0);

@@ -1,21 +1,15 @@
 import { Box, useFocus, useFocusManager, useInput } from "ink";
 import { useEffect, useId, useReducer, useRef, useState } from "react";
-
-import { deriveMentionMenu, findMentionToken } from "./mention-menu.js";
-import { searchFiles } from "../search/file-search.js";
-import { deriveSlashMenu } from "./slash-menu.js";
-import type { SlashCommand, SlashMenu } from "./slash-menu.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
-
-import type { TextBufferAction } from "./text-buffer.js";
-import {
-  editorActionForChord,
-  editorReducer,
-  seedEditorState,
-} from "./composer-editor.js";
 import type { Key } from "../renderer/input/key.js";
+import { searchFiles } from "../search/file-search.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
 import { ComposerFooter, ComposerFrame, InputRow } from "./composer/index.js";
+import { editorActionForChord, editorReducer, seedEditorState } from "./composer-editor.js";
+import { deriveMentionMenu, findMentionToken } from "./mention-menu.js";
+import type { SlashCommand, SlashMenu } from "./slash-menu.js";
+import { deriveSlashMenu } from "./slash-menu.js";
+import type { TextBufferAction } from "./text-buffer.js";
 
 export type { SlashCommand as ChatComposerCommand } from "./slash-menu.js";
 
@@ -116,10 +110,8 @@ function promptFor(
     : { glyph: theme.role.user.glyph, prefixColor: theme.role.user.prefix };
 }
 
-const defaultFileSearch = (
-  query: string,
-  signal?: AbortSignal,
-): Promise<string[]> => searchFiles(query, signal ? { signal } : {});
+const defaultFileSearch = (query: string, signal?: AbortSignal): Promise<string[]> =>
+  searchFiles(query, signal ? { signal } : {});
 
 interface ComposerKey {
   return: boolean;
@@ -160,16 +152,10 @@ export function isAltReturn(key: ComposerKey): boolean {
  * Single source of the newline-vs-submit decision (review F-arch-3): the
  * submit gate is derived from THIS predicate, never re-encoded.
  */
-export function isNewlineChord(
-  input: string,
-  key: ComposerKey,
-  multiLine: boolean,
-): boolean {
+export function isNewlineChord(input: string, key: ComposerKey, multiLine: boolean): boolean {
   // Ctrl+J arrives as a literal linefeed with key.return === false; Alt+Enter
   // (portable) and Shift+Enter (kitty only) both arrive as key.return.
-  return (
-    multiLine && (input === "\n" || isAltReturn(key) || isShiftReturn(key))
-  );
+  return multiLine && (input === "\n" || isAltReturn(key) || isShiftReturn(key));
 }
 
 function newlineAction(
@@ -177,9 +163,7 @@ function newlineAction(
   key: ComposerKey,
   multiLine: boolean,
 ): TextBufferAction | undefined {
-  return isNewlineChord(input, key, multiLine)
-    ? { type: "newline" }
-    : undefined;
+  return isNewlineChord(input, key, multiLine) ? { type: "newline" } : undefined;
 }
 
 function motionAction(key: ComposerKey): TextBufferAction | undefined {
@@ -196,10 +180,7 @@ function motionAction(key: ComposerKey): TextBufferAction | undefined {
   return undefined;
 }
 
-function insertAction(
-  input: string,
-  key: ComposerKey,
-): TextBufferAction | undefined {
+function insertAction(input: string, key: ComposerKey): TextBufferAction | undefined {
   if (input.length > 0 && !key.ctrl && !key.meta && input !== "\n") {
     return { type: "insert", text: input };
   }
@@ -216,11 +197,7 @@ export function actionForKey(
   key: ComposerKey,
   multiLine: boolean,
 ): TextBufferAction | undefined {
-  return (
-    newlineAction(input, key, multiLine) ??
-    motionAction(key) ??
-    insertAction(input, key)
-  );
+  return newlineAction(input, key, multiLine) ?? motionAction(key) ?? insertAction(input, key);
 }
 
 function useSlashMenuState(
@@ -231,8 +208,7 @@ function useSlashMenuState(
   const [selectionIndex, setSelectionIndex] = useState(0);
   const [dismissedFilter, setDismissedFilter] = useState<string | null>(null);
   const probe = deriveSlashMenu(bufferText, commands, selectionIndex, false);
-  const dismissed =
-    dismissedFilter !== null && dismissedFilter === probe.filter;
+  const dismissed = dismissedFilter !== null && dismissedFilter === probe.filter;
   const menu: SlashMenu = dismissed ? { ...probe, open: false } : probe;
   const completeSelection = (): void => {
     const chosen = menu.matches[menu.clampedIndex];
@@ -276,12 +252,7 @@ function useMentionMenuState(
     return () => controller.abort();
   }, [query, fileSearch]);
 
-  const menu = deriveMentionMenu(
-    text,
-    cursorOffset,
-    candidates,
-    selectionIndex,
-  );
+  const menu = deriveMentionMenu(text, cursorOffset, candidates, selectionIndex);
   const completeSelection = (): void => {
     const chosen = menu.matches[menu.clampedIndex];
     if (chosen && token) {
@@ -307,11 +278,7 @@ export function ChatComposer({
   onChange,
   ...margin
 }: ChatComposerProps) {
-  const [editor, dispatchEditor] = useReducer(
-    editorReducer,
-    initialValue,
-    seedEditorState,
-  );
+  const [editor, dispatchEditor] = useReducer(editorReducer, initialValue, seedEditorState);
   const buffer = editor.buffer;
   // M54 — surface buffer text to the host (composer-empty precondition for backtrack).
   //
@@ -335,13 +302,16 @@ export function ChatComposer({
   const { isFocused } = useFocus({ autoFocus, id: focusId });
   const { focus } = useFocusManager();
   const theme = useTheoTheme();
-  const { menu, setSelectionIndex, setDismissedFilter, completeSelection } =
-    useSlashMenuState(buffer.text, commands, (name) => {
+  const { menu, setSelectionIndex, setDismissedFilter, completeSelection } = useSlashMenuState(
+    buffer.text,
+    commands,
+    (name) => {
       dispatchEditor({
         type: "buffer",
         action: { type: "complete-command", name },
       });
-    });
+    },
+  );
   const mention = useMentionMenuState(
     buffer.text,
     buffer.cursorOffset,
@@ -361,9 +331,7 @@ export function ChatComposer({
       return false;
     }
     if (key.upArrow) {
-      setSelectionIndex(
-        (menu.clampedIndex - 1 + menu.matches.length) % menu.matches.length,
-      );
+      setSelectionIndex((menu.clampedIndex - 1 + menu.matches.length) % menu.matches.length);
       return true;
     }
     if (key.downArrow) {
@@ -396,15 +364,12 @@ export function ChatComposer({
     }
     if (key.upArrow) {
       mention.setSelectionIndex(
-        (mention.menu.clampedIndex - 1 + mention.menu.matches.length) %
-          mention.menu.matches.length,
+        (mention.menu.clampedIndex - 1 + mention.menu.matches.length) % mention.menu.matches.length,
       );
       return true;
     }
     if (key.downArrow) {
-      mention.setSelectionIndex(
-        (mention.menu.clampedIndex + 1) % mention.menu.matches.length,
-      );
+      mention.setSelectionIndex((mention.menu.clampedIndex + 1) % mention.menu.matches.length);
       return true;
     }
     if (key.tab || (key.return && !isNewlineChord(input, key, multiLine))) {
@@ -420,17 +385,11 @@ export function ChatComposer({
   const handleEditorKey = (input: string, key: ComposerKey): boolean => {
     // History recall on arrows, gated to the first/last visual line (multiline
     // drafts keep the arrow for cursor movement — the composer owns this gate).
-    if (
-      key.upArrow &&
-      !buffer.text.slice(0, buffer.cursorOffset).includes("\n")
-    ) {
+    if (key.upArrow && !buffer.text.slice(0, buffer.cursorOffset).includes("\n")) {
       dispatchEditor({ type: "history-prev" });
       return true;
     }
-    if (
-      key.downArrow &&
-      !buffer.text.slice(buffer.cursorOffset).includes("\n")
-    ) {
+    if (key.downArrow && !buffer.text.slice(buffer.cursorOffset).includes("\n")) {
       dispatchEditor({ type: "history-next" });
       return true;
     }
@@ -537,11 +496,7 @@ export function ChatComposer({
 
   return (
     <Box flexDirection="column" {...margin}>
-      <ComposerFrame
-        bordered={bordered}
-        monochrome={isMonochrome(theme)}
-        accent={theme.accent}
-      >
+      <ComposerFrame bordered={bordered} monochrome={isMonochrome(theme)} accent={theme.accent}>
         <InputRow
           buffer={buffer}
           placeholder={placeholder}

@@ -2,8 +2,8 @@ import { Box, Text } from "ink";
 import { memo } from "react";
 
 import type { LayoutMarginProps } from "../layout/layout-props.js";
-import { isMonochrome, useTheoTheme, type TheoTheme } from "../theme/theme.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { isMonochrome, type TheoTheme, useTheoTheme } from "../theme/theme.js";
 
 // M24 TodoList (plan m24-live-progress-surfaces T1.2, ADR D1): a live checklist
 // keyed by stable id. An item updates IN PLACE when the caller passes a NEW
@@ -62,8 +62,7 @@ const Row = memo(
     const color = statusColor(item.status, theme);
     return (
       <Text {...todoRowStyle(item.status)}>
-        <Text {...(color ? { color } : {})}>{STATUS_GLYPH[item.status]}</Text>{" "}
-        {item.label}
+        <Text {...(color ? { color } : {})}>{STATUS_GLYPH[item.status]}</Text> {item.label}
       </Text>
     );
   },
@@ -77,10 +76,7 @@ function assertUniqueIds(items: readonly TodoItem[]): void {
     if (seen.has(item.id)) {
       // Duplicate keys corrupt row identity / in-place update — fail fast at the
       // boundary (the ChatThread precedent, rules/error-handling.md § 2).
-      reportGuardFailure(
-        "TodoList",
-        new TypeError(`TodoList: duplicate item id "${item.id}"`),
-      );
+      reportGuardFailure("TodoList", new TypeError(`TodoList: duplicate item id "${item.id}"`));
     }
     seen.add(item.id);
   }

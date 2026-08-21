@@ -83,9 +83,7 @@ function pairRun(
   }
 }
 
-export function pairIntraLines(
-  lines: readonly DiffLine[],
-): Map<DiffLine, WordSegment[]> {
+export function pairIntraLines(lines: readonly DiffLine[]): Map<DiffLine, WordSegment[]> {
   const map = new Map<DiffLine, WordSegment[]>();
   let i = 0;
   while (i < lines.length) {

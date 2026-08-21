@@ -1,6 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { loadavg } from "node:os";
-import { cpus } from "node:os";
+import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,15 +7,8 @@ import { Box } from "ink";
 import { render } from "ink-testing-library";
 
 import { ChatMessage, TheoTUIProvider } from "../src/index.js";
-import {
-  fmt,
-  frameSampler,
-  round,
-  stats,
-  tick,
-  stackVersions,
-} from "./sampling.js";
 import type { RunMetrics } from "./sampling.js";
+import { fmt, frameSampler, round, stackVersions, stats, tick } from "./sampling.js";
 
 // M0 render benchmark (plan T3.1, ADR D6/D9 — data-only, no threshold gate).
 // Workload: 100-message static thread + 300-token streaming append into the
@@ -38,8 +30,7 @@ type Mode = "plain" | "markdown";
 // markdown tail ALSO carries MD_PREFIX — the mode delta therefore measures
 // parse + richer content TOGETHER, not the flag in isolation (honest scope,
 // review r1-F1).
-const MD_PREFIX =
-  "## Reply\n**bold** step, `code span`\n```ts\nconst x = 1;\n```\n";
+const MD_PREFIX = "## Reply\n**bold** step, `code span`\n```ts\nconst x = 1;\n```\n";
 
 function App({ streamed, mode }: { streamed: string; mode: Mode }) {
   const history = Array.from({ length: N_MESSAGES }, (_, i) => (
@@ -84,9 +75,7 @@ console.log(
 
 const measured = smoke ? 1 : MEASURED_RUNS;
 const aggregate = (modeRuns: RunMetrics[]) => ({
-  frames_mean: round(
-    modeRuns.reduce((a, r) => a + r.frames, 0) / modeRuns.length,
-  ),
+  frames_mean: round(modeRuns.reduce((a, r) => a + r.frames, 0) / modeRuns.length),
   mean_ms_per_frame: stats(modeRuns.map((r) => r.mean_ms_per_frame)),
   peak_ms_per_frame: stats(modeRuns.map((r) => r.peak_ms_per_frame)),
 });
@@ -96,7 +85,7 @@ const modeResults: { mode: Mode; runs: RunMetrics[] }[] = [];
 for (const mode of MODES) {
   for (let i = 0; i < (smoke ? 0 : WARMUP_RUNS); i++) {
     const w = await runOnce(mode);
-    console.log(fmt(`${mode} warmup`, w) + "  (discarded)");
+    console.log(`${fmt(`${mode} warmup`, w)}  (discarded)`);
   }
   const modeRuns: RunMetrics[] = [];
   for (let i = 0; i < measured; i++) {
@@ -131,7 +120,7 @@ if (!smoke) {
       cores: cpus().length,
     },
     workload: { messages: N_MESSAGES, streamed_tokens: N_TOKENS },
-    color_env: { FORCE_COLOR: process.env["FORCE_COLOR"] ?? "unset" },
+    color_env: { FORCE_COLOR: process.env.FORCE_COLOR ?? "unset" },
     protocol: { warmup_runs: WARMUP_RUNS, measured_runs: measured },
     load_1min_at_start: round(loadAtStart),
     runs,
@@ -159,8 +148,6 @@ if (!smoke) {
     "chat-message-baseline.json",
   );
   mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(baseline, null, 2) + "\n");
-  console.log(
-    `baseline written: benchmarks/baselines/chat-message-baseline.json`,
-  );
+  writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
+  console.log(`baseline written: benchmarks/baselines/chat-message-baseline.json`);
 }
