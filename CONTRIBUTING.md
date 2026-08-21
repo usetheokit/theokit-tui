@@ -81,6 +81,13 @@ CHANGELOG.md                 the single changelog, and the source of the next ve
 The workspace holds one package today. Its shape matches `theokit-sdk` so the tooling — `biome.json`,
 `.ls-lint.yml`, `.dependency-cruiser.cjs`, `turbo.json` — sits in the same place in both repos.
 
+**Cutting a release needs `--root packages/tui`.** The release scripts look for the published
+manifest at the repository root, and since the workspace migration the root `package.json` is
+private and carries no `version`. `bump_version.py` refuses outright rather than writing to the
+wrong file — pass `--root packages/tui` and it updates both sites (the manifest and the `VERSION`
+constant a consumer reads at runtime). This note lives here because those scripts are installed
+tooling and are not versioned with the project.
+
 **Releases do NOT use changesets, unlike `theokit-sdk`.** `rules/cycle-release.md` derives the next
 version from this repository's single `CHANGELOG.md` `[Unreleased]` section and cuts one semver tag;
 changesets would replace both the changelog and that derivation. Changing it is a release-process

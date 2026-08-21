@@ -7,6 +7,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.77.0] - 2026-08-21
+
+### Added
+
 - **The repository adopts the ecosystem's shared conventions (B-109).**
 
   `theokit-sdk` is the reference layout for the Theo framework, and this package diverged from it
