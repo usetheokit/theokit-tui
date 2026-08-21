@@ -1,24 +1,20 @@
 # File-naming convention, shared with the rest of the Theo ecosystem
-# (`theokit-sdk/.ls-lint.yml`). Adapted for a single-package layout: the paths
-# are `src`/`tests` at the root rather than `packages/*/src`.
-#
-# kebab-case, lowercase, no underscores. The tree already satisfied this when the
-# rule was introduced — 0 of 250 source files needed renaming, so this pins a
-# convention that was being followed by habit and had nothing enforcing it.
+# (`theokit-sdk/.ls-lint.yml`) — now with the SAME paths, since this repo is a
+# workspace too. kebab-case, lowercase, no underscores.
 ls:
-  src:
+  packages/*/src:
     .ts: regex:^[a-z][a-z0-9-]*$
     .tsx: regex:^[a-z][a-z0-9-]*$
-  src/**:
+  packages/*/src/**:
     .ts: regex:^[a-z][a-z0-9-]*$
     .tsx: regex:^[a-z][a-z0-9-]*$
-  tests:
+  packages/*/tests:
     .ts: regex:^[a-z][a-z0-9-]*$
     .tsx: regex:^[a-z][a-z0-9-]*$
-  tests/**:
+  packages/*/tests/**:
     .ts: regex:^[a-z][a-z0-9-]*$
     .tsx: regex:^[a-z][a-z0-9-]*$
-  scripts:
+  packages/*/scripts:
     .mjs: regex:^[a-z][a-z0-9-]*$
 
 ignore:

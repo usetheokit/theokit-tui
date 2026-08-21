@@ -21,3 +21,6 @@ BACKLOG.md
 # Nested foreign checkout: TheoCode is its own repository (383 commits), kept here for
 # co-evolution. Committing it would embed one repository inside another.
 modelo/
+
+# turbo task cache — machine-local, never versioned
+.turbo/

@@ -65,6 +65,9 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: "node_modules" },
+    // B-109 — this runs with CWD INSIDE the package (the config is shared from the workspace
+    // root, the run is not). depcruise resolves this path and the tsconfig's own `include`
+    // globs from its cwd, so running it from the root produced TS5083, then TS18003.
     tsConfig: { fileName: "tsconfig.json" },
     tsPreCompilationDeps: true,
   },

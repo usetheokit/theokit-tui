@@ -1,6 +1,6 @@
 {
   "benchmark": "renderer-layout",
-  "date": "2026-07-08T18:23:32.270Z",
+  "date": "2026-08-21T11:54:46.412Z",
   "node_version": "v22.22.2",
   "stack": {
     "ink": "7.1.0",
@@ -14,39 +14,27 @@
   "color_env": {
     "FORCE_COLOR": "1"
   },
-  "load_1min_at_start": 3.56,
+  "load_1min_at_start": 3.79,
   "workload": {
     "messages": 30,
     "update_frames": 40
   },
   "protocol": {
     "warmup_runs": 1,
-    "measured_runs": 5
+    "measured_runs": 1
   },
   "modes": [
     {
       "mode": "own",
       "runs": [
         {
-          "mean_ms_per_frame": 7.142
-        },
-        {
-          "mean_ms_per_frame": 7.506
-        },
-        {
-          "mean_ms_per_frame": 5.663
-        },
-        {
-          "mean_ms_per_frame": 5.701
-        },
-        {
-          "mean_ms_per_frame": 4.818
+          "mean_ms_per_frame": 3.147
         }
       ],
       "aggregate": {
         "mean_ms_per_frame": {
-          "mean": 6.166,
-          "std_dev": 1.003
+          "mean": 3.147,
+          "std_dev": 0
         }
       }
     },
@@ -54,25 +42,13 @@
       "mode": "ink",
       "runs": [
         {
-          "mean_ms_per_frame": 16.14
-        },
-        {
-          "mean_ms_per_frame": 16.558
-        },
-        {
-          "mean_ms_per_frame": 15.146
-        },
-        {
-          "mean_ms_per_frame": 16.577
-        },
-        {
-          "mean_ms_per_frame": 16.447
+          "mean_ms_per_frame": 18.302
         }
       ],
       "aggregate": {
         "mean_ms_per_frame": {
-          "mean": 16.174,
-          "std_dev": 0.537
+          "mean": 18.302,
+          "std_dev": 0
         }
       }
     }

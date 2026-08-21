@@ -1,0 +1,40 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "tsup.config.ts", "tsconfig.json", "package.json"],
+      "outputs": ["dist/**"],
+      "outputLogs": "errors-only"
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "examples/**",
+        "benchmarks/**",
+        "tsconfig.json",
+        "package.json"
+      ],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "tests/**", "vitest.config.ts", "package.json"],
+      "outputs": []
+    },
+    "lint": {
+      "inputs": ["src/**", "tests/**", "package.json"],
+      "outputs": []
+    },
+    "deadcode": {
+      "inputs": ["src/**", "knip.json", "package.json"],
+      "outputs": []
+    },
+    "depcruise": {
+      "inputs": ["src/**", "tests/**", "../../.dependency-cruiser.cjs"],
+      "outputs": []
+    }
+  }
+}

@@ -20,7 +20,9 @@ import { describe, expect, it } from "vitest";
 
 import { type Offender, scanText } from "./no-ptbr.test.js";
 
-const CHANGELOG = new URL("../../CHANGELOG.md", import.meta.url);
+// The CHANGELOG is a REPOSITORY artifact and stays at the workspace root (B-109): `cycle-release`
+// derives the next version from its `[Unreleased]` section, so there is exactly one of them.
+const CHANGELOG = new URL("../../../../CHANGELOG.md", import.meta.url);
 
 /**
  * The body between `## [Unreleased]` and the next `## [` heading.

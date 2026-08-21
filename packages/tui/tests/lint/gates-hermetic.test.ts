@@ -29,7 +29,9 @@ import { describe, expect, it } from "vitest";
 // So this runs the REAL pipeline against a THROWAWAY three-file repository in the system tmpdir.
 // It is the property, executed, in milliseconds — the 400-file tree was never what made it slow.
 
-const REPO_ROOT = new URL("../..", import.meta.url).pathname;
+// The gate scripts under test are the WORKSPACE ones (`format:check` runs at the root), and so is
+// the node_modules/.bin the probe puts on PATH — B-109.
+const REPO_ROOT = new URL("../../../../", import.meta.url).pathname;
 
 interface Probe {
   readonly exitCode: number;

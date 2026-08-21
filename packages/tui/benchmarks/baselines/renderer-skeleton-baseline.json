@@ -1,6 +1,6 @@
 {
   "benchmark": "renderer-skeleton",
-  "date": "2026-07-08T16:28:19.265Z",
+  "date": "2026-08-21T11:54:53.384Z",
   "node_version": "v22.22.2",
   "stack": {
     "ink": "7.1.0",
@@ -14,68 +14,44 @@
   "color_env": {
     "FORCE_COLOR": "1"
   },
-  "load_1min_at_start": 3.78,
+  "load_1min_at_start": 3.79,
   "workload": {
     "lines": 200,
     "update_frames": 60
   },
   "protocol": {
     "warmup_runs": 1,
-    "measured_runs": 5
+    "measured_runs": 1
   },
-  "bytes_delta_ink_over_own": 29.224,
+  "bytes_delta_ink_over_own": 29.307,
   "modes": [
     {
       "mode": "ink",
       "bytes_written": 584472,
       "runs": [
         {
-          "mean_ms_per_frame": 39.548
-        },
-        {
-          "mean_ms_per_frame": 44.281
-        },
-        {
-          "mean_ms_per_frame": 48.228
-        },
-        {
-          "mean_ms_per_frame": 52.168
-        },
-        {
-          "mean_ms_per_frame": 55.636
+          "mean_ms_per_frame": 37.156
         }
       ],
       "aggregate": {
         "mean_ms_per_frame": {
-          "mean": 47.972,
-          "std_dev": 5.674
+          "mean": 37.156,
+          "std_dev": 0
         }
       }
     },
     {
       "mode": "own",
-      "bytes_written": 20000,
+      "bytes_written": 19943,
       "runs": [
         {
-          "mean_ms_per_frame": 6.623
-        },
-        {
-          "mean_ms_per_frame": 7.522
-        },
-        {
-          "mean_ms_per_frame": 7.278
-        },
-        {
-          "mean_ms_per_frame": 9.562
-        },
-        {
-          "mean_ms_per_frame": 8.355
+          "mean_ms_per_frame": 13.098
         }
       ],
       "aggregate": {
         "mean_ms_per_frame": {
-          "mean": 7.868,
-          "std_dev": 1.012
+          "mean": 13.098,
+          "std_dev": 0
         }
       }
     }

@@ -82,6 +82,36 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   Coverage is unaffected — vitest already excluded test files from `coverage.include: ["src/**"]`
   (verified: 0 of 142 reported files were tests, total 98.59%).
 
+- **The repository becomes a pnpm workspace, matching the ecosystem layout (B-109).**
+
+  The package moved to `packages/tui/`; `pnpm-workspace.yaml`, `turbo.json`, `biome.json`,
+  `.ls-lint.yml`, `.dependency-cruiser.cjs` and `.npmrc` sit at the root, exactly where
+  `theokit-sdk` keeps them. CI is unchanged — it calls `pnpm <script>` at the root, and the root
+  now delegates through turbo.
+
+  **The published package is unaffected**: same name, same version, same four entry points, same
+  `files: ["dist"]`. `publint` reports "All good!" and the packed tarball carries the same
+  artifacts.
+
+  **`.npmrc` had to go to the ROOT, and that is not cosmetic.** pnpm resolves the tree from the
+  workspace root, so a package-local `.npmrc` is never read during install. While it sat inside
+  the package, `auto-install-peers` reverted to its default, `figlet` was installed, and
+  `figlet-art.test.ts → returns_null_when_figlet_is_absent` went red — the exact failure the README
+  warns about. The lockfile had to be regenerated to drop the peer it recorded.
+
+  **Four gates broke on the way and each is fixed rather than relaxed:** `depcruise` could not find
+  the tsconfig from the root (TS5083, then TS18003) and now runs with its cwd inside the package;
+  the root `lint` could not see files outside the packages (`.dependency-cruiser.cjs` was the only
+  one, and one invisible file is how the next ten arrive); `validate:naming` reported **0 files
+  checked** under a `git ls-files` pathspec that matched nothing — a green gate that inspected
+  nothing, caught by the same B-084 discipline that motivated it; and four repo-level contract
+  tests were reading `wiki/`, `.github/` and the gate scripts through the package's relative path.
+
+  **Deliberately NOT adopted: changesets.** `theokit-sdk` generates per-package changelogs with
+  them and has no root `CHANGELOG.md`. `rules/cycle-release.md` derives the next version from this
+  file's `[Unreleased]` section and cuts one semver tag. Adopting changesets would replace the
+  release process, not the layout — that needs an ADR, not a refactor.
+
 ## [0.76.1] - 2026-08-20
 
 ### Changed

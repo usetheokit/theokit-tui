@@ -65,7 +65,14 @@ describe("package manifest contract (T0.1)", () => {
   });
 
   it("package_manifest_declares_the_gate_chain_scripts_ci_depends_on", () => {
-    // ci.yml invokes these script keys (review F-arch-4).
+    // ci.yml invokes these script keys (review F-arch-4) — and it invokes them at the WORKSPACE
+    // ROOT, which is where they live since B-109 made this repo a workspace. Asserting them on the
+    // package manifest would assert against a file CI never runs (measured: `format:check` moved
+    // to the root and this test still passed reading the package, because `lint` happened to exist
+    // in both).
+    const root = JSON.parse(
+      readFileSync(new URL("../../../../package.json", import.meta.url), "utf8"),
+    ) as { scripts: Record<string, string> };
     for (const key of [
       "format:check",
       "lint",
@@ -75,7 +82,7 @@ describe("package manifest contract (T0.1)", () => {
       "build",
       "bench",
     ]) {
-      expect(typeof pkg.scripts[key]).toBe("string");
+      expect(typeof root.scripts[key], `root script ${key}`).toBe("string");
     }
   });
 

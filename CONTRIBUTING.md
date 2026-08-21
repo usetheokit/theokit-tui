@@ -17,6 +17,17 @@ pnpm gates                                # format:check + lint + typecheck + de
 
 `pnpm gates` runs the same sequence CI runs.
 
+One caveat comes with the workspace: **turbo caches task results per package, and it keys that
+cache on declared inputs only.** A change outside them — a root file, a lockfile, a rebuilt native
+module — does not invalidate it, so a cached PASS can describe a tree that no longer exists.
+Measured while adopting the workspace: `node-pty` was rebuilt, four PTY tests went from skipped to
+passing, and `pnpm test` kept replaying the cached run that skipped them. After touching anything
+outside a package's `src`/`tests`, force a real run:
+
+```bash
+npx turbo run test --filter='./packages/*' --force
+```
+
 **`auto-install-peers=false` in `.npmrc` is deliberate — do not flip it.** `figlet` and `lowlight`
 are _optional_ peers. `figlet` is deliberately not installed, and
 `figlet-art.test.ts → returns_null_when_figlet_is_absent` proves the real import failure degrades to
@@ -58,13 +69,22 @@ The flow is `workspace → develop → main`.
 ## Repository layout
 
 ```
-src/<domain>/        one product domain per folder, each owning its public barrel (ADR 0001, 0002)
-src/renderer/        the differential terminal engine — output, input and layout
-tests/               cross-cutting suites: contract, degrade matrix, lint, examples
-wiki/                the OKF knowledge bundle — measured records, parity gates, benchmarks
-assets/              brand artwork
-scripts/             repo gates invoked from package.json
+packages/tui/src/<domain>/   one product domain per folder, each owning its public barrel (ADR 0001, 0002)
+packages/tui/src/renderer/   the differential terminal engine — output, input and layout
+packages/tui/tests/          every test, mirroring src/ plus the cross-cutting suites
+packages/tui/scripts/        package gates invoked from its package.json
+assets/                      brand artwork
+wiki/                        the OKF knowledge bundle — measured records, parity gates, benchmarks
+CHANGELOG.md                 the single changelog, and the source of the next version
 ```
+
+The workspace holds one package today. Its shape matches `theokit-sdk` so the tooling — `biome.json`,
+`.ls-lint.yml`, `.dependency-cruiser.cjs`, `turbo.json` — sits in the same place in both repos.
+
+**Releases do NOT use changesets, unlike `theokit-sdk`.** `rules/cycle-release.md` derives the next
+version from this repository's single `CHANGELOG.md` `[Unreleased]` section and cuts one semver tag;
+changesets would replace both the changelog and that derivation. Changing it is a release-process
+decision, not a layout one, and needs an ADR.
 
 `src/index.ts` re-exports domain barrels and does nothing else. Export policy lives in each domain's
 barrel, next to the code it governs.

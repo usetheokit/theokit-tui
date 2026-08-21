@@ -5,6 +5,12 @@ import { describe, expect, it } from "vitest";
 // M8 T1.1/T1.2 (plan m8-ga-publish): the publish contract — manifest fields,
 // publint strictness, README public-copy compliance, snapshot-coverage metric.
 
+// B-109 — this repository is a workspace: the PACKAGE manifest is two levels up, the WORKSPACE
+// manifest is four, and the repo-level artifacts (wiki, CI) live beside the latter. Reading a
+// repo artifact through the package's relative path is how three of these assertions went red the
+// moment the package moved.
+const WORKSPACE_ROOT = "../../../../";
+
 const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
   description?: string;
   keywords?: string[];
@@ -96,7 +102,10 @@ describe("README public-copy contract (M8 T1.2)", () => {
 
 describe("TTFATT record (M8 T2.2)", () => {
   it("ttfatt_record_exists_with_measurement", () => {
-    const md = readFileSync(new URL("../../wiki/benchmarks/ttfatt.md", import.meta.url), "utf8");
+    const md = readFileSync(
+      new URL(`${WORKSPACE_ROOT}wiki/benchmarks/ttfatt.md`, import.meta.url),
+      "utf8",
+    );
     expect(md).toMatch(/@theokit\/tui@0\.10\.0/);
     expect(md).toMatch(/@theokit\/tui@0\.11\.0/);
     expect(md).toMatch(/\d+(\.\d+)?\s?(s|seconds|min)/);
@@ -202,7 +211,10 @@ describe("never-weaken migration guard (M10 D2)", () => {
 
 describe("platform coherence (M10 T2.3)", () => {
   it("readme_and_ci_declare_new_platform", () => {
-    const ci = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
+    const ci = readFileSync(
+      new URL(`${WORKSPACE_ROOT}.github/workflows/ci.yml`, import.meta.url),
+      "utf8",
+    );
     expect(ci).toContain("22.x");
     expect(ci).not.toContain("20.x");
     const md = readFileSync(new URL("../../README.md", import.meta.url), "utf8");
