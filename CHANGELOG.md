@@ -7,17 +7,22 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `Release`, a tag-driven publish for `@theokit/tui`. There was no release workflow: publishing
+  happened by hand, which is why the tree carries 0.77.0 while the registry serves 0.76.1, and why
+  no published version carries a provenance attestation (#153)
+- `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#153)
+
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Fixed
+- The CI matrix runs Node 22.12 and the latest 22.x, was 22.x and 24.x. Testing 24 while never
+  testing the floor `engines` declares covers the wrong end (#153)
+- `engines.node` is `>=22.12.0`, was `>=22`, matching the rest of the published packages (#153)
+- Node pinned to 22.12.0 and pnpm to 10.34.1, resolved from `.nvmrc` and `packageManager` (#153)
 
 ### Security
 
-## [0.77.0] - 2026-08-21
+- Every GitHub Action is pinned to a commit SHA rather than a movable tag (#153)
+- The publish authenticates with npm trusted publishing over OIDC; no long-lived token exists (#153)
 
 ### Added
 
@@ -33,6 +38,23 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - The OKF knowledge bundle cites the code holding each fact. **13 of 21** citations resolved
     before this session, **1 of 21** after the move, **21 of 21** now. Every rewrite was checked
     against the filesystem; none was guessed.
+
+
+### Changed
+
+- **Test runs no longer claim every core on the host.** `vitest.config.ts` capped nothing, so the default applied — `os.availableParallelism()`, one fork per core, each booting a full test environment. On a 12-thread machine a single `vitest run` therefore took the whole box, and anything else running alongside it (a second suite, a typecheck, the desktop) competed for what was left. The cap now leaves 4 cores free (`Math.max(2, cpus().length - 4)`), scaling with the runner instead of hard-coding one machine's core count. It costs no wall-clock — measured in `theokit-ui`, the full suite ran 73.96s at 4 workers against 74.36s at 12. (usetheokit/theokit-ui#51)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.77.0] - 2026-08-21
+
+### Added
 
 - **The repository adopts the ecosystem's shared conventions (B-109).**
 

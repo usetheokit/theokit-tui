@@ -105,7 +105,10 @@ describe("package manifest contract (T0.1)", () => {
   it("package_manifest_declares_apache2_license_and_node22_floor", () => {
     expect(pkg.name).toBe("@theokit/tui");
     expect(pkg.license).toBe("Apache-2.0");
-    expect(pkg.engines.node).toBe(">=22");
+    // 22.12.0, not a bare 22. ink7's floor is the major; this is the org-wide floor,
+    // and it is the version CI actually exercises — a bare `>=22` let a consumer on
+    // 22.0.0 install a package nothing had ever run on that version.
+    expect(pkg.engines.node).toBe(">=22.12.0");
     expect(pkg.sideEffects).toBe(false);
     expect(pkg.private).toBeUndefined();
   });
