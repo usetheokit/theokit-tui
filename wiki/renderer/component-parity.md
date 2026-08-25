@@ -3,7 +3,7 @@ type: Parity Report
 title: M20 — full component suite on the V4 renderer
 description: All 16 shipped components dual-rendered against Ink with zero divergences, the M11 scrollback oracles re-proven on the new engine, and the scroll-invariance fix that relative cursor positioning bought.
 tags: [renderer, parity, components, scrollback, milestone, m20]
-resource: "file:tests/renderer/component-parity.test.tsx"
+resource: "file:packages/tui/tests/renderer/component-parity.test.tsx"
 sources:
   - id: m20-report
     resource: "git:9fd7eb1:docs/renderer/m20-parity-report.md"

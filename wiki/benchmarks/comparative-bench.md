@@ -3,13 +3,13 @@ type: Benchmark
 title: M20 comparative benchmark — Ink vs the V4 renderer
 description: One streaming workload through both engines with symmetric timing — ~20× fewer bytes written for the differential engine, and ms/frame at parity. The bytes ratio is the portable signal.
 tags: [benchmark, renderer, performance, ink, m20]
-resource: "file:benchmarks/comparative.bench.tsx"
+resource: "file:packages/tui/benchmarks/comparative.bench.tsx"
 sources:
   - id: m20-bench
     resource: "git:9fd7eb1:docs/renderer/comparative-bench.md"
     last_modified: 2026-07-08
   - id: baseline
-    resource: "file:benchmarks/baselines/comparative-baseline.json"
+    resource: "file:packages/tui/benchmarks/baselines/comparative-baseline.json"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06

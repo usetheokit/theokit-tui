@@ -66,6 +66,17 @@ The flow is `workspace → develop → main`.
       **English** and address the consumer, not the implementer.
 - [ ] File naming passes `pnpm validate:naming` — kebab-case, enforced by `.ls-lint.yml`.
 
+## Running an example
+
+The `example:*` scripts live in the package, not at the root, so reach them through the filter:
+
+```bash
+pnpm --filter=@theokit/tui run example:chat     # or example:agent, example:banner, …
+```
+
+Verified after the workspace move — `example:banner` renders. They are deliberately not aliased at
+the root: sixteen pass-through scripts would be sixteen things to keep in sync for one package.
+
 ## Repository layout
 
 ```

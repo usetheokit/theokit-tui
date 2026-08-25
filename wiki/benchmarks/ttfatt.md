@@ -9,7 +9,7 @@ sources:
     resource: "git:9fd7eb1:docs/ttfatt.md"
     last_modified: 2026-07-07
   - id: contract-test
-    resource: "file:tests/package-contract.test.ts"
+    resource: "file:packages/tui/tests/contract/package-contract.test.ts"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06

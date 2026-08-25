@@ -46,6 +46,23 @@ export interface PermissionPromptProps extends LayoutMarginProps {
   ruleNote?: string;
   /** An optional secondary hint, e.g. `/permissions to update rules`. */
   hint?: string;
+  /**
+   * Where `hint` sits relative to the question and the choices.
+   *
+   * `"above"` (the default, and what has always shipped) keeps it with `ruleNote`, before the
+   * question. `"below"` renders it under the choice list as a footer, which is where Claude Code
+   * puts the keys that settle the prompt:
+   *
+   *     ❯ 1. Yes, I trust this folder
+   *       2. No, exit
+   *
+   *     Enter to confirm · Esc to cancel
+   *
+   * A consumer telling the user WHICH KEYS settle the prompt wants the second: read before the
+   * question, the instruction arrives before the thing it applies to. The default is unchanged
+   * because moving it would relocate every existing `ruleNote`-style hint.
+   */
+  hintPlacement?: "above" | "below";
   /** The question line. Default `Do you want to proceed?`. */
   question?: string;
   /** The vertical numbered choices. Default Yes/No (Esc → the last one). */
@@ -88,6 +105,7 @@ export function PermissionPrompt({
   description,
   ruleNote,
   hint,
+  hintPlacement = "above",
   question = "Do you want to proceed?",
   choices = DEFAULT_PERMISSION_CHOICES,
   onDecision,
@@ -123,7 +141,7 @@ export function PermissionPrompt({
     >
       <Text {...accent}>{toolType}</Text>
       <CommandBlock command={command} description={description} />
-      <NoteBlock ruleNote={ruleNote} hint={hint} />
+      <NoteBlock ruleNote={ruleNote} hint={hintPlacement === "above" ? hint : undefined} />
       <Box flexDirection="column" marginTop={1}>
         <Text>{question}</Text>
         <ChoiceRow
@@ -137,6 +155,11 @@ export function PermissionPrompt({
           autoFocus={autoFocus}
         />
       </Box>
+      {hintPlacement === "below" && hint !== undefined ? (
+        <Box marginTop={1}>
+          <Text dimColor>{hint}</Text>
+        </Box>
+      ) : undefined}
     </Box>
   );
 }

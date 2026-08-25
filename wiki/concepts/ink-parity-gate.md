@@ -14,9 +14,9 @@ sources:
     resource: "git:9fd7eb1:docs/renderer/m20-parity-report.md"
     last_modified: 2026-07-08
   - id: corpus-test
-    resource: "file:tests/renderer/parity-corpus.test.tsx"
+    resource: "file:packages/tui/tests/renderer/parity-corpus.test.tsx"
   - id: component-test
-    resource: "file:tests/renderer/component-parity.test.tsx"
+    resource: "file:packages/tui/tests/renderer/component-parity.test.tsx"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06

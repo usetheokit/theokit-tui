@@ -5,9 +5,73 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.78.0] - 2026-08-25
+
+Cut as 0.78.0 rather than 0.77.0. The tree carried 0.77.0 and the registry served 0.76.1, so 0.77.0
+was never published — but it was packed as a tarball and consumed locally, WITHOUT the `asideDivider`
+below. Publishing a different 0.77.0 would give one version number two contents, which is the kind
+of ambiguity that costs an afternoon to diagnose.
+
 ### Added
 
+- `WelcomeBanner` takes `borderTitle`, which writes the product and build INTO the top border —
+  `╭─── TheoCode v0.4.7 ─────╮`. It was not expressible before: the frame is an Ink `<Box borderStyle>`
+  and Ink has no border label, so the only way to get one was to hand-roll the whole box, which is
+  what `WelcomeBanner` exists to stop (#155)
+- `PermissionPrompt` takes `hintPlacement`, which moves `hint` under the choice list instead of above
+  the question. A consumer using it to say which keys settle the prompt wants it read after the
+  choices, not before them; `"above"` stays the default so existing `ruleNote`-style hints do not
+  move (#155)
+
+- `WelcomeBanner` takes `asideDivider`, which draws the vertical rule between the two columns and
+  lets the aside fill the width left over. Building the "Tips for getting started" panel that
+  `aside` was made for previously meant computing the slot width from the box's own padding
+  (`columns - artWidth - 6`), asking for a cross-axis `flexGrow` so the rule reached the bottom
+  border, and drawing the rule on your own Box because the gutter is a margin. All three go away;
+  banners that do not pass the flag are unchanged (#157)
+- `Release`, a tag-driven publish for `@theokit/tui`. There was no release workflow: publishing
+  happened by hand, which is why the tree carries 0.77.0 while the registry serves 0.76.1, and why
+  no published version carries a provenance attestation (#153)
+- `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#153)
+
+### Fixed
+
+- A consumer's `formatResult` override never ran on the FAILURE path. The gate read `tool.output`,
+  while an errored part is filled from `tool.errorText` — so a rejected or failed call rendered its
+  raw payload verbatim while the header override, which has no such gate, fired normally. A consumer
+  could format every successful call and no failed one, with nothing on screen saying why (#156)
+
 ### Changed
+
+- The CI matrix runs Node 22.12 and the latest 22.x, was 22.x and 24.x. Testing 24 while never
+  testing the floor `engines` declares covers the wrong end (#153)
+- `engines.node` is `>=22.12.0`, was `>=22`, matching the rest of the published packages (#153)
+- Node pinned to 22.12.0 and pnpm to 10.34.1, resolved from `.nvmrc` and `packageManager` (#153)
+
+### Security
+
+- Every GitHub Action is pinned to a commit SHA rather than a movable tag (#153)
+- The publish authenticates with npm trusted publishing over OIDC; no long-lived token exists (#153)
+
+### Added
+
+- **A documentation-only commit was impossible, and the wiki's citations had gone dead (B-109).**
+
+  Two defects the layout change introduced, both found while promoting it:
+
+  - The pre-commit formatter gate rejected any commit whose staged set is only Markdown. Prettier
+    formatted `.md`; Biome does not, and reports an empty input set as an error rather than a
+    no-op — so the hook refused the commit naming files it does not govern. The empty case is now
+    reported, not silenced, and the gate was re-verified against all three cases (malformed `.ts`
+    blocks; `.md`-only passes; mixed set still checks the `.ts`).
+  - The OKF knowledge bundle cites the code holding each fact. **13 of 21** citations resolved
+    before this session, **1 of 21** after the move, **21 of 21** now. Every rewrite was checked
+    against the filesystem; none was guessed.
+
+
+### Changed
+
+- **Test runs no longer claim every core on the host.** `vitest.config.ts` capped nothing, so the default applied — `os.availableParallelism()`, one fork per core, each booting a full test environment. On a 12-thread machine a single `vitest run` therefore took the whole box, and anything else running alongside it (a second suite, a typecheck, the desktop) competed for what was left. The cap now leaves 4 cores free (`Math.max(2, cpus().length - 4)`), scaling with the runner instead of hard-coding one machine's core count. It costs no wall-clock — measured in `theokit-ui`, the full suite ran 73.96s at 4 workers against 74.36s at 12. (usetheokit/theokit-ui#51)
 
 ### Deprecated
 

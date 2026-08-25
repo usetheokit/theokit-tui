@@ -1,7 +1,7 @@
 {
   "name": "@theokit/tui",
-  "version": "0.77.0",
-  "description": "AI-native TUI primitives for agent CLIs \u2014 streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
+  "version": "0.78.0",
+  "description": "AI-native TUI primitives for agent CLIs — streaming chat, tool cards, diffs, agent timeline and metrics, built on Ink (React for the terminal)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "packageManager": "pnpm@10.34.1",
   "scripts": {
@@ -43,7 +43,7 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "node scripts/gate-scope.mjs typecheck npx tsc --noEmit --listFiles",
     "lint": "test -n \"$(git ls-files '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs')\" && git ls-files -z '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' | xargs -0 node scripts/gate-scope.mjs lint biome lint --reporter=json -- && true",
-    "deadcode": "knip --production && printf 'deadcode: %s source files checked for UNUSED FILES only \u2014 unused exports and unused exported types are NOT examined (knip.json \"include\": [\"files\"]; lifting it reports 162, untriaged \u2014 B-096)\\n' \"$(git ls-files -- src | grep -cE '\\.(ts|tsx)$')\"",
+    "deadcode": "knip --production && printf 'deadcode: %s source files checked for UNUSED FILES only — unused exports and unused exported types are NOT examined (knip.json \"include\": [\"files\"]; lifting it reports 162, untriaged — B-096)\\n' \"$(git ls-files -- src | grep -cE '\\.(ts|tsx)$')\"",
     "bench": "tsx benchmarks/run.ts",
     "example": "tsx examples/components/basic.tsx",
     "example:chat": "tsx examples/scenes/chat.tsx",
@@ -124,5 +124,9 @@
     "chat",
     "streaming",
     "llm"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

@@ -11,7 +11,7 @@ sources:
     resource: "git:9fd7eb1:docs/renderer/comparative-bench.md"
     last_modified: 2026-07-08
   - id: renderer-src
-    resource: "file:src/renderer/"
+    resource: "file:packages/tui/src/renderer/"
 generated:
   by: claude-code/opus-5
   at: 2026-08-06
