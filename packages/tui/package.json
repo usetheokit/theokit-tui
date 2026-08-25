@@ -59,7 +59,7 @@
     "example:showcase": "tsx examples/scenes/showcase.tsx",
     "example:renderer": "tsx examples/renderer/renderer-skeleton.tsx",
     "example:all": "tsx examples/scenes/all-components.tsx",
-    "prepublishOnly": "pnpm gates",
+    "prepublishOnly": "[ \"$CI\" = true ] || pnpm -w gates",
     "example:claude-code": "tsx examples/scenes/claude-code-scene.tsx",
     "version": "node scripts/sync-version.mjs && git add src/index.ts",
     "sync-version": "node scripts/sync-version.mjs",
