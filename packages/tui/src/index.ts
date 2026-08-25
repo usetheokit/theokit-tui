@@ -6,7 +6,7 @@
 // policy (which symbols stay module-internal) lives in each domain's barrel,
 // next to the code it governs, rather than as prose here. See docs/adr/.
 
-export const VERSION = "0.77.0";
+export const VERSION = "0.78.0";
 
 export * from "./agent/index.js";
 export * from "./branding/index.js";

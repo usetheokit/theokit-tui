@@ -5,6 +5,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.78.0] - 2026-08-25
+
+Cut as 0.78.0 rather than 0.77.0. The tree carried 0.77.0 and the registry served 0.76.1, so 0.77.0
+was never published — but it was packed as a tarball and consumed locally, WITHOUT the `asideDivider`
+below. Publishing a different 0.77.0 would give one version number two contents, which is the kind
+of ambiguity that costs an afternoon to diagnose.
+
 ### Added
 
 - `WelcomeBanner` takes `borderTitle`, which writes the product and build INTO the top border —
