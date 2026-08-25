@@ -36,6 +36,14 @@ of ambiguity that costs an afternoon to diagnose.
 
 ### Fixed
 
+- The release workflow could never have published. `packages/tui`'s `prepublishOnly` ran `pnpm
+  gates`, and `gates` is a script of the ROOT manifest — inside the package it does not exist, so
+  `pnpm publish` died with `Command "gates" not found` before uploading anything. Found by cutting
+  the first real tag; the workflow shipped in #153 and had never been exercised. It now defers to
+  the root script and skips entirely under `CI`, where the workflow has already run the same gates
+  twice (Node 22 and 22.12) — the same "CI runs its own gates" pattern the sibling repos' pre-push
+  hook uses. The gate did its job: it failed closed, and nothing reached the registry (#153)
+
 - A consumer's `formatResult` override never ran on the FAILURE path. The gate read `tool.output`,
   while an errored part is filled from `tool.errorText` — so a rejected or failed call rendered its
   raw payload verbatim while the header override, which has no such gate, fired normally. A consumer
