@@ -112,6 +112,45 @@ describe("borderTitle — a label written into the top border", () => {
     );
   });
 
+  it("test_the_title_REPLACES_the_name_header_rather_than_doubling_it", () => {
+    // The title already carries the product and the build — that is what a consumer puts in it —
+    // so rendering the internal header too prints the same two facts twice, three lines apart:
+    //
+    //     ╭─── TheoCode v0.4.7 ────────────╮
+    //     │ TheoCode v0.4.7                │
+    const frame = rows(
+      renderAtColumns(80, { name: "TheoCode", version: "0.4.7", borderTitle: "TheoCode v0.4.7" }),
+    );
+
+    expect(frame[0]).toContain("TheoCode v0.4.7");
+    expect(
+      frame.slice(1).filter((r) => r.includes("TheoCode")),
+      "the name header is repeated under a border that already names it",
+    ).toHaveLength(0);
+  });
+
+  it("test_the_version_under_the_ART_is_suppressed_by_a_title_too", () => {
+    // Same rule on the art branch: #155 put the version under the wordmark, and a title makes that
+    // the second copy.
+    const frame = rows(
+      renderAtColumns(80, {
+        name: "TheoCode",
+        version: "0.4.7",
+        art: ART,
+        borderTitle: "TheoCode v0.4.7",
+      }),
+    );
+
+    expect(frame.slice(1).filter((r) => r.includes("v0.4.7"))).toHaveLength(0);
+  });
+
+  it("test_without_a_title_the_name_header_is_still_there", () => {
+    // Anti-vacuity: suppressing it unconditionally would satisfy both assertions above.
+    expect(rows(renderAtColumns(80, { name: "TheoCode", version: "0.4.7" }))[1]).toContain(
+      "TheoCode",
+    );
+  });
+
   it("test_it_works_with_the_two_column_layout_too", () => {
     // The aside branch returns a different tree, so it needs its own assertion — a title that
     // worked only on the single-column path would be the more likely bug.
