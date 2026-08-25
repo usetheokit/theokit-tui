@@ -230,8 +230,22 @@ function toToolEvent(
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
     ...toolResultContent(tool),
   };
-  if (formatResult !== undefined && tool.output !== undefined) {
-    event = applyResultOverride(event, tool.output, formatResult);
+  // #156 — the value the formatter receives is the one that POPULATED the event, not one fixed
+  // source field.
+  //
+  // The gate used to be `tool.output !== undefined`, while `toolResultContent` fills an errored
+  // part from `tool.errorText`. So on the failure path — the path where a formatted body matters
+  // most — `tool.output` was `undefined`, the override was skipped, and the consumer's raw payload
+  // was rendered verbatim. Measured in TheoCode by rejecting an approval:
+  //
+  //     ⎿ {"stdout":"","stderr":"Tool 'run_shell' denied by human approver","exitCode":126}
+  //
+  // Its `formatToolResult` handles that shape and was never called, while `formatToolHeader` — which
+  // has no such gate — fired normally. A consumer could format every successful call and no failed
+  // one, with nothing to indicate why.
+  const rawResult = tool.state === "output-error" ? tool.errorText : tool.output;
+  if (formatResult !== undefined && rawResult !== undefined) {
+    event = applyResultOverride(event, rawResult, formatResult);
   }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
