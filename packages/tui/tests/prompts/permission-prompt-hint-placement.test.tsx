@@ -1,7 +1,7 @@
 import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-import { PermissionPrompt } from "../../src/prompts/permission-prompt.js";
 import { stripAnsi } from "../../src/format/ansi.js";
+import { PermissionPrompt } from "../../src/prompts/permission-prompt.js";
 
 // A consumer telling the user WHICH KEYS settle the prompt had nowhere sensible to put it.
 //
@@ -67,7 +67,11 @@ describe("hintPlacement", () => {
   it("test_a_ruleNote_stays_above_regardless", () => {
     // `ruleNote` is context about the rule that gated the call — it belongs before the question at
     // either placement, and moving it with the hint would be a silent relocation.
-    const rows = frame({ ...base, ruleNote: "Permission rule Bash(npm *)", hintPlacement: "below" });
+    const rows = frame({
+      ...base,
+      ruleNote: "Permission rule Bash(npm *)",
+      hintPlacement: "below",
+    });
 
     expect(indexOf(rows, "Permission rule")).toBeLessThan(indexOf(rows, "Do you want to proceed?"));
     expect(indexOf(rows, HINT)).toBeGreaterThan(indexOf(rows, "Do you want to proceed?"));
