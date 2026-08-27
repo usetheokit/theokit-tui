@@ -272,7 +272,7 @@ describe("built-in themes + provider resolution (M6 T1.2)", () => {
     expect(nc.accent).toBe("");
     expect(nc.code.keyword).toBe("");
     expect(nc.toolStatus.success.glyph).toBe("⏺");
-    expect(nc.role.user.glyph).toBe("> ");
+    expect(nc.role.user.glyph).toBe("❯ ");
     expect(nc.name).toBe("no-color");
   });
 
@@ -338,7 +338,7 @@ describe("built-in themes + provider resolution (M6 T1.2)", () => {
           <Probe />
         </TheoTUIProvider>,
       );
-      expect(captured?.role.user.glyph).toBe("> ");
+      expect(captured?.role.user.glyph).toBe("❯ ");
     } finally {
       vi.unstubAllEnvs();
     }

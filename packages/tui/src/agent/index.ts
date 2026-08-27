@@ -36,8 +36,10 @@ export {
   initialAgentStreamState,
 } from "./agent-stream-reducer.js";
 export type { AgentStreamingProps } from "./agent-streaming.js";
+export type { TurnDoneProps } from "./turn-done.js";
 // formatElapsed stays module-internal (EC-10 — D7 precedent).
 export { AgentStreaming } from "./agent-streaming.js";
+export { TurnDone, WHIMSY_VERBS, whimsyVerb } from "./turn-done.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentTimeline } from "./agent-timeline.js";
 export type {

@@ -4,13 +4,15 @@ import { describe, expect, it } from "vitest";
 
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../../src/format/ansi.js";
-import { TheoTUIProvider } from "../../src/theme/theme.js";
+import { defaultTheme, TheoTUIProvider } from "../../src/theme/theme.js";
 import { ChatMessage } from "../../src/chat/chat-message.js";
 
 describe("ChatMessage (T2.1)", () => {
   it("renders_user_message_with_glyph_prefix", async () => {
     const frame = await renderFrame(<ChatMessage role="user">hello</ChatMessage>);
-    expect(frame).toContain(">");
+    // The theme's token, not a literal: what this pins is that the USER role's glyph reaches the
+    // frame, which stays true across a glyph change (#62 item 3 changed `> ` to `❯ `).
+    expect(frame).toContain(defaultTheme.role.user.glyph.trim());
     expect(frame).toContain("hello");
   });
 
@@ -193,7 +195,7 @@ describe("ChatMessage (T2.1)", () => {
         <ChatMessage role="user">{""}</ChatMessage>
       </Box>,
     );
-    expect(frame).toContain(">");
+    expect(frame).toContain(defaultTheme.role.user.glyph.trim());
     // Snapshot proves glyph-only output — no stray content (review F-tests-3).
     expect(frame).toMatchSnapshot("chat-message-empty");
   });

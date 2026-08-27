@@ -1,14 +1,14 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`ChatComposer slash menu (M15 T2.1) > menu_open_scene_snapshot > slash-menu-open 1`] = `
-"[36m> [39m/[7m [27m
+"[36m❯ [39m/[7m [27m
   [36m❯ /clear[39m[2m  clear the thread[22m
     /help[2m  show help[22m
     /hello[2m  greet[22m"
 `;
 
 exports[`ChatComposer slash menu (M15 T2.1) > monochrome_active_row_carries_marker > slash-menu-monochrome 1`] = `
-"> /▏
+"❯ /▏
   ❯ /clear[2m  clear the thread[22m
     /help[2m  show help[22m
     /hello[2m  greet[22m"

@@ -4,6 +4,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import type { Key } from "../renderer/input/key.js";
 import { searchFiles } from "../search/file-search.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import type { ComposerVariant } from "./composer/index.js";
 import { ComposerFooter, ComposerFrame, InputRow } from "./composer/index.js";
 import { editorActionForChord, editorReducer, seedEditorState } from "./composer-editor.js";
 import { deriveMentionMenu, findMentionToken } from "./mention-menu.js";
@@ -60,6 +61,16 @@ export interface ChatComposerProps extends LayoutMarginProps {
    * monochrome theme the border degrades to a `single` style (no accent color).
    */
   bordered?: boolean;
+  /**
+   * How the input line is framed: `"plain"` (nothing), `"border"` (the rounded box `bordered`
+   * draws), or `"rules"` — full-width horizontal rules above and below with no sides, the shape
+   * Claude Code v2.1.218 uses (#62 item 2).
+   *
+   * Omit it and the frame follows `bordered`, so every existing consumer is unchanged. Pass it and
+   * it WINS over `bordered`: two props naming the same thing have to have an order, and the more
+   * specific one is the one the caller reached for on purpose.
+   */
+  variant?: ComposerVariant;
   /**
    * M21: the `@`-file-mention provider — fuzzy-ranked cwd-relative paths for a
    * query. Defaults to a `.gitignore`-aware cwd walk; inject for tests or to
@@ -284,6 +295,7 @@ export function ChatComposer({
   commands = [],
   hint,
   bordered = false,
+  variant,
   fileSearch = defaultFileSearch,
   onShellCommand,
   onHelpToggle,
@@ -514,7 +526,11 @@ export function ChatComposer({
 
   return (
     <Box flexDirection="column" {...margin}>
-      <ComposerFrame bordered={bordered} monochrome={isMonochrome(theme)} accent={theme.accent}>
+      <ComposerFrame
+        variant={variant ?? (bordered ? "border" : "plain")}
+        monochrome={isMonochrome(theme)}
+        accent={theme.accent}
+      >
         <InputRow
           buffer={buffer}
           placeholder={placeholder}

@@ -1,3 +1,4 @@
+import { Box } from "ink";
 import { render } from "ink-testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatComposer, isNewlineChord, parseShellCommand } from "../../src/chat/chat-composer.js";
@@ -750,6 +751,52 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     await waitForFrame(instance, "hi", true);
     await type(instance, ["!", "?"]);
     expect(plain(instance.lastFrame())).toContain("hi!?");
+    instance.unmount();
+  });
+
+  it("variant_rules_draws_full_width_rules_and_no_sides", async () => {
+    // #62 item 2 — Claude Code's composer chrome. Rules, not a box: the input spans the
+    // terminal instead of sitting inside a frame.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} variant="rules" />);
+    const frame = plain(instance.lastFrame());
+    const ruleRows = frame.split("\n").filter((row) => /^─+$/.test(row.trim()));
+    expect(ruleRows.length).toBeGreaterThanOrEqual(2);
+    // No corners and no sides — those are the box, which is the other variant.
+    expect(frame).not.toContain("╭");
+    expect(frame).not.toContain("│");
+    instance.unmount();
+  });
+
+  it("variant_rules_spans_its_container_rather_than_the_typed_text", async () => {
+    // Rules that stopped where the text does would read as an underline, not as chrome.
+    //
+    // Rendered inside a FIXED-WIDTH COLUMN parent on purpose: at the top level
+    // ink-testing-library's root box is already the terminal width, so any implementation spans
+    // it and the assertion proves nothing. The 40 is what makes the width observable.
+    const instance = await mount(
+      <Box width={40} flexDirection="column">
+        <ChatComposer onSubmit={() => {}} variant="rules" />
+      </Box>,
+    );
+    await type(instance, ["h", "i"]);
+    const rows = plain(instance.lastFrame()).split("\n");
+    const rule = rows.find((row) => /^─+$/.test(row.trim()))?.trim() ?? "";
+    expect(rule.length).toBe(40);
+    instance.unmount();
+  });
+
+  it("variant_wins_over_bordered_when_both_are_passed", async () => {
+    // Two props naming the same thing need an order, and the specific one is the one the
+    // caller reached for on purpose.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} bordered variant="rules" />);
+    expect(plain(instance.lastFrame())).not.toContain("╭");
+    instance.unmount();
+  });
+
+  it("omitting_variant_leaves_bordered_in_charge", async () => {
+    // The back-compat half: an existing consumer passing only `bordered` is unchanged.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} bordered />);
+    expect(plain(instance.lastFrame())).toContain("╭");
     instance.unmount();
   });
 

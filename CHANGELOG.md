@@ -23,6 +23,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `TurnDone` — the dim past-tense line a finished turn leaves behind (`✻ Baked for 5s`).
+  `AgentStreaming` is live-only, so a scrolled-back transcript kept the answers and dropped the
+  timings. Static and timer-free by design: this is the row that graduates into `<Static>`, and a
+  row that changed after mount would disagree with what the terminal already printed. The verb is
+  a function of the duration, not a random pick, for the same reason; `WHIMSY_VERBS` and
+  `whimsyVerb` are exported so an app can use its own voice (#62 item 1)
+- `ChatComposer` accepts `variant` — `"plain"`, `"border"`, or `"rules"` (full-width horizontal
+  rules above and below with no sides, the Claude Code composer chrome). Omit it and the frame
+  follows `bordered`, so existing consumers are unchanged (#62 item 2)
 - `ChatComposer` accepts `refocusOnEscape` (default `true`). The composer re-takes focus on ESC
   because Ink blurs the focused input before subscribers see the key, which left it inert after an
   app used ESC to interrupt a turn. An app that maps ESC to a deliberate focus handoff can now say
@@ -31,6 +40,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- The user role's glyph is `❯ ` in every built-in theme, replacing `> ` (Claude Code parity,
+  #62 item 3). A consumer wanting the old prompt overrides `role.user.glyph` on the theme
 - `ToolResultFormatter` returns a union of single bodies instead of
   `Pick<AgentToolEvent, "output" | "shell" | "diff">`. A formatter returning two exclusive bodies
   used to compile and fail later at the timeline's guard, which named the timeline rather than the

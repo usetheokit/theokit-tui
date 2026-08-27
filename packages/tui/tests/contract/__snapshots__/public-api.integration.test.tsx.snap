@@ -40,7 +40,7 @@ exports[`public API integration (M9 T2.1 — welcome banner scene) > composed_ba
 [36m│[39m [2m/help for commands[22m                                       [36m│[39m
 [36m│[39m [2mesc to cancel[22m                                            [36m│[39m
 [36m╰──────────────────────────────────────────────────────────╯[39m
-[36m> [39m[2mhello[22m
+[36m❯ [39m[2mhello[22m
 
 [35m⏺  [39mwelcome aboard"
 `;
