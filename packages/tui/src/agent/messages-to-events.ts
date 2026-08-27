@@ -385,6 +385,52 @@ export type ToolHeaderFormatter = (
 ) => { name?: string; summary?: string } | undefined;
 
 /**
+ * The conventional tool names, humanised — the batteries-included default this seam was missing
+ * (usetheokit/theokit-tui#53).
+ *
+ * `formatToolHeader` was always the right seam, and every Codex-clone was re-deriving the same
+ * verb table behind it. This ships the derivation once, the way {@link DEFAULT_EXPLORE_TOOLS}
+ * already ships a default explore set.
+ *
+ * OPT-IN, and deliberately so. Passing it is one line — `formatToolHeader: defaultToolHeader` —
+ * and NOT applying it automatically is what keeps this a non-event for existing apps: a default
+ * that rewrote `run_shell` into `Ran …` on upgrade would change every timeline that never asked
+ * for it, which is a render change dressed as a patch.
+ *
+ * An app composes rather than replaces: call this first and fall back to your own table, or the
+ * reverse. Returning `undefined` for an unknown tool is what makes that composition work — the
+ * caller's `undefined` check leaves the event untouched.
+ */
+export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
+  run_shell: "Ran",
+  run_command: "Ran",
+  bash: "Ran",
+  apply_patch: "Edited",
+  edit_file: "Edited",
+  write_file: "Wrote",
+  write_stdin: "Wrote to session",
+  read_file: "Read",
+  list_dir: "Listed",
+  grep: "Searched",
+  search_text: "Searched",
+  glob: "Searched",
+  git_diff: "Diffed",
+};
+
+/**
+ * A {@link ToolHeaderFormatter} over {@link DEFAULT_TOOL_HEADERS}.
+ *
+ * Returns `undefined` for a tool it does not know, which is the contract the caller relies on to
+ * leave such events alone. The target is left to the existing `summary` rather than being spliced
+ * into the name: this file stays tool-agnostic about argument SHAPES, and guessing which input key
+ * holds "the file" is exactly the app-specific knowledge the seam exists to keep out.
+ */
+export function defaultToolHeader(event: AgentToolEvent): { name?: string } | undefined {
+  const verb = DEFAULT_TOOL_HEADERS[event.name];
+  return verb === undefined ? undefined : { name: verb };
+}
+
+/**
  * Map a tool's RAW result to a Codex-style result body — the sibling of {@link ToolHeaderFormatter}.
  * The app owns how ITS OWN tools' results render: a structured result (the SDK serializes tool results
  * to a JSON string, so `rawResult` is usually that string) becomes a clean `output` (terminal text),

@@ -5,6 +5,20 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `defaultToolHeader` and `DEFAULT_TOOL_HEADERS` — the humanised verb table for the conventional
+  tool names (`run_shell` → `Ran`, `apply_patch` → `Edited`, `write_stdin` → `Wrote to session`),
+  so an app no longer re-derives it behind the `formatToolHeader` seam. Opt-in with
+  `formatToolHeader: defaultToolHeader`; an app that passes nothing renders raw tool names exactly
+  as before (#53)
+
+### Changed
+
+- CI reports on `main` when the tree's version is not the one npm serves. It warns rather than
+  fails: a bumped-but-unpublished version is the normal state between merging a bump and cutting
+  the tag, so a red check would fire on every correct commit and be trained away (#131)
+
 ## [0.78.0] - 2026-08-25
 
 Cut as 0.78.0 rather than 0.77.0. The tree carried 0.77.0 and the registry served 0.76.1, so 0.77.0

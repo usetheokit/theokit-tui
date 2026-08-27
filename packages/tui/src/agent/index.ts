@@ -54,6 +54,8 @@ export type {
 // without importing `ai`.
 export {
   DEFAULT_EXPLORE_TOOLS,
+  DEFAULT_TOOL_HEADERS,
+  defaultToolHeader,
   findPendingApproval,
   messagesToAgentEvents,
   messagesToChatThread,
