@@ -112,8 +112,11 @@ jobs:
       # SKIPS LOUDLY when the token is absent, instead of failing or pretending. `SONAR_TOKEN` is
       # created in SonarCloud and added by the repository owner; until then the step says so in the
       # log rather than leaving a red check whose cause nobody can read.
+      # `'22'` and NOT `'22.x'`: the matrix is `['22.12', '22']`, so the old condition compared
+      # against a value that never occurs and the step was skipped on every run since B-126
+      # introduced it. A step that never executes reads exactly like a step that passes.
       - name: sonarcloud
-        if: matrix.node-version == '22.x'
+        if: matrix.node-version == '22'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
