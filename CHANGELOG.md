@@ -23,6 +23,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- An approval LEDGER (`createApprovalLedger`, `ingest`, `settle`, `prune`, `findNextApproval`,
+  `pendingCount`) for several approvals in flight — settled individually, pruned on backtrack, and
+  read incrementally instead of rescanning the thread. `findPendingApproval` scans newest-first and
+  answers "the approval that just came in"; the ledger returns the OLDEST unsettled, because a human
+  answering a queue answers it in the order the questions arrived. Both answers already existed in
+  one process; the difference is now written down rather than implicit in two places (#68)
+- `resolveApprovalId` and `partToPendingApproval` are exported. They were private, so a consumer
+  needing to settle an approval re-derived the whole fallback chain — including the `toolName:
+  "tool"` default — and ended up declaring the same concept a third time (#68)
 - `TurnDone` — the dim past-tense line a finished turn leaves behind (`✻ Baked for 5s`).
   `AgentStreaming` is live-only, so a scrolled-back transcript kept the answers and dropped the
   timings. Static and timer-free by design: this is the row that graduates into `<Static>`, and a

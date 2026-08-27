@@ -103,7 +103,14 @@ export interface PendingApproval {
  * `toolCallId`) is the settle id; `toolName`/`input` come off the same part.
  */
 /** The settle id: `approval.id`, else the `toolCallId`, else none. */
-function resolveApprovalId(p: Record<string, unknown>): string | undefined {
+/**
+ * The approval id for a part: `approval.id`, else `toolCallId`, else none (#68).
+ *
+ * Exported because it was private and got re-derived. A consumer needing to settle an approval had
+ * to reconstruct this exact chain, and did — including the `toolName: "tool"` default below. A
+ * fallback chain that two codebases maintain separately is a fallback chain that drifts.
+ */
+export function resolveApprovalId(p: Record<string, unknown>): string | undefined {
   const approval = p.approval as { id?: unknown } | undefined;
   if (typeof approval?.id === "string") return approval.id;
   if (typeof p.toolCallId === "string") return p.toolCallId;
@@ -112,7 +119,14 @@ function resolveApprovalId(p: Record<string, unknown>): string | undefined {
 
 /** Read a single part as a {@link PendingApproval}, or `undefined` when it is
  * not an approval-requested tool part with a settle id. */
-function partToPendingApproval(part: unknown): PendingApproval | undefined {
+/**
+ * One message part as a {@link PendingApproval}, or `undefined` when it is not an approval request.
+ *
+ * Exported alongside `resolveApprovalId` (#68) so `approval-ledger.ts` — and a consumer building its
+ * own queue — reads an approval the same way `findPendingApproval` does. Two readers of one wire
+ * shape is how a `toolName` default ends up different in each.
+ */
+export function partToPendingApproval(part: unknown): PendingApproval | undefined {
   const p = part as Record<string, unknown>;
   if (p.state !== "approval-requested") return undefined;
   const approvalId = resolveApprovalId(p);

@@ -61,7 +61,9 @@ export {
   findPendingApproval,
   messagesToAgentEvents,
   messagesToChatThread,
+  partToPendingApproval,
   readTurnUsage,
+  resolveApprovalId,
 } from "./messages-to-events.js";
 // UseAgentStreamResult and AssistantContentBlock ship as props-construction
 // accessories (hook return type / block embedded in AgentStreamEvent.message)
