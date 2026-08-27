@@ -522,6 +522,21 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
   );
 }
 
+/**
+ * The index of the first event that has not reached a terminal state, or `events.length` when
+ * every one has (#52).
+ *
+ * Only tool rows have a non-terminal state. `explored` blocks group read-only calls the projection
+ * has already seen finish, and prose has no lifecycle at all — treating either as unsettled would
+ * hold the boundary forever for events that are never going to change.
+ */
+export function firstUnsettledIndex(events: readonly AgentEvent[]): number {
+  const index = events.findIndex(
+    (event) => event.kind === "tool" && (event.status === "pending" || event.status === "running"),
+  );
+  return index === -1 ? events.length : index;
+}
+
 function eventRow(event: AgentEvent) {
   switch (event.kind) {
     case "explored":
@@ -591,10 +606,28 @@ export function AgentTimeline({
   // MOUNT-FREEZE (M11 D1 — mirrors ChatThread): constant length
   // contribution; ink Static advances its index by LENGTH only.
   const frozenHeader = useRef(header).current;
-  const tailStart = Math.max(
+  const windowStart = Math.max(
     0,
     events.length - Math.max(0, windowSize) - Math.max(0, windowOverscan),
   );
+  // #52 — the boundary also stops at the FIRST event that has not settled.
+  //
+  // `<Static>` is append-only: what it prints is printed. A tool row that crossed the boundary
+  // while `running` was committed mid-flight and never repainted — measured, the spinner glyph
+  // stays in the transcript and the result never appears. Widen the window so nothing graduates
+  // and the same events end on the terminal glyph, which means the transcript was reporting the
+  // WINDOW rather than the turn.
+  //
+  // It stops at the first one rather than skipping it, because scrollback has no insertion point:
+  // graduating a later event while an earlier one is in flight would print the earlier row BELOW
+  // rows that came after it once it settled.
+  //
+  // The cost is real and bounded by the caller: a tool that never settles holds the boundary, so
+  // the live region grows for as long as it runs. That is the trade this makes — a tail that is
+  // longer than the window beats a history that is wrong, and the reducer's terminal fold settles
+  // in-flight tools when a turn ends.
+  const settledThrough = firstUnsettledIndex(events);
+  const tailStart = Math.min(windowStart, settledThrough);
   const prefix = useMemo(() => events.slice(0, tailStart), [events, tailStart]);
   const items = useMemo<TimelineStaticItem[]>(
     () => (frozenHeader === undefined ? prefix : [HEADER_SENTINEL, ...prefix]),

@@ -61,6 +61,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- A tool row no longer graduates into `<Static>` while it is still running or pending. Scrollback
+  is append-only, so a row committed mid-flight was frozen there: the spinner stayed in the
+  transcript and the result never appeared. Widening the window so nothing graduated produced a
+  different transcript from the same events — the history was reporting the window rather than the
+  turn. The boundary now stops at the first unsettled row, and the whole tail waits with it,
+  because scrollback has no insertion point to fill in later. A tool that never settles keeps the
+  live region growing; a longer tail beats a wrong history (#52)
 - `WelcomeBanner`'s two-column layout stays inside its border at every width. Both columns were
   unshrinkable, so wherever art + gutter + aside did not fit, the aside ran past the right border
   and lost its closing rule — visible below roughly 52 columns for a 24-cell wordmark. The aside
