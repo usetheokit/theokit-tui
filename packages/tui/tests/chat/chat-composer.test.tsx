@@ -1,10 +1,10 @@
 import { render } from "ink-testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WAIT_BUDGET_MS, waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
+import { ChatComposer, isNewlineChord, parseShellCommand } from "../../src/chat/chat-composer.js";
 import { stripAnsi } from "../../src/format/ansi.js";
 import { searchFiles } from "../../src/search/file-search.js";
 import { TheoTUIProvider } from "../../src/theme/theme.js";
-import { ChatComposer, isNewlineChord, parseShellCommand } from "../../src/chat/chat-composer.js";
+import { WAIT_BUDGET_MS, waitFor as waitForCondition } from "../../tests/fixtures/wait-for.js";
 
 // Exact stdin byte sequences from ink's own test suite (blueprint Corner 1;
 // SEPA brief: never trust prose renderings of control bytes).
@@ -750,6 +750,32 @@ describe("ChatComposer slash menu (M15 T2.1)", () => {
     await waitForFrame(instance, "hi", true);
     await type(instance, ["!", "?"]);
     expect(plain(instance.lastFrame())).toContain("hi!?");
+    instance.unmount();
+  });
+
+  it("refocusOnEscape_false_lets_the_bare_escape_blur_stand", async () => {
+    // #59 item 4. An app that maps ESC to a deliberate focus handoff moved focus and the
+    // composer took it straight back, so the two fought over every press. With the opt-out
+    // the Ink blur stands, and the keystrokes after ESC no longer reach the buffer.
+    const instance = await mount(<ChatComposer onSubmit={() => {}} refocusOnEscape={false} />);
+    await type(instance, ["h", "i", ESC]);
+    await waitForFrame(instance, "hi", true);
+    await type(instance, ["!", "?"]);
+    // Not "hi!?" — the opposite of the test above, on the same keystrokes.
+    expect(plain(instance.lastFrame())).not.toContain("hi!?");
+    instance.unmount();
+  });
+
+  it("refocusOnEscape_false_still_refocuses_after_a_menu_dismissal", async () => {
+    // The menu ESC is one the composer HANDLED; going inert after its own action is not a
+    // handoff, so the opt-out deliberately does not reach it.
+    const instance = await mount(
+      <ChatComposer onSubmit={() => {}} commands={COMMANDS} refocusOnEscape={false} />,
+    );
+    await type(instance, ["/", "h", ESC]);
+    await waitForFrame(instance, "show help", false);
+    await type(instance, ["x"]);
+    expect(plain(instance.lastFrame())).toContain("/hx");
     instance.unmount();
   });
 

@@ -82,6 +82,19 @@ export interface ChatComposerProps extends LayoutMarginProps {
    * always ordinary text (non-breaking).
    */
   onHelpToggle?: () => void;
+  /**
+   * `false` stops the composer re-taking focus on a LOOSE escape — one no menu or shell draft
+   * consumed (#59 item 4). Defaults to `true`.
+   *
+   * The refocus exists because Ink's App blurs the focused input on ESC before subscribers see it,
+   * which leaves the composer inert after an app uses ESC to interrupt a turn. An app that maps ESC
+   * to a deliberate focus handoff wants the opposite, and had no way to say so: it moved focus, the
+   * composer took it straight back, and the two fought over every press.
+   *
+   * The menu and shell dismissals still refocus regardless — there the composer HANDLED the key,
+   * and going inert after its own action is not a handoff.
+   */
+  refocusOnEscape?: boolean;
 }
 
 /**
@@ -274,6 +287,7 @@ export function ChatComposer({
   fileSearch = defaultFileSearch,
   onShellCommand,
   onHelpToggle,
+  refocusOnEscape = true,
   initialValue,
   onChange,
   ...margin
@@ -480,7 +494,11 @@ export function ChatComposer({
       // Ink's App handler BLURS the focused input on ESC (before subscribers). When ESC is not a
       // menu/shell dismissal, the host app has likely used it to interrupt a streaming turn — re-take
       // focus so the composer stays usable afterwards instead of going inert (theokit-tui#… / #10).
-      if (key.escape) {
+      //
+      // Only the LOOSE escape is gated by `refocusOnEscape` (#59 item 4). The menu and shell
+      // dismissals above re-take focus too, and they stay unconditional: there the composer HANDLED
+      // the key, and letting Ink's blur stand would leave it inert after an action it performed.
+      if (key.escape && refocusOnEscape) {
         focus(focusId);
       }
       if (handleHelpKey(input, composerKey)) {

@@ -21,6 +21,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   the toggle (`Showing detailed transcript · ctrl+o`). The text and the key binding belong to the
   app; the timeline only exposes the surface (#61)
 
+### Added
+
+- `ChatComposer` accepts `refocusOnEscape` (default `true`). The composer re-takes focus on ESC
+  because Ink blurs the focused input before subscribers see the key, which left it inert after an
+  app used ESC to interrupt a turn. An app that maps ESC to a deliberate focus handoff can now say
+  so instead of fighting the composer over every press. Menu and shell-draft dismissals still
+  refocus regardless — there the composer handled the key itself (#59 item 4)
+
+### Changed
+
+- `ToolResultFormatter` returns a union of single bodies instead of
+  `Pick<AgentToolEvent, "output" | "shell" | "diff">`. A formatter returning two exclusive bodies
+  used to compile and fail later at the timeline's guard, which named the timeline rather than the
+  formatter. It is now a type error at the formatter (#59 item 2)
+- The tool-result routing (`routeToolResult`, `looksLikeUnifiedDiff`, `toShell`,
+  `parseShellEnvelope`, `NormalizedShell`, `isShellEnvelope`) moved to its own module. Every symbol
+  is re-exported from `agent-stream-event.ts`, so no import changes (#59 item 1)
+
 ### Fixed
 
 - `WelcomeBanner`'s two-column layout stays inside its border at every width. Both columns were

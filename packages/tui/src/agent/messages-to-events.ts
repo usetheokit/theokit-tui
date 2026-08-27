@@ -9,6 +9,7 @@
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
 /** A message part, read structurally — a `text`/`reasoning` block or a tool invocation. */
@@ -437,11 +438,22 @@ export function defaultToolHeader(event: AgentToolEvent): { name?: string } | un
  * `shell` envelope, or inline `diff`, instead of the default raw-JSON dump. Return `undefined` to keep
  * the default routing, so unmapped tools are unchanged. **Display-only** — the model already consumed
  * the raw result during the turn; this changes only how the past result renders in the timeline.
+ *
+ * The three bodies are EXCLUSIVE, and {@link ToolResultBody} makes that a type error rather than a
+ * runtime one (#59 item 2). The previous `Pick<AgentToolEvent, ...>` statically admitted a formatter
+ * returning two of them; the timeline threw on it later, naming the timeline rather than the
+ * formatter that produced it. Same union `routeToolResult` already returns, so the default routing
+ * satisfies it unchanged.
  */
+export type ToolResultBody =
+  | { output: string; shell?: never; diff?: never }
+  | { shell: NormalizedShell; output?: never; diff?: never }
+  | { diff: string; output?: never; shell?: never };
+
 export type ToolResultFormatter = (
   event: AgentToolEvent,
   rawResult: unknown,
-) => Pick<AgentToolEvent, "output" | "shell" | "diff"> | undefined;
+) => ToolResultBody | undefined;
 
 export interface MessagesToEventsOptions {
   /** Tool names whose consecutive runs collapse into an `explored` block.
