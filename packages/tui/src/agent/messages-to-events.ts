@@ -9,6 +9,7 @@
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
 /** A message part, read structurally — a `text`/`reasoning` block or a tool invocation. */
@@ -102,7 +103,14 @@ export interface PendingApproval {
  * `toolCallId`) is the settle id; `toolName`/`input` come off the same part.
  */
 /** The settle id: `approval.id`, else the `toolCallId`, else none. */
-function resolveApprovalId(p: Record<string, unknown>): string | undefined {
+/**
+ * The approval id for a part: `approval.id`, else `toolCallId`, else none (#68).
+ *
+ * Exported because it was private and got re-derived. A consumer needing to settle an approval had
+ * to reconstruct this exact chain, and did — including the `toolName: "tool"` default below. A
+ * fallback chain that two codebases maintain separately is a fallback chain that drifts.
+ */
+export function resolveApprovalId(p: Record<string, unknown>): string | undefined {
   const approval = p.approval as { id?: unknown } | undefined;
   if (typeof approval?.id === "string") return approval.id;
   if (typeof p.toolCallId === "string") return p.toolCallId;
@@ -111,7 +119,14 @@ function resolveApprovalId(p: Record<string, unknown>): string | undefined {
 
 /** Read a single part as a {@link PendingApproval}, or `undefined` when it is
  * not an approval-requested tool part with a settle id. */
-function partToPendingApproval(part: unknown): PendingApproval | undefined {
+/**
+ * One message part as a {@link PendingApproval}, or `undefined` when it is not an approval request.
+ *
+ * Exported alongside `resolveApprovalId` (#68) so `approval-ledger.ts` — and a consumer building its
+ * own queue — reads an approval the same way `findPendingApproval` does. Two readers of one wire
+ * shape is how a `toolName` default ends up different in each.
+ */
+export function partToPendingApproval(part: unknown): PendingApproval | undefined {
   const p = part as Record<string, unknown>;
   if (p.state !== "approval-requested") return undefined;
   const approvalId = resolveApprovalId(p);
@@ -385,17 +400,74 @@ export type ToolHeaderFormatter = (
 ) => { name?: string; summary?: string } | undefined;
 
 /**
+ * The conventional tool names, humanised — the batteries-included default this seam was missing
+ * (usetheokit/theokit-tui#53).
+ *
+ * `formatToolHeader` was always the right seam, and every Codex-clone was re-deriving the same
+ * verb table behind it. This ships the derivation once, the way {@link DEFAULT_EXPLORE_TOOLS}
+ * already ships a default explore set.
+ *
+ * OPT-IN, and deliberately so. Passing it is one line — `formatToolHeader: defaultToolHeader` —
+ * and NOT applying it automatically is what keeps this a non-event for existing apps: a default
+ * that rewrote `run_shell` into `Ran …` on upgrade would change every timeline that never asked
+ * for it, which is a render change dressed as a patch.
+ *
+ * An app composes rather than replaces: call this first and fall back to your own table, or the
+ * reverse. Returning `undefined` for an unknown tool is what makes that composition work — the
+ * caller's `undefined` check leaves the event untouched.
+ */
+export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
+  run_shell: "Ran",
+  run_command: "Ran",
+  bash: "Ran",
+  apply_patch: "Edited",
+  edit_file: "Edited",
+  write_file: "Wrote",
+  write_stdin: "Wrote to session",
+  read_file: "Read",
+  list_dir: "Listed",
+  grep: "Searched",
+  search_text: "Searched",
+  glob: "Searched",
+  git_diff: "Diffed",
+};
+
+/**
+ * A {@link ToolHeaderFormatter} over {@link DEFAULT_TOOL_HEADERS}.
+ *
+ * Returns `undefined` for a tool it does not know, which is the contract the caller relies on to
+ * leave such events alone. The target is left to the existing `summary` rather than being spliced
+ * into the name: this file stays tool-agnostic about argument SHAPES, and guessing which input key
+ * holds "the file" is exactly the app-specific knowledge the seam exists to keep out.
+ */
+export function defaultToolHeader(event: AgentToolEvent): { name?: string } | undefined {
+  const verb = DEFAULT_TOOL_HEADERS[event.name];
+  return verb === undefined ? undefined : { name: verb };
+}
+
+/**
  * Map a tool's RAW result to a Codex-style result body — the sibling of {@link ToolHeaderFormatter}.
  * The app owns how ITS OWN tools' results render: a structured result (the SDK serializes tool results
  * to a JSON string, so `rawResult` is usually that string) becomes a clean `output` (terminal text),
  * `shell` envelope, or inline `diff`, instead of the default raw-JSON dump. Return `undefined` to keep
  * the default routing, so unmapped tools are unchanged. **Display-only** — the model already consumed
  * the raw result during the turn; this changes only how the past result renders in the timeline.
+ *
+ * The three bodies are EXCLUSIVE, and {@link ToolResultBody} makes that a type error rather than a
+ * runtime one (#59 item 2). The previous `Pick<AgentToolEvent, ...>` statically admitted a formatter
+ * returning two of them; the timeline threw on it later, naming the timeline rather than the
+ * formatter that produced it. Same union `routeToolResult` already returns, so the default routing
+ * satisfies it unchanged.
  */
+export type ToolResultBody =
+  | { output: string; shell?: never; diff?: never }
+  | { shell: NormalizedShell; output?: never; diff?: never }
+  | { diff: string; output?: never; shell?: never };
+
 export type ToolResultFormatter = (
   event: AgentToolEvent,
   rawResult: unknown,
-) => Pick<AgentToolEvent, "output" | "shell" | "diff"> | undefined;
+) => ToolResultBody | undefined;
 
 export interface MessagesToEventsOptions {
   /** Tool names whose consecutive runs collapse into an `explored` block.

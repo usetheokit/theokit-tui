@@ -10,6 +10,7 @@
 
 export { ComposerFooter } from "./composer-footer.js";
 export { ComposerFrame } from "./composer-frame.js";
+export type { ComposerVariant } from "./composer-frame.js";
 export type { CursorSlices } from "./cursor-slices.js";
 export { cursorSlices } from "./cursor-slices.js";
 export { InputRow } from "./input-row.js";

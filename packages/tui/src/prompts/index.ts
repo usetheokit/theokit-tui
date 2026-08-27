@@ -34,3 +34,16 @@ export type { WindowedListProps } from "./windowed-list.js";
 // the centred anchor and the hidden-row COUNTS were added to `windowFor` for exactly this view,
 // and the view was never shipped — so the one measured consumer rebuilt the clamp by hand.
 export { WindowedList } from "./windowed-list.js";
+
+// #68 — the approval ledger: several approvals in flight, settled individually, pruned on
+// backtrack. Its queue policy (oldest unsettled) is declared in the module, because the same
+// question had two answers in one process before it existed.
+export type { ApprovalLedger, LedgerEntry } from "./approval-ledger.js";
+export {
+  createApprovalLedger,
+  findNextApproval,
+  ingest,
+  pendingCount,
+  prune,
+  settle,
+} from "./approval-ledger.js";

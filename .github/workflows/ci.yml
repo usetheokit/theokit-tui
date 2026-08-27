@@ -5,7 +5,10 @@ name: ci
 
 on:
   push:
-    branches: [develop]
+    # `main` was missing, and the gap is visible in the run history: across the last twenty runs
+    # this workflow fired on develop and on pull requests, and never once on main. A merge could
+    # land on the release branch with no CI record of what it passed.
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
@@ -32,25 +35,20 @@ jobs:
           persist-credentials: false
           fetch-depth: 0 # full history — the never-weaken guard diffs against the M10 base SHA
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        # pnpm version resolved from package.json "packageManager" (corepack).
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      # The install spine — Node, the package manager this repository DECLARES, a cache keyed
+      # so it cannot outlive that manager, and a frozen install. Shared because it was the
+      # same four steps in nine repositories, and because the knowledge inside them was not:
+      # theokit-sdk pinned pnpm 9.15.0 in four workflows while its manifest said 10.34.1, so
+      # every gate there validated a tree no contributor had (usetheokit/theokit-sdk#415).
+      #
+      # @v1 is a moving major and the blanket SHA-pinning policy is suppressed for it: that
+      # policy defends against a THIRD PARTY moving a ref under us, and this is the same
+      # organisation. What a SHA would buy is a guarantee we already have; what it would cost
+      # is one correction becoming nine pull requests. What the action RUNS stays pinned —
+      # every action inside it by digest, and the package manager by this repository's manifest.
+      - uses: usetheokit/shared-workflows/actions/setup@v1 # zizmor: ignore[unpinned-uses]
         with:
           node-version: ${{ matrix.node-version }}
-          cache: pnpm
-          # The cache key must change when the package manager does. setup-node keys the
-          # pnpm store on the lockfile alone, so a pnpm 9 -> 10 bump leaves the key
-          # identical and the job restores a store the new pnpm reads as inconsistent —
-          # `ERR_PNPM_MISSING_PACKAGE_INDEX_FILE`, on a package the lockfile does list.
-          # package.json carries `packageManager`, so including it ties the cache to the
-          # pnpm that wrote it.
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            package.json
-
-      - name: install
-        run: pnpm install --frozen-lockfile
 
       - name: format
         run: pnpm format:check
@@ -125,3 +123,47 @@ jobs:
             exit 0
           fi
           npx --yes sonarqube-scanner@4
+
+  # Does the tree's version exist on npm?
+  #
+  # `@theokit/tui` was published by hand for most of its life, and the failure mode that leaves is
+  # silent: a version gets bumped, the publish never happens, and nothing says so. The tree carried
+  # 0.77.0 while the registry served 0.76.1 and the only way to notice was to look — which nobody
+  # does on a green build (usetheokit/theokit-tui#131).
+  #
+  # This does NOT fail the build, and that is the point rather than a compromise. A bumped-but-
+  # unpublished version is the NORMAL state between merging a bump and cutting the tag: releases
+  # here are a deliberate act triggered by a pushed tag, so a red check would fire on every correct
+  # commit and be trained away within a week. What was missing was not enforcement — it was anyone
+  # being told. This puts the gap in the run summary of the branch that releases, where the person
+  # about to cut a tag is already looking.
+  version-vs-registry:
+    name: tree version vs npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./packages/tui/package.json').name")
+          TREE=$(node -p "require('./packages/tui/package.json').version")
+          # `|| true` and the empty check: a registry hiccup must not turn into a verdict about the
+          # version. Unknown is reported as unknown.
+          PUBLISHED=$(npm view "${NAME}" version 2>/dev/null || true)
+
+          if [ -z "${PUBLISHED}" ]; then
+            echo "::notice title=Version::could not read ${NAME} from the registry — tree is ${TREE}, comparison skipped."
+            exit 0
+          fi
+
+          echo "tree ${TREE} · registry ${PUBLISHED}"
+          if [ "${TREE}" = "${PUBLISHED}" ]; then
+            echo "::notice title=Version::${NAME}@${TREE} is published."
+          else
+            echo "::warning title=Version::the tree is at ${TREE} and the registry serves ${PUBLISHED}. If ${TREE} was meant to ship, the tag was never pushed."
+          fi

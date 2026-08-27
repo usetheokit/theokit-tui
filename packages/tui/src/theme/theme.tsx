@@ -104,7 +104,7 @@ export interface TheoThemeOverride {
 export const defaultTheme: TheoTheme = Object.freeze({
   name: "dark",
   role: Object.freeze({
-    user: Object.freeze({ glyph: "> ", prefix: "cyan", text: undefined }),
+    user: Object.freeze({ glyph: "❯ ", prefix: "cyan", text: undefined }),
     assistant: Object.freeze({
       glyph: "⏺  ",
       prefix: "magenta",
@@ -150,7 +150,7 @@ const BUILTIN_UNION_MESSAGE = unionMessage(BUILTIN_THEME_NAMES);
 const lightTheme: TheoTheme = Object.freeze({
   name: "light",
   role: Object.freeze({
-    user: Object.freeze({ glyph: "> ", prefix: "blue", text: undefined }),
+    user: Object.freeze({ glyph: "❯ ", prefix: "blue", text: undefined }),
     assistant: Object.freeze({
       glyph: "⏺  ",
       prefix: "magenta",
@@ -184,7 +184,7 @@ const lightTheme: TheoTheme = Object.freeze({
 const noColorTheme: TheoTheme = Object.freeze({
   name: "no-color",
   role: Object.freeze({
-    user: Object.freeze({ glyph: "> ", prefix: "", text: undefined }),
+    user: Object.freeze({ glyph: "❯ ", prefix: "", text: undefined }),
     assistant: Object.freeze({ glyph: "⏺  ", prefix: "", text: undefined }),
     system: Object.freeze({ glyph: "· ", prefix: "", text: undefined }),
   }),

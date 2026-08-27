@@ -143,6 +143,32 @@ puts it in the live region, where it duplicates on scroll. There is no general
 `insertHistory` primitive yet — see
 [#55](https://github.com/usetheokit/theokit-tui/issues/55).
 
+### Interactive prompts under plain Ink
+
+`ApprovalPrompt`, `ChoiceRow`, `SelectList`, `Pager` and `FreeTextInput` read keys through this
+package's own input and focus hooks. Under this package's renderer that context is already
+mounted. Under **plain Ink** — `render()` from `ink`, which is what `create-theokit --surface tui`
+scaffolds — it is not, and a prompt with no input context renders its options and answers no keys.
+
+Wrap them in `<InkInputProvider>`, which wires an `InputSource` to Ink's stdin and provides both
+the input context and the focus manager:
+
+```tsx
+import { render } from "ink";
+import { InkInputProvider, ChoiceRow } from "@theokit/tui";
+
+render(
+  <InkInputProvider>
+    <ChoiceRow choices={choices} onCommit={onCommit} />
+  </InkInputProvider>,
+);
+```
+
+The bridge is explicit on purpose. Making the prompts listen by default would blur the line
+between the two renderers, and a test in this repository pins the behaviour without it — a prompt
+outside the bridge ignores input, defined rather than accidental. Nothing else changes: the same
+components, the same props.
+
 ### When a component rejects a prop, it writes to stderr
 
 Components in this package validate their props and throw a typed `TypeError` before rendering.
