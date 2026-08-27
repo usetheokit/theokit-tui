@@ -12,6 +12,14 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   so an app no longer re-derives it behind the `formatToolHeader` seam. Opt-in with
   `formatToolHeader: defaultToolHeader`; an app that passes nothing renders raw tool names exactly
   as before (#53)
+- `AgentTimeline` accepts `verbose` — set it to `false` and every run of adjacent tool calls
+  collapses into a dim count line (`Ran 2 shell commands`, `Read 3 files`) instead of the cards,
+  the collapsed-by-default transcript Claude Code shows. Defaults to `true`, so an existing
+  timeline renders unchanged. The collapse covers the live tail; rows already printed into
+  scrollback stay as they were printed (#61)
+- `AgentTimeline` accepts `footer` — a slot under the last row for the mode note that goes with
+  the toggle (`Showing detailed transcript · ctrl+o`). The text and the key binding belong to the
+  app; the timeline only exposes the surface (#61)
 
 ### Changed
 

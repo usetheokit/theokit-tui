@@ -12,6 +12,7 @@ import { ToolCallCard } from "../tools/tool-call-card.js";
 import { ToolResult } from "../tools/tool-result.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
+import { defaultToolHeader } from "./messages-to-events.js";
 import { unionMessage } from "./union-message.js";
 
 const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
@@ -46,6 +47,29 @@ export interface AgentTimelineProps extends LayoutMarginProps {
    * Static's box is content-sized/absolute; percentage widths may collapse.
    */
   header?: ReactElement;
+  /**
+   * `false` collapses every run of adjacent tool calls into a dim count line (`Ran 2 shell
+   * commands`) instead of rendering the cards — the collapsed-by-default transcript Claude Code
+   * shows, with `verbose` as the surface an app binds to ctrl+o (#61). Defaults to `true`, so an
+   * existing consumer renders exactly as before.
+   *
+   * SCOPE — LIVE TAIL ONLY. Flipping this re-renders the tail; it does NOT rewrite rows that have
+   * already graduated into `<Static>`. Those are terminal scrollback: printed, scrolled, and
+   * outside this component's reach (same one-way contract as `header`). A transcript toggled
+   * mid-run therefore shows cards above and count lines below, which is what the terminal actually
+   * contains — the alternative would be to claim a re-render that never happened.
+   */
+  verbose?: boolean;
+  /**
+   * Rendered as the LAST row of the live tail — the slot for the note Claude Code keeps under a
+   * verbose transcript (`Showing detailed transcript · ctrl+o to toggle`).
+   *
+   * The text is the app's, not ours, because the key binding is: this component exposes `verbose`
+   * and never reads a key, so hardcoding "ctrl+o" here would announce a binding the app may not
+   * have made. Unlike `header` this is NOT frozen — it lives in the live region and re-renders,
+   * which is what a note about the CURRENT mode has to do.
+   */
+  footer?: ReactElement;
 }
 
 const HEADER_SENTINEL = Symbol("theokit-tui-header");
@@ -314,6 +338,122 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
   );
 }
 
+/**
+ * The dim one-line stand-in for a run of tool calls, when `verbose` is off
+ * (usetheokit/theokit-tui#61).
+ *
+ * Claude Code shows `Ran 1 shell command` under the user echo and keeps the cards for the verbose
+ * view. The count is what carries the information here: a transcript with fifteen collapsed calls
+ * says fifteen, so nothing is hidden without being announced.
+ *
+ * Rendered from the SAME events the cards would use, rather than from a parallel summary the
+ * caller supplies — a summary the caller maintains is a summary that can disagree with what ran.
+ */
+function CollapsedToolRun({ groups }: { groups: readonly CollapsedGroup[] }) {
+  return (
+    <Box flexDirection="column">
+      {groups.map((group) => (
+        <Text key={group.verb} dimColor>
+          {`  ${group.verb} ${String(group.count)} ${group.count === 1 ? group.singular : group.plural}`}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
+/**
+ * The noun each verb counts, keyed by the verb `defaultToolHeader` already produces (#53) rather
+ * than by tool name: the verb IS the equivalence class the summary groups on, so a new tool that
+ * maps to `Ran` needs no entry here.
+ *
+ * The fallback covers a tool the verb table does not know — it still gets counted, because a
+ * collapsed transcript that silently drops calls is worse than one that names them vaguely.
+ */
+const COLLAPSED_NOUNS: Readonly<Record<string, readonly [string, string]>> = {
+  Ran: ["shell command", "shell commands"],
+  Edited: ["file", "files"],
+  Wrote: ["file", "files"],
+  "Wrote to session": ["session write", "session writes"],
+  Read: ["file", "files"],
+  Listed: ["directory", "directories"],
+  Searched: ["search", "searches"],
+  Diffed: ["diff", "diffs"],
+};
+
+const FALLBACK_VERB = "Used";
+const FALLBACK_NOUN: readonly [string, string] = ["tool", "tools"];
+
+interface CollapsedGroup {
+  verb: string;
+  singular: string;
+  plural: string;
+  count: number;
+}
+
+/**
+ * Counts a run of tool events per verb, preserving first-seen order.
+ *
+ * One line per verb, not one per call: `Ran 2 shell commands` then `Read 3 files` reads the way the
+ * run happened. Merging everything into a single "12 tool calls" would hide that a write ran among
+ * the reads, which is precisely the distinction a reader scanning a collapsed transcript needs.
+ */
+function collapseTools(tools: readonly AgentToolEvent[]): CollapsedGroup[] {
+  const groups: CollapsedGroup[] = [];
+  for (const tool of tools) {
+    const verb = defaultToolHeader(tool)?.name ?? FALLBACK_VERB;
+    const existing = groups.find((group) => group.verb === verb);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    const [singular, plural] = COLLAPSED_NOUNS[verb] ?? FALLBACK_NOUN;
+    groups.push({ verb, singular, plural, count: 1 });
+  }
+  return groups;
+}
+
+/** The tool events a timeline event contributes to a collapsed run — none for prose. */
+function collapsibleTools(event: AgentEvent): readonly AgentToolEvent[] | undefined {
+  if (event.kind === "tool") return [event];
+  if (event.kind === "explored") return event.tools;
+  return undefined;
+}
+
+/**
+ * Rewrites a run of adjacent tool/explored events into one collapsed row, leaving prose untouched.
+ *
+ * Applied to the LIVE TAIL ONLY (see the `verbose` prop): the `<Static>` prefix is terminal
+ * scrollback that has already been printed, and Ink cannot un-print it. Re-collapsing graduated
+ * rows is not a thing this component can offer without lying about what the terminal shows.
+ */
+function collapseTail(tail: readonly AgentEvent[]): TailRow[] {
+  const rows: TailRow[] = [];
+  let run: AgentToolEvent[] = [];
+  let runKey: string | undefined;
+  const flush = () => {
+    if (runKey === undefined) return;
+    rows.push({ key: runKey, groups: collapseTools(run) });
+    run = [];
+    runKey = undefined;
+  };
+  for (const event of tail) {
+    const tools = collapsibleTools(event);
+    if (tools === undefined) {
+      flush();
+      rows.push({ key: event.id, event });
+      continue;
+    }
+    runKey ??= event.id;
+    run.push(...tools);
+  }
+  flush();
+  return rows;
+}
+
+type TailRow =
+  | { key: string; event: AgentEvent; groups?: undefined }
+  | { key: string; groups: readonly CollapsedGroup[]; event?: undefined };
+
 interface ExploreArgs {
   path: string | undefined;
   pattern: string | undefined;
@@ -441,6 +581,8 @@ export function AgentTimeline({
   windowSize = 8,
   windowOverscan = 4,
   header,
+  verbose = true,
+  footer,
   ...margin
 }: AgentTimelineProps) {
   // Boundary validation FIRST, before any hook (F10 — tests invoke this as a
@@ -458,7 +600,17 @@ export function AgentTimeline({
     () => (frozenHeader === undefined ? prefix : [HEADER_SENTINEL, ...prefix]),
     [frozenHeader, prefix],
   );
+  // The windowing math stays on the RAW events (collapsing only rewrites how the tail renders), so
+  // `tailStart` — and therefore what graduates — is identical in both modes. A toggle can never
+  // pull a graduated row back or push an extra one out.
   const tail = events.slice(tailStart);
+  // Deliberately NOT memoized. Memoizing on `[events, tailStart]` makes an in-place push on the
+  // SAME array reference invisible to the tail, which breaks the hybrid behavior EC-8 pins. The
+  // work is a map over `windowSize + windowOverscan` items (~12) and the rows themselves stay
+  // memoized by event identity, so the cache bought nothing and cost a contract.
+  const tailRows: TailRow[] = verbose
+    ? tail.map((event) => ({ key: event.id, event }))
+    : collapseTail(tail);
 
   return (
     <>
@@ -480,11 +632,23 @@ export function AgentTimeline({
           terminal scrollback and is not margined (a graduated row's position is
           frozen); the consumer margin spaces the timeline's on-screen tail. */}
       <Box flexDirection="column" {...margin}>
-        {tail.map((event, index) => (
+        {tailRows.map((row, index) => {
           // First tail block is the timeline's first ONLY when nothing graduated
           // into Static above it (items empty).
-          <Row key={event.id} event={event} spaced={items.length > 0 || index > 0} />
-        ))}
+          const spaced = items.length > 0 || index > 0;
+          return row.event === undefined ? (
+            <Box key={row.key} marginTop={spaced ? 1 : 0} flexDirection="column">
+              <CollapsedToolRun groups={row.groups} />
+            </Box>
+          ) : (
+            <Row key={row.key} event={row.event} spaced={spaced} />
+          );
+        })}
+        {footer !== undefined && (
+          <Box marginTop={tailRows.length > 0 || items.length > 0 ? 1 : 0} flexDirection="column">
+            {footer}
+          </Box>
+        )}
       </Box>
     </>
   );
