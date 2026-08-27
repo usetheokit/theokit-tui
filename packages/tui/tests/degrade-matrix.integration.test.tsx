@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
+import { defaultTheme } from "../src/theme/theme.js";
+
 // M6 T3.2 (plan D6): the degrade matrix — THREE spawns of ONE provider-wrapped
 // all-primitives fixture. Level changes REQUIRE a fresh subprocess (chalk
 // freezes its level at import — the M0 lesson); theme swaps are in-process
@@ -37,7 +39,9 @@ function spawnProbe(extraEnv: Record<string, string>): string {
  * color: glyphs, labels and signs are the color-independent channel. */
 function assertDegradedScene(out: string): void {
   expect(out).not.toContain("\u001b[");
-  expect(out).toContain(">");
+  // The theme's own token — the assertion is that the glyph channel SURVIVES without colour, not
+  // that it is any particular character (#62 item 3 changed it).
+  expect(out).toContain(defaultTheme.role.user.glyph.trim());
   expect(out).toContain("plain text probe");
   // M9: banner name + hint readable in every degraded scene (theme-agnostic;
   // the border GLYPH is asserted per scene — the policy is theme-DATA-driven,

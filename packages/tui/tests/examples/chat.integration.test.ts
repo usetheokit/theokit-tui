@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
+import { defaultTheme } from "../../src/theme/theme.js";
+
 // Review F-tests-8: the TTFATT demo is the milestone's wiring pillar-a caller —
 // a fresh non-TTY subprocess proves it renders all roles + the streamed reply
 // and exits 0 (composer intentionally unmounted without a TTY — ADR D8).
@@ -14,7 +16,9 @@ describe("examples/scenes/chat.tsx (T4.2)", () => {
         FORCE_COLOR: "1",
       },
     });
-    expect(out).toContain(">");
+    // The theme's token, not a literal — this pins that the USER role rendered, which survives a
+    // glyph change (#62 item 3 moved it from `> ` to `❯ `).
+    expect(out).toContain(defaultTheme.role.user.glyph.trim());
     expect(out).toContain("⏺");
     expect(out).toContain("·");
     expect(out).toContain("appended in place.");

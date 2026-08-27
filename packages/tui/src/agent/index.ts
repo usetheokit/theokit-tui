@@ -36,8 +36,10 @@ export {
   initialAgentStreamState,
 } from "./agent-stream-reducer.js";
 export type { AgentStreamingProps } from "./agent-streaming.js";
+export type { TurnDoneProps } from "./turn-done.js";
 // formatElapsed stays module-internal (EC-10 — D7 precedent).
 export { AgentStreaming } from "./agent-streaming.js";
+export { TurnDone, WHIMSY_VERBS, whimsyVerb } from "./turn-done.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentTimeline } from "./agent-timeline.js";
 export type {
@@ -54,10 +56,14 @@ export type {
 // without importing `ai`.
 export {
   DEFAULT_EXPLORE_TOOLS,
+  DEFAULT_TOOL_HEADERS,
+  defaultToolHeader,
   findPendingApproval,
   messagesToAgentEvents,
   messagesToChatThread,
+  partToPendingApproval,
   readTurnUsage,
+  resolveApprovalId,
 } from "./messages-to-events.js";
 // UseAgentStreamResult and AssistantContentBlock ship as props-construction
 // accessories (hook return type / block embedded in AgentStreamEvent.message)

@@ -4,6 +4,7 @@ import type { LayoutMarginProps } from "../layout/layout-props.js";
 import type { Key } from "../renderer/input/key.js";
 import { searchFiles } from "../search/file-search.js";
 import { isMonochrome, useTheoTheme } from "../theme/theme.js";
+import type { ComposerVariant } from "./composer/index.js";
 import { ComposerFooter, ComposerFrame, InputRow } from "./composer/index.js";
 import { editorActionForChord, editorReducer, seedEditorState } from "./composer-editor.js";
 import { deriveMentionMenu, findMentionToken } from "./mention-menu.js";
@@ -61,6 +62,16 @@ export interface ChatComposerProps extends LayoutMarginProps {
    */
   bordered?: boolean;
   /**
+   * How the input line is framed: `"plain"` (nothing), `"border"` (the rounded box `bordered`
+   * draws), or `"rules"` — full-width horizontal rules above and below with no sides, the shape
+   * Claude Code v2.1.218 uses (#62 item 2).
+   *
+   * Omit it and the frame follows `bordered`, so every existing consumer is unchanged. Pass it and
+   * it WINS over `bordered`: two props naming the same thing have to have an order, and the more
+   * specific one is the one the caller reached for on purpose.
+   */
+  variant?: ComposerVariant;
+  /**
    * M21: the `@`-file-mention provider — fuzzy-ranked cwd-relative paths for a
    * query. Defaults to a `.gitignore`-aware cwd walk; inject for tests or to
    * scope the search. Return `[]` (or omit results) to disable mentions.
@@ -82,6 +93,19 @@ export interface ChatComposerProps extends LayoutMarginProps {
    * always ordinary text (non-breaking).
    */
   onHelpToggle?: () => void;
+  /**
+   * `false` stops the composer re-taking focus on a LOOSE escape — one no menu or shell draft
+   * consumed (#59 item 4). Defaults to `true`.
+   *
+   * The refocus exists because Ink's App blurs the focused input on ESC before subscribers see it,
+   * which leaves the composer inert after an app uses ESC to interrupt a turn. An app that maps ESC
+   * to a deliberate focus handoff wants the opposite, and had no way to say so: it moved focus, the
+   * composer took it straight back, and the two fought over every press.
+   *
+   * The menu and shell dismissals still refocus regardless — there the composer HANDLED the key,
+   * and going inert after its own action is not a handoff.
+   */
+  refocusOnEscape?: boolean;
 }
 
 /**
@@ -271,9 +295,11 @@ export function ChatComposer({
   commands = [],
   hint,
   bordered = false,
+  variant,
   fileSearch = defaultFileSearch,
   onShellCommand,
   onHelpToggle,
+  refocusOnEscape = true,
   initialValue,
   onChange,
   ...margin
@@ -480,7 +506,11 @@ export function ChatComposer({
       // Ink's App handler BLURS the focused input on ESC (before subscribers). When ESC is not a
       // menu/shell dismissal, the host app has likely used it to interrupt a streaming turn — re-take
       // focus so the composer stays usable afterwards instead of going inert (theokit-tui#… / #10).
-      if (key.escape) {
+      //
+      // Only the LOOSE escape is gated by `refocusOnEscape` (#59 item 4). The menu and shell
+      // dismissals above re-take focus too, and they stay unconditional: there the composer HANDLED
+      // the key, and letting Ink's blur stand would leave it inert after an action it performed.
+      if (key.escape && refocusOnEscape) {
         focus(focusId);
       }
       if (handleHelpKey(input, composerKey)) {
@@ -496,7 +526,11 @@ export function ChatComposer({
 
   return (
     <Box flexDirection="column" {...margin}>
-      <ComposerFrame bordered={bordered} monochrome={isMonochrome(theme)} accent={theme.accent}>
+      <ComposerFrame
+        variant={variant ?? (bordered ? "border" : "plain")}
+        monochrome={isMonochrome(theme)}
+        accent={theme.accent}
+      >
         <InputRow
           buffer={buffer}
           placeholder={placeholder}

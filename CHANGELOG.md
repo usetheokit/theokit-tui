@@ -5,6 +5,83 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.79.0] - 2026-08-27
+
+### Added
+
+- `defaultToolHeader` and `DEFAULT_TOOL_HEADERS` — the humanised verb table for the conventional
+  tool names (`run_shell` → `Ran`, `apply_patch` → `Edited`, `write_stdin` → `Wrote to session`),
+  so an app no longer re-derives it behind the `formatToolHeader` seam. Opt-in with
+  `formatToolHeader: defaultToolHeader`; an app that passes nothing renders raw tool names exactly
+  as before (#53)
+- `AgentTimeline` accepts `verbose` — set it to `false` and every run of adjacent tool calls
+  collapses into a dim count line (`Ran 2 shell commands`, `Read 3 files`) instead of the cards,
+  the collapsed-by-default transcript Claude Code shows. Defaults to `true`, so an existing
+  timeline renders unchanged. The collapse covers the live tail; rows already printed into
+  scrollback stay as they were printed (#61)
+- `AgentTimeline` accepts `footer` — a slot under the last row for the mode note that goes with
+  the toggle (`Showing detailed transcript · ctrl+o`). The text and the key binding belong to the
+  app; the timeline only exposes the surface (#61)
+
+### Added
+
+- An approval LEDGER (`createApprovalLedger`, `ingest`, `settle`, `prune`, `findNextApproval`,
+  `pendingCount`) for several approvals in flight — settled individually, pruned on backtrack, and
+  read incrementally instead of rescanning the thread. `findPendingApproval` scans newest-first and
+  answers "the approval that just came in"; the ledger returns the OLDEST unsettled, because a human
+  answering a queue answers it in the order the questions arrived. Both answers already existed in
+  one process; the difference is now written down rather than implicit in two places (#68)
+- `resolveApprovalId` and `partToPendingApproval` are exported. They were private, so a consumer
+  needing to settle an approval re-derived the whole fallback chain — including the `toolName:
+  "tool"` default — and ended up declaring the same concept a third time (#68)
+- `TurnDone` — the dim past-tense line a finished turn leaves behind (`✻ Baked for 5s`).
+  `AgentStreaming` is live-only, so a scrolled-back transcript kept the answers and dropped the
+  timings. Static and timer-free by design: this is the row that graduates into `<Static>`, and a
+  row that changed after mount would disagree with what the terminal already printed. The verb is
+  a function of the duration, not a random pick, for the same reason; `WHIMSY_VERBS` and
+  `whimsyVerb` are exported so an app can use its own voice (#62 item 1)
+- `ChatComposer` accepts `variant` — `"plain"`, `"border"`, or `"rules"` (full-width horizontal
+  rules above and below with no sides, the Claude Code composer chrome). Omit it and the frame
+  follows `bordered`, so existing consumers are unchanged (#62 item 2)
+- `ChatComposer` accepts `refocusOnEscape` (default `true`). The composer re-takes focus on ESC
+  because Ink blurs the focused input before subscribers see the key, which left it inert after an
+  app used ESC to interrupt a turn. An app that maps ESC to a deliberate focus handoff can now say
+  so instead of fighting the composer over every press. Menu and shell-draft dismissals still
+  refocus regardless — there the composer handled the key itself (#59 item 4)
+
+### Changed
+
+- The user role's glyph is `❯ ` in every built-in theme, replacing `> ` (Claude Code parity,
+  #62 item 3). A consumer wanting the old prompt overrides `role.user.glyph` on the theme
+- `ToolResultFormatter` returns a union of single bodies instead of
+  `Pick<AgentToolEvent, "output" | "shell" | "diff">`. A formatter returning two exclusive bodies
+  used to compile and fail later at the timeline's guard, which named the timeline rather than the
+  formatter. It is now a type error at the formatter (#59 item 2)
+- The tool-result routing (`routeToolResult`, `looksLikeUnifiedDiff`, `toShell`,
+  `parseShellEnvelope`, `NormalizedShell`, `isShellEnvelope`) moved to its own module. Every symbol
+  is re-exported from `agent-stream-event.ts`, so no import changes (#59 item 1)
+
+### Fixed
+
+- A tool row no longer graduates into `<Static>` while it is still running or pending. Scrollback
+  is append-only, so a row committed mid-flight was frozen there: the spinner stayed in the
+  transcript and the result never appeared. Widening the window so nothing graduated produced a
+  different transcript from the same events — the history was reporting the window rather than the
+  turn. The boundary now stops at the first unsettled row, and the whole tail waits with it,
+  because scrollback has no insertion point to fill in later. A tool that never settles keeps the
+  live region growing; a longer tail beats a wrong history (#52)
+- `WelcomeBanner`'s two-column layout stays inside its border at every width. Both columns were
+  unshrinkable, so wherever art + gutter + aside did not fit, the aside ran past the right border
+  and lost its closing rule — visible below roughly 52 columns for a 24-cell wordmark. The aside
+  now wraps instead; the art keeps its full width, which is the rule that made the columns
+  unshrinkable in the first place. A consumer whose banner overflowed will see it reflow (#158)
+
+### Changed
+
+- CI reports on `main` when the tree's version is not the one npm serves. It warns rather than
+  fails: a bumped-but-unpublished version is the normal state between merging a bump and cutting
+  the tag, so a red check would fire on every correct commit and be trained away (#131)
+
 ## [0.78.0] - 2026-08-25
 
 Cut as 0.78.0 rather than 0.77.0. The tree carried 0.77.0 and the registry served 0.76.1, so 0.77.0
