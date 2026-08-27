@@ -295,7 +295,15 @@ function staticBannerTree(
       <Box flexDirection="column" {...artColumn}>
         {mainContent}
       </Box>
-      <Box flexDirection="column" flexShrink={0} marginLeft={ASIDE_GUTTER} {...asidePanel}>
+      {/* No `flexShrink={0}` here (#158). #5 turned Ink's default off on BOTH columns, which left
+          Yoga nothing to shrink: whenever art + gutter + aside exceeded the frame, the row was laid
+          out wider than its container and the aside ran past the right border — measured at 50
+          columns with a 24-cell wordmark, two cells over and no closing rule. U-7b's rule is that
+          the ART must not be compressed, and it still holds, because the art column keeps its
+          `flexShrink: 0`; the aside is the side that yields, and it yields by WRAPPING, so the text
+          survives. Not byte-identical for a consumer whose banner overflows today — that consumer's
+          banner was broken. */}
+      <Box flexDirection="column" marginLeft={ASIDE_GUTTER} {...asidePanel}>
         {aside}
       </Box>
     </Box>,

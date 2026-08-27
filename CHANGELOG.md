@@ -21,6 +21,14 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   the toggle (`Showing detailed transcript · ctrl+o`). The text and the key binding belong to the
   app; the timeline only exposes the surface (#61)
 
+### Fixed
+
+- `WelcomeBanner`'s two-column layout stays inside its border at every width. Both columns were
+  unshrinkable, so wherever art + gutter + aside did not fit, the aside ran past the right border
+  and lost its closing rule — visible below roughly 52 columns for a 24-cell wordmark. The aside
+  now wraps instead; the art keeps its full width, which is the rule that made the columns
+  unshrinkable in the first place. A consumer whose banner overflowed will see it reflow (#158)
+
 ### Changed
 
 - CI reports on `main` when the tree's version is not the one npm serves. It warns rather than
