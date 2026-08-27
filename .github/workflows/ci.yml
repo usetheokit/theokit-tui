@@ -5,7 +5,10 @@ name: ci
 
 on:
   push:
-    branches: [develop]
+    # `main` was missing, and the gap is visible in the run history: across the last twenty runs
+    # this workflow fired on develop and on pull requests, and never once on main. A merge could
+    # land on the release branch with no CI record of what it passed.
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
