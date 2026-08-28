@@ -115,7 +115,7 @@ jobs:
       # floor and still tolerates the publish flags — the same pin theokit-di landed on
       # after measuring both failures.
       - name: Install an npm that speaks OIDC (>= 11.5.1) but tolerates pnpm's publish flags
-        run: npm install -g npm@11.9.0 # zizmor: ignore[adhoc-packages] — bootstrapping npm itself; no lockfile can cover it
+        uses: usetheokit/shared-workflows/actions/npm-oidc@v1 # zizmor: ignore[unpinned-uses]
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
