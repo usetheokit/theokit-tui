@@ -51,17 +51,17 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
 
-      # Turbo's task cache. `turbo.json` declares explicit `inputs` per task and turbo folds each
-      # package's dependency hashes into its own, so a hit means the same sources produced the same
-      # task before. Keyed per matrix leg: two legs sharing one key would let one answer for the
-      # other's inputs.
-      - name: Turbo cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-node${{ matrix.node-version }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-node${{ matrix.node-version }}-
+      # NO TURBO CACHE HERE, and that is a measurement rather than an omission.
+      #
+      # One was added and removed the same day. It ran correctly — restore and save both fired —
+      # and in `theokit-sdk`, where the same step was tested by disabling it on an unchanged
+      # commit, the job took 2.3 minutes with it and 2.3 minutes without. It saved nothing
+      # measurable there, and it was added here on the strength of that borrowed number rather
+      # than on one measured in this repository.
+      #
+      # The pnpm store is already cached by the setup action above, which is most likely what
+      # was doing the work all along. Worth re-testing only against a measurement, not against
+      # the intuition that a cache must help.
       - name: format
         if: matrix.node-version == '22'
         run: pnpm format:check
