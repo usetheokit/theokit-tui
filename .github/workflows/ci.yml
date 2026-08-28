@@ -50,10 +50,24 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+
+      # Turbo's task cache. `turbo.json` declares explicit `inputs` per task and turbo folds each
+      # package's dependency hashes into its own, so a hit means the same sources produced the same
+      # task before. Keyed per matrix leg: two legs sharing one key would let one answer for the
+      # other's inputs.
+      - name: Turbo cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-node${{ matrix.node-version }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-node${{ matrix.node-version }}-
       - name: format
+        if: matrix.node-version == '22'
         run: pnpm format:check
 
       - name: lint
+        if: matrix.node-version == '22'
         run: pnpm lint
 
       - name: typecheck
@@ -94,9 +108,11 @@ jobs:
         run: pnpm test
 
       - name: coverage
+        if: matrix.node-version == '22'
         run: pnpm test:coverage
 
       - name: bench smoke
+        if: matrix.node-version == '22'
         run: pnpm bench --smoke
 
       # B-126 — SonarCloud, analysed from CI rather than by Automatic Analysis.
@@ -170,3 +186,35 @@ jobs:
           else
             echo "::warning title=Version::the tree is at ${TREE} and the registry serves ${PUBLISHED}. If ${TREE} was meant to ship, the tag was never pushed."
           fi
+
+  # The one check branch protection should require.
+  #
+  # Requiring individual matrix legs works only while every leg runs on every event. A leg that
+  # skips leaves its required check at "Expected — Waiting for status to be reported" forever,
+  # because branch protection cannot tell "deliberately skipped" from "not reported yet". A
+  # sibling repository hit exactly that and had to revert the change rather than fix it.
+  #
+  # A SKIPPED dependency counts as a pass; a failed or cancelled one does not. `cancelled` is
+  # checked too, or the concurrency group's own cancellations would report green.
+  ci-ok:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs: [gates]
+    steps:
+      - name: Report
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -q '"result": *"failure"'; then
+            echo "::error::a required job failed"
+            exit 1
+          fi
+          if echo "$RESULTS" | grep -q '"result": *"cancelled"'; then
+            echo "::error::a required job was cancelled"
+            exit 1
+          fi
+          echo "no required job failed or was cancelled"
