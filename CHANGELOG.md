@@ -8,6 +8,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [0.79.0] - 2026-08-27
 
 ### Added
+- **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 60 promotions landed (usetheokit/theokit#606)
 
 - `defaultToolHeader` and `DEFAULT_TOOL_HEADERS` — the humanised verb table for the conventional
   tool names (`run_shell` → `Ran`, `apply_patch` → `Edited`, `write_stdin` → `Wrote to session`),
