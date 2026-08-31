@@ -115,7 +115,7 @@ jobs:
       # floor and still tolerates the publish flags — the same pin theokit-di landed on
       # after measuring both failures.
       - name: Install an npm that speaks OIDC (>= 11.5.1) but tolerates pnpm's publish flags
-        run: npm install -g npm@11.9.0 # zizmor: ignore[adhoc-packages] — bootstrapping npm itself; no lockfile can cover it
+        uses: usetheokit/shared-workflows/actions/npm-oidc@v1 # zizmor: ignore[unpinned-uses]
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -144,8 +144,21 @@ jobs:
         # says the same thing beside the package it describes. It is passed here so a
         # publish that somehow falls back to a token still signs.
         run: |
+          set -euo pipefail
+
+          # The dist-tag is DERIVED from the version, never defaulted. `npm publish` and
+          # `pnpm publish` both fall back to `latest`, so a prerelease published without
+          # `--tag` becomes the version every consumer installs — and the publish reports
+          # success either way, which is what makes the mistake invisible.
+          version="$(node -p "require('./packages/tui/package.json').version")"
+          case "$version" in
+            *-*) dist_tag="${version#*-}"; dist_tag="${dist_tag%%.*}" ;;
+            *)   dist_tag="latest" ;;
+          esac
+          echo "publishing $version under dist-tag $dist_tag"
+
           if [ "${{ inputs.dry_run }}" = 'true' ]; then
-            pnpm --filter @theokit/tui publish --dry-run --no-git-checks --access public
+            pnpm --filter @theokit/tui publish --dry-run --no-git-checks --access public --tag "$dist_tag"
           else
-            pnpm --filter @theokit/tui publish --no-git-checks --access public
+            pnpm --filter @theokit/tui publish --no-git-checks --access public --tag "$dist_tag"
           fi

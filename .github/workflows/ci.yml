@@ -11,6 +11,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  schedule:
+    - cron: '41 5 * * 1'
 
 permissions:
   contents: read
@@ -25,10 +27,6 @@ jobs:
   gates:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ['22.12', '22']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,8 +46,22 @@ jobs:
       # every action inside it by digest, and the package manager by this repository's manifest.
       - uses: usetheokit/shared-workflows/actions/setup@v1 # zizmor: ignore[unpinned-uses]
         with:
-          node-version: ${{ matrix.node-version }}
+          # Test the exact supported floor on every change. The floating Node 22 leg used to
+          # repeat the full suite while exercising the same major and dependency tree.
+          node-version: '22.12'
 
+
+      # NO TURBO CACHE HERE, and that is a measurement rather than an omission.
+      #
+      # One was added and removed the same day. It ran correctly — restore and save both fired —
+      # and in `theokit-sdk`, where the same step was tested by disabling it on an unchanged
+      # commit, the job took 2.3 minutes with it and 2.3 minutes without. It saved nothing
+      # measurable there, and it was added here on the strength of that borrowed number rather
+      # than on one measured in this repository.
+      #
+      # The pnpm store is already cached by the setup action above, which is most likely what
+      # was doing the work all along. Worth re-testing only against a measurement, not against
+      # the intuition that a cache must help.
       - name: format
         run: pnpm format:check
 
@@ -112,8 +124,10 @@ jobs:
       # SKIPS LOUDLY when the token is absent, instead of failing or pretending. `SONAR_TOKEN` is
       # created in SonarCloud and added by the repository owner; until then the step says so in the
       # log rather than leaving a red check whose cause nobody can read.
+      # `'22'` and NOT `'22.x'`: the matrix is `['22.12', '22']`, so the old condition compared
+      # against a value that never occurs and the step was skipped on every run since B-126
+      # introduced it. A step that never executes reads exactly like a step that passes.
       - name: sonarcloud
-        if: matrix.node-version == '22.x'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
@@ -167,3 +181,51 @@ jobs:
           else
             echo "::warning title=Version::the tree is at ${TREE} and the registry serves ${PUBLISHED}. If ${TREE} was meant to ship, the tag was never pushed."
           fi
+
+  runtime-compat:
+    name: latest Node 22 compatibility
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: usetheokit/shared-workflows/actions/setup@v1 # zizmor: ignore[unpinned-uses]
+        with:
+          node-version: '22'
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm test
+
+  # The one check branch protection should require.
+  #
+  # Requiring individual matrix legs works only while every leg runs on every event. A leg that
+  # skips leaves its required check at "Expected — Waiting for status to be reported" forever,
+  # because branch protection cannot tell "deliberately skipped" from "not reported yet". A
+  # sibling repository hit exactly that and had to revert the change rather than fix it.
+  #
+  # A SKIPPED dependency counts as a pass; a failed or cancelled one does not. `cancelled` is
+  # checked too, or the concurrency group's own cancellations would report green.
+  ci-ok:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs: [gates]
+    steps:
+      - name: Report
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -q '"result": *"failure"'; then
+            echo "::error::a required job failed"
+            exit 1
+          fi
+          if echo "$RESULTS" | grep -q '"result": *"cancelled"'; then
+            echo "::error::a required job was cancelled"
+            exit 1
+          fi
+          echo "no required job failed or was cancelled"

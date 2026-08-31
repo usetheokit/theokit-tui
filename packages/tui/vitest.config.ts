@@ -52,7 +52,12 @@ export default defineConfig({
       // The `thresholds` below are what actually enforce coverage, at 90 — stricter than the Squad
       // gate's 80 — and CI runs `pnpm test:coverage`, so a miss fails the job. This key does not
       // add safety; it stops a gate from emitting noise nobody can act on.
-      reporter: ["text", "html", "clover", "json", "json-summary"],
+      // `lcov` is what SonarCloud reads. `sonar-project.properties` already points at
+      // `packages/tui/coverage/lcov.info`, and without this entry that file is never written — the
+      // scanner looked for it, found nothing, and reported 0% coverage while the suite was at 90+.
+      // A promise in a config file that the build does not keep is worse than no promise: the
+      // number it produces looks measured.
+      reporter: ["text", "html", "clover", "json", "json-summary", "lcov"],
       // Plan Global DoD: >= 90% on src/** (critical paths at 100%).
       thresholds: {
         statements: 90,
