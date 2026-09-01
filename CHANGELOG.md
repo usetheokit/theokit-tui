@@ -5,6 +5,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- **ci:** per-commit package previews via pkg.pr.new. A fix here is unverifiable from a sibling
+  repository until it is on a registry, and this ecosystem has nine interdependent publishable
+  repositories — measured 2026-08-31, `@theokit/http` reached 2.0.0 in one while three packages in
+  another declared a range excluding it, and nothing found out until a release gate ran. Previews
+  cost nothing and burn no npm version, so they are the first thing to reach for; the snapshot path
+  is for when the answer has to come from registry.npmjs.org specifically.
+
 ### Changed
 
 - **release:** the npm dist-tag is now derived from the version being published instead of
