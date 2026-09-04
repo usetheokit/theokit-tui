@@ -81,6 +81,28 @@ Swap `demoTurn` for your real stream: `useAgentStream` consumes any
 `AsyncIterable<AgentStreamEvent>` (or a factory) — SDK streams, SSE, fixtures.
 See `examples/scenes/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
 
+### Resuming a session
+
+A stream only carries what happens next, so a surface that repoints itself at an
+existing session renders an empty timeline while the model still has the earlier
+turns — *"it worked"* and *"it did nothing"* look the same. Pass the transcript
+as `initialMessages` and it renders ahead of everything the stream folds:
+
+```tsx
+const { events, streaming } = useAgentStream(source, {
+  initialMessages: resumedThread, // UIMessageLike[] — `useAgent().thread` passes straight through
+});
+```
+
+The history is a **prefix**, not a seeded fold. It therefore survives the reset a
+new `source` identity triggers (reconnect-by-refold), and a transcript read
+asynchronously may arrive after mount. `status` and `streaming` describe the live
+stream only: seeding a hook that has not started leaves it `idle`.
+
+Seed the history that *precedes* the stream. A tool already in the transcript and
+re-emitted by the live stream renders twice — the projection and the fold mint
+ids in disjoint namespaces and cannot tell they are the same call.
+
 ## Primitives
 
 | Surface | Components                                                                                                                                                                |
