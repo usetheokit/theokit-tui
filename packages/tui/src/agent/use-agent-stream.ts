@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
+import type { AgentEvent } from "./agent-event.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
 import type { AgentStreamState } from "./agent-stream-reducer.js";
 import { agentStreamReducer, initialAgentStreamState } from "./agent-stream-reducer.js";
+import type { MessagesToEventsOptions, UIMessageLike } from "./messages-to-events.js";
+import { messagesToAgentEvents } from "./messages-to-events.js";
 
 // The react seam (plan m7-stream-adapter ADR D4): a sequential awaited loop
 // over an async-iterable stream, folding each event through the pure reducer.
@@ -32,6 +35,36 @@ export interface UseAgentStreamResult extends AgentStreamState {
   cancel: () => void;
 }
 
+/**
+ * Options for {@link useAgentStream}. Extends {@link MessagesToEventsOptions} so a seeded
+ * transcript is projected with the SAME tool formatting the surface uses everywhere else.
+ */
+export interface UseAgentStreamOptions extends MessagesToEventsOptions {
+  /**
+   * Messages already in the thread — a resumed session's transcript (#179).
+   *
+   * They are projected through {@link messagesToAgentEvents} and returned as a PREFIX of `events`,
+   * ahead of everything the live stream folds. Being a prefix rather than a seeded fold is what
+   * makes the two things a resumed surface needs work at once:
+   *
+   * - a NEW `source` identity resets the fold (the D5 reconnect-by-refold contract) and the history
+   *   is untouched — it was never part of the fold to reset;
+   * - a transcript read asynchronously can arrive AFTER mount and still render.
+   *
+   * `status`/`streaming` describe the live stream only: seeding leaves an unstarted hook `idle`,
+   * because nothing has streamed.
+   *
+   * KNOWN LIMIT: the projection ids (`{messageId}::mN`, the raw `toolCallId`) and the fold's minted
+   * ids (`msg-N`, `tool-{call_id}`) live in disjoint namespaces, so a tool that was ALREADY in the
+   * transcript and is re-emitted by the live stream renders twice, under both ids. Seed the history
+   * that precedes the stream, not the turn the stream is about to replay.
+   */
+  initialMessages?: readonly UIMessageLike[];
+}
+
+/** Shared empty seed — a stable identity, so the no-seed path never re-allocates `events`. */
+const NO_SEED: readonly AgentEvent[] = [];
+
 /** Internal wrapper action — a structural ENVELOPE (review F-2), so a
  * producer emitting `{type: "__reset__"}` can never reach the reset branch
  * (EC-4: the hook resets its own state between sources; producers cannot —
@@ -57,7 +90,10 @@ interface StreamControl {
   iterator?: AsyncIterator<AgentStreamEvent>;
 }
 
-export function useAgentStream(source?: AgentStreamSource): UseAgentStreamResult {
+export function useAgentStream(
+  source?: AgentStreamSource,
+  options?: UseAgentStreamOptions,
+): UseAgentStreamResult {
   const [state, dispatch] = useReducer(hookReducer, initialAgentStreamState);
   const controlRef = useRef<StreamControl>({ cancelled: false });
 
@@ -104,6 +140,28 @@ export function useAgentStream(source?: AgentStreamSource): UseAgentStreamResult
     };
   }, [source]);
 
+  // Destructured so the memo's dependencies are the VALUES, not an options object a
+  // consumer re-creates on every render.
+  const initialMessages = options?.initialMessages;
+  const exploreTools = options?.exploreTools;
+  const formatToolHeader = options?.formatToolHeader;
+  const formatToolResult = options?.formatToolResult;
+  const seeded = useMemo<readonly AgentEvent[]>(() => {
+    if (initialMessages === undefined || initialMessages.length === 0) {
+      return NO_SEED;
+    }
+    return messagesToAgentEvents(initialMessages, {
+      ...(exploreTools === undefined ? {} : { exploreTools }),
+      ...(formatToolHeader === undefined ? {} : { formatToolHeader }),
+      ...(formatToolResult === undefined ? {} : { formatToolResult }),
+    });
+  }, [initialMessages, exploreTools, formatToolHeader, formatToolResult]);
+
+  const events = useMemo(
+    () => (seeded.length === 0 ? state.events : [...seeded, ...state.events]),
+    [seeded, state.events],
+  );
+
   const cancel = useCallback(() => {
     const control = controlRef.current;
     if (control.cancelled) {
@@ -114,5 +172,5 @@ export function useAgentStream(source?: AgentStreamSource): UseAgentStreamResult
     dispatch({ kind: "fold", event: { type: "done" } });
   }, []);
 
-  return { ...state, cancel };
+  return { ...state, events, cancel };
 }

@@ -5,7 +5,17 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.80.0] - 2026-09-04
+
 ### Added
+
+- `useAgentStream` accepts a second `options` argument with `initialMessages` — the transcript of a
+  resumed session, projected through `messagesToAgentEvents` and returned ahead of everything the
+  live stream folds. The fold only ever grew from the stream, so a surface that repointed its
+  session rendered an empty timeline while the model demonstrably had the earlier turns: *"it
+  worked"* and *"it did nothing"* looked identical. The history is a prefix rather than a seeded
+  fold, so it survives the reset a new `source` identity triggers and may arrive after mount
+  (#179)
 
 - **ci:** per-commit package previews via pkg.pr.new. A fix here is unverifiable from a sibling
   repository until it is on a registry, and this ecosystem has nine interdependent publishable

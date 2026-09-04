@@ -137,6 +137,15 @@ jobs:
             exit 0
           fi
           npx --yes sonarqube-scanner@4
+      # The published-manifest contract, checked instead of remembered. Audited across 50
+      # packages on 2026-09-01: 38 did not export "./package.json" — reproduced as
+      # `ERR_PACKAGE_PATH_NOT_EXPORTED` against a real tarball — 30 had no keywords and 18
+      # declared no sideEffects at all.
+      #
+      # `@v1` is a moving ref by design — a policy fix in shared-workflows must reach every
+      # caller without nine pull requests, which is the reason that repo exists.
+      - name: Published manifests satisfy the contract
+        uses: usetheokit/shared-workflows/actions/manifest-check@v1 # zizmor: ignore[unpinned-uses]
 
   # Does the tree's version exist on npm?
   #
@@ -214,18 +223,14 @@ jobs:
     if: always()
     needs: [gates]
     steps:
-      - name: Report
-        env:
-          RESULTS: ${{ toJSON(needs) }}
-        run: |
-          set -euo pipefail
-          echo "$RESULTS"
-          if echo "$RESULTS" | grep -q '"result": *"failure"'; then
-            echo "::error::a required job failed"
-            exit 1
-          fi
-          if echo "$RESULTS" | grep -q '"result": *"cancelled"'; then
-            echo "::error::a required job was cancelled"
-            exit 1
-          fi
-          echo "no required job failed or was cancelled"
+      # Was an inline grep over the serialized results, duplicated in four repositories.
+      # It read only `failure` and `cancelled`, so a job that SKIPPED counted as a pass —
+      # and a job that did not run reads exactly like one that did. The shared action
+      # fails on an undeclared skip, and one implementation replaces four.
+      #
+      # `@v1` is a moving ref by design — a policy fix in shared-workflows must reach
+      # every caller without nine pull requests, which is the reason that repo exists.
+      - uses: usetheokit/shared-workflows/actions/checks-pass@v1 # zizmor: ignore[unpinned-uses]
+        with:
+          needs: ${{ toJSON(needs) }}
+

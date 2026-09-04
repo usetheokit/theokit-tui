@@ -70,6 +70,7 @@ export {
 // — the TokenCategory arch-5 precedent (review F-7 rationale).
 export type {
   AgentStreamSource,
+  UseAgentStreamOptions,
   UseAgentStreamResult,
 } from "./use-agent-stream.js";
 // M7 — stream adapter (plan ADR D8): the hook + the pure fold + its zero

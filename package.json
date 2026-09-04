@@ -23,7 +23,7 @@
     "format:check": "test -n \"$(git ls-files)\" && git ls-files -z | xargs -0 biome format --files-ignore-unknown=true -- && printf 'format: %s tracked files handed to biome (unknown types skipped)\\n' \"$(git ls-files | wc -l)\"",
     "validate:naming": "ls-lint && printf 'naming: %s source files checked against .ls-lint.yml (kebab-case)\\n' \"$(git ls-files -- packages | grep -cE '^packages/[^/]+/(src|tests)/.*\\.(ts|tsx)$')\"",
     "depcruise": "turbo run depcruise --filter='./packages/*'",
-    "gates": "pnpm format:check && pnpm validate:naming && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm build && pnpm test",
+    "gates": "run-p -c --aggregate-output format:check validate:naming lint typecheck depcruise && pnpm build && pnpm test",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "sync-version": "pnpm --filter=@theokit/tui run sync-version"
   },
@@ -31,6 +31,7 @@
     "@biomejs/biome": "^2.5.9",
     "@ls-lint/ls-lint": "^2.3.1",
     "dependency-cruiser": "18.2.0",
+    "npm-run-all2": "9.0.3",
     "turbo": "^2.5.8"
   },
   "pnpm": {

@@ -12,7 +12,9 @@ interface PackageManifest {
   private?: unknown;
   main: string;
   types: string;
-  exports: Record<string, Record<string, string> | undefined>;
+  // `./package.json` maps to a plain string; every other subpath maps to a conditions
+  // object. The union says so rather than letting the type lie about one of them.
+  exports: Record<string, Record<string, string> | string | undefined>;
   files: string[];
   engines: Record<string, string>;
   peerDependencies: Record<string, string>;
@@ -39,21 +41,32 @@ describe("package manifest contract (T0.1)", () => {
     // B-104 slice 2: `./keys` ships the modal keypress router — the ORDERING RULE only, with the
     // states, keys and actions as type parameters. Separate from `./terminal` because it is pure:
     // routing a key in a test should not pull in file handles to do it.
-    expect(Object.keys(pkg.exports)).toEqual([".", "./renderer", "./terminal", "./keys"]);
-    const dot = pkg.exports["."] ?? {};
+    // `./package.json` is last and is a plain string, not a conditions object: it is
+    // metadata, not an entry point. Without it `require('@theokit/tui/package.json')`
+    // throws ERR_PACKAGE_PATH_NOT_EXPORTED, which bundlers, test-runner resolvers and
+    // version telemetry all hit — reproduced against a packed tarball before it was added.
+    expect(Object.keys(pkg.exports)).toEqual([
+      ".",
+      "./renderer",
+      "./terminal",
+      "./keys",
+      "./package.json",
+    ]);
+    expect(pkg.exports["./package.json"]).toBe("./package.json");
+    const dot = (pkg.exports["."] ?? {}) as Record<string, string>;
     // "types" MUST precede "default" — Node/TS resolve conditions in order.
     expect(Object.keys(dot)).toEqual(["types", "default"]);
     expect(dot.types).toBe("./dist/index.d.ts");
     expect(dot.default).toBe("./dist/index.js");
-    const renderer = pkg.exports["./renderer"] ?? {};
+    const renderer = (pkg.exports["./renderer"] ?? {}) as Record<string, string>;
     expect(Object.keys(renderer)).toEqual(["types", "default"]);
     expect(renderer.types).toBe("./dist/renderer/index.d.ts");
     expect(renderer.default).toBe("./dist/renderer/index.js");
-    const terminal = pkg.exports["./terminal"] ?? {};
+    const terminal = (pkg.exports["./terminal"] ?? {}) as Record<string, string>;
     expect(Object.keys(terminal)).toEqual(["types", "default"]);
     expect(terminal.types).toBe("./dist/terminal/index.d.ts");
     expect(terminal.default).toBe("./dist/terminal/index.js");
-    const keys = pkg.exports["./keys"] ?? {};
+    const keys = (pkg.exports["./keys"] ?? {}) as Record<string, string>;
     expect(Object.keys(keys)).toEqual(["types", "default"]);
     expect(keys.types).toBe("./dist/keys/index.d.ts");
     expect(keys.default).toBe("./dist/keys/index.js");
