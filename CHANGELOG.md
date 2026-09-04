@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.80.0] - 2026-09-04
+
 ### Added
 
 - `useAgentStream` accepts a second `options` argument with `initialMessages` — the transcript of a
