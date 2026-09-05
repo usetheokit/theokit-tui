@@ -51,25 +51,22 @@ jobs:
           # The never-weaken guard diffs against a base SHA, which a shallow clone hides.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        # No `version:` — `packageManager` in package.json is the single authority.
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning]
+      # `@v1` is a moving ref by design; what the action RUNS stays pinned by digest inside it,
+      # and pnpm comes from `packageManager`, the single authority. It carries the cache key this
+      # block spelled out — `package.json` beside `pnpm-lock.yaml`, so a pnpm 9 → 10 bump
+      # invalidates the store instead of restoring one the new pnpm reads as inconsistent.
+      #
+      # Caching is safe HERE and only here: this job holds no publishing credential — no
+      # `id-token: write`, no registry config — so a restored cache reaches a gate, not the
+      # registry. The publish job below keeps its hand-rolled setup precisely because the action
+      # always caches and that job must not; see the note there.
+      #
+      # `node-version` stays explicit: it is a matrix leg, not the repository default, so it must
+      # not fall through to `.nvmrc`.
+      - uses: usetheokit/shared-workflows/actions/setup@v1 # zizmor: ignore[unpinned-uses]
         with:
           node-version: ${{ matrix.node-version }}
-          # This job holds no publishing credential — no `id-token: write`, no registry
-          # config — so a restored cache reaches a gate, not the registry. The publish
-          # job below runs with no cache at all, which is where it matters.
-          cache: 'pnpm'
-          # The cache key must change when the package manager does. setup-node keys the
-          # pnpm store on the lockfile alone, so a pnpm 9 -> 10 bump leaves the key
-          # identical and the job restores a store the new pnpm reads as inconsistent —
-          # `ERR_PNPM_MISSING_PACKAGE_INDEX_FILE`, on a package the lockfile does list.
-          # package.json carries `packageManager`, so including it ties the cache to the
-          # pnpm that wrote it.
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            package.json
+          install: 'false'
 
       - run: pnpm install --frozen-lockfile
       - name: Gates (format, naming, lint, typecheck, depcruise, build, test)
@@ -91,11 +88,17 @@ jobs:
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
+      # DELIBERATELY NOT `shared-workflows/actions/setup@v1`, unlike the verify job above. That
+      # action always sets `cache: pnpm`, and this job must not cache: a cache entry written by a
+      # pull-request run is restorable here, and this is the one job whose output reaches the
+      # registry under the org's name. Converting it would reverse a supply-chain decision to make
+      # two blocks look alike.
+      #
+      # Measured 2026-09-05 while converting the other twenty: this is the ONLY publish job in the
+      # ecosystem that avoids the cache, so the action was not given a `cache` input for one
+      # caller. If a second one appears, that is the moment to add it.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning]
         with:
-          # No dependency cache in the job that publishes: a cache entry written by a
-          # pull-request run is restorable here, and this is the one job whose output
-          # reaches the registry under the org's name.
           node-version-file: '.nvmrc'
           # NO `registry-url`. It looks harmless and is not: setup-node writes
           # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into an npmrc
