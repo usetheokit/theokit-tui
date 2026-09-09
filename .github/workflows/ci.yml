@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   gates:
+    name: M0 gate chain
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -129,6 +130,9 @@ jobs:
       # introduced it. A step that never executes reads exactly like a step that passes.
       - name: sonarcloud
         env:
+          # zizmor: ignore[secrets-outside-env] -- this is a CI job, reached from every branch a pull
+          # request can come from, so there is no branch set a deployment policy could name without
+          # blocking ordinary runs. The token travels through `env:` and the step handles its absence.
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           if [ -z "${SONAR_TOKEN}" ]; then
