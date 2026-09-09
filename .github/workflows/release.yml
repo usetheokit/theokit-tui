@@ -151,6 +151,13 @@ jobs:
           fi
 
       - name: Publish
+        env:
+          # Through `env:` rather than interpolated into the script, so the shell receives a
+          # VARIABLE instead of a value pasted into its source. `inputs.dry_run` is a typed
+          # boolean and only a dispatcher with write access sets it, so nothing here was
+          # injectable -- this is the same discipline applied uniformly, and it leaves nothing
+          # to except where the alternative was a standing suppression.
+          DRY_RUN: ${{ inputs.dry_run }}
         # `--provenance` is redundant under trusted publishing, which attaches the
         # attestation on its own, and `publishConfig.provenance: true` in the manifest
         # says the same thing beside the package it describes. It is passed here so a
@@ -169,7 +176,7 @@ jobs:
           esac
           echo "publishing $version under dist-tag $dist_tag"
 
-          if [ "${{ inputs.dry_run }}" = 'true' ]; then
+          if [ "$DRY_RUN" = 'true' ]; then
             pnpm --filter @theokit/tui publish --dry-run --no-git-checks --access public --tag "$dist_tag"
           else
             pnpm --filter @theokit/tui publish --no-git-checks --access public --tag "$dist_tag"
