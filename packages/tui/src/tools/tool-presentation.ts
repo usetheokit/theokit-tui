@@ -25,6 +25,7 @@
  * narrows before it reads and every branch has a fallback.
  */
 import type { ToolCardResult } from "./tool-card-result.js";
+import { parseV4APatchFiles } from "./v4a-patch.js";
 
 /**
  * The tool names `@theokit/agents/tools` produces, measured on 2026-08-16 by constructing every
@@ -118,6 +119,35 @@ function diffBody(result: unknown): ToolCardResult {
   return patch === undefined ? previewOf(result) : { kind: "diff", patch };
 }
 
+/** Paths a V4A `patch` input names; empty when the input is not that shape. */
+function patchPaths(input: unknown): string[] {
+  const patch = str(input, "patch");
+  return patch === undefined ? [] : parseV4APatchFiles(patch).map((f) => f.path);
+}
+
+/** `{ ok, files_patched | error }` (object or JSON string) as an output card; else the diff path. */
+function patchBody(result: unknown): ToolCardResult {
+  let value = result;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return diffBody(result);
+    }
+  }
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+    if (record.ok === true && Array.isArray(record.files_patched)) {
+      const files = record.files_patched.filter((f): f is string => typeof f === "string");
+      return { kind: "output", shell: { stdout: files.join("\n"), stderr: "", exitCode: 0 } };
+    }
+    if (record.ok === false && typeof record.error === "string") {
+      return { kind: "output", shell: { stdout: "", stderr: record.error, exitCode: 1 } };
+    }
+  }
+  return diffBody(result);
+}
+
 /** An output card when the result looks like a shell envelope; a preview when it does not. */
 function shellBody(result: unknown): ToolCardResult {
   if (typeof result !== "object" || result === null) return previewOf(result);
@@ -170,10 +200,28 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
   [
     "apply_patch",
     {
-      header: pathHeader("Applying a patch to", "Patched", "path", "file", "filePath"),
-      body: diffBody,
-      approvalLabel: (input) =>
-        `Apply the patch to ${firstStr(input, "path", "file") ?? "the file"}?`,
+      header: (input, active) => {
+        const paths = patchPaths(input);
+        if (paths.length === 0) {
+          return pathHeader(
+            "Applying a patch to",
+            "Patched",
+            "path",
+            "file",
+            "filePath",
+          )(input, active);
+        }
+        const shown = paths.slice(0, 3).join(", ");
+        const more = paths.length > 3 ? ` +${paths.length - 3} more` : "";
+        return `${active ? "Editing" : "Edited"} ${shown}${more}`;
+      },
+      body: patchBody,
+      approvalLabel: (input) => {
+        const paths = patchPaths(input);
+        return `Apply the patch to ${
+          paths.length > 0 ? paths.join(", ") : (firstStr(input, "path", "file") ?? "the file")
+        }?`;
+      },
     },
   ],
   [

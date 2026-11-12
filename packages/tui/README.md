@@ -117,6 +117,12 @@ ids in disjoint namespaces and cannot tell they are the same call.
 Every primitive degrades cleanly under `NO_COLOR`, `TERM=dumb` and bare
 pipes — proven by a subprocess degrade matrix in CI.
 
+### Reading an `apply_patch` call
+
+The default `apply_patch` presentation names the files a V4A patch touches in its header and approval
+prompt. `parseV4APatchFiles(patch)` is exported if you need the same list: it returns
+`{ path, op, from? }[]` and `[]` for text that is not V4A.
+
 ## How it works
 
 - **Data-props contract:** components render caller-provided data; no hidden

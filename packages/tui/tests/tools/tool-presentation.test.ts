@@ -171,3 +171,45 @@ describe("body", () => {
     expect(card?.kind).toBe("preview");
   });
 });
+
+describe("apply_patch with a V4A patch", () => {
+  const patch = [
+    "*** Begin Patch",
+    "*** Add File: a.ts",
+    "*** Update File: b.ts",
+    "*** Move to: c.ts",
+    "*** Delete File: d.ts",
+    "*** End Patch",
+  ].join("\n");
+  const entry = DEFAULT_TOOL_PRESENTATION.get("apply_patch");
+
+  it("test_header_and_label_name_the_files", () => {
+    const header = entry?.header({ patch }, false) ?? "";
+    expect(header).toContain("a.ts");
+    expect(header).toContain("c.ts");
+    expect(header.startsWith("Edited")).toBe(true);
+    expect(entry?.header({ patch }, true)).toMatch(/^Editing/);
+    const label = entry?.approvalLabel?.({ patch }) ?? "";
+    for (const f of ["a.ts", "c.ts", "d.ts"]) expect(label).toContain(f);
+  });
+
+  it("test_header_truncates_past_three_files", () => {
+    const many = ["a", "b", "c", "d", "e"].map((f) => `*** Add File: ${f}.ts`).join("\n");
+    expect(entry?.header({ patch: many }, false)).toBe("Edited a.ts, b.ts, c.ts +2 more");
+  });
+
+  it("test_non_string_patch_falls_back", () => {
+    expect(entry?.header({ patch: 5, path: "x.ts" }, false)).toBe("Patched x.ts");
+    expect(entry?.approvalLabel?.({ patch: 5 })).toBe("Apply the patch to the file?");
+  });
+
+  it("test_body_renders_results", () => {
+    const card = entry?.body?.('{"ok":true,"files_patched":["a.ts"]}');
+    expect(card?.kind).toBe("output");
+    expect(JSON.stringify(card)).toContain("a.ts");
+    expect(entry?.body?.({ ok: true, files_patched: ["b.ts", 3] })?.kind).toBe("output");
+    const err = entry?.body?.({ ok: false, error: "bad hunk" });
+    expect(JSON.stringify(err)).toContain("bad hunk");
+    expect(entry?.body?.("not json")?.kind).toBe("preview");
+  });
+});

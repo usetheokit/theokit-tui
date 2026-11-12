@@ -5,6 +5,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `parseV4APatchFiles(patch)` lists the files a V4A patch names (`add` / `update` / `delete` /
+  `move` with `from`), in order; it never throws and returns `[]` for non-V4A text (#190)
+
+### Fixed
+
+- The `apply_patch` presentation reads the V4A `patch` the framework tool actually takes: the header
+  is `Editing`/`Edited <files>` (up to three, then `+N more`), the approval label names every file,
+  and the body renders `{ ok, files_patched | error }` results. It no longer falls back to a bare
+  "Patched" and "the file" (#190)
+
 ## [0.80.0] - 2026-09-04
 
 ### Added

@@ -18,5 +18,6 @@ export {
   toolPresentation,
 } from "./tool-presentation.js";
 export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";
+export { type V4AFile, type V4AFileOp, parseV4APatchFiles } from "./v4a-patch.js";
 // truncateLines stays module-internal (ADR D7 — SEPA phase-2 F1).
 export { MAX_RESULT_CHARS, ToolResult } from "./tool-result.js";
