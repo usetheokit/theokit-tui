@@ -13,6 +13,9 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- CI `pnpm install --frozen-lockfile` failed on `node-pty@1.1.0`: it ships no linux-x64 prebuild, so
+  its install script fell back to `node-gyp`, which the runner lacks. The dev dependency is now
+  `node-pty@1.2.0-beta.18`, which ships linux prebuilds; the PTY e2e tests still run (#211)
 - The default `apply_patch` presentation reads the V4A `patch` the framework tool takes. The header
   names the files (`Editing a.ts, c.ts`, `+N more` past three), the approval label names every
   file, and the body renders `{ ok, files_patched | error }`. It read `input.path`, which the tool
