@@ -13,6 +13,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- CI `pnpm install --frozen-lockfile` failed on `node-pty@1.1.0`: it ships no linux-x64 prebuild, so
+  its install script fell back to `node-gyp`, which is not on `PATH` on the GitHub runner
+  ("node-gyp: not found"). `node-gyp` is now a dependency of `node-pty` through
+  `pnpm.packageExtensions`, so the build runs and the PTY e2e tests still run (#211)
 - `agentStreamReducer` no longer shows thinking and the answer twice for the SDK event order. A
   coarse `thinking` after streamed `thinking-delta` events is dropped, and an `assistant` event
   with the new optional `textAlreadyStreamed` field finalizes the streamed message in place even
