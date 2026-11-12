@@ -13,6 +13,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- `messagesToAgentEvents` maps a tool part in state `output-denied` to `failed`. It fell back to
+  `pending`, so a denied call showed a spinner forever in a rebuilt transcript (#205)
 - The never-weaken guard (`it_count_never_decreases`) reads the base commit with one
   `git cat-file --batch` process instead of hundreds of `git show` spawns. Under CPU load it ran
   past the 15 s test timeout and failed `CI` on a correct tree (#210)
