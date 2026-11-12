@@ -23,6 +23,10 @@ export interface AgentStreamState {
   seq: number;
   /** The tail-replace anchor currently open (EC-5 lifecycle). */
   liveMessageId?: string;
+  /** This turn already received `thinking-delta` events: a coarse `thinking` is a duplicate. */
+  thinkingStreamed?: boolean;
+  /** The most recent assistant message minted this turn (survives the live anchor closing). */
+  lastMessageId?: string;
 }
 
 export const initialAgentStreamState: AgentStreamState = {
@@ -65,6 +69,26 @@ function withoutLiveMessage(state: AgentStreamState): AgentStreamState {
   return rest;
 }
 
+/** Per-turn markers reset at the turn boundary (assistant, user, done, error). */
+function withoutTurnMarkers(state: AgentStreamState): AgentStreamState {
+  if (state.thinkingStreamed === undefined && state.lastMessageId === undefined) {
+    return state;
+  }
+  const rest = { ...state };
+  delete rest.thinkingStreamed;
+  delete rest.lastMessageId;
+  return rest;
+}
+
+/** The SDK sends the coarse `thinking` after the fine deltas: the streamed text is authoritative. */
+function foldCoarseThinking(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
+  return state.thinkingStreamed === true ? state : foldThinkingText(state, event);
+}
+
+function foldThinkingDelta(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
+  return { ...foldThinkingText(state, event), thinkingStreamed: true };
+}
+
 function foldThinkingText(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
   const thought = (state.streaming.thought ?? "") + (event.text ?? "");
   return {
@@ -97,6 +121,7 @@ function foldTextDelta(state: AgentStreamState, event: AgentStreamEvent): AgentS
     ...next,
     seq,
     liveMessageId: id,
+    lastMessageId: id,
     events: [...next.events, { id, kind: "message", role: "assistant", text: chunk }],
     status: "streaming",
     streaming: { active: true },
@@ -114,20 +139,30 @@ function foldAssistant(state: AgentStreamState, event: AgentStreamEvent): AgentS
         ? { ...item, text: text === "" ? item.text : text }
         : item,
     );
-    return { ...withoutLiveMessage(next), events, status: "streaming" };
+    return withoutTurnMarkers({ ...withoutLiveMessage(next), events, status: "streaming" });
+  }
+  if (event.textAlreadyStreamed === true && next.lastMessageId !== undefined) {
+    // The text already streamed and the live anchor closed (a tool_call or
+    // graduation intervened): finalize that message in place, never mint a second.
+    const events = next.events.map((item) =>
+      item.id === next.lastMessageId && item.kind === "message"
+        ? { ...item, text: text === "" ? item.text : text }
+        : item,
+    );
+    return withoutTurnMarkers({ ...next, events, status: "streaming" });
   }
   if (text === "") {
     // Mint-empty rule: tool_use-only / empty assistants create no event
     // (EC-11 — tool lifecycle arrives via tool_call events).
-    return next;
+    return withoutTurnMarkers(next);
   }
   const seq = next.seq + 1;
-  return {
+  return withoutTurnMarkers({
     ...next,
     seq,
     events: [...next.events, { id: `msg-${seq}`, kind: "message", role: "assistant", text }],
     status: "streaming",
-  };
+  });
 }
 
 const TOOL_STATUS_MAP: Record<string, ToolCallStatus> = {
@@ -241,7 +276,7 @@ function foldTerminal(
   status: "done" | "error",
   error?: Error,
 ): AgentStreamState {
-  const next = withoutLiveMessage(graduateThought(state));
+  const next = withoutTurnMarkers(withoutLiveMessage(graduateThought(state)));
   return {
     ...next,
     events: failNonTerminalTools(next.events),
@@ -256,8 +291,9 @@ const HANDLERS: Record<
   (state: AgentStreamState, event: AgentStreamEvent) => AgentStreamState
 > = {
   "text-delta": foldTextDelta,
-  "thinking-delta": foldThinkingText,
-  thinking: foldThinkingText,
+  "thinking-delta": foldThinkingDelta,
+  thinking: foldCoarseThinking,
+  user: withoutTurnMarkers,
   assistant: foldAssistant,
   tool_call: foldToolCall,
   error: (state, event) => foldTerminal(state, "error", toError(event.error)),
