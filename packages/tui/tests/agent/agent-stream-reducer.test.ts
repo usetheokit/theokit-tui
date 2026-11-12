@@ -410,4 +410,57 @@ describe("agentStreamReducer", () => {
       expect(passesBoundary(state)).toBe(true);
     }
   });
+
+  describe("SDK event order (#203)", () => {
+    const coarse = (text: string): AgentStreamEvent => ({ type: "thinking", text });
+    const shape = (state: ReturnType<typeof fold>) =>
+      state.events.map((e) => [e.kind, (e as { text?: string }).text]);
+
+    it("streamed_thinking_and_answer_are_not_repeated_by_the_coarse_events", () => {
+      const state = fold(
+        thinkDelta("hmm"),
+        delta("Hi"),
+        coarse("hmm"),
+        { ...assistantMsg("Hi"), textAlreadyStreamed: true },
+        doneEvt(),
+      );
+      expect(shape(state)).toEqual([
+        ["thinking", "hmm"],
+        ["message", "Hi"],
+      ]);
+    });
+
+    it("coarse_thinking_without_deltas_still_folds", () => {
+      const state = fold(coarse("hmm"), assistantMsg("Hi"), doneEvt());
+      expect(shape(state)).toEqual([
+        ["thinking", "hmm"],
+        ["message", "Hi"],
+      ]);
+    });
+
+    it("text_already_streamed_finalizes_the_message_after_a_tool_call_closed_the_anchor", () => {
+      const state = fold(delta("Hi"), toolRunning("c1", "x"), {
+        ...assistantMsg("Hi"),
+        textAlreadyStreamed: true,
+      });
+      expect(state.events.filter((e) => e.kind === "message")).toHaveLength(1);
+      expect(shape(state)[0]).toEqual(["message", "Hi"]);
+    });
+
+    it("two_turns_in_a_row_yield_two_thinking_events_and_two_messages", () => {
+      const turn = (t: string, a: string): AgentStreamEvent[] => [
+        thinkDelta(t),
+        delta(a),
+        coarse(t),
+        { ...assistantMsg(a), textAlreadyStreamed: true },
+      ];
+      const state = fold(...turn("one", "A"), { type: "user" }, ...turn("two", "B"), doneEvt());
+      expect(shape(state)).toEqual([
+        ["thinking", "one"],
+        ["message", "A"],
+        ["thinking", "two"],
+        ["message", "B"],
+      ]);
+    });
+  });
 });
