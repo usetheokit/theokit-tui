@@ -13,6 +13,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- `agentStreamReducer` no longer shows thinking and the answer twice for the SDK event order. A
+  coarse `thinking` after streamed `thinking-delta` events is dropped, and an `assistant` event
+  with the new optional `textAlreadyStreamed` field finalizes the streamed message in place even
+  after a tool call closed it, instead of minting a second one (#203)
 - `messagesToAgentEvents` maps a tool part in state `output-denied` to `failed`. It fell back to
   `pending`, so a denied call showed a spinner forever in a rebuilt transcript (#205)
 - The never-weaken guard (`it_count_never_decreases`) reads the base commit with one
