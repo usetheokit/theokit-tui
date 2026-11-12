@@ -13,6 +13,9 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- The never-weaken guard (`it_count_never_decreases`) reads the base commit with one
+  `git cat-file --batch` process instead of hundreds of `git show` spawns. Under CPU load it ran
+  past the 15 s test timeout and failed `CI` on a correct tree (#210)
 - The default `apply_patch` presentation reads the V4A `patch` the framework tool takes. The header
   names the files (`Editing a.ts, c.ts`, `+N more` past three), the approval label names every
   file, and the body renders `{ ok, files_patched | error }`. It read `input.path`, which the tool
