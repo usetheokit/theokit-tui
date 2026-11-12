@@ -5,7 +5,18 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `parseV4APatchFiles` lists the files a V4A patch (`*** Begin Patch ... *** End Patch`) names, in
+  order, with `add` / `update` / `delete` / `move` operations. It never throws and returns `[]` for
+  text that is not V4A (#190)
+
 ### Fixed
+
+- The default `apply_patch` presentation reads the V4A `patch` the framework tool takes. The header
+  names the files (`Editing a.ts, c.ts`, `+N more` past three), the approval label names every
+  file, and the body renders `{ ok, files_patched | error }`. It read `input.path`, which the tool
+  never has, so the header was a bare "Patched" and the prompt named no file (#190)
 
 - `ingest` in the approval ledger re-reads the last message it has already passed. An approval
   request added to the assistant message still streaming (same index, thread length unchanged) was
