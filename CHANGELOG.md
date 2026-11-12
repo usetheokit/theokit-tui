@@ -13,6 +13,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- A `shell_exec` result with a non-zero `exit_code` renders as a failure. The shell parsers accept
+  `exit_code` (sdk-tools) as well as `exitCode` (`exitCode` wins), the `shell_exec` presentation
+  parses string results through `routeToolResult`, and a missing exit code stays undefined
+  instead of defaulting to `0` (#204)
 - The never-weaken guard (`it_count_never_decreases`) reads the base commit with one
   `git cat-file --batch` process instead of hundreds of `git show` spawns. Under CPU load it ran
   past the 15 s test timeout and failed `CI` on a correct tree (#210)

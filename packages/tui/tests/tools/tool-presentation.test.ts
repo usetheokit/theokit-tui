@@ -20,6 +20,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import {
   DEFAULT_TOOL_PRESENTATION,
   KNOWN_TOOL_NAMES,
@@ -160,6 +161,31 @@ describe("body", () => {
       exitCode: 0,
     });
     expect(card?.kind).toBe("output");
+  });
+
+  it("test_shell_exec_reads_exit_code_from_string_object_and_route", () => {
+    const body = DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.body;
+    const raw = JSON.stringify({ ok: true, stdout: "", stderr: "boom", exit_code: 2 });
+    const expected = { kind: "output", shell: { stdout: "", stderr: "boom", exitCode: 2 } };
+    expect(body?.(raw)).toEqual(expected);
+    expect(body?.(JSON.parse(raw))).toEqual(expected);
+    expect(routeToolResult(raw)).toEqual({ shell: expected.shell });
+  });
+
+  it("test_shell_exec_without_an_exit_code_leaves_it_undefined", () => {
+    const card = DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.body?.({ stdout: "x", stderr: "" });
+    expect(card).toEqual({ kind: "output", shell: { stdout: "x", stderr: "" } });
+    expect((card as { shell: { exitCode?: number } }).shell.exitCode).toBeUndefined();
+  });
+
+  it("test_shell_exec_string_with_exit_zero_and_a_diff_still_routes_to_diff", () => {
+    const stdout = "--- a\n+++ b\n@@ -1 +1 @@\n-x\n+y\n";
+    const raw = JSON.stringify({ ok: true, stdout, stderr: "", exit_code: 0 });
+    expect(routeToolResult(raw)).toEqual({ diff: stdout });
+    expect(DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.body?.(raw)).toEqual({
+      kind: "diff",
+      patch: stdout,
+    });
   });
 
   it("test_a_body_given_a_shape_it_does_not_recognise_falls_back_to_preview", () => {

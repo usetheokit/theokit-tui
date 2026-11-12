@@ -4,6 +4,7 @@ import {
   extractAssistantText,
   isShellEnvelope,
   looksLikeUnifiedDiff,
+  routeToolResult,
 } from "../../src/agent/agent-stream-event.js";
 
 describe("looksLikeUnifiedDiff", () => {
@@ -44,6 +45,20 @@ describe("isShellEnvelope", () => {
       const out = isShellEnvelope(bad);
       expect(out, JSON.stringify(bad)).toBe(false);
     }
+  });
+});
+
+describe("routeToolResult exit codes", () => {
+  it("prefers exitCode over exit_code when both are present", () => {
+    expect(routeToolResult({ stdout: "x", exitCode: 0, exit_code: 3 })).toEqual({
+      shell: { stdout: "x", stderr: "", exitCode: 0 },
+    });
+  });
+
+  it("reads exit_code alone", () => {
+    expect(routeToolResult({ stdout: "x", exit_code: 3 })).toEqual({
+      shell: { stdout: "x", stderr: "", exitCode: 3 },
+    });
   });
 });
 
