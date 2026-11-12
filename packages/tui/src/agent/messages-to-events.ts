@@ -152,7 +152,7 @@ export function findPendingApproval(
   return undefined;
 }
 
-/** ai SDK tool-part `state` → tui {@link ToolCallStatus}. Approval-pending states read as `pending`. */
+/** ai SDK tool-part `state` → tui {@link ToolCallStatus}. Approval-pending states read as `pending`; a denied call (`output-denied`) is finished and not run, so `failed`. */
 const TOOL_STATUS: Readonly<Record<string, ToolCallStatus>> = {
   "input-streaming": "pending",
   "input-available": "running",
@@ -160,6 +160,7 @@ const TOOL_STATUS: Readonly<Record<string, ToolCallStatus>> = {
   "approval-responded": "pending",
   "output-available": "success",
   "output-error": "failed",
+  "output-denied": "failed",
 };
 
 interface ToolPartView {

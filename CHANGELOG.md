@@ -5,6 +5,36 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `parseV4APatchFiles` lists the files a V4A patch (`*** Begin Patch ... *** End Patch`) names, in
+  order, with `add` / `update` / `delete` / `move` operations. It never throws and returns `[]` for
+  text that is not V4A (#190)
+
+### Fixed
+
+- CI `pnpm install --frozen-lockfile` failed on `node-pty@1.1.0`: it ships no linux-x64 prebuild, so
+  its install script fell back to `node-gyp`, which is not on `PATH` on the GitHub runner
+  ("node-gyp: not found"). `node-gyp` is now a dependency of `node-pty` through
+  `pnpm.packageExtensions`, so the build runs and the PTY e2e tests still run (#211)
+- `agentStreamReducer` no longer shows thinking and the answer twice for the SDK event order. A
+  coarse `thinking` after streamed `thinking-delta` events is dropped, and an `assistant` event
+  with the new optional `textAlreadyStreamed` field finalizes the streamed message in place even
+  after a tool call closed it, instead of minting a second one (#203)
+- `messagesToAgentEvents` maps a tool part in state `output-denied` to `failed`. It fell back to
+  `pending`, so a denied call showed a spinner forever in a rebuilt transcript (#205)
+- The never-weaken guard (`it_count_never_decreases`) reads the base commit with one
+  `git cat-file --batch` process instead of hundreds of `git show` spawns. Under CPU load it ran
+  past the 15 s test timeout and failed `CI` on a correct tree (#210)
+- The default `apply_patch` presentation reads the V4A `patch` the framework tool takes. The header
+  names the files (`Editing a.ts, c.ts`, `+N more` past three), the approval label names every
+  file, and the body renders `{ ok, files_patched | error }`. It read `input.path`, which the tool
+  never has, so the header was a bare "Patched" and the prompt named no file (#190)
+
+- `ingest` in the approval ledger re-reads the last message it has already passed. An approval
+  request added to the assistant message still streaming (same index, thread length unchanged) was
+  never seen, so the prompt never appeared and the run waited until the approval timed out (#189)
+
 ## [0.80.0] - 2026-09-04
 
 ### Added
