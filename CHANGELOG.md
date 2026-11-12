@@ -5,6 +5,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `ingest` in the approval ledger re-reads the last message it has already passed. An approval
+  request added to the assistant message still streaming (same index, thread length unchanged) was
+  never seen, so the prompt never appeared and the run waited until the approval timed out (#189)
+
 ## [0.80.0] - 2026-09-04
 
 ### Added

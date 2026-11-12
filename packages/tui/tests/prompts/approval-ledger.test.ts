@@ -63,6 +63,41 @@ describe("approval ledger — ingest", () => {
     expect(twice).toBe(once);
   });
 
+  it("test_an_approval_added_to_the_streaming_last_message_is_seen", () => {
+    const user: UIMessageLike = {
+      id: "u1",
+      role: "user",
+      parts: [{ type: "text", text: "run ls" }],
+    };
+    const text = { type: "text", text: "Let me run it." };
+    const streaming: UIMessageLike = { id: "a1", role: "assistant", parts: [text] };
+    const withApproval: UIMessageLike = {
+      id: "a1",
+      role: "assistant",
+      parts: [
+        text,
+        {
+          type: "tool-shell_exec",
+          toolCallId: "c1",
+          state: "approval-requested",
+          approval: { id: "ap1" },
+          input: { command: "ls" },
+        },
+      ],
+    };
+    let led = ingest(createApprovalLedger(), [user, streaming]);
+    led = ingest(led, [user, withApproval]);
+    expect(findNextApproval(led)?.approvalId).toBe("ap1");
+
+    const t = [user, withApproval];
+    led = ingest(ingest(ingest(led, t), t), t);
+    expect(led.entries.filter((e) => e.approvalId === "ap1")).toHaveLength(1);
+
+    led = ingest(settle(led, "ap1"), t);
+    expect(findNextApproval(led)).toBeUndefined();
+    expect(pendingCount(led)).toBe(0);
+  });
+
   it("test_the_same_id_arriving_in_a_LATER_message_is_not_added_twice", () => {
     // The case the id check alone can catch: the second message is PAST the watermark, so the
     // incremental read does reach it. Without the check the ledger holds `a` twice and asks about
