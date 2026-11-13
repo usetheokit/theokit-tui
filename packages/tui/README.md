@@ -109,7 +109,7 @@ ids in disjoint namespaces and cannot tell they are the same call.
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Chat    | `ChatMessage`, `ChatThread` (windowed scrollback), `ChatComposer`                                                                                                         |
 | Tools   | `ToolCall`, `ToolCallCard`, `ToolResult` (shell envelope, truncation), `parseV4APatchFiles` (files named by an `apply_patch` V4A patch)                                                                                                     |
-| Agent   | `AgentTimeline`, `AgentStreaming`, `useAgentStream` + `agentStreamReducer`                                                                                                |
+| Agent   | `AgentTimeline`, `AgentStreaming`, `useAgentStream` + `agentStreamReducer`, `agentEventsToMarkdown` + `lastAssistantText` (conversation export)                                                                                                |
 | Code    | `CodeBlock` (optional lowlight), `DiffViewer` + `parseUnifiedDiff`                                                                                                        |
 | Metrics | `ContextWindowBar`, `TokenUsageChart`, `CostMeter`                                                                                                                        |
 | Shell   | `WelcomeBanner` (optional `animated` < 2 s reveal — TTY-gated, disable with `THEOKIT_TUI_NO_MOTION=1`), `TheoTUIProvider` + built-in themes (`dark`, `light`, `no-color`) |
