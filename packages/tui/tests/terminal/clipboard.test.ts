@@ -14,6 +14,7 @@ const enoent = (): SpawnSyncReturns<string> =>
     error: Object.assign(new Error("spawn ENOENT"), { code: "ENOENT" }),
   }) as unknown as SpawnSyncReturns<string>;
 
+const custom = 123;
 const two = [
   { bin: "a", args: [] },
   { bin: "b", args: ["-x"] },
@@ -37,8 +38,8 @@ describe("copyToClipboard", () => {
       return ok();
     };
     copyToClipboard("x", { candidates: two, runner });
-    copyToClipboard("x", { candidates: two, runner, timeoutMs: 123 });
-    expect(seen).toEqual([5000, 123]);
+    copyToClipboard("x", { candidates: two, runner, timeoutMs: custom });
+    expect(seen).toEqual([5000, custom]);
   });
 
   it("throws NoClipboardError listing every bin", () => {
@@ -74,7 +75,7 @@ describe("copyToClipboard", () => {
       r as unknown as SpawnSyncReturns<string>;
     const detail = (r: Partial<SpawnSyncReturns<string>>) => {
       try {
-        copyToClipboard("x", { candidates: two, runner: mk(r), timeoutMs: 7 });
+        copyToClipboard("x", { candidates: two, runner: mk(r), timeoutMs: custom });
       } catch (e) {
         return (e as ClipboardWriteError).detail;
       }
@@ -82,7 +83,7 @@ describe("copyToClipboard", () => {
     };
     expect(
       detail({ status: null, error: Object.assign(new Error("t"), { code: "ETIMEDOUT" }) }),
-    ).toBe("timed out after 7 ms");
+    ).toBe(`timed out after ${custom} ms`);
     expect(detail({ status: null, error: new Error("denied") })).toBe("denied");
     expect(detail({ status: 3 })).toBe("exited with status 3");
   });
