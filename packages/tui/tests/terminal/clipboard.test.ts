@@ -42,7 +42,8 @@ describe("copyToClipboard", () => {
       return ok();
     };
     copyToClipboard("x", { candidates: [A], runner });
-    copyToClipboard("x", { candidates: [A], runner, timeoutMs: 123 });
+    const custom = 123;
+    copyToClipboard("x", { candidates: [A], runner, timeoutMs: custom });
     expect(seen).toEqual([5000, 123]);
   });
 
