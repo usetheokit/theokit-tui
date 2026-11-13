@@ -7,6 +7,9 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `ContextWindowBar` accepts `pressure` (`ok` | `warn` | `critical`, exported as `ContextPressureLevel`)
+  to color the fill from a caller-computed level such as `contextPressure`, and `estimated` to mark a
+  guessed window with `(estimated)` (or a trailing `~` when only the label fits) (#200)
 - `@theokit/tui/keys` exports `chordOf`, `defaultKeymap`, `resolveAction` and the `Chord`, `Action`
   and `Keymap` types, plus `parseKeybindings`, which applies a keybindings document onto a keymap and
   returns a `notApplied` report (reserved, claimed, unknown action, invalid chord, malformed

@@ -311,3 +311,16 @@ gate — sustained internal use with recorded evidence — is satisfied.
 ## License
 
 Apache-2.0
+
+### ContextWindowBar fed by `contextPressure`
+
+```tsx
+import { contextPressure } from "@theokit/agents/config";
+
+<ContextWindowBar
+  usedTokens={used}
+  limitTokens={windowSize}
+  pressure={contextPressure(used, windowSize)}
+  estimated={windowIsFallback}
+/>;
+```
