@@ -8,3 +8,5 @@ export {
   setTerminalTitle,
   supportsHyperlinks,
 } from "./terminal-osc.js";
+export type { FormatCostOptions } from "./format.js";
+export { formatCost, formatElapsed, formatTokens } from "./format.js";

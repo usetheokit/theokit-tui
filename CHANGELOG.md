@@ -5,6 +5,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `formatTokens`, `formatCost` (with `FormatCostOptions`) and `formatElapsed` are exported from the
+  package entry, so apps stop rewriting them (`formatTokens(1_000_000)` is `1m`, not `1000k`) (#199)
+
 ## [0.81.1] - 2026-11-12
 
 ### Fixed

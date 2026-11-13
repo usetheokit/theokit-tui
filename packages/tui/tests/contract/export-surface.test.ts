@@ -174,6 +174,14 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.preloadHighlighter).toBe("function");
   });
 
+  it("public_entry_exposes_the_formatters", async () => {
+    const mod = await import("../../src/index.js");
+    expect(typeof mod.formatTokens).toBe("function");
+    expect(typeof mod.formatCost).toBe("function");
+    expect(typeof mod.formatElapsed).toBe("function");
+    expect(mod.formatTokens(1_000_000)).toBe("1m");
+  });
+
   it("manifest_declares_lowlight_optional_peer", () => {
     const pkg = JSON.parse(
       readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
@@ -213,8 +221,6 @@ describe("public entry surface (T0.2)", () => {
     expect(mod.CHAT_ROLES).toEqual(["user", "assistant", "system"]);
     expect(mod.TOOL_CALL_STATUSES).toEqual(["pending", "running", "success", "failed"]);
     expect(typeof mod.AgentStreaming).toBe("function");
-    // Module-internal by plan decision (EC-10, ADR D7 precedent):
-    expect(mod).not.toHaveProperty("formatElapsed");
   });
 
   it("public_entry_exposes_metrics_surface", async () => {
@@ -231,8 +237,6 @@ describe("public entry surface (T0.2)", () => {
     expect(mod).not.toHaveProperty("renderFillBar");
     expect(mod).not.toHaveProperty("formatPercent");
     expect(mod).not.toHaveProperty("displayPercent");
-    expect(mod).not.toHaveProperty("formatTokens");
-    expect(mod).not.toHaveProperty("formatCost");
   });
 
   it("public_entry_exposes_welcome_banner", async () => {

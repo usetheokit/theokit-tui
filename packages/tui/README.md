@@ -112,6 +112,7 @@ ids in disjoint namespaces and cannot tell they are the same call.
 | Agent   | `AgentTimeline`, `AgentStreaming`, `useAgentStream` + `agentStreamReducer`                                                                                                |
 | Code    | `CodeBlock` (optional lowlight), `DiffViewer` + `parseUnifiedDiff`                                                                                                        |
 | Metrics | `ContextWindowBar`, `TokenUsageChart`, `CostMeter`                                                                                                                        |
+| Format  | `formatTokens` (`1m`, never `1000k`), `formatCost` (sub-cent reads `<$0.01`), `formatElapsed` |
 | Shell   | `WelcomeBanner` (optional `animated` < 2 s reveal — TTY-gated, disable with `THEOKIT_TUI_NO_MOTION=1`), `TheoTUIProvider` + built-in themes (`dark`, `light`, `no-color`) |
 
 Every primitive degrades cleanly under `NO_COLOR`, `TERM=dumb` and bare
