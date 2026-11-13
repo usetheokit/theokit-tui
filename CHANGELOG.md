@@ -5,6 +5,24 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.82.0] - 2026-11-13
+
+### Added
+
+- `ContextWindowBar` accepts `pressure` (`ok` | `warn` | `critical`, exported as `ContextPressureLevel`)
+  to color the fill from a caller-computed level such as `contextPressure`, and `estimated` to mark a
+  guessed window with `(estimated)` (or a trailing `~` when only the label fits) (#200)
+- `@theokit/tui/keys` exports `chordOf`, `defaultKeymap`, `resolveAction` and the `Chord`, `Action`
+  and `Keymap` types, plus `parseKeybindings`, which applies a keybindings document onto a keymap and
+  returns a `notApplied` report (reserved, claimed, unknown action, invalid chord, malformed
+  document). `null` unbinds (#201)
+- `formatTokens`, `formatCost` (with `FormatCostOptions`) and `formatElapsed` are exported from the root
+  entry, so apps stop hand-rolling token, cost and elapsed-time formatting (`formatTokens(1_000_000)`
+  is `"1m"`, not `"1000k"`) (#199)
+- `agentEventsToMarkdown` renders an `AgentEvent[]` as Markdown (`## <heading>` per message, optional
+  tool lines with `includeTools`, thinking left out) and `lastAssistantText` returns the newest
+  non-empty assistant text. Both skip malformed entries and never throw (#202)
+
 ## [0.81.1] - 2026-11-12
 
 ### Fixed

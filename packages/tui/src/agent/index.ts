@@ -37,7 +37,7 @@ export {
 } from "./agent-stream-reducer.js";
 export type { AgentStreamingProps } from "./agent-streaming.js";
 export type { TurnDoneProps } from "./turn-done.js";
-// formatElapsed stays module-internal (EC-10 — D7 precedent).
+// formatElapsed is public, exported from the format barrel (#199).
 export { AgentStreaming } from "./agent-streaming.js";
 export { TurnDone, WHIMSY_VERBS, whimsyVerb } from "./turn-done.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
@@ -82,3 +82,6 @@ export type { UseCoalescedOptions } from "./use-coalesced.js";
 // change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
 // complete and tested and reachable by nobody until this slice exported it.
 export { useCoalesced } from "./use-coalesced.js";
+// Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
+export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
+export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";

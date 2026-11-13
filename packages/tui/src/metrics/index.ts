@@ -2,7 +2,7 @@
 // src/index.ts re-exports this file; anything NOT listed here is
 // module-internal by construction rather than by comment.
 
-export type { ContextWindowBarProps } from "./context-window-bar.js";
+export type { ContextPressureLevel, ContextWindowBarProps } from "./context-window-bar.js";
 export { ContextWindowBar } from "./context-window-bar.js";
 export type { CostMeterProps } from "./cost-meter.js";
 export { CostMeter } from "./cost-meter.js";
