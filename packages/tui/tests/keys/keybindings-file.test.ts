@@ -6,14 +6,20 @@ const actions = ["toggle-verbose", "quit"] as const;
 describe("parseKeybindings", () => {
   it("maps a flat document and the nested form to the same keymap", () => {
     const flat = parseKeybindings({ "ctrl+t": "toggle-verbose" }, { actions });
-    const nested = parseKeybindings({ bindings: [{ bindings: { "ctrl+t": "toggle-verbose" } }] }, { actions });
+    const nested = parseKeybindings(
+      { bindings: [{ bindings: { "ctrl+t": "toggle-verbose" } }] },
+      { actions },
+    );
     expect(flat.notApplied).toEqual([]);
     expect(flat.keymap.get("ctrl+t")).toBe("toggle-verbose");
     expect(nested.keymap).toEqual(flat.keymap);
   });
 
   it("normalizes chords and lists", () => {
-    const r = parseKeybindings({ "  Ctrl+T ": "quit", "ctrl+Q": "quit" }, { actions, reserved: ["CTRL+Q"] });
+    const r = parseKeybindings(
+      { "  Ctrl+T ": "quit", "ctrl+Q": "quit" },
+      { actions, reserved: ["CTRL+Q"] },
+    );
     expect(r.keymap.get("ctrl+t")).toBe("quit");
     expect(r.keymap.has("ctrl+q")).toBe(false);
     expect(r.notApplied).toHaveLength(1);
@@ -52,7 +58,14 @@ describe("parseKeybindings", () => {
   });
 
   it("reports a malformed document and never throws", () => {
-    for (const doc of ["nope", { bindings: 3 }, null, [], { bindings: [3] }, { bindings: [{ bindings: 1 }] }]) {
+    for (const doc of [
+      "nope",
+      { bindings: 3 },
+      null,
+      [],
+      { bindings: [3] },
+      { bindings: [{ bindings: 1 }] },
+    ]) {
       const r = parseKeybindings(doc, { actions });
       expect(r.keymap.size).toBe(0);
       expect(r.notApplied).toHaveLength(1);
