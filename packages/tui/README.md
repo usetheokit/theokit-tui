@@ -285,6 +285,23 @@ A `null` value removes the chord from `base`.
 reserved, claimed, bound to an unknown action, not a chord `chordOf` can produce, or the document
 is malformed. Show it to the user (a `/status` line, say). `parseKeybindings` never throws.
 
+## Collapsing goal-continuation turns
+
+`runGoalLoop` in `@theokit/sdk` sends a long continuation prompt as a user turn on every iteration.
+Pass the marker to `messagesToAgentEvents` and each such turn becomes one short message event
+(same id, so ids stay stable):
+
+```ts
+import { GOAL_CONTINUATION_MARKER } from "@theokit/sdk";
+
+const events = messagesToAgentEvents(messages, {
+  collapseUserTurns: { marker: GOAL_CONTINUATION_MARKER, label: "continuing the goal" },
+});
+```
+
+Only `user` messages are checked; `label` defaults to `continuing the goal`. An empty `marker`
+throws a `TypeError`.
+
 ## Development
 
 Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).

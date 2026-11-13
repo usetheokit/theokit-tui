@@ -593,3 +593,52 @@ describe("messagesToAgentEvents — formatToolHeader (header seam)", () => {
     expect(renamed.map((e) => e.kind)).toEqual(["tool", "tool"]);
   });
 });
+
+describe("collapseUserTurns", () => {
+  const MARKER = "[[theokit:goal-continuation]]";
+  const user: UIMessageLike = {
+    id: "u1",
+    role: "user",
+    parts: [{ type: "text", text: `${MARKER}\nContinue working...` }],
+  };
+  const assistant: UIMessageLike = {
+    id: "a1",
+    role: "assistant",
+    parts: [{ type: "text", text: `${MARKER} done` }],
+  };
+
+  it("collapses a marked user turn and leaves the assistant message alone", () => {
+    const events = messagesToAgentEvents([user, assistant], {
+      collapseUserTurns: { marker: MARKER },
+    });
+    expect(events).toEqual([
+      { id: "u1::m0", kind: "message", role: "user", text: "continuing the goal" },
+      { id: "a1::m0", kind: "message", role: "assistant", text: `${MARKER} done` },
+    ]);
+  });
+
+  it("uses a custom label", () => {
+    const events = messagesToAgentEvents([user], {
+      collapseUserTurns: { marker: MARKER, label: "↻" },
+    });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ text: "↻" });
+  });
+
+  it("returns the collapsed event after an uncollapsed call on the same array", () => {
+    const messages = [user];
+    const before = messagesToAgentEvents(messages);
+    expect(before[0]).toMatchObject({ text: `${MARKER}\nContinue working...` });
+    const after = messagesToAgentEvents(messages, { collapseUserTurns: { marker: MARKER } });
+    expect(after[0]).toMatchObject({ text: "continuing the goal" });
+    expect(messagesToAgentEvents(messages)[0]).toMatchObject({
+      text: before[0] && "text" in before[0] ? before[0].text : "",
+    });
+  });
+
+  it("throws TypeError on an empty marker", () => {
+    expect(() => messagesToAgentEvents([], { collapseUserTurns: { marker: "" } })).toThrow(
+      new TypeError("collapseUserTurns.marker must be a non-empty string"),
+    );
+  });
+});

@@ -7,6 +7,9 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `messagesToAgentEvents` accepts `collapseUserTurns: { marker, label? }`, which collapses user turns
+  starting with the marker (such as the SDK's `GOAL_CONTINUATION_MARKER`) into one message event
+  (default label `continuing the goal`); an empty marker throws `TypeError` (#196)
 - `sanitizeTitle` (strip C0/C1, collapse whitespace, cap by code points, default 240) and
   `pushTerminalTitle` (XTWINOPS save, idempotent restore) next to `setTerminalTitle` (#198)
 
