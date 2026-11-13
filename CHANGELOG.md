@@ -7,6 +7,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `@theokit/tui/keys` exports `chordOf`, `defaultKeymap`, `resolveAction` and the `Chord`, `Action`
+  and `Keymap` types, plus `parseKeybindings`, which applies a keybindings document onto a keymap and
+  returns a `notApplied` report (reserved, claimed, unknown action, invalid chord, malformed
+  document). `null` unbinds (#201)
 - `formatTokens`, `formatCost` (with `FormatCostOptions`) and `formatElapsed` are exported from the root
   entry, so apps stop hand-rolling token, cost and elapsed-time formatting (`formatTokens(1_000_000)`
   is `"1m"`, not `"1000k"`) (#199)
