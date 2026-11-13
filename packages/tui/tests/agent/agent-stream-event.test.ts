@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AgentStreamEvent } from "../../src/agent/agent-stream-event.js";
+import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import {
   extractAssistantText,
   isShellEnvelope,
@@ -80,5 +81,17 @@ describe("AgentStreamEvent union", () => {
     };
     expect(fine.type).toBe("text-delta");
     expect(coarse.call_id).toBe("1");
+  });
+});
+
+describe("exit_code dialect (#204)", () => {
+  it("accepts exit_code and rejects a non-number one", () => {
+    expect(isShellEnvelope({ stdout: "x", exit_code: 3 })).toBe(true);
+    expect(isShellEnvelope({ stdout: "x", exit_code: "3" })).toBe(false);
+  });
+  it("exitCode wins over exit_code when both are present", () => {
+    expect(routeToolResult({ stdout: "x", exitCode: 0, exit_code: 3 })).toEqual({
+      shell: { stdout: "x", stderr: "", exitCode: 0 },
+    });
   });
 });

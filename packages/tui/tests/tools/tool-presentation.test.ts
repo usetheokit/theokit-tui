@@ -20,6 +20,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import {
   DEFAULT_TOOL_PRESENTATION,
   KNOWN_TOOL_NAMES,
@@ -223,5 +224,32 @@ describe("apply_patch V4A", () => {
   it("test_body_keeps_diff_and_preview_for_other_strings", () => {
     expect(entry?.body?.("not json")?.kind).toBe("preview");
     expect(entry?.body?.("[1]")?.kind).toBe("preview");
+  });
+});
+
+describe("shell_exec exit_code (#204)", () => {
+  const body = DEFAULT_TOOL_PRESENTATION.get("shell_exec")?.body;
+  const raw = JSON.stringify({ ok: true, stdout: "", stderr: "boom", exit_code: 2 });
+  const want = { kind: "output", shell: { stdout: "", stderr: "boom", exitCode: 2 } };
+
+  it("reads exit_code from a JSON string", () => {
+    expect(body?.(raw)).toEqual(want);
+  });
+  it("reads exit_code from a parsed object", () => {
+    expect(body?.(JSON.parse(raw))).toEqual(want);
+  });
+  it("routeToolResult reads exit_code", () => {
+    expect(routeToolResult(raw)).toEqual({ shell: want.shell });
+  });
+  it("leaves exitCode undefined when the producer sent none", () => {
+    const out = body?.({ stdout: "x", stderr: "" });
+    expect(out).toEqual({ kind: "output", shell: { stdout: "x", stderr: "" } });
+    expect(out?.kind === "output" && out.shell?.exitCode).toBeUndefined();
+  });
+  it("still routes a clean diff with exit_code 0 to a diff", () => {
+    const stdout = "--- a\n+++ a\n@@ -1 +1 @@\n-x\n+y\n";
+    expect(routeToolResult(JSON.stringify({ stdout, stderr: "", exit_code: 0 }))).toEqual({
+      diff: stdout,
+    });
   });
 });

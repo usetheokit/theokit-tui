@@ -5,6 +5,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A `shell_exec` result with a non-zero `exit_code` rendered as raw JSON, an `exitCode: 0` card, or
+  a card with no exit code. `routeToolResult` now reads `exit_code` as well as `exitCode`
+  (`exitCode` wins), and `shellBody` delegates to it for string and object input, leaving
+  `exitCode` undefined when the producer sent none (#204)
+
 ## [0.81.0] - 2026-11-12
 
 ### Added
