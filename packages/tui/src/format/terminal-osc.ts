@@ -76,6 +76,41 @@ export function setTerminalTitle(title: string, out: OscSink = process.stdout): 
   out.write(`\x1b]0;${title}\x07`);
 }
 
+/**
+ * Make arbitrary text safe for `setTerminalTitle`: whitespace controls become spaces, the other
+ * C0/C1 characters are dropped, whitespace is collapsed and trimmed, and the result is capped at
+ * `max` code points (default 240) so an emoji is never cut in half.
+ *
+ * @throws TypeError when `max` is not a positive integer.
+ */
+export function sanitizeTitle(raw: string, opts: { max?: number } = {}): string {
+  const max = opts.max ?? 240;
+  if (!Number.isInteger(max) || max <= 0) {
+    throw new TypeError(`sanitizeTitle: max must be a positive integer, got ${String(max)}`);
+  }
+  const clean = raw
+    .replace(/[\t\n\r]/g, " ")
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return Array.from(clean).slice(0, max).join("").trim();
+}
+
+/**
+ * Save the current terminal title (XTWINOPS 22;0) and return an idempotent restore (23;0).
+ * A no-op off a TTY.
+ */
+export function pushTerminalTitle(out: OscSink = process.stdout): () => void {
+  if (out.isTTY !== true) return () => {};
+  out.write("\x1b[22;0t");
+  let restored = false;
+  return () => {
+    if (restored) return;
+    restored = true;
+    out.write("\x1b[23;0t");
+  };
+}
+
 /** True when an OSC-8 hyperlink is safe to emit (a TTY, not under a multiplexer). */
 export function supportsHyperlinks(
   env: NodeJS.ProcessEnv = process.env,
