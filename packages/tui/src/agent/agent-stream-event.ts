@@ -29,11 +29,6 @@ export interface AgentStreamEvent {
    * `SDKStatusMessage.message?: string` (the whole-union assignability fix).
    */
   message?: string | { content?: ReadonlyArray<AssistantContentBlock> };
-  /**
-   * On `assistant`: the SDK already streamed this text as `text-delta` events. The reducer
-   * finalizes the turn's message in place and never mints a second one.
-   */
-  textAlreadyStreamed?: boolean;
   /** Tool lifecycle (coarse `tool_call`). */
   call_id?: string;
   name?: string;

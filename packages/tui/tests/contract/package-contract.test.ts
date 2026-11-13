@@ -190,43 +190,22 @@ function basePathCandidates(path: string): string[] {
   return [...new Set(candidates)];
 }
 
-/**
- * `it(` count at the base commit for every path in ONE `git cat-file --batch` process, or null for
- * a path that did not exist then.
- *
- * This used to spawn `git show` once per candidate per file — several hundred sequential
- * processes, most of them failing lookups. Under CPU load that outran the 15 s `testTimeout` and
- * the guard went red on a correct tree (the `CI` check on the #207 promotion). One process makes
- * the cost independent of how many files changed. Any git failure still throws: a guard that
- * silently skips is not a guard.
- */
-function itCountsAtBase(paths: readonly string[]): Map<string, number | null> {
-  const requests = paths.map((path) => ({ path, candidates: basePathCandidates(path) }));
-  const lines = requests.flatMap((r) => r.candidates.map((c) => `${M10_BASE}:${c}`));
-  const out = execFileSync("git", ["cat-file", "--batch"], {
-    input: `${lines.join("\n")}\n`,
-    maxBuffer: 256 * 1024 * 1024,
-  });
-  // Reply per request, in order: `<sha> blob <size>\n<bytes>\n`, or `<spec> missing\n`.
-  const found = new Map<string, number>();
-  let offset = 0;
-  for (const line of lines) {
-    const eol = out.indexOf(0x0a, offset);
-    if (eol === -1) throw new Error(`git cat-file --batch ended early at ${line}`);
-    const header = out.toString("utf8", offset, eol);
-    offset = eol + 1;
-    if (header.endsWith(" missing")) continue;
-    const size = Number(header.split(" ")[2]);
-    if (!Number.isInteger(size)) throw new Error(`unreadable git cat-file header: ${header}`);
-    found.set(line, countIts(out.toString("utf8", offset, offset + size)));
-    offset += size + 1;
+function itCountAtBase(path: string): number | null {
+  for (const candidate of basePathCandidates(path)) {
+    try {
+      return countIts(
+        execFileSync("git", ["show", `${M10_BASE}:${candidate}`], {
+          encoding: "utf8",
+          stdio: ["pipe", "pipe", "pipe"],
+        }),
+      );
+    } catch (thrown) {
+      const msg = String((thrown as { stderr?: unknown }).stderr ?? thrown);
+      if (/exists on disk, but not in|does not exist in/.test(msg)) continue;
+      throw thrown;
+    }
   }
-  const result = new Map<string, number | null>();
-  for (const { path, candidates } of requests) {
-    const hit = candidates.find((c) => found.has(`${M10_BASE}:${c}`));
-    result.set(path, hit === undefined ? null : (found.get(`${M10_BASE}:${hit}`) ?? null));
-  }
-  return result;
+  return null;
 }
 
 /** Where a base-commit test file lives today: same basename, an explicit
@@ -246,10 +225,9 @@ describe("never-weaken migration guard (M10 D2)", () => {
         encoding: "utf8",
       }),
     );
-    const countsAtBase = itCountsAtBase(changed);
     let compared = 0;
     for (const path of changed) {
-      const before = countsAtBase.get(path) ?? null;
+      const before = itCountAtBase(path);
       if (before === null) continue; // new since the base — nothing to weaken
       compared += 1;
       const current = currentPathFor(path, byBase);

@@ -108,7 +108,7 @@ ids in disjoint namespaces and cannot tell they are the same call.
 | Surface | Components                                                                                                                                                                |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Chat    | `ChatMessage`, `ChatThread` (windowed scrollback), `ChatComposer`                                                                                                         |
-| Tools   | `ToolCall`, `ToolCallCard`, `ToolResult` (shell envelope, truncation), `parseV4APatchFiles` (files named by an `apply_patch` V4A patch)                                                                                                     |
+| Tools   | `ToolCall`, `ToolCallCard`, `ToolResult` (shell envelope, truncation)                                                                                                     |
 | Agent   | `AgentTimeline`, `AgentStreaming`, `useAgentStream` + `agentStreamReducer`                                                                                                |
 | Code    | `CodeBlock` (optional lowlight), `DiffViewer` + `parseUnifiedDiff`                                                                                                        |
 | Metrics | `ContextWindowBar`, `TokenUsageChart`, `CostMeter`                                                                                                                        |

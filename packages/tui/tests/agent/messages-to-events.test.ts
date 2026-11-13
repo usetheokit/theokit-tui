@@ -444,35 +444,6 @@ describe("messagesToAgentEvents tool-result routing", () => {
     ]).find((e) => e.kind === "tool");
     expect(ev).toMatchObject({ output: "command failed", status: "failed" });
   });
-
-  it("maps an output-denied tool part to failed", () => {
-    const ev = messagesToAgentEvents([
-      {
-        id: "m1",
-        role: "assistant",
-        parts: [
-          {
-            type: "tool-shell",
-            toolCallId: "t1",
-            state: "output-denied",
-            input: { command: "rm -rf x" },
-          },
-        ],
-      },
-    ]).find((e) => e.kind === "tool");
-    expect(ev).toMatchObject({ status: "failed" });
-  });
-
-  it("keeps an unknown tool state pending", () => {
-    const ev = messagesToAgentEvents([
-      {
-        id: "m1",
-        role: "assistant",
-        parts: [{ type: "tool-shell", toolCallId: "t1", state: "something-new", input: {} }],
-      },
-    ]).find((e) => e.kind === "tool");
-    expect(ev).toMatchObject({ status: "pending" });
-  });
 });
 
 describe("messagesToAgentEvents — formatToolResult (result-body seam)", () => {

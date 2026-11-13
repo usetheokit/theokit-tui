@@ -25,7 +25,6 @@
  * narrows before it reads and every branch has a fallback.
  */
 import type { ToolCardResult } from "./tool-card-result.js";
-import { parseV4APatchFiles } from "./v4a-patch.js";
 
 /**
  * The tool names `@theokit/agents/tools` produces, measured on 2026-08-16 by constructing every
@@ -119,39 +118,6 @@ function diffBody(result: unknown): ToolCardResult {
   return patch === undefined ? previewOf(result) : { kind: "diff", patch };
 }
 
-/** Paths named by the V4A `patch` input: up to `max`, then `+N more`. Undefined without markers. */
-function v4aFiles(input: unknown, max: number): string | undefined {
-  const patch = str(input, "patch");
-  if (patch === undefined) return undefined;
-  const paths = parseV4APatchFiles(patch).map((file) => file.path);
-  if (paths.length === 0) return undefined;
-  const shown = paths.slice(0, max).join(", ");
-  return paths.length > max ? `${shown} +${paths.length - max} more` : shown;
-}
-
-/** `apply_patch` results: `{ ok, files_patched | error }` as an output card, else the diff path. */
-function applyPatchBody(result: unknown): ToolCardResult {
-  let value = result;
-  if (typeof value === "string") {
-    try {
-      value = JSON.parse(value);
-    } catch {
-      return diffBody(result);
-    }
-  }
-  if (typeof value === "object" && value !== null) {
-    const record = value as Record<string, unknown>;
-    if (record.ok === true && Array.isArray(record.files_patched)) {
-      const files = record.files_patched.filter((f): f is string => typeof f === "string");
-      return { kind: "output", shell: { stdout: files.join("\n"), stderr: "", exitCode: 0 } };
-    }
-    if (record.ok === false && typeof record.error === "string") {
-      return { kind: "output", shell: { stdout: "", stderr: record.error, exitCode: 1 } };
-    }
-  }
-  return diffBody(value);
-}
-
 /** An output card when the result looks like a shell envelope; a preview when it does not. */
 function shellBody(result: unknown): ToolCardResult {
   if (typeof result !== "object" || result === null) return previewOf(result);
@@ -204,15 +170,10 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
   [
     "apply_patch",
     {
-      header: (input, active) => {
-        const files = v4aFiles(input, 3);
-        return files === undefined
-          ? pathHeader("Applying a patch to", "Patched", "path", "file", "filePath")(input, active)
-          : `${active ? "Editing" : "Edited"} ${files}`;
-      },
-      body: applyPatchBody,
+      header: pathHeader("Applying a patch to", "Patched", "path", "file", "filePath"),
+      body: diffBody,
       approvalLabel: (input) =>
-        `Apply the patch to ${v4aFiles(input, Number.POSITIVE_INFINITY) ?? firstStr(input, "path", "file") ?? "the file"}?`,
+        `Apply the patch to ${firstStr(input, "path", "file") ?? "the file"}?`,
     },
   ],
   [
