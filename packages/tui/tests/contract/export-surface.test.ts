@@ -246,6 +246,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.formatElapsed).toBe("function");
     expect(typeof mod.sanitizeTitle).toBe("function");
     expect(typeof mod.pushTerminalTitle).toBe("function");
+    expect(typeof mod.sessionMessagesToThread).toBe("function");
     expect(mod.formatTokens(1_000_000)).toBe("1m");
   });
 

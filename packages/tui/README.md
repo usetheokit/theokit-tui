@@ -99,6 +99,16 @@ new `source` identity triggers (reconnect-by-refold), and a transcript read
 asynchronously may arrive after mount. `status` and `streaming` describe the live
 stream only: seeding a hook that has not started leaves it `idle`.
 
+To resume from a stored SDK session, convert it first. The SDK stores tool calls
+Claude-style (`tool_use` / `tool_result` parts joined by an id), and
+`sessionMessagesToThread` pairs them into one `tool-<name>` part per call:
+
+```tsx
+const { events } = useAgentStream(source, {
+  initialMessages: sessionMessagesToThread(await readSessionMessages(id)),
+});
+```
+
 Seed the history that *precedes* the stream. A tool already in the transcript and
 re-emitted by the live stream renders twice — the projection and the fold mint
 ids in disjoint namespaces and cannot tell they are the same call.
