@@ -7,6 +7,9 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `@theokit/tui/terminal` exports `copyToClipboard` (bounded `spawnSync` probe over `wl-copy`, `xclip`,
+  `xsel`, `pbcopy`, `clip.exe`, optional OSC 52 fallback on a TTY sink), `DEFAULT_CLIPBOARD_COMMANDS`,
+  and the typed `NoClipboardError` and `ClipboardWriteError` (#193)
 - `messagesToAgentEvents` accepts `collapseUserTurns: { marker, label? }`, which collapses user turns
   starting with the marker (such as the SDK's `GOAL_CONTINUATION_MARKER`) into one message event
   (default label `continuing the goal`); an empty marker throws `TypeError` (#196)

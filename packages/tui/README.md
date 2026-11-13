@@ -345,3 +345,27 @@ import { contextPressure } from "@theokit/agents/config";
   estimated={windowIsFallback}
 />;
 ```
+
+### Copying to the clipboard
+
+`copyToClipboard` from `@theokit/tui/terminal` writes text to the system clipboard. It tries
+`wl-copy`, `xclip`, `xsel`, `pbcopy` and `clip.exe` in turn, each with a bounded `spawnSync`
+(`timeoutMs`, default 5000), so a hung compositor cannot block the Ink loop forever.
+
+```ts
+import { copyToClipboard, NoClipboardError } from "@theokit/tui/terminal";
+
+try {
+  const { via } = copyToClipboard(lastAnswer, { osc52: process.stdout });
+  // via is the binary name, or "osc52"
+} catch (error) {
+  if (error instanceof NoClipboardError) console.error(error.message); // error.tried lists every bin
+  else throw error; // ClipboardWriteError: error.bin, error.detail
+}
+```
+
+- A missing binary (`ENOENT`) moves on to the next candidate. Any other failure (non-zero exit,
+  timeout) throws `ClipboardWriteError` and the next candidate is not tried.
+- `osc52` is off by default. When set and no binary exists, it writes `ESC ] 52 ; c ; <base64> BEL`
+  to that sink, only if `sink.isTTY === true`; otherwise it counts as unavailable.
+- Pass `candidates` to replace the binary list; `runner` is a test seam.

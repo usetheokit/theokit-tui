@@ -20,6 +20,13 @@
  * @public
  */
 
+export type { ClipboardCommand, CopyToClipboardOptions } from "./clipboard.js";
+export {
+  ClipboardWriteError,
+  copyToClipboard,
+  DEFAULT_CLIPBOARD_COMMANDS,
+  NoClipboardError,
+} from "./clipboard.js";
 export type { RotateOptions } from "./log-rotation.js";
 export { DEFAULT_CAP_BYTES, DEFAULT_KEEP, rotateLog } from "./log-rotation.js";
 export { CLEAR_SCREEN_AND_SCROLLBACK } from "./screen.js";
