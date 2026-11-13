@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.81.1] - 2026-11-12
+
 ### Fixed
 
 - A `shell_exec` result with a non-zero `exit_code` rendered as raw JSON, an `exitCode: 0` card, or
