@@ -7,6 +7,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `copyToClipboard`, `DEFAULT_CLIPBOARD_COMMANDS`, `NoClipboardError` and `ClipboardWriteError` in
+  `@theokit/tui/terminal`: a bounded (5 s) probe over `wl-copy`, `xclip`, `xsel`, `pbcopy` and
+  `clip.exe`, an opt-in OSC 52 fallback on a TTY sink, and typed errors that name every binary tried
+  (#193)
 - `messagesToAgentEvents` accepts `collapseUserTurns: { marker, label? }`, which collapses user turns
   starting with the marker (such as the SDK's `GOAL_CONTINUATION_MARKER`) into one message event
   (default label `continuing the goal`); an empty marker throws `TypeError` (#196)

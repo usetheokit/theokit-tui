@@ -238,6 +238,19 @@ process exits **0**. So the record is what survives for you to read afterwards, 
 session that continues. An earlier version of this paragraph offered "a corrupted frame is
 repainted" as the consolation, which this package's own measurement contradicts.
 
+**Copying to the clipboard.** `copyToClipboard` from `@theokit/tui/terminal` tries `wl-copy`, `xclip`,
+`xsel`, `pbcopy` and `clip.exe` in turn, each with a bounded timeout (`timeoutMs`, default 5000) so a
+hung compositor cannot block the loop. A missing binary moves on to the next; any other failure throws
+`ClipboardWriteError` (`bin`, `detail`) without trying more. With no binary at all it throws
+`NoClipboardError` (`tried`), unless you pass `osc52: process.stdout`, which writes an OSC 52 sequence
+when the sink is a TTY (useful over ssh). It returns `{ via }`: the binary name, or `"osc52"`.
+
+```ts
+import { copyToClipboard } from "@theokit/tui/terminal";
+
+const { via } = copyToClipboard(lastAnswer, { osc52: process.stdout });
+```
+
 If the sink itself fails — a closed pipe, an unwritable log path — the record is **counted rather
 than swallowed**, and `lostGuardRecords()` returns how many this process lost. Nothing reports that
 number for you: this package owns no lifecycle to hook, so read it where your session already ends.
