@@ -114,6 +114,10 @@ ids in disjoint namespaces and cannot tell they are the same call.
 | Metrics | `ContextWindowBar`, `TokenUsageChart`, `CostMeter`, `formatTokens`, `formatCost`, `formatElapsed` (number formatters)                                                                                                                        |
 | Shell   | `WelcomeBanner` (optional `animated` < 2 s reveal — TTY-gated, disable with `THEOKIT_TUI_NO_MOTION=1`), `TheoTUIProvider` + built-in themes (`dark`, `light`, `no-color`) |
 
+The window title helpers live in the format barrel: `setTerminalTitle` (throws on control bytes),
+`sanitizeTitle` (makes untrusted text safe for it) and `pushTerminalTitle` (saves the title and
+returns an idempotent restore).
+
 Every primitive degrades cleanly under `NO_COLOR`, `TERM=dumb` and bare
 pipes — proven by a subprocess degrade matrix in CI.
 

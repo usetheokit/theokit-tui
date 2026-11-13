@@ -5,6 +5,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `sanitizeTitle` (strip C0/C1, collapse whitespace, cap by code points, default 240) and
+  `pushTerminalTitle` (XTWINOPS save, idempotent restore) next to `setTerminalTitle` (#198)
+
 ## [0.82.0] - 2026-11-13
 
 ### Added
