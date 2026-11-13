@@ -24,6 +24,7 @@
  * unexpected shape takes down the session over a string the model got wrong, so every reader below
  * narrows before it reads and every branch has a fallback.
  */
+import { routeToolResult } from "../agent/tool-result-routing.js";
 import type { ToolCardResult } from "./tool-card-result.js";
 import { parseV4APatchFiles } from "./v4a-patch.js";
 
@@ -152,21 +153,12 @@ function applyPatchBody(result: unknown): ToolCardResult {
   return diffBody(value);
 }
 
-/** An output card when the result looks like a shell envelope; a preview when it does not. */
+/** An output card for a shell envelope (string or object, `exitCode` or `exit_code`); a diff card for a clean diff; a preview otherwise. */
 function shellBody(result: unknown): ToolCardResult {
-  if (typeof result !== "object" || result === null) return previewOf(result);
-  const record = result as Record<string, unknown>;
-  if (typeof record.stdout !== "string" && typeof record.stderr !== "string") {
-    return previewOf(result);
-  }
-  return {
-    kind: "output",
-    shell: {
-      stdout: typeof record.stdout === "string" ? record.stdout : "",
-      stderr: typeof record.stderr === "string" ? record.stderr : "",
-      exitCode: typeof record.exitCode === "number" ? record.exitCode : 0,
-    },
-  };
+  const routed = routeToolResult(result);
+  if (routed !== undefined && "shell" in routed) return { kind: "output", shell: routed.shell };
+  if (routed !== undefined && "diff" in routed) return { kind: "diff", patch: routed.diff };
+  return previewOf(result);
 }
 
 /**

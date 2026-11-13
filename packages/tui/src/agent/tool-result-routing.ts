@@ -26,17 +26,22 @@ function keyValid(
 
 export function isShellEnvelope(
   result: unknown,
-): result is { stdout?: string; stderr?: string; exitCode?: number } {
+): result is { stdout?: string; stderr?: string; exitCode?: number; exit_code?: number } {
   if (typeof result !== "object" || result === null || Array.isArray(result)) {
     return false;
   }
   const candidate = result as Record<string, unknown>;
-  const hasAny = "stdout" in candidate || "stderr" in candidate || "exitCode" in candidate;
+  const hasAny =
+    "stdout" in candidate ||
+    "stderr" in candidate ||
+    "exitCode" in candidate ||
+    "exit_code" in candidate;
   return (
     hasAny &&
     keyValid(candidate, "stdout", "string") &&
     keyValid(candidate, "stderr", "string") &&
-    keyValid(candidate, "exitCode", "number")
+    keyValid(candidate, "exitCode", "number") &&
+    keyValid(candidate, "exit_code", "number")
   );
 }
 
@@ -57,11 +62,14 @@ export function toShell(envelope: {
   stdout?: string;
   stderr?: string;
   exitCode?: number;
+  exit_code?: number;
 }): NormalizedShell {
+  // `exitCode` (SDK runtime) wins over `exit_code` (sdk-tools `shell_exec`) when both are present.
+  const exitCode = typeof envelope.exitCode === "number" ? envelope.exitCode : envelope.exit_code;
   return {
     stdout: envelope.stdout ?? "",
     stderr: envelope.stderr ?? "",
-    ...(typeof envelope.exitCode === "number" ? { exitCode: envelope.exitCode } : {}),
+    ...(typeof exitCode === "number" ? { exitCode } : {}),
   };
 }
 
