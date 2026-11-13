@@ -238,3 +238,43 @@ describe("ContextWindowBar — accent token (M6 T2.3)", () => {
     expect(frame).toContain("[35m");
   });
 });
+
+describe("ContextWindowBar — pressure and estimated (#200)", () => {
+  const bar = (props: Record<string, unknown>) =>
+    renderFrame(
+      <TheoTUIProvider
+        theme={{ accent: "magenta", status: { warning: "yellow", error: "red" } } as never}
+      >
+        <ContextWindowBar usedTokens={600} limitTokens={1000} width={60} {...props} />
+      </TheoTUIProvider>,
+    );
+
+  it("pressure ok uses the accent color at 60%", async () => {
+    expect(await bar({ pressure: "ok" })).toContain("[35m");
+  });
+
+  it("pressure critical at 50% uses the error color", async () => {
+    const frame = await bar({ usedTokens: 500, pressure: "critical" });
+    expect(frame).toContain("[31m");
+  });
+
+  it("pressure warn uses the warning color at 10%", async () => {
+    expect(await bar({ usedTokens: 100, pressure: "warn" })).toContain("[33m");
+  });
+
+  it("estimated adds (estimated) to the detail", async () => {
+    expect(stripAnsi(await bar({ estimated: true }))).toContain("(estimated)");
+  });
+
+  it("estimated adds ~ to the label when the detail does not fit", async () => {
+    const frame = stripAnsi(await bar({ estimated: true, width: 10 }));
+    expect(frame).toContain("~");
+    expect(frame).not.toContain("(estimated)");
+  });
+
+  it("an unknown pressure reports a guard failure naming pressure", () => {
+    expect(() =>
+      ContextWindowBar({ usedTokens: 1, limitTokens: 10, pressure: "high" as never }),
+    ).toThrow("pressure");
+  });
+});

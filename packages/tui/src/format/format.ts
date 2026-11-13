@@ -97,7 +97,7 @@ export function formatCost(costUsd: number, options?: FormatCostOptions): string
 /**
  * Human elapsed-time formatting: `0s`…`59s`, `1m 5s`, `1h 2m 3s` — NO days unit
  * (`86400` → `24h 0m 0s`). Fractional input is FLOORED first (`Date.now()` diffs
- * produce 59.9). Module-internal (not re-exported from the package entry).
+ * produce 59.9). Public: re-exported from the package entry (#199).
  */
 export function formatElapsed(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) {
