@@ -7,6 +7,9 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `formatTokens`, `formatCost` (with `FormatCostOptions`) and `formatElapsed` are exported from the root
+  entry, so apps stop hand-rolling token, cost and elapsed-time formatting (`formatTokens(1_000_000)`
+  is `"1m"`, not `"1000k"`) (#199)
 - `agentEventsToMarkdown` renders an `AgentEvent[]` as Markdown (`## <heading>` per message, optional
   tool lines with `includeTools`, thinking left out) and `lastAssistantText` returns the newest
   non-empty assistant text. Both skip malformed entries and never throw (#202)
