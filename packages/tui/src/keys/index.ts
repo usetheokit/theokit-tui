@@ -22,3 +22,16 @@ export {
   type RoutedKey,
   routeThroughLayers,
 } from "./layer-router.js";
+
+export {
+  type ParseKeybindingsOptions,
+  parseKeybindings,
+} from "./keybindings-file.js";
+export {
+  type Action,
+  type Chord,
+  chordOf,
+  defaultKeymap,
+  type Keymap,
+  resolveAction,
+} from "../renderer/input/keybindings.js";

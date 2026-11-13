@@ -255,6 +255,32 @@ Two limits worth knowing:
   measured 2 for a conditional guard, 3 for an unconditional one, and 0 at `render()` return under
   ink's `concurrent: true` root. The count is a renderer detail, not a count of failures.
 
+## Rebinding keys from a file
+
+`@theokit/tui/keys` exports `chordOf`, `defaultKeymap`, `resolveAction` and
+`parseKeybindings`, which is pure (no `node:fs`). Reading the file stays with your app:
+
+```ts
+import { parseKeybindings, defaultKeymap } from "@theokit/tui/keys";
+
+const { keymap, notApplied } = parseKeybindings(JSON.parse(readFileSync(path, "utf8")), {
+  actions: ["toggle-verbose"], // the action names your app understands
+  reserved: ["ctrl+c"], // never rebindable
+  claimed: ["ctrl+o"], // your app handles these first
+  base: defaultKeymap, // default: an empty map
+});
+```
+
+The document is either flat, `{ "ctrl+t": "toggle-verbose" }`, or nested,
+`{ "bindings": [{ "bindings": { "ctrl+t": "toggle-verbose" } }] }`. Chords are trimmed and
+lower-cased; valid ones are `ctrl+<key>`, `alt+<key>` and the named keys `chordOf` produces
+(`left`, `right`, `up`, `down`, `backspace`, `delete`, `tab`, `escape`, `return`, `home`, `end`).
+A `null` value removes the chord from `base`.
+
+`notApplied` lists what was ignored, as `{ chord, reason }` with an English reason: the chord is
+reserved, claimed, bound to an unknown action, not a chord `chordOf` can produce, or the document
+is malformed. Show it to the user (a `/status` line, say). `parseKeybindings` never throws.
+
 ## Development
 
 Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).
