@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.81.0] - 2026-11-12
+
 ### Added
 
 - `parseV4APatchFiles` lists the files a V4A patch (`*** Begin Patch ... *** End Patch`) names, in
