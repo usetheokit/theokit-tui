@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.82.0] - 2026-11-13
+
 ### Added
 
 - `ContextWindowBar` accepts `pressure` (`ok` | `warn` | `critical`, exported as `ContextPressureLevel`)
