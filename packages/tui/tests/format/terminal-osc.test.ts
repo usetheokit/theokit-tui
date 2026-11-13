@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { osc8Link, setTerminalTitle, supportsHyperlinks } from "../../src/format/terminal-osc.js";
+import {
+  osc8Link,
+  pushTerminalTitle,
+  sanitizeTitle,
+  setTerminalTitle,
+  supportsHyperlinks,
+} from "../../src/format/terminal-osc.js";
 
 // M25 T4.1 — the terminal-title + OSC-8 hyperlink helpers (blueprint ADR D),
 // mirroring notify.ts: pure, injectable env/out, no-op / degrade off-TTY or under
@@ -228,5 +234,49 @@ describe("terminal-osc — a caller value cannot open a second sequence (B-086)"
     expect(osc8Link("click", "https://example.com", ENV, { isTTY: true })).toBe(
       `${ESC}]8;;https://example.com${BEL}click${ESC}]8;;${BEL}`,
     );
+  });
+});
+
+describe("sanitizeTitle (#198)", () => {
+  it("strips_controls_and_collapses_whitespace_so_setTerminalTitle_accepts_it", () => {
+    const out = sanitizeTitle("a\u0007b\u009b c\n\n d");
+    expect(out).toBe("ab c d");
+    expect(() => setTerminalTitle(out, fakeOut())).not.toThrow();
+  });
+
+  it("caps_by_code_points_without_a_lone_surrogate", () => {
+    const out = sanitizeTitle("😀".repeat(300));
+    expect(Array.from(out)).toHaveLength(240);
+    expect(out).toBe("😀".repeat(240));
+  });
+
+  it("honours_max_and_rejects_a_non_positive_integer", () => {
+    expect(sanitizeTitle("abcdef", { max: 3 })).toBe("abc");
+    expect(() => sanitizeTitle("x", { max: 0 })).toThrow(TypeError);
+    expect(() => sanitizeTitle("x", { max: 1.5 })).toThrow(TypeError);
+    expect(() => sanitizeTitle("x", { max: -1 })).toThrow(TypeError);
+  });
+
+  it("returns_empty_for_whitespace_only", () => {
+    expect(sanitizeTitle(" \n\t ")).toBe("");
+  });
+});
+
+describe("pushTerminalTitle (#198)", () => {
+  it("pushes_on_a_tty_and_restores_exactly_once", () => {
+    const out = fakeOut();
+    const restore = pushTerminalTitle(out);
+    expect(out.writes).toEqual(["\x1b[22;0t"]);
+    restore();
+    restore();
+    expect(out.writes).toEqual(["\x1b[22;0t", "\x1b[23;0t"]);
+  });
+
+  it("writes_nothing_off_tty", () => {
+    const out = fakeOut();
+    out.isTTY = false;
+    const restore = pushTerminalTitle(out);
+    restore();
+    expect(out.writes).toEqual([]);
   });
 });

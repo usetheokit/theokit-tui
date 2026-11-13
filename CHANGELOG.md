@@ -5,6 +5,16 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `sessionMessagesToThread` (with `StoredMessage` / `StoredMessagePart`) renders a stored session as
+  `initialMessages`, pairing `tool_use` with `tool_result` across messages (#194)
+- `messagesToAgentEvents` accepts `collapseUserTurns: { marker, label? }`, which collapses user turns
+  starting with the marker (such as the SDK's `GOAL_CONTINUATION_MARKER`) into one message event
+  (default label `continuing the goal`); an empty marker throws `TypeError` (#196)
+- `sanitizeTitle` (strip C0/C1, collapse whitespace, cap by code points, default 240) and
+  `pushTerminalTitle` (XTWINOPS save, idempotent restore) next to `setTerminalTitle` (#198)
+
 ## [0.82.0] - 2026-11-13
 
 ### Added

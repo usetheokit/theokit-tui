@@ -478,6 +478,11 @@ export interface MessagesToEventsOptions {
   formatToolHeader?: ToolHeaderFormatter;
   /** Map a tool's raw result to a Codex-style result body (see {@link ToolResultFormatter}). */
   formatToolResult?: ToolResultFormatter;
+  /**
+   * Collapse user turns whose text starts with `marker` into one message event with `label`.
+   * Pass GOAL_CONTINUATION_MARKER from @theokit/sdk. `label` defaults to "continuing the goal".
+   */
+  collapseUserTurns?: { marker: string; label?: string };
 }
 
 /**
@@ -514,7 +519,13 @@ function eventsOfMessage(
   // Only cache when there are no formatters: they are caller-supplied functions and can change
   // between renders without the message changing. Keying on function identity would add a key
   // dimension for a case the consumer does not exercise (its formatters are module-stable).
-  if (opts?.formatToolHeader !== undefined || opts?.formatToolResult !== undefined) return derive();
+  if (
+    opts?.formatToolHeader !== undefined ||
+    opts?.formatToolResult !== undefined ||
+    opts?.collapseUserTurns !== undefined
+  ) {
+    return derive();
+  }
   const key = message as unknown as object;
   const previous = eventCache.get(key);
   if (
@@ -533,6 +544,10 @@ export function messagesToAgentEvents(
   messages: readonly UIMessageLike[],
   opts?: MessagesToEventsOptions,
 ): AgentEvent[] {
+  const collapse = opts?.collapseUserTurns;
+  if (collapse !== undefined && (typeof collapse.marker !== "string" || collapse.marker === "")) {
+    throw new TypeError("collapseUserTurns.marker must be a non-empty string");
+  }
   const events: AgentEvent[] = [];
   for (const message of messages) {
     const cached = eventsOfMessage(message, opts, () => deriveOneMessage(message, opts));
@@ -547,6 +562,22 @@ function deriveOneMessage(
   message: UIMessageLike,
   opts: MessagesToEventsOptions | undefined,
 ): AgentEvent[] {
+  const collapse = opts?.collapseUserTurns;
+  if (collapse !== undefined && message.role === "user") {
+    const text = message.parts
+      .map((p) => (p.type === "text" && typeof p.text === "string" ? p.text : ""))
+      .join("");
+    if (text.startsWith(collapse.marker)) {
+      return [
+        {
+          id: `${message.id}::m0`,
+          kind: "message",
+          role: "user",
+          text: collapse.label ?? "continuing the goal",
+        },
+      ];
+    }
+  }
   const events: AgentEvent[] = [];
   message.parts.forEach((part, index) => {
     if (part.type === "text") {
