@@ -58,8 +58,8 @@ export class NoClipboardError extends Error {
 export class ClipboardWriteError extends Error {
   readonly bin: string;
   readonly detail: string;
-  constructor(bin: string, detail: string) {
-    super(`Clipboard write via ${bin} failed: ${detail}`);
+  constructor(bin: string, detail: string, tried: readonly string[] = [bin]) {
+    super(`Clipboard write via ${bin} failed: ${detail} (tried: ${tried.join(", ")})`);
     this.name = "ClipboardWriteError";
     this.bin = bin;
     this.detail = detail;
@@ -75,6 +75,8 @@ const defaultRunner: NonNullable<CopyToClipboardOptions["runner"]> = (
   spawnSync(bin, [...args], {
     input,
     timeout: timeoutMs,
+    // SIGTERM can be ignored, and spawnSync then waits for the child forever. SIGKILL cannot.
+    killSignal: "SIGKILL",
     encoding: "utf8",
     stdio: ["pipe", "ignore", "pipe"],
   });
@@ -100,7 +102,7 @@ export function copyToClipboard(text: string, opts: CopyToClipboardOptions = {})
       continue;
     }
     if (result.error || result.status !== 0) {
-      throw new ClipboardWriteError(bin, failureDetail(result, timeoutMs));
+      throw new ClipboardWriteError(bin, failureDetail(result, timeoutMs), [...tried, bin]);
     }
     return { via: bin };
   }

@@ -119,4 +119,30 @@ describe("copyToClipboard", () => {
     ).toThrow(NoClipboardError);
     expect(() => copyToClipboard("x", { candidates: [] })).toThrow(/no binaries/);
   });
+
+  it("names the binaries tried before a failing one", () => {
+    const runner = (bin: string) =>
+      bin === "a"
+        ? enoent()
+        : ({ status: 1, stderr: "boom" } as unknown as SpawnSyncReturns<string>);
+    try {
+      copyToClipboard("x", { candidates: two, runner });
+      expect.unreachable();
+    } catch (e) {
+      expect((e as Error).message).toContain("a, b");
+    }
+  });
+
+  it("kills a child that ignores SIGTERM instead of waiting for it", () => {
+    const short = 500;
+    const stubborn = {
+      bin: process.execPath,
+      args: ["-e", "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)"],
+    };
+    const started = Date.now();
+    expect(() => copyToClipboard("x", { candidates: [stubborn], timeoutMs: short })).toThrow(
+      /timed out/,
+    );
+    expect(Date.now() - started).toBeLessThan(4000);
+  });
 });
