@@ -94,6 +94,16 @@ const { events, streaming } = useAgentStream(source, {
 });
 ```
 
+A stored session (`readSessionMessages()` from `@theokit/sdk`) keeps tool calls as
+separate `tool_use` / `tool_result` parts. `sessionMessagesToThread` pairs them into
+the shape the renderers read, so the commands show up too:
+
+```tsx
+useAgentStream(source, {
+  initialMessages: sessionMessagesToThread(await readSessionMessages(id)),
+});
+```
+
 The history is a **prefix**, not a seeded fold. It therefore survives the reset a
 new `source` identity triggers (reconnect-by-refold), and a transcript read
 asynchronously may arrive after mount. `status` and `streaming` describe the live
