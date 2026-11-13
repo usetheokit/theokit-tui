@@ -82,3 +82,6 @@ export type { UseCoalescedOptions } from "./use-coalesced.js";
 // change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
 // complete and tested and reachable by nobody until this slice exported it.
 export { useCoalesced } from "./use-coalesced.js";
+// Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
+export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
+export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";

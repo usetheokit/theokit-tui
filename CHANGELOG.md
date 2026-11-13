@@ -5,6 +5,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `agentEventsToMarkdown` renders an `AgentEvent[]` as Markdown (`## <heading>` per message, optional
+  tool lines with `includeTools`, thinking left out) and `lastAssistantText` returns the newest
+  non-empty assistant text. Both skip malformed entries and never throw (#202)
+
 ## [0.81.1] - 2026-11-12
 
 ### Fixed
