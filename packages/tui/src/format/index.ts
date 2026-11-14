@@ -7,6 +7,8 @@ export { formatCost, formatElapsed, formatTokens } from "./format.js";
 export type { OscSink } from "./terminal-osc.js";
 export {
   osc8Link,
+  pushTerminalTitle,
+  sanitizeTitle,
   setTerminalTitle,
   supportsHyperlinks,
 } from "./terminal-osc.js";

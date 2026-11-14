@@ -94,6 +94,16 @@ const { events, streaming } = useAgentStream(source, {
 });
 ```
 
+A stored session (`readSessionMessages()` from `@theokit/sdk`) keeps tool calls as
+separate `tool_use` / `tool_result` parts. `sessionMessagesToThread` pairs them into
+the shape the renderers read, so the commands show up too:
+
+```tsx
+useAgentStream(source, {
+  initialMessages: sessionMessagesToThread(await readSessionMessages(id)),
+});
+```
+
 The history is a **prefix**, not a seeded fold. It therefore survives the reset a
 new `source` identity triggers (reconnect-by-refold), and a transcript read
 asynchronously may arrive after mount. `status` and `streaming` describe the live
@@ -113,6 +123,10 @@ ids in disjoint namespaces and cannot tell they are the same call.
 | Code    | `CodeBlock` (optional lowlight), `DiffViewer` + `parseUnifiedDiff`                                                                                                        |
 | Metrics | `ContextWindowBar`, `TokenUsageChart`, `CostMeter`, `formatTokens`, `formatCost`, `formatElapsed` (number formatters)                                                                                                                        |
 | Shell   | `WelcomeBanner` (optional `animated` < 2 s reveal — TTY-gated, disable with `THEOKIT_TUI_NO_MOTION=1`), `TheoTUIProvider` + built-in themes (`dark`, `light`, `no-color`) |
+
+The window title helpers live in the format barrel: `setTerminalTitle` (throws on control bytes),
+`sanitizeTitle` (makes untrusted text safe for it) and `pushTerminalTitle` (saves the title and
+returns an idempotent restore).
 
 Every primitive degrades cleanly under `NO_COLOR`, `TERM=dumb` and bare
 pipes — proven by a subprocess degrade matrix in CI.
@@ -280,6 +294,23 @@ A `null` value removes the chord from `base`.
 `notApplied` lists what was ignored, as `{ chord, reason }` with an English reason: the chord is
 reserved, claimed, bound to an unknown action, not a chord `chordOf` can produce, or the document
 is malformed. Show it to the user (a `/status` line, say). `parseKeybindings` never throws.
+
+## Collapsing goal-continuation turns
+
+`runGoalLoop` in `@theokit/sdk` sends a long continuation prompt as a user turn on every iteration.
+Pass the marker to `messagesToAgentEvents` and each such turn becomes one short message event
+(same id, so ids stay stable):
+
+```ts
+import { GOAL_CONTINUATION_MARKER } from "@theokit/sdk";
+
+const events = messagesToAgentEvents(messages, {
+  collapseUserTurns: { marker: GOAL_CONTINUATION_MARKER, label: "continuing the goal" },
+});
+```
+
+Only `user` messages are checked; `label` defaults to `continuing the goal`. An empty `marker`
+throws a `TypeError`.
 
 ## Development
 
