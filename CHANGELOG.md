@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.83.0] - 2026-11-14
+
 ### Added
 
 - `sessionMessagesToThread` (with `StoredMessage` / `StoredMessagePart`) renders a stored session as
