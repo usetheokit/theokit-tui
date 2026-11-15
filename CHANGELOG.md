@@ -5,6 +5,13 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- `copyToClipboard`, `DEFAULT_CLIPBOARD_COMMANDS`, `NoClipboardError` and `ClipboardWriteError` in
+  `@theokit/tui/terminal`: a bounded (5 s) probe over `wl-copy`, `xclip`, `xsel`, `pbcopy` and
+  `clip.exe`, an opt-in OSC 52 fallback on a TTY sink, and typed errors that name every binary tried
+  (#193)
+
 ## [0.83.0] - 2026-11-14
 
 ### Added
