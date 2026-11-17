@@ -22,6 +22,7 @@ export interface WorkspaceConsentDeps {
    * can be pointed at another directory.
    */
   workspaceKey?: string;
+  /** Must reflect the store: it is read on every render and is true once `persistTrust` resolved. */
   isTrusted: () => boolean;
   persistTrust: () => Promise<void>;
   listPendingHooks: () => readonly ReviewableHook[];
@@ -42,7 +43,7 @@ export interface WorkspaceConsent {
 
 interface SessionState {
   key: string | undefined;
-  /** Set by `trust()`; `null` means "ask `isTrusted()`". */
+  /** Optimistic value while `trust()` is saving; `null` means "ask `isTrusted()`". */
   trusted: boolean | null;
   refused: ReadonlySet<string>;
 }
@@ -78,6 +79,9 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
     set(true);
     try {
       await depsRef.current.persistTrust();
+      // Saved: from here the store is the source of truth again, so the answer follows
+      // `isTrusted()` and cannot leak into another directory.
+      set(null);
     } catch (err) {
       set(false);
       throw err;

@@ -41,9 +41,13 @@ function deferred() {
 describe("useWorkspaceConsent", () => {
   it("trust_is_optimistic_and_stays_when_persist_resolves", async () => {
     const d = deferred();
+    let saved = false;
     const { app, get } = mount({
-      isTrusted: () => false,
-      persistTrust: () => d.promise,
+      isTrusted: () => saved,
+      persistTrust: async () => {
+        await d.promise;
+        saved = true;
+      },
       listPendingHooks: () => [],
       approveHook: async () => {},
     });
@@ -148,7 +152,7 @@ describe("useWorkspaceConsent", () => {
     const depsFor = (dir: string): WorkspaceConsentDeps => ({
       workspaceKey: dir,
       isTrusted: () => trustedDirs.has(dir),
-      persistTrust: async () => {},
+      persistTrust: async () => void trustedDirs.add(dir),
       listPendingHooks: () => [hook("h")],
       approveHook: async () => {},
     });
@@ -163,6 +167,25 @@ describe("useWorkspaceConsent", () => {
     await app.flush();
     expect(get().trusted).toBe(false);
     expect(get().pendingHooks.map((h) => h.fingerprint)).toEqual(["h"]);
+    app.unmount();
+  });
+
+  it("switching_workspace_without_a_key_follows_isTrusted", async () => {
+    const trustedDirs = new Set<string>();
+    const depsFor = (dir: string): WorkspaceConsentDeps => ({
+      isTrusted: () => trustedDirs.has(dir),
+      persistTrust: async () => void trustedDirs.add(dir),
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    const { app, get, rerender } = mount(depsFor("/b"));
+    await app.flush();
+    await get().trust();
+    await app.flush();
+    expect(get().trusted).toBe(true);
+    rerender(depsFor("/untrusted"));
+    await app.flush();
+    expect(get().trusted).toBe(false);
     app.unmount();
   });
 });
