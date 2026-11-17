@@ -248,6 +248,19 @@ process exits **0**. So the record is what survives for you to read afterwards, 
 session that continues. An earlier version of this paragraph offered "a corrupted frame is
 repainted" as the consolation, which this package's own measurement contradicts.
 
+**Copying to the clipboard.** `copyToClipboard` from `@theokit/tui/terminal` tries `wl-copy`, `xclip`,
+`xsel`, `pbcopy` and `clip.exe` in turn, each with a bounded timeout (`timeoutMs`, default 5000) so a
+hung compositor cannot block the loop. A missing binary moves on to the next; any other failure throws
+`ClipboardWriteError` (`bin`, `detail`) without trying more. With no binary at all it throws
+`NoClipboardError` (`tried`), unless you pass `osc52: process.stdout`, which writes an OSC 52 sequence
+when the sink is a TTY (useful over ssh). It returns `{ via }`: the binary name, or `"osc52"`.
+
+```ts
+import { copyToClipboard } from "@theokit/tui/terminal";
+
+const { via } = copyToClipboard(lastAnswer, { osc52: process.stdout });
+```
+
 If the sink itself fails — a closed pipe, an unwritable log path — the record is **counted rather
 than swallowed**, and `lostGuardRecords()` returns how many this process lost. Nothing reports that
 number for you: this package owns no lifecycle to hook, so read it where your session already ends.
@@ -311,6 +324,34 @@ const events = messagesToAgentEvents(messages, {
 
 Only `user` messages are checked; `label` defaults to `continuing the goal`. An empty `marker`
 throws a `TypeError`.
+
+## Esc to edit a previous message
+
+`backtrackReducer` and `BacktrackOverlay` give the selection ladder of the gesture; the fork stays
+in your app. First Esc primes the ladder, each next Esc goes one message older, Enter confirms.
+
+```tsx
+const [bt, dispatch] = useReducer(backtrackReducer, CLOSED_BACKTRACK);
+
+// Esc (routed with routeThroughLayers from @theokit/tui/keys)
+if (!bt.armed) dispatch({ type: "prime", previews: turns.map((t) => t.text) }); // listUserTurns
+else dispatch({ type: "older" });
+
+// Enter: ignore it while nothing is selected (-1), else map the index back to the 1-based `nth`
+const turn = bt.selected >= 0 ? turns[bt.selected] : undefined;
+if (turn) {
+  // forkBeforeUserTurn(session, turn.nth) -> new thread, then seed the composer:
+  setDraft((d) => ({ text: turn.text, key: d.key + 1 })); // useState({ text: "", key: 0 })
+  dispatch({ type: "reset" });
+}
+
+<BacktrackOverlay previews={bt.previews} selected={bt.selected} />
+{/* ChatComposer reads initialValue only on mount: change `key` to remount it with the new text */}
+<ChatComposer key={draft.key} initialValue={draft.text} onSubmit={send} />
+```
+
+`prime` with an empty list stays closed; `older` stops at the oldest; `newer` from the newest
+returns to `-1`. The overlay's `header` and `hint` props reword its text.
 
 ## Development
 
