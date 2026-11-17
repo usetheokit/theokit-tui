@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 // useWorkspaceConsent — the UI-side state for the two gates an agent opening a repository it did
 // not write must pass: trust the directory, then review each project hook before it runs. The
@@ -16,6 +16,12 @@ export interface ReviewableHook {
 }
 
 export interface WorkspaceConsentDeps {
+  /**
+   * Identifies the workspace (its directory, say). When it changes, the optimistic trust and the
+   * session refusals of the previous workspace are dropped. Pass it whenever one mounted component
+   * can be pointed at another directory.
+   */
+  workspaceKey?: string;
   isTrusted: () => boolean;
   persistTrust: () => Promise<void>;
   listPendingHooks: () => readonly ReviewableHook[];
@@ -34,39 +40,63 @@ export interface WorkspaceConsent {
   refuseHook(fingerprint: string): void;
 }
 
+interface SessionState {
+  key: string | undefined;
+  /** Set by `trust()`; `null` means "ask `isTrusted()`". */
+  trusted: boolean | null;
+  refused: ReadonlySet<string>;
+}
+
+const fresh = (key: string | undefined): SessionState => ({
+  key,
+  trusted: null,
+  refused: new Set(),
+});
+
 export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsent {
   const depsRef = useRef(deps);
   depsRef.current = deps;
-  const [trusted, setTrusted] = useState<boolean>(() => deps.isTrusted());
-  const [refused, setRefused] = useState<ReadonlySet<string>>(() => new Set());
-  const [epoch, setEpoch] = useState(0);
+  const [stored, setStored] = useState<SessionState>(() => fresh(deps.workspaceKey));
+  const [, setTick] = useState(0);
 
-  // `epoch` is the recompute trigger: the store is read again after each successful approval.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: epoch forces a re-read of the store
-  const listed = useMemo(() => depsRef.current.listPendingHooks(), [epoch]);
-  const pendingHooks = useMemo(
-    () => listed.filter((h) => !refused.has(h.fingerprint)),
-    [listed, refused],
-  );
+  // A different workspace starts from scratch (state derived during render, no stale frame).
+  let session = stored;
+  if (stored.key !== deps.workspaceKey) {
+    session = fresh(deps.workspaceKey);
+    setStored(session);
+  }
+  const key = session.key;
+
+  // Read on every render, so hooks that appear after mount (loaded once trust is granted, or for
+  // a new workspace) are never hidden behind a cached list.
+  const trusted = session.trusted ?? deps.isTrusted();
+  const pendingHooks = deps.listPendingHooks().filter((h) => !session.refused.has(h.fingerprint));
 
   const trust = useCallback(async () => {
-    setTrusted(true);
+    const set = (value: boolean | null) =>
+      setStored((prev) => (prev.key === key ? { ...prev, trusted: value } : prev));
+    set(true);
     try {
       await depsRef.current.persistTrust();
     } catch (err) {
-      setTrusted(false);
+      set(false);
       throw err;
     }
-  }, []);
+  }, [key]);
 
   const approveHook = useCallback(async (fingerprint: string) => {
     await depsRef.current.approveHook(fingerprint);
-    setEpoch((n) => n + 1);
+    setTick((n) => n + 1); // re-read the store
   }, []);
 
-  const refuseHook = useCallback((fingerprint: string) => {
-    setRefused((prev) => new Set(prev).add(fingerprint));
-  }, []);
+  const refuseHook = useCallback(
+    (fingerprint: string) => {
+      setStored((prev) =>
+        prev.key === key ? { ...prev, refused: new Set(prev.refused).add(fingerprint) } : prev,
+      );
+    },
+    [key],
+  );
 
   return { trusted, pendingHooks, trust, approveHook, refuseHook };
 }

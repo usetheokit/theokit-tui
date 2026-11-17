@@ -18,13 +18,14 @@ const hook = (fp: string): ReviewableHook => ({
 
 function mount(deps: WorkspaceConsentDeps) {
   const box: { current: WorkspaceConsent | undefined } = { current: undefined };
-  function Probe() {
-    box.current = useWorkspaceConsent(deps);
+  function Probe({ d }: { d: WorkspaceConsentDeps }) {
+    box.current = useWorkspaceConsent(d);
     return createElement("ink-text", {}, "x");
   }
-  const app = render(createElement(Probe));
+  const app = render(createElement(Probe, { d: deps }));
   const get = () => box.current as WorkspaceConsent;
-  return { app, get };
+  const rerender = (d: WorkspaceConsentDeps) => app.rerender(createElement(Probe, { d }));
+  return { app, get, rerender };
 }
 
 function deferred() {
@@ -124,6 +125,44 @@ describe("useWorkspaceConsent", () => {
     await get().approveHook("a");
     await app.flush();
     expect(get().pendingHooks.map((h) => h.fingerprint)).toEqual(["b"]);
+    app.unmount();
+  });
+
+  it("a_rerender_with_new_hooks_refreshes_pendingHooks", async () => {
+    const base = {
+      isTrusted: () => true,
+      persistTrust: async () => {},
+      approveHook: async () => {},
+    };
+    const { app, get, rerender } = mount({ ...base, listPendingHooks: () => [] });
+    await app.flush();
+    expect(get().pendingHooks).toEqual([]);
+    rerender({ ...base, listPendingHooks: () => [hook("late")] });
+    await app.flush();
+    expect(get().pendingHooks.map((h) => h.fingerprint)).toEqual(["late"]);
+    app.unmount();
+  });
+
+  it("switching_workspace_drops_the_previous_trust_and_refusals", async () => {
+    const trustedDirs = new Set(["/a"]);
+    const depsFor = (dir: string): WorkspaceConsentDeps => ({
+      workspaceKey: dir,
+      isTrusted: () => trustedDirs.has(dir),
+      persistTrust: async () => {},
+      listPendingHooks: () => [hook("h")],
+      approveHook: async () => {},
+    });
+    const { app, get, rerender } = mount(depsFor("/b"));
+    await app.flush();
+    await get().trust();
+    get().refuseHook("h");
+    await app.flush();
+    expect(get().trusted).toBe(true);
+    expect(get().pendingHooks).toEqual([]);
+    rerender(depsFor("/c"));
+    await app.flush();
+    expect(get().trusted).toBe(false);
+    expect(get().pendingHooks.map((h) => h.fingerprint)).toEqual(["h"]);
     app.unmount();
   });
 });

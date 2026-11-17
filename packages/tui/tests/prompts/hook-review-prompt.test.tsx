@@ -58,6 +58,27 @@ describe("HookReviewPrompt", () => {
     app.unmount();
   });
 
+  it("a_literal_backslash_r_does_not_look_like_a_carriage_return", async () => {
+    const show = async (command: string) => {
+      const app = render(
+        createElement(HookReviewPrompt, {
+          hook: { ...base, command },
+          remaining: 0,
+          onDecision: () => {},
+        }),
+      );
+      await app.flush();
+      const frame = app.lastFrame();
+      app.unmount();
+      return frame;
+    };
+    const real = await show("a\rb");
+    const literal = await show("a\\rb");
+    expect(real).toContain("a\\rb");
+    expect(literal).toContain("a\\\\rb");
+    expect(real).not.toEqual(literal);
+  });
+
   it("enter_approves_and_esc_refuses", async () => {
     const decided: string[] = [];
     const app = render(

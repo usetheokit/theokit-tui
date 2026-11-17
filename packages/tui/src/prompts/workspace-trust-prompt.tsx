@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
 import type { ApprovalChoice } from "../agent/agent-decision.js";
-import { escapeControl } from "./escape-control.js";
+import { escapeControl } from "./hook-review-prompt.js";
 import { PermissionPrompt } from "./permission-prompt.js";
 
 export interface WorkspaceTrustPromptProps {

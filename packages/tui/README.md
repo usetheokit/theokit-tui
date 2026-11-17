@@ -339,6 +339,7 @@ const trustStore = new TrustStore();
 
 function Gate({ dir, hooks }: { dir: string; hooks: ReviewableHook[] }) {
   const consent = useWorkspaceConsent({
+    workspaceKey: dir, // resets trust and refusals when the same component is pointed at another dir
     isTrusted: () => trustStore.isTrusted(dir),
     persistTrust: () => trustStore.trust(dir),
     listPendingHooks: () => hooks, // from your HookApprovalStore + hookFingerprint
@@ -372,7 +373,8 @@ function Gate({ dir, hooks }: { dir: string; hooks: ReviewableHook[] }) {
 same error. `approveHook` leaves the hook pending when the store rejects; `refuseHook` lasts for the
 session only. `HookReviewPrompt` shows `[new]` or `[changed]` with `was:` / `now:` lines, and shows
 control characters in a command as escapes (`\r`), so the text shown is the text that runs. All
-wording is a prop.
+wording is a prop. `pendingHooks` is read from `listPendingHooks()` on every render, so hooks that
+appear later are never skipped.
 
 ## Development
 
