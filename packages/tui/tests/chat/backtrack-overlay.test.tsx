@@ -7,7 +7,9 @@ import { renderFrame } from "../fixtures/helpers.js";
 describe("BacktrackOverlay", () => {
   it("marks_the_selected_numbered_row_and_shows_position", async () => {
     const plain = stripAnsi(
-      await renderFrame(<BacktrackOverlay previews={["one", "two\nlines", "three"]} selected={1} />),
+      await renderFrame(
+        <BacktrackOverlay previews={["one", "two\nlines", "three"]} selected={1} />,
+      ),
     );
     expect(plain).toContain("2/3");
     expect(plain).toMatch(/❯ 2\. two lines/);
