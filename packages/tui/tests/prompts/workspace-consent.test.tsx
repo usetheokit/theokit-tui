@@ -43,6 +43,7 @@ describe("useWorkspaceConsent", () => {
     const d = deferred();
     let saved = false;
     const { app, get } = mount({
+      workspaceKey: "/w",
       isTrusted: () => saved,
       persistTrust: async () => {
         await d.promise;
@@ -66,6 +67,7 @@ describe("useWorkspaceConsent", () => {
   it("trust_rolls_back_and_rethrows_the_same_error_when_persist_rejects", async () => {
     const boom = new Error("disk full");
     const { app, get } = mount({
+      workspaceKey: "/w",
       isTrusted: () => false,
       persistTrust: () => Promise.reject(boom),
       listPendingHooks: () => [],
@@ -82,6 +84,7 @@ describe("useWorkspaceConsent", () => {
   it("refuseHook_removes_the_hook_without_calling_approveHook", async () => {
     const approved: string[] = [];
     const { app, get } = mount({
+      workspaceKey: "/w",
       isTrusted: () => true,
       persistTrust: async () => {},
       listPendingHooks: () => [hook("a"), hook("b")],
@@ -100,6 +103,7 @@ describe("useWorkspaceConsent", () => {
   it("approveHook_rejecting_keeps_the_hook_pending_and_rejects", async () => {
     const boom = new Error("cannot write");
     const { app, get } = mount({
+      workspaceKey: "/w",
       isTrusted: () => true,
       persistTrust: async () => {},
       listPendingHooks: () => [hook("a")],
@@ -115,6 +119,7 @@ describe("useWorkspaceConsent", () => {
   it("approveHook_resolving_re_reads_the_store", async () => {
     const pending = [hook("a"), hook("b")];
     const { app, get } = mount({
+      workspaceKey: "/w",
       isTrusted: () => true,
       persistTrust: async () => {},
       listPendingHooks: () => [...pending],
@@ -134,6 +139,7 @@ describe("useWorkspaceConsent", () => {
 
   it("a_rerender_with_new_hooks_refreshes_pendingHooks", async () => {
     const base = {
+      workspaceKey: "/w",
       isTrusted: () => true,
       persistTrust: async () => {},
       approveHook: async () => {},
@@ -170,22 +176,52 @@ describe("useWorkspaceConsent", () => {
     app.unmount();
   });
 
-  it("switching_workspace_without_a_key_follows_isTrusted", async () => {
+  it("switching_workspace_while_trust_is_pending_shows_the_prompt_for_the_new_dir", async () => {
+    const d = deferred();
     const trustedDirs = new Set<string>();
     const depsFor = (dir: string): WorkspaceConsentDeps => ({
+      workspaceKey: dir,
       isTrusted: () => trustedDirs.has(dir),
-      persistTrust: async () => void trustedDirs.add(dir),
+      persistTrust: async () => {
+        await d.promise;
+        trustedDirs.add(dir);
+      },
       listPendingHooks: () => [],
       approveHook: async () => {},
     });
-    const { app, get, rerender } = mount(depsFor("/b"));
+    const { app, get, rerender } = mount(depsFor("/a"));
     await app.flush();
-    await get().trust();
+    const p = get().trust();
     await app.flush();
     expect(get().trusted).toBe(true);
-    rerender(depsFor("/untrusted"));
+    rerender(depsFor("/b"));
     await app.flush();
     expect(get().trusted).toBe(false);
+    d.resolve();
+    await p;
+    await app.flush();
+    expect(get().trusted).toBe(false);
+    app.unmount();
+  });
+
+  it("a_failed_write_for_a_previous_dir_does_not_touch_the_new_dir", async () => {
+    const d = deferred();
+    const depsFor = (dir: string): WorkspaceConsentDeps => ({
+      workspaceKey: dir,
+      isTrusted: () => dir === "/b",
+      persistTrust: () => d.promise,
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    const { app, get, rerender } = mount(depsFor("/a"));
+    await app.flush();
+    const p = get().trust();
+    rerender(depsFor("/b"));
+    await app.flush();
+    d.reject(new Error("x"));
+    await expect(p).rejects.toThrow("x");
+    await app.flush();
+    expect(get().trusted).toBe(true);
     app.unmount();
   });
 });

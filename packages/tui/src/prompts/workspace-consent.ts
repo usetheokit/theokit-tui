@@ -17,11 +17,10 @@ export interface ReviewableHook {
 
 export interface WorkspaceConsentDeps {
   /**
-   * Identifies the workspace (its directory, say). When it changes, the optimistic trust and the
-   * session refusals of the previous workspace are dropped. Pass it whenever one mounted component
-   * can be pointed at another directory.
+   * The workspace directory. Consent state is keyed by it: when it changes, the optimistic trust,
+   * the session refusals and any pending `trust()` result of the previous directory are dropped.
    */
-  workspaceKey?: string;
+  workspaceKey: string;
   /** Must reflect the store: it is read on every render and is true once `persistTrust` resolved. */
   isTrusted: () => boolean;
   persistTrust: () => Promise<void>;
@@ -42,13 +41,13 @@ export interface WorkspaceConsent {
 }
 
 interface SessionState {
-  key: string | undefined;
+  key: string;
   /** Optimistic value while `trust()` is saving; `null` means "ask `isTrusted()`". */
   trusted: boolean | null;
   refused: ReadonlySet<string>;
 }
 
-const fresh = (key: string | undefined): SessionState => ({
+const fresh = (key: string): SessionState => ({
   key,
   trusted: null,
   refused: new Set(),

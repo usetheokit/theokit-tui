@@ -339,7 +339,7 @@ const trustStore = new TrustStore();
 
 function Gate({ dir, hooks }: { dir: string; hooks: ReviewableHook[] }) {
   const consent = useWorkspaceConsent({
-    workspaceKey: dir, // resets trust and refusals when the same component is pointed at another dir
+    workspaceKey: dir, // required: consent state is keyed by directory
     isTrusted: () => trustStore.isTrusted(dir),
     persistTrust: () => trustStore.trust(dir),
     listPendingHooks: () => hooks, // from your HookApprovalStore + hookFingerprint
