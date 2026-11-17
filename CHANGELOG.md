@@ -7,6 +7,11 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `useWorkspaceConsent`, `WorkspaceTrustPrompt`, `HookReviewPrompt` and `ReviewableHook`: the
+  workspace-trust and project-hook-review gates over `PermissionPrompt`. Trust is optimistic and
+  rolled back (the error rethrown) when persisting fails, hooks are reviewed one at a time, a
+  refusal is session-only, and C0/C1 control characters in a hook command are shown as visible
+  escapes (#197)
 - `copyToClipboard`, `DEFAULT_CLIPBOARD_COMMANDS`, `NoClipboardError` and `ClipboardWriteError` in
   `@theokit/tui/terminal`: a bounded (5 s) probe over `wl-copy`, `xclip`, `xsel`, `pbcopy` and
   `clip.exe`, an opt-in OSC 52 fallback on a TTY sink, and typed errors that name every binary tried
