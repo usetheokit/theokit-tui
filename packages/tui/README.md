@@ -337,12 +337,17 @@ const [bt, dispatch] = useReducer(backtrackReducer, CLOSED_BACKTRACK);
 if (!bt.armed) dispatch({ type: "prime", previews: turns.map((t) => t.text) }); // listUserTurns
 else dispatch({ type: "older" });
 
-// Enter: map the index back to the 1-based `nth`, fork, then seed the composer
-const nth = turns[bt.selected]?.nth;
-// forkBeforeUserTurn(session, nth) -> new thread; setDraft(turns[bt.selected].text); dispatch({ type: "reset" });
+// Enter: ignore it while nothing is selected (-1), else map the index back to the 1-based `nth`
+const turn = bt.selected >= 0 ? turns[bt.selected] : undefined;
+if (turn) {
+  // forkBeforeUserTurn(session, turn.nth) -> new thread, then seed the composer:
+  setDraft((d) => ({ text: turn.text, key: d.key + 1 })); // useState({ text: "", key: 0 })
+  dispatch({ type: "reset" });
+}
 
 <BacktrackOverlay previews={bt.previews} selected={bt.selected} />
-<ChatComposer initialValue={draft} onSubmit={send} />
+{/* ChatComposer reads initialValue only on mount: change `key` to remount it with the new text */}
+<ChatComposer key={draft.key} initialValue={draft.text} onSubmit={send} />
 ```
 
 `prime` with an empty list stays closed; `older` stops at the oldest; `newer` from the newest
