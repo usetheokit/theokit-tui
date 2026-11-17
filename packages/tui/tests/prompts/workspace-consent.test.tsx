@@ -224,4 +224,55 @@ describe("useWorkspaceConsent", () => {
     expect(get().trusted).toBe(true);
     app.unmount();
   });
+
+  it("a_late_write_for_an_earlier_visit_of_the_same_dir_does_not_touch_the_new_session", async () => {
+    const first = deferred();
+    const second = deferred();
+    const queue = [first, second];
+    const depsFor = (dir: string): WorkspaceConsentDeps => ({
+      workspaceKey: dir,
+      isTrusted: () => false,
+      persistTrust: () => (queue.shift() as ReturnType<typeof deferred>).promise,
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    const { app, get, rerender } = mount(depsFor("/a"));
+    await app.flush();
+    const p1 = get().trust();
+    rerender(depsFor("/b"));
+    await app.flush();
+    rerender(depsFor("/a"));
+    await app.flush();
+    const p2 = get().trust();
+    await app.flush();
+    expect(get().trusted).toBe(true);
+    first.reject(new Error("old"));
+    await expect(p1).rejects.toThrow("old");
+    await app.flush();
+    expect(get().trusted).toBe(true); // the old failure must not roll back the new optimistic trust
+    second.resolve();
+    await p2;
+    app.unmount();
+  });
+
+  it("a_retained_trust_callback_persists_through_its_own_workspace_deps", async () => {
+    const persisted: string[] = [];
+    const depsFor = (dir: string): WorkspaceConsentDeps => ({
+      workspaceKey: dir,
+      isTrusted: () => false,
+      persistTrust: async () => void persisted.push(dir),
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    const { app, get, rerender } = mount(depsFor("/a"));
+    await app.flush();
+    const trustA = get().trust;
+    rerender(depsFor("/b"));
+    await app.flush();
+    await trustA();
+    await app.flush();
+    expect(persisted).toEqual(["/a"]);
+    expect(get().trusted).toBe(false);
+    app.unmount();
+  });
 });

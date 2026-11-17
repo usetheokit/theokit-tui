@@ -17,10 +17,11 @@ export interface ReviewableHook {
 
 export interface WorkspaceConsentDeps {
   /**
-   * The workspace directory. Consent state is keyed by it: when it changes, the optimistic trust,
-   * the session refusals and any pending `trust()` result of the previous directory are dropped.
+   * The workspace directory. Optional, but pass it whenever one mounted component can be pointed
+   * at another directory: each change starts a new session, dropping the optimistic trust, the
+   * session refusals and any pending `trust()` result of the previous one.
    */
-  workspaceKey: string;
+  workspaceKey?: string;
   /** Must reflect the store: it is read on every render and is true once `persistTrust` resolved. */
   isTrusted: () => boolean;
   persistTrust: () => Promise<void>;
@@ -41,13 +42,16 @@ export interface WorkspaceConsent {
 }
 
 interface SessionState {
-  key: string;
+  /** Unique per session: a workspace switched away from and back to is a new session. */
+  id: number;
+  key: string | undefined;
   /** Optimistic value while `trust()` is saving; `null` means "ask `isTrusted()`". */
   trusted: boolean | null;
   refused: ReadonlySet<string>;
 }
 
-const fresh = (key: string): SessionState => ({
+const fresh = (id: number, key: string | undefined): SessionState => ({
+  id,
   key,
   trusted: null,
   refused: new Set(),
@@ -56,16 +60,21 @@ const fresh = (key: string): SessionState => ({
 export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsent {
   const depsRef = useRef(deps);
   depsRef.current = deps;
-  const [stored, setStored] = useState<SessionState>(() => fresh(deps.workspaceKey));
+  const nextId = useRef(1);
+  const [stored, setStored] = useState<SessionState>(() => fresh(0, deps.workspaceKey));
   const [, setTick] = useState(0);
+  // The deps of the render that started the session: `trust()` of that session persists through
+  // them, never through the deps of a workspace the component has since been pointed at.
+  const sessionDeps = useRef(deps);
 
   // A different workspace starts from scratch (state derived during render, no stale frame).
   let session = stored;
   if (stored.key !== deps.workspaceKey) {
-    session = fresh(deps.workspaceKey);
+    session = fresh(nextId.current++, deps.workspaceKey);
+    sessionDeps.current = deps;
     setStored(session);
   }
-  const key = session.key;
+  const sessionId = session.id;
 
   // Read on every render, so hooks that appear after mount (loaded once trust is granted, or for
   // a new workspace) are never hidden behind a cached list.
@@ -73,11 +82,12 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
   const pendingHooks = deps.listPendingHooks().filter((h) => !session.refused.has(h.fingerprint));
 
   const trust = useCallback(async () => {
+    const persist = sessionDeps.current.persistTrust;
     const set = (value: boolean | null) =>
-      setStored((prev) => (prev.key === key ? { ...prev, trusted: value } : prev));
+      setStored((prev) => (prev.id === sessionId ? { ...prev, trusted: value } : prev));
     set(true);
     try {
-      await depsRef.current.persistTrust();
+      await persist();
       // Saved: from here the store is the source of truth again, so the answer follows
       // `isTrusted()` and cannot leak into another directory.
       set(null);
@@ -85,7 +95,7 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
       set(false);
       throw err;
     }
-  }, [key]);
+  }, [sessionId]);
 
   const approveHook = useCallback(async (fingerprint: string) => {
     await depsRef.current.approveHook(fingerprint);
@@ -95,10 +105,10 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
   const refuseHook = useCallback(
     (fingerprint: string) => {
       setStored((prev) =>
-        prev.key === key ? { ...prev, refused: new Set(prev.refused).add(fingerprint) } : prev,
+        prev.id === sessionId ? { ...prev, refused: new Set(prev.refused).add(fingerprint) } : prev,
       );
     },
-    [key],
+    [sessionId],
   );
 
   return { trusted, pendingHooks, trust, approveHook, refuseHook };
