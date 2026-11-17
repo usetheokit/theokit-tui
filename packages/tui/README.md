@@ -325,6 +325,29 @@ const events = messagesToAgentEvents(messages, {
 Only `user` messages are checked; `label` defaults to `continuing the goal`. An empty `marker`
 throws a `TypeError`.
 
+## Esc to edit a previous message
+
+`backtrackReducer` and `BacktrackOverlay` give the selection ladder of the gesture; the fork stays
+in your app. First Esc primes the ladder, each next Esc goes one message older, Enter confirms.
+
+```tsx
+const [bt, dispatch] = useReducer(backtrackReducer, CLOSED_BACKTRACK);
+
+// Esc (routed with routeThroughLayers from @theokit/tui/keys)
+if (!bt.armed) dispatch({ type: "prime", previews: turns.map((t) => t.text) }); // listUserTurns
+else dispatch({ type: "older" });
+
+// Enter: map the index back to the 1-based `nth`, fork, then seed the composer
+const nth = turns[bt.selected]?.nth;
+// forkBeforeUserTurn(session, nth) -> new thread; setDraft(turns[bt.selected].text); dispatch({ type: "reset" });
+
+<BacktrackOverlay previews={bt.previews} selected={bt.selected} />
+<ChatComposer initialValue={draft} onSubmit={send} />
+```
+
+`prime` with an empty list stays closed; `older` stops at the oldest; `newer` from the newest
+returns to `-1`. The overlay's `header` and `hint` props reword its text.
+
 ## Development
 
 Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).
