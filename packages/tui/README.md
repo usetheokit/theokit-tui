@@ -325,59 +325,6 @@ const events = messagesToAgentEvents(messages, {
 Only `user` messages are checked; `label` defaults to `continuing the goal`. An empty `marker`
 throws a `TypeError`.
 
-## Workspace trust and hook review
-
-`useWorkspaceConsent` holds the state of the two gates an agent passes when it opens a repository it
-did not write; `WorkspaceTrustPrompt` and `HookReviewPrompt` render them. This package does not
-import `@theokit/agents`: the stores come in as plain functions.
-
-```tsx
-import { TrustStore } from "@theokit/agents/config";
-import { HookReviewPrompt, WorkspaceTrustPrompt, useWorkspaceConsent } from "@theokit/tui";
-
-const trustStore = new TrustStore();
-
-// `hookApprovals` is your HookApprovalStore; `pendingHooks(dir)` lists the project hooks (new or
-// changed) it has not approved yet, so an approved hook leaves the queue on the next render.
-function Gate({ dir }: { dir: string }) {
-  const consent = useWorkspaceConsent({
-    workspaceKey: dir, // optional: a new directory starts a new consent session
-    isTrusted: () => trustStore.isTrusted(dir),
-    persistTrust: () => trustStore.trust(dir),
-    listPendingHooks: () => pendingHooks(dir), // re-read after each approval
-    approveHook: (fingerprint) => hookApprovals.approve(fingerprint),
-  });
-  const hook = consent.pendingHooks[0];
-  if (!consent.trusted) {
-    return (
-      <WorkspaceTrustPrompt
-        dir={dir}
-        onDecision={(d) => (d === "trust" ? void consent.trust().catch(showToast) : process.exit(0))}
-      />
-    );
-  }
-  if (hook === undefined) return <ChatThread />;
-  return (
-    <HookReviewPrompt
-      hook={hook}
-      remaining={consent.pendingHooks.length - 1}
-      onDecision={(d) =>
-        d === "approve"
-          ? void consent.approveHook(hook.fingerprint).catch(showToast)
-          : consent.refuseHook(hook.fingerprint)
-      }
-    />
-  );
-}
-```
-
-`trust()` applies at once and, when `persistTrust` rejects, goes back to untrusted and rethrows the
-same error. `approveHook` leaves the hook pending when the store rejects; `refuseHook` lasts for the
-session only. `HookReviewPrompt` shows `[new]` or `[changed]` with `was:` / `now:` lines, and shows
-control characters in a command as escapes (`\r`), so the text shown is the text that runs. All
-wording is a prop. `pendingHooks` is read from `listPendingHooks()` on every render, so hooks that
-appear later are never skipped.
-
 ## Esc to edit a previous message
 
 `backtrackReducer` and `BacktrackOverlay` give the selection ladder of the gesture; the fork stays
