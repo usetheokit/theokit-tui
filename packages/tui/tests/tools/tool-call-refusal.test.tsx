@@ -129,6 +129,36 @@ describe("refused tool call (#192)", () => {
     }
   });
 
+  it("keeps_refusal_wording_outside_any_fixed_list", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => (e.refusal ? { name: "Not permitted: node x" } : undefined),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Not permitted: node x");
+    expect(out).not.toContain("Rejected");
+  });
+
+  it("keeps_the_chronological_order_of_refused_calls_in_an_explored_event", async () => {
+    const tool = (id: string, name: string, refusal?: { by: "policy" }) =>
+      ({
+        id,
+        kind: "tool",
+        name,
+        status: refusal ? "failed" : "success",
+        ...(refusal ? { refusal } : {}),
+      }) as const;
+    const events: AgentEvent[] = [
+      {
+        id: "e",
+        kind: "explored",
+        tools: [tool("a", "read_file"), tool("b", "grep", { by: "policy" }), tool("c", "list_dir")],
+      },
+    ];
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out.indexOf("Blocked")).toBeGreaterThan(out.indexOf("Explored"));
+    expect(out.indexOf("List .")).toBeGreaterThan(out.indexOf("Blocked"));
+  });
+
   it("keeps_refused_tools_of_an_explored_event_visible", async () => {
     const tool = (id: string, refusal?: { by: "policy"; reason: string }) =>
       ({

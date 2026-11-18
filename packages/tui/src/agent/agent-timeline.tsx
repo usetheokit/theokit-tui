@@ -545,16 +545,24 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
   );
 }
 
-/** Refused tools never explored anything: they render as their own cards, after the block. */
+/** Refused tools never explored anything: they render as their own cards, in their original order. */
 function ExploredRows({ tools }: { tools: readonly AgentToolEvent[] }) {
-  const explored = tools.filter((tool) => tool.refusal === undefined);
-  const refused = tools.filter((tool) => tool.refusal !== undefined);
+  const groups: (AgentToolEvent | AgentToolEvent[])[] = [];
+  for (const tool of tools) {
+    const last = groups[groups.length - 1];
+    if (tool.refusal !== undefined) groups.push(tool);
+    else if (Array.isArray(last)) last.push(tool);
+    else groups.push([tool]);
+  }
   return (
     <Box flexDirection="column">
-      {explored.length > 0 && <ExploredBlock tools={explored} />}
-      {refused.map((tool) => (
-        <ToolRow key={tool.id} {...tool} />
-      ))}
+      {groups.map((group) =>
+        Array.isArray(group) ? (
+          <ExploredBlock key={group[0]!.id} tools={group} />
+        ) : (
+          <ToolRow key={group.id} {...group} />
+        ),
+      )}
     </Box>
   );
 }
