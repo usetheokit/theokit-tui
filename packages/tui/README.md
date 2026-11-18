@@ -337,12 +337,14 @@ import { HookReviewPrompt, WorkspaceTrustPrompt, useWorkspaceConsent } from "@th
 
 const trustStore = new TrustStore();
 
-function Gate({ dir, hooks }: { dir: string; hooks: ReviewableHook[] }) {
+// `hookApprovals` is your HookApprovalStore; `pendingHooks(dir)` lists the project hooks (new or
+// changed) it has not approved yet, so an approved hook leaves the queue on the next render.
+function Gate({ dir }: { dir: string }) {
   const consent = useWorkspaceConsent({
     workspaceKey: dir, // optional: a new directory starts a new consent session
     isTrusted: () => trustStore.isTrusted(dir),
     persistTrust: () => trustStore.trust(dir),
-    listPendingHooks: () => hooks, // from your HookApprovalStore + hookFingerprint
+    listPendingHooks: () => pendingHooks(dir), // re-read after each approval
     approveHook: (fingerprint) => hookApprovals.approve(fingerprint),
   });
   const hook = consent.pendingHooks[0];

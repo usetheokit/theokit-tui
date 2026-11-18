@@ -275,4 +275,90 @@ describe("useWorkspaceConsent", () => {
     expect(get().trusted).toBe(false);
     app.unmount();
   });
+
+  it("trust_uses_the_latest_persistTrust_of_the_current_session", async () => {
+    const calls: string[] = [];
+    const base = {
+      workspaceKey: "/w",
+      isTrusted: () => false,
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    };
+    const { app, get, rerender } = mount({
+      ...base,
+      persistTrust: async () => void calls.push("old"),
+    });
+    await app.flush();
+    rerender({ ...base, persistTrust: async () => void calls.push("new") });
+    await app.flush();
+    await get().trust();
+    expect(calls).toEqual(["new"]);
+    app.unmount();
+  });
+
+  it("a_retained_approveHook_stays_bound_to_its_own_workspace", async () => {
+    const approved: string[] = [];
+    const mk = (key: string) => ({
+      workspaceKey: key,
+      isTrusted: () => true,
+      persistTrust: async () => {},
+      listPendingHooks: () => [],
+      approveHook: async (fp: string) => void approved.push(`${key}:${fp}`),
+    });
+    const { app, get, rerender } = mount(mk("/a"));
+    await app.flush();
+    const retained = get().approveHook;
+    rerender(mk("/b"));
+    await app.flush();
+    await retained("h1");
+    expect(approved).toEqual(["/a:h1"]);
+    app.unmount();
+  });
+
+  it("concurrent_trust_calls_share_one_save_and_one_outcome", async () => {
+    const d = deferred();
+    let n = 0;
+    const { app, get } = mount({
+      workspaceKey: "/w",
+      isTrusted: () => false,
+      persistTrust: async () => {
+        n++;
+        await d.promise;
+      },
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    await app.flush();
+    const p1 = get().trust();
+    const p2 = get().trust();
+    const err = new Error("disk");
+    d.reject(err);
+    await expect(p1).rejects.toBe(err);
+    await expect(p2).rejects.toBe(err);
+    await app.flush();
+    expect(n).toBe(1);
+    expect(get().trusted).toBe(false);
+    app.unmount();
+  });
+
+  it("trust_can_be_retried_after_a_failed_save", async () => {
+    let n = 0;
+    let saved = false;
+    const { app, get } = mount({
+      workspaceKey: "/w",
+      isTrusted: () => saved,
+      persistTrust: async () => {
+        if (n++ === 0) throw new Error("first");
+        saved = true;
+      },
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    await app.flush();
+    await expect(get().trust()).rejects.toThrow("first");
+    await get().trust();
+    await app.flush();
+    expect(get().trusted).toBe(true);
+    app.unmount();
+  });
 });

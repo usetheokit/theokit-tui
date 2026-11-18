@@ -57,23 +57,29 @@ const fresh = (id: number, key: string | undefined): SessionState => ({
   refused: new Set(),
 });
 
+/** What one session's callbacks share: its latest deps and its in-flight trust save. */
+interface SessionHandle {
+  deps: WorkspaceConsentDeps;
+  inflight: Promise<void> | undefined;
+}
+
 export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsent {
-  const depsRef = useRef(deps);
-  depsRef.current = deps;
   const nextId = useRef(1);
   const [stored, setStored] = useState<SessionState>(() => fresh(0, deps.workspaceKey));
   const [, setTick] = useState(0);
-  // The deps of the render that started the session: `trust()` of that session persists through
-  // them, never through the deps of a workspace the component has since been pointed at.
-  const sessionDeps = useRef(deps);
+  // Callbacks of a session use that session's latest deps; once the session ends its handle is no
+  // longer updated, so a retained callback never reaches the store of another workspace.
+  const handleRef = useRef<SessionHandle>({ deps, inflight: undefined });
 
   // A different workspace starts from scratch (state derived during render, no stale frame).
   let session = stored;
   if (stored.key !== deps.workspaceKey) {
     session = fresh(nextId.current++, deps.workspaceKey);
-    sessionDeps.current = deps;
+    handleRef.current = { deps, inflight: undefined };
     setStored(session);
   }
+  const handle = handleRef.current;
+  handle.deps = deps;
   const sessionId = session.id;
 
   // Read on every render, so hooks that appear after mount (loaded once trust is granted, or for
@@ -81,27 +87,38 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
   const trusted = session.trusted ?? deps.isTrusted();
   const pendingHooks = deps.listPendingHooks().filter((h) => !session.refused.has(h.fingerprint));
 
-  // Captured when the session's callback is created, so a later session's deps cannot replace it.
-  const persist = sessionDeps.current.persistTrust;
-  const trust = useCallback(async () => {
+  const trust = useCallback(() => {
+    // Concurrent calls share one save and one outcome.
+    if (handle.inflight !== undefined) return handle.inflight;
     const set = (value: boolean | null) =>
       setStored((prev) => (prev.id === sessionId ? { ...prev, trusted: value } : prev));
     set(true);
-    try {
-      await persist();
-      // Saved: from here the store is the source of truth again, so the answer follows
-      // `isTrusted()` and cannot leak into another directory.
-      set(null);
-    } catch (err) {
-      set(false);
-      throw err;
-    }
-  }, [sessionId, persist]);
+    const run = (async () => {
+      try {
+        await handle.deps.persistTrust();
+        // Saved: from here the store is the source of truth again, so the answer follows
+        // `isTrusted()` and cannot leak into another directory.
+        set(null);
+      } catch (err) {
+        set(false);
+        throw err;
+      }
+    })();
+    handle.inflight = run;
+    const clear = () => {
+      handle.inflight = undefined;
+    };
+    run.then(clear, clear);
+    return run;
+  }, [handle, sessionId]);
 
-  const approveHook = useCallback(async (fingerprint: string) => {
-    await depsRef.current.approveHook(fingerprint);
-    setTick((n) => n + 1); // re-read the store
-  }, []);
+  const approveHook = useCallback(
+    async (fingerprint: string) => {
+      await handle.deps.approveHook(fingerprint);
+      setTick((n) => n + 1); // re-read the store
+    },
+    [handle],
+  );
 
   const refuseHook = useCallback(
     (fingerprint: string) => {
