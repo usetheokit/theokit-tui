@@ -132,13 +132,7 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
  * Inline tool-call row: 3-cell status indicator + bold name + dim summary.
  * Status arrives via props — transitions are plain rerenders (ADR D3).
  */
-export function ToolCall({
-  name,
-  status,
-  summary,
-  refusal,
-  ...margin
-}: ToolCallProps) {
+export function ToolCall({ name, status, summary, refusal, ...margin }: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
   // error BEFORE any hook — JS consumers get the contract, not a crash.
   // Guards MUST stay above the first hook: tests invoke this component as a
@@ -162,9 +156,7 @@ export function ToolCall({
     <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
-        {refusal !== undefined
-          ? refusedHeader(name, refusal)
-          : formatToolName(singleLine(name))}
+        {refusal !== undefined ? refusedHeader(name, refusal) : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">
