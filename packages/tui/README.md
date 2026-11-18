@@ -378,6 +378,34 @@ control characters in a command as escapes (`\r`), so the text shown is the text
 wording is a prop. `pendingHooks` is read from `listPendingHooks()` on every render, so hooks that
 appear later are never skipped.
 
+## Esc to edit a previous message
+
+`backtrackReducer` and `BacktrackOverlay` give the selection ladder of the gesture; the fork stays
+in your app. First Esc primes the ladder, each next Esc goes one message older, Enter confirms.
+
+```tsx
+const [bt, dispatch] = useReducer(backtrackReducer, CLOSED_BACKTRACK);
+
+// Esc (routed with routeThroughLayers from @theokit/tui/keys)
+if (!bt.armed) dispatch({ type: "prime", previews: turns.map((t) => t.text) }); // listUserTurns
+else dispatch({ type: "older" });
+
+// Enter: ignore it while nothing is selected (-1), else map the index back to the 1-based `nth`
+const turn = bt.selected >= 0 ? turns[bt.selected] : undefined;
+if (turn) {
+  // forkBeforeUserTurn(session, turn.nth) -> new thread, then seed the composer:
+  setDraft((d) => ({ text: turn.text, key: d.key + 1 })); // useState({ text: "", key: 0 })
+  dispatch({ type: "reset" });
+}
+
+<BacktrackOverlay previews={bt.previews} selected={bt.selected} />
+{/* ChatComposer reads initialValue only on mount: change `key` to remount it with the new text */}
+<ChatComposer key={draft.key} initialValue={draft.text} onSubmit={send} />
+```
+
+`prime` with an empty list stays closed; `older` stops at the oldest; `newer` from the newest
+returns to `-1`. The overlay's `header` and `hint` props reword its text.
+
 ## Development
 
 Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).

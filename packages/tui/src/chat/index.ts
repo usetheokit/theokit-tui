@@ -20,3 +20,7 @@ export type { InkInputProviderProps } from "./ink-input-provider.js";
 export { InkInputProvider } from "./ink-input-provider.js";
 export type { TextBufferAction, TextBufferState } from "./text-buffer.js";
 export { initialTextBuffer, textBufferReducer } from "./text-buffer.js";
+export type { BacktrackAction, BacktrackState } from "./backtrack.js";
+export { backtrackReducer, CLOSED_BACKTRACK } from "./backtrack.js";
+export type { BacktrackOverlayProps } from "./backtrack-overlay.js";
+export { BacktrackOverlay } from "./backtrack-overlay.js";

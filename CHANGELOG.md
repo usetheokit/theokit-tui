@@ -12,6 +12,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   rolled back (the error rethrown) when persisting fails, hooks are reviewed one at a time, a
   refusal is session-only, and C0/C1 control characters in a hook command are shown as visible
   escapes (#197)
+
+- `backtrackReducer`, `CLOSED_BACKTRACK` and `BacktrackOverlay` for the Esc-to-edit-a-previous-message
+  ladder: `prime` arms and sets the previews in one transition, `older` / `newer` step, `reset`
+  closes (#195)
 - `copyToClipboard`, `DEFAULT_CLIPBOARD_COMMANDS`, `NoClipboardError` and `ClipboardWriteError` in
   `@theokit/tui/terminal`: a bounded (5 s) probe over `wl-copy`, `xclip`, `xsel`, `pbcopy` and
   `clip.exe`, an opt-in OSC 52 fallback on a TTY sink, and typed errors that name every binary tried
