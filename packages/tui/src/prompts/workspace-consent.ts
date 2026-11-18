@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 // useWorkspaceConsent — the UI-side state for the two gates an agent opening a repository it did
 // not write must pass: trust the directory, then review each project hook before it runs. The
@@ -82,7 +82,7 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
   const pendingHooks = deps.listPendingHooks().filter((h) => !session.refused.has(h.fingerprint));
 
   // Captured when the session's callback is created, so a later session's deps cannot replace it.
-  const persist = useMemo(() => sessionDeps.current.persistTrust, [sessionId]);
+  const persist = sessionDeps.current.persistTrust;
   const trust = useCallback(async () => {
     const set = (value: boolean | null) =>
       setStored((prev) => (prev.id === sessionId ? { ...prev, trusted: value } : prev));
