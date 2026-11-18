@@ -64,6 +64,21 @@ describe("useWorkspaceConsent", () => {
     app.unmount();
   });
 
+  it("trust_stays_when_persist_resolves_but_isTrusted_still_reports_false", async () => {
+    const { app, get } = mount({
+      workspaceKey: "/w",
+      isTrusted: () => false,
+      persistTrust: async () => {},
+      listPendingHooks: () => [],
+      approveHook: async () => {},
+    });
+    await app.flush();
+    await get().trust();
+    await app.flush();
+    expect(get().trusted).toBe(true);
+    app.unmount();
+  });
+
   it("trust_rolls_back_and_rethrows_the_same_error_when_persist_rejects", async () => {
     const boom = new Error("disk full");
     const { app, get } = mount({

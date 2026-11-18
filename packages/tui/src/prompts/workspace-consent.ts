@@ -22,7 +22,7 @@ export interface WorkspaceConsentDeps {
    * session refusals and any pending `trust()` result of the previous one.
    */
   workspaceKey?: string;
-  /** Must reflect the store: it is read on every render and is true once `persistTrust` resolved. */
+  /** Read on every render until `trust()` is called; after that the session keeps `true`. */
   isTrusted: () => boolean;
   persistTrust: () => Promise<void>;
   listPendingHooks: () => readonly ReviewableHook[];
@@ -45,7 +45,7 @@ interface SessionState {
   /** Unique per session: a workspace switched away from and back to is a new session. */
   id: number;
   key: string | undefined;
-  /** Optimistic value while `trust()` is saving; `null` means "ask `isTrusted()`". */
+  /** Set by `trust()` (kept once saved, `false` after a rollback); `null` means "ask `isTrusted()`". */
   trusted: boolean | null;
   refused: ReadonlySet<string>;
 }
@@ -95,10 +95,9 @@ export function useWorkspaceConsent(deps: WorkspaceConsentDeps): WorkspaceConsen
     set(true);
     const run = (async () => {
       try {
+        // Saved: the optimistic `true` stays for this session (a new `workspaceKey` drops it),
+        // whether or not `isTrusted()` has caught up.
         await handle.deps.persistTrust();
-        // Saved: from here the store is the source of truth again, so the answer follows
-        // `isTrusted()` and cannot leak into another directory.
-        set(null);
       } catch (err) {
         set(false);
         throw err;

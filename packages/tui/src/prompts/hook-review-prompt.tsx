@@ -34,6 +34,8 @@ export interface HookReviewPromptProps {
   changedLabel?: string;
   wasLabel?: string;
   nowLabel?: string;
+  /** Shown after `was:` when a modified hook carries no `previousCommand`. */
+  unavailableLabel?: string;
   remainingLabel?: (remaining: number) => string;
 }
 
@@ -50,6 +52,7 @@ export function HookReviewPrompt({
   changedLabel = "[changed]",
   wasLabel = "was:",
   nowLabel = "now:",
+  unavailableLabel = "(unavailable)",
   remainingLabel = (n) => `${n} more to review`,
 }: HookReviewPromptProps): ReactElement {
   const choices: readonly ApprovalChoice[] = [
@@ -58,8 +61,10 @@ export function HookReviewPrompt({
   ];
   const changed = hook.status === "modified";
   const lines = [`${changed ? changedLabel : newLabel} ${escapeControl(hook.event)}`];
-  if (changed && hook.previousCommand !== undefined) {
-    lines.push(`${wasLabel} ${escapeControl(hook.previousCommand)}`);
+  if (changed) {
+    const previous =
+      hook.previousCommand === undefined ? unavailableLabel : escapeControl(hook.previousCommand);
+    lines.push(`${wasLabel} ${previous}`);
   }
   lines.push(`${changed ? `${nowLabel} ` : ""}${escapeControl(hook.command)}`);
   const command = lines.join("\n");

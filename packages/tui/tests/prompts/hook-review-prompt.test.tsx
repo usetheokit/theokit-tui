@@ -43,6 +43,21 @@ describe("HookReviewPrompt", () => {
     app.unmount();
   });
 
+  it("renders_a_was_fallback_when_a_modified_hook_has_no_previous_command", async () => {
+    const app = render(
+      createElement(HookReviewPrompt, {
+        hook: { ...base, status: "modified" },
+        remaining: 0,
+        onDecision: () => {},
+      }),
+    );
+    await app.flush();
+    const frame = app.lastFrame();
+    expect(frame).toContain("was: (unavailable)");
+    expect(frame).toContain("now: npm test");
+    app.unmount();
+  });
+
   it("escapes_control_characters_and_keeps_the_rest_on_the_same_line", async () => {
     const app = render(
       createElement(HookReviewPrompt, {
