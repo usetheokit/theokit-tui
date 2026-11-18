@@ -294,6 +294,13 @@ describe("public entry surface (T0.2)", () => {
     expect(mod.initialTextBuffer).toEqual({ text: "", cursorOffset: 0 });
   });
 
+  it("public_entry_exposes_backtrack", async () => {
+    const mod = await import("../../src/index.js");
+    expect(typeof mod.backtrackReducer).toBe("function");
+    expect(typeof mod.BacktrackOverlay).toBe("function");
+    expect(mod.CLOSED_BACKTRACK.armed).toBe(false);
+  });
+
   it("public_entry_exposes_agent_decision_surface", async () => {
     const mod = await import("../../src/index.js");
     // M23: the three decision surfaces + the shared ChoiceRow / FreeTextInput.
