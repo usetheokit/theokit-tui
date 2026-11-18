@@ -7,7 +7,12 @@ import { DiffViewer } from "../diff/diff-viewer.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
 import { useTheoTheme } from "../theme/theme.js";
-import { formatToolName, STATUS_INDICATOR_WIDTH, TOOL_CALL_STATUSES } from "../tools/tool-call.js";
+import {
+  formatToolName,
+  refusalBody,
+  STATUS_INDICATOR_WIDTH,
+  TOOL_CALL_STATUSES,
+} from "../tools/tool-call.js";
 import { ToolCallCard } from "../tools/tool-call-card.js";
 import { ToolResult } from "../tools/tool-result.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
@@ -315,6 +320,9 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
       />
     );
   }
+  if (event.refusal !== undefined && event.output === undefined && event.shell === undefined) {
+    return <ToolResult>{refusalBody(event.refusal)}</ToolResult>;
+  }
   const hasBody = (event.output !== undefined && event.output !== "") || event.shell !== undefined;
   if (!hasBody) return null;
   return (
@@ -331,6 +339,7 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
     <ToolCallCard
       name={event.name}
       status={event.status}
+      {...(event.refusal !== undefined ? { refusal: event.refusal } : {})}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
       {toolBody(event)}
@@ -414,7 +423,8 @@ function collapseTools(tools: readonly AgentToolEvent[]): CollapsedGroup[] {
 
 /** The tool events a timeline event contributes to a collapsed run — none for prose. */
 function collapsibleTools(event: AgentEvent): readonly AgentToolEvent[] | undefined {
-  if (event.kind === "tool") return [event];
+  // A refused call never ran — collapsing it under "Ran N commands" would claim it did.
+  if (event.kind === "tool") return event.refusal === undefined ? [event] : undefined;
   if (event.kind === "explored") return event.tools;
   return undefined;
 }

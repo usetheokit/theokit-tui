@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
+import type { ToolRefusal } from "../agent/agent-event.js";
 import { unionMessage } from "../agent/union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
@@ -45,6 +46,23 @@ export interface ToolCallProps extends LayoutMarginProps {
    * (M6 plan D1) — still gemini-parity in shape.
    */
   summary?: string;
+  /**
+   * Set when the call was refused before it ran: the header reads `Rejected <name>`
+   * (`human`/`timeout`) or `Blocked <name>` (`policy`/`hook`). `status` stays `failed`.
+   */
+  refusal?: ToolRefusal;
+}
+
+/** Header verb for a refusal — nothing ran, so never "Ran". */
+export function refusalVerb(refusal: ToolRefusal): "Rejected" | "Blocked" {
+  return refusal.by === "human" || refusal.by === "timeout" ? "Rejected" : "Blocked";
+}
+
+/** Default body of a refused call: `nothing ran`, plus `: <reason>` when there is one. */
+export function refusalBody(refusal: ToolRefusal): string {
+  return refusal.reason !== undefined && refusal.reason !== ""
+    ? `nothing ran: ${refusal.reason}`
+    : "nothing ran";
 }
 
 /** Collapse any newlines so the header stays a single line (EC-8). */
@@ -97,7 +115,7 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
  * Inline tool-call row: 3-cell status indicator + bold name + dim summary.
  * Status arrives via props — transitions are plain rerenders (ADR D3).
  */
-export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
+export function ToolCall({ name, status, summary, refusal, ...margin }: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
   // error BEFORE any hook — JS consumers get the contract, not a crash.
   // Guards MUST stay above the first hook: tests invoke this component as a
@@ -121,7 +139,9 @@ export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
     <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
-        {formatToolName(singleLine(name))}
+        {refusal !== undefined
+          ? `${refusalVerb(refusal)} ${formatToolName(singleLine(name).replace(/^Ran /, ""))}`
+          : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">

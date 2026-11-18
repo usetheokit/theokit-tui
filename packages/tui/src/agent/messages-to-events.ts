@@ -8,7 +8,8 @@
 
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
-import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
+import type { AgentEvent, AgentToolEvent, ToolRefusal } from "./agent-event.js";
+import { TOOL_REFUSAL_BY } from "./agent-event.js";
 import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
@@ -170,6 +171,18 @@ interface ToolPartView {
   output?: unknown;
   errorText?: string;
   input?: unknown;
+  refusal?: ToolRefusal;
+}
+
+/** A valid `by` is required; anything else is dropped. A non-string reason is omitted. */
+function readRefusal(value: unknown): ToolRefusal | undefined {
+  if (!isRecord(value)) return undefined;
+  const by = value.by;
+  if (!(TOOL_REFUSAL_BY as readonly unknown[]).includes(by)) return undefined;
+  return {
+    by: by as ToolRefusal["by"],
+    ...(typeof value.reason === "string" ? { reason: value.reason } : {}),
+  };
 }
 
 /** Read the tool view from a part, or `null` when the part is not a tool invocation. */
@@ -191,6 +204,8 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
   };
   if (typeof p.errorText === "string") view.errorText = p.errorText;
   if (p.input !== undefined) view.input = p.input;
+  const refusal = readRefusal(p.refusal);
+  if (refusal !== undefined) view.refusal = refusal;
   return view;
 }
 
@@ -244,7 +259,7 @@ function toToolEvent(
     name: tool.toolName,
     status: TOOL_STATUS[tool.state] ?? "pending",
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
-    ...toolResultContent(tool),
+    ...(tool.refusal !== undefined ? { refusal: tool.refusal } : toolResultContent(tool)),
   };
   // #156 — the value the formatter receives is the one that POPULATED the event, not one fixed
   // source field.

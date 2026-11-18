@@ -21,6 +21,7 @@ export type {
   AgentMessageEvent,
   AgentThinkingEvent,
   AgentToolEvent,
+  ToolRefusal,
 } from "./agent-event.js";
 export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {

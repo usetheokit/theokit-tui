@@ -28,6 +28,14 @@ export interface AgentThinkingEvent {
   text: string;
 }
 
+/** Why a tool call was refused before it ran. */
+export interface ToolRefusal {
+  by: "human" | "policy" | "hook" | "timeout";
+  reason?: string;
+}
+
+export const TOOL_REFUSAL_BY = ["human", "policy", "hook", "timeout"] as const;
+
 export interface AgentToolEvent {
   id: string;
   kind: "tool";
@@ -49,6 +57,8 @@ export interface AgentToolEvent {
    * path (ToolResult) and 20 on the `diff` path (DiffViewer counts the file
    * headers in the same budget, so it needs the extra room). */
   maxLines?: number;
+  /** Set when the call was refused before it ran. The status stays "failed". */
+  refusal?: ToolRefusal;
 }
 
 /**

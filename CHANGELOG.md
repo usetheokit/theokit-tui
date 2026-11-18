@@ -7,6 +7,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `ToolRefusal` and `AgentToolEvent.refusal`: `messagesToAgentEvents` copies a typed `refusal`
+  (`by: "human" | "policy" | "hook" | "timeout"`, optional `reason`) from the tool part; `ToolCall`
+  takes a `refusal` prop and renders `Rejected <tool>` (human, timeout) or `Blocked <tool>` (policy,
+  hook) with the body `nothing ran[: reason]`. Status stays `failed`; invalid refusals are ignored;
+  both formatters receive the event with `refusal` set (#192)
+
 - `useWorkspaceConsent`, `WorkspaceTrustPrompt`, `HookReviewPrompt` and `ReviewableHook`: the
   workspace-trust and project-hook-review gates over `PermissionPrompt`. Trust is optimistic and
   rolled back (the error rethrown) when persisting fails, hooks are reviewed one at a time, a
