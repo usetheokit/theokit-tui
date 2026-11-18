@@ -51,6 +51,8 @@ export interface ToolCallProps extends LayoutMarginProps {
    * (`human`/`timeout`) or `Blocked <name>` (`policy`/`hook`). `status` stays `failed`.
    */
   refusal?: ToolRefusal;
+  /** The name is the app's own refusal wording: render it verbatim, with no `Rejected`/`Blocked` prefix. */
+  refusalWording?: boolean;
 }
 
 /** Header verb for a refusal — nothing ran, so never "Ran". */
@@ -75,9 +77,9 @@ const REFUSAL_WORDING =
  * refusal (`Blocked …`, `Declined command`) is the app's own wording and is kept; any other header
  * (`Read file.ts`, `Edited x`) gets the refusal verb so it never claims an action occurred.
  */
-function refusedHeader(name: string, refusal: ToolRefusal): string {
+function refusedHeader(name: string, refusal: ToolRefusal, wording = false): string {
   const header = singleLine(name);
-  if (REFUSAL_WORDING.test(header)) return header;
+  if (wording || REFUSAL_WORDING.test(header)) return header;
   const target = header.replace(/^Ran\b\s*/, "");
   return `${refusalVerb(refusal)} ${formatToolName(target)}`.trimEnd();
 }
@@ -132,7 +134,7 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
  * Inline tool-call row: 3-cell status indicator + bold name + dim summary.
  * Status arrives via props — transitions are plain rerenders (ADR D3).
  */
-export function ToolCall({ name, status, summary, refusal, ...margin }: ToolCallProps) {
+export function ToolCall({ name, status, summary, refusal, refusalWording, ...margin }: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
   // error BEFORE any hook — JS consumers get the contract, not a crash.
   // Guards MUST stay above the first hook: tests invoke this component as a
@@ -156,7 +158,9 @@ export function ToolCall({ name, status, summary, refusal, ...margin }: ToolCall
     <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
-        {refusal !== undefined ? refusedHeader(name, refusal) : formatToolName(singleLine(name))}
+        {refusal !== undefined
+          ? refusedHeader(name, refusal, refusalWording === true)
+          : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">

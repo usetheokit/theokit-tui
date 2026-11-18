@@ -129,6 +129,15 @@ describe("refused tool call (#192)", () => {
     }
   });
 
+  it("keeps_refusal_wording_outside_any_fixed_list", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => (e.refusal ? { name: "Not permitted: node x" } : undefined),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Not permitted: node x");
+    expect(out).not.toContain("Rejected");
+  });
+
   it("keeps_refused_tools_of_an_explored_event_visible", async () => {
     const tool = (id: string, refusal?: { by: "policy"; reason: string }) =>
       ({
