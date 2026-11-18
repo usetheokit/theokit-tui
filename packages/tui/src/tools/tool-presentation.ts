@@ -189,7 +189,7 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
   [
     "write_stdin",
     {
-      header: pathHeader("Sending input to", "Sent input to", "sessionId", "session_id"),
+      header: pathHeader("Writing to session", "Wrote to session", "sessionId", "session_id"),
       approvalLabel: () => "Send input to the running shell?",
     },
   ],
@@ -199,7 +199,7 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
       header: (input, active) => {
         const files = v4aFiles(input, 3);
         return files === undefined
-          ? pathHeader("Applying a patch to", "Patched", "path", "file", "filePath")(input, active)
+          ? pathHeader("Applying a patch to", "Edited", "path", "file", "filePath")(input, active)
           : `${active ? "Editing" : "Edited"} ${files}`;
       },
       body: applyPatchBody,
@@ -234,7 +234,7 @@ const DEFAULT_ENTRIES: readonly (readonly [string, ToolPresentation])[] = [
       body: shellBody,
     },
   ],
-  ["git_diff", { header: verbPair("Reading the diff", "Read the diff"), body: diffBody }],
+  ["git_diff", { header: verbPair("Diffing the changes", "Diffed the changes"), body: diffBody }],
   [
     "run_vitest",
     {
@@ -266,18 +266,39 @@ export const DEFAULT_TOOL_PRESENTATION: ReadonlyMap<string, ToolPresentation> = 
   DEFAULT_ENTRIES,
 );
 
+export interface ToolPresentationOptions {
+  /** Map an app tool name to the known name whose presentation it uses, e.g. { Bash: "shell_exec" }. */
+  aliases?: Readonly<Record<string, KnownToolName>>;
+}
+
 /**
- * The defaults with `overrides` merged over them, per entry and per field.
+ * The defaults with `aliases` and `overrides` merged over them, per entry and per field.
  *
  * Partial by design: changing one header must not mean restating the other nineteen, which is a fork
  * wearing an override's clothes. An unknown name is answered by a generic entry rather than
  * `undefined`, so a caller never has to guard — and an override for an unknown name is honoured, so
  * a product with its own tool describes it here instead of forking the map.
+ *
+ * An alias points an app's own tool name at a known name's presentation (`{ Bash: "shell_exec" }`).
+ * It resolves before the generic fallback, and an override on the alias name applies on top of the
+ * aliased entry. Targets are looked up in the defaults, so aliases do not chain. A target that is
+ * not in {@link KNOWN_TOOL_NAMES} throws a `TypeError` at construction.
  */
 export function toolPresentation(
   overrides: Readonly<Record<string, Partial<ToolPresentation>>> = {},
+  options: ToolPresentationOptions = {},
 ): ReadonlyMap<string, ToolPresentation> {
   const merged = new Map<string, ToolPresentation>(DEFAULT_TOOL_PRESENTATION);
+
+  for (const [alias, target] of Object.entries(options.aliases ?? {})) {
+    const aliased = DEFAULT_TOOL_PRESENTATION.get(target);
+    if (aliased === undefined || !(KNOWN_TOOL_NAMES as readonly string[]).includes(target)) {
+      throw new TypeError(
+        `toolPresentation: alias "${alias}" targets "${String(target)}", which is not a known tool name (${KNOWN_TOOL_NAMES.join(", ")})`,
+      );
+    }
+    merged.set(alias, aliased);
+  }
 
   for (const [name, override] of Object.entries(overrides)) {
     const base = merged.get(name) ?? genericPresentation(name);

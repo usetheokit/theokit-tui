@@ -19,7 +19,7 @@
  * permanent.
  */
 import { describe, expect, it } from "vitest";
-
+import { DEFAULT_TOOL_HEADERS } from "../../src/agent/messages-to-events.js";
 import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import {
   DEFAULT_TOOL_PRESENTATION,
@@ -198,9 +198,9 @@ describe("apply_patch V4A", () => {
   });
 
   it("test_falls_back_without_markers_or_with_a_non_string_patch", () => {
-    expect(entry?.header({ path: "x.ts" }, false)).toBe("Patched x.ts");
-    expect(entry?.header({ patch: 5 }, false)).toBe("Patched");
-    expect(entry?.header({ patch: "--- a" }, false)).toBe("Patched");
+    expect(entry?.header({ path: "x.ts" }, false)).toBe("Edited x.ts");
+    expect(entry?.header({ patch: 5 }, false)).toBe("Edited");
+    expect(entry?.header({ patch: "--- a" }, false)).toBe("Edited");
     expect(entry?.approvalLabel?.({ patch: 5 })).toBe("Apply the patch to the file?");
   });
 
@@ -251,5 +251,39 @@ describe("shell_exec exit_code (#204)", () => {
     expect(routeToolResult(JSON.stringify({ stdout, stderr: "", exit_code: 0 }))).toEqual({
       diff: stdout,
     });
+  });
+});
+
+describe("toolPresentation aliases", () => {
+  const aliases = { Bash: "shell_exec" } as const;
+
+  it("resolves an alias to the known entry", () => {
+    const got = toolPresentation({}, { aliases }).get("Bash");
+    const known = DEFAULT_TOOL_PRESENTATION.get("shell_exec");
+    expect(got?.header({ command: "ls" }, false)).toBe(known?.header({ command: "ls" }, false));
+    expect(got?.approvalLabel).toBeDefined();
+  });
+
+  it("applies an override on the alias name over the aliased entry", () => {
+    const got = toolPresentation({ Bash: { header: () => "x" } }, { aliases }).get("Bash");
+    const known = DEFAULT_TOOL_PRESENTATION.get("shell_exec");
+    expect(got?.header({}, false)).toBe("x");
+    expect(got?.body).toBe(known?.body);
+    expect(got?.approvalLabel).toBe(known?.approvalLabel);
+  });
+
+  it("throws a TypeError naming the alias and an unknown target", () => {
+    expect(() => toolPresentation({}, { aliases: { Foo: "nope" as never } })).toThrow(TypeError);
+    expect(() => toolPresentation({}, { aliases: { Foo: "nope" as never } })).toThrow(/Foo.*nope/);
+  });
+});
+
+describe("one vocabulary across both default tables", () => {
+  it.each(KNOWN_TOOL_NAMES)("%s has the same verb in both", (name) => {
+    const verb = DEFAULT_TOOL_HEADERS[name];
+    const header = DEFAULT_TOOL_PRESENTATION.get(name)?.header({}, false) ?? "";
+    expect(verb).toBeDefined();
+    // `write_stdin` is the one multi-word verb ("Wrote to session"), pinned by default-tool-header.test.ts.
+    expect(header === verb || header.startsWith(`${verb} `)).toBe(true);
   });
 });

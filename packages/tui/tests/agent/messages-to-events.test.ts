@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  defaultToolHeader,
   findPendingApproval,
   messagesToAgentEvents,
   readTurnUsage,
@@ -640,5 +641,12 @@ describe("collapseUserTurns", () => {
     expect(() => messagesToAgentEvents([], { collapseUserTurns: { marker: "" } })).toThrow(
       new TypeError("collapseUserTurns.marker must be a non-empty string"),
     );
+  });
+});
+
+describe("defaultToolHeader for framework names", () => {
+  it("answers shell_exec with Ran", () => {
+    const event = { name: "shell_exec" } as unknown as Parameters<typeof defaultToolHeader>[0];
+    expect(defaultToolHeader(event)).toEqual({ name: "Ran" });
   });
 });
