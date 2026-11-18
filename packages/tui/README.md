@@ -149,7 +149,7 @@ a valid `by`; anything else is ignored. The status stays `"failed"`. `AgentTimel
 `ToolCall`, which renders `Rejected <tool>` (`human`, `timeout`) or `Blocked <tool>` (`policy`,
 `hook`), with the body `nothing ran` plus `: <reason>` when a reason exists. `formatToolHeader` and
 `formatToolResult` receive the event with `refusal` set, so an app can override the wording. A
-header with whitespace (from `formatToolHeader`) is your own wording and is kept as-is, `defaultToolHeader` leaves refused calls on the raw name, and the default body wins over any `output`/`shell`/`diff` unless `formatToolResult` supplies one. A
+header from `formatToolHeader` always gets `Rejected`/`Blocked` (a leading `Ran` is dropped) unless it already starts with that verb, `defaultToolHeader` leaves refused calls on the raw name, and the default body wins over any `output`/`shell`/`diff` unless `formatToolResult` supplies one. A
 refused call is never folded into a collapsed `Ran N …` line when `verbose` is off.
 
 ## How it works

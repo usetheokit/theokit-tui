@@ -64,10 +64,10 @@ describe("refused tool call (#192)", () => {
 
   it("keeps_an_app_formatter_wording_without_a_second_verb", async () => {
     const events = messagesToAgentEvents(msg({ by: "human" }), {
-      formatToolHeader: (e) => (e.refusal ? { name: "Declined command" } : undefined),
+      formatToolHeader: (e) => (e.refusal ? { name: "Blocked by you: command" } : undefined),
     });
     const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Declined command");
+    expect(out).toContain("Blocked by you: command");
     expect(out).not.toContain("Rejected");
   });
 
@@ -97,6 +97,38 @@ describe("refused tool call (#192)", () => {
       const out = stripAnsi(await renderFrame(<AgentTimeline events={[{ ...base, ...extra }]} />));
       expect(out).toContain("nothing ran");
       expect(out).not.toContain("stale");
+    }
+  });
+
+  it("prefixes_an_ordinary_formatted_header_and_drops_Ran", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: () => ({ name: "Ran node x" }),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Rejected node x");
+    expect(out).not.toContain("Ran");
+  });
+
+  it("keeps_refused_tools_of_an_explored_event_visible", async () => {
+    const tool = (id: string, refusal?: { by: "policy"; reason: string }) =>
+      ({
+        id,
+        kind: "tool",
+        name: "read_file",
+        status: refusal ? "failed" : "success",
+        ...(refusal ? { refusal } : {}),
+      }) as const;
+    const events: AgentEvent[] = [
+      {
+        id: "e",
+        kind: "explored",
+        tools: [tool("a"), tool("b", { by: "policy", reason: "outside workspace" })],
+      },
+    ];
+    for (const verbose of [true, false]) {
+      const out = stripAnsi(await renderFrame(<AgentTimeline events={events} verbose={verbose} />));
+      expect(out).toContain("Blocked");
+      expect(out).toContain("nothing ran: outside workspace");
     }
   });
 });

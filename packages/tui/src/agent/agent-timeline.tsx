@@ -436,6 +436,12 @@ function collapsibleTools(event: AgentEvent): readonly AgentToolEvent[] | undefi
  * scrollback that has already been printed, and Ink cannot un-print it. Re-collapsing graduated
  * rows is not a thing this component can offer without lying about what the terminal shows.
  */
+const exploredOf = (tool: AgentToolEvent): AgentEvent => ({
+  id: `explored-${tool.id}`,
+  kind: "explored",
+  tools: [tool],
+});
+
 function collapseTail(tail: readonly AgentEvent[]): TailRow[] {
   const rows: TailRow[] = [];
   let run: AgentToolEvent[] = [];
@@ -446,7 +452,14 @@ function collapseTail(tail: readonly AgentEvent[]): TailRow[] {
     run = [];
     runKey = undefined;
   };
-  for (const event of tail) {
+  // A refused tool inside an `explored` event stays its own row: folding it into a count would hide
+  // that it never ran, and the reason.
+  const units = tail.flatMap((event): AgentEvent[] =>
+    event.kind === "explored" && event.tools.some((tool) => tool.refusal !== undefined)
+      ? event.tools.map((tool) => (tool.refusal !== undefined ? tool : exploredOf(tool)))
+      : [event],
+  );
+  for (const event of units) {
     const tools = collapsibleTools(event);
     if (tools === undefined) {
       flush();
@@ -532,6 +545,20 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
   );
 }
 
+/** Refused tools never explored anything: they render as their own cards, after the block. */
+function ExploredRows({ tools }: { tools: readonly AgentToolEvent[] }) {
+  const explored = tools.filter((tool) => tool.refusal === undefined);
+  const refused = tools.filter((tool) => tool.refusal !== undefined);
+  return (
+    <Box flexDirection="column">
+      {explored.length > 0 && <ExploredBlock tools={explored} />}
+      {refused.map((tool) => (
+        <ToolRow key={tool.id} {...tool} />
+      ))}
+    </Box>
+  );
+}
+
 /**
  * The index of the first event that has not reached a terminal state, or `events.length` when
  * every one has (#52).
@@ -550,7 +577,7 @@ export function firstUnsettledIndex(events: readonly AgentEvent[]): number {
 function eventRow(event: AgentEvent) {
   switch (event.kind) {
     case "explored":
-      return <ExploredBlock tools={event.tools} />;
+      return <ExploredRows tools={event.tools} />;
     case "message":
       // Claude Code parity: an assistant turn is Markdown (headings, lists, fenced code → CodeBlock with
       // syntax highlight), so render it through MarkdownText. The user echo stays raw (dim) — a user's typed
