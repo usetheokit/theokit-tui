@@ -67,12 +67,15 @@ export function refusalBody(refusal: ToolRefusal): string {
 
 /**
  * Header of a refused call: always `Rejected …` / `Blocked …`, never an execution verb. A leading
- * `Ran` from a formatter is dropped (nothing ran); a header that already starts with the refusal
- * verb is the app's own wording and is kept.
+ * `Ran` from a formatter is dropped (nothing ran); a multi-word header that
+ * does not start with `Ran` (e.g. `Blocked …`, `Declined command`) is the app's own wording and is kept.
  */
 function refusedHeader(name: string, refusal: ToolRefusal): string {
   const header = singleLine(name);
   if (/^(Rejected|Blocked)\b/.test(header)) return header;
+  // A multi-word header that does not start with the execution verb is the app's own
+  // refusal wording (e.g. "Declined command"): keep it, no second verb.
+  if (/\s/.test(header) && !/^Ran\b/.test(header)) return header;
   const target = header.replace(/^Ran\b\s*/, "");
   return `${refusalVerb(refusal)} ${formatToolName(target)}`.trimEnd();
 }

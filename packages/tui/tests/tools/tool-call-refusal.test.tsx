@@ -109,6 +109,16 @@ describe("refused tool call (#192)", () => {
     expect(out).not.toContain("Ran");
   });
 
+  it("keeps_an_explicit_refusal_header_like_Declined_command", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => (e.refusal ? { name: "Declined command" } : undefined),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Declined command");
+    expect(out).not.toContain("Rejected");
+    expect(out).not.toContain("Ran");
+  });
+
   it("keeps_refused_tools_of_an_explored_event_visible", async () => {
     const tool = (id: string, refusal?: { by: "policy"; reason: string }) =>
       ({
