@@ -9,7 +9,7 @@
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent, ToolRefusal } from "./agent-event.js";
-import { REFUSAL_BODY_OVERRIDE, TOOL_REFUSAL_BY } from "./agent-event.js";
+import { REFUSAL_BODY_OVERRIDE, REFUSAL_HEADER_OVERRIDE, TOOL_REFUSAL_BY } from "./agent-event.js";
 import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
@@ -284,10 +284,23 @@ function toToolEvent(
   }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
-  const header = formatHeader?.(event);
+  // The callback gets the real event (one call, no synthetic copy). A watcher records whether it read
+  // `refusal`: a formatter that branched on it supplied its own refusal wording.
+  let branchedOnRefusal = false;
+  const watched =
+    event.refusal === undefined
+      ? event
+      : new Proxy(event, {
+          get(target, key, receiver) {
+            if (key === "refusal") branchedOnRefusal = true;
+            return Reflect.get(target, key, receiver);
+          },
+        });
+  const header = formatHeader?.(watched);
   if (header === undefined) return event;
   return {
     ...event,
+    ...(branchedOnRefusal ? { [REFUSAL_HEADER_OVERRIDE]: true } : {}),
     ...(header.name !== undefined ? { name: header.name } : {}),
     ...(header.summary !== undefined ? { summary: header.summary } : {}),
   };

@@ -138,6 +138,35 @@ describe("refused tool call (#192)", () => {
     expect(out).not.toContain("Rejected");
   });
 
+  it("keeps_explicit_refusal_wording_even_when_a_single_word_or_action_verb", async () => {
+    for (const name of ["Denied", "Read blocked by policy"]) {
+      const events = messagesToAgentEvents(msg({ by: "policy" }), {
+        formatToolHeader: (e) => (e.refusal ? { name } : undefined),
+      });
+      const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+      expect(out).toContain(name);
+      expect(out).not.toContain(`Blocked ${name}`);
+      expect(out).not.toContain(`Rejected ${name}`);
+    }
+  });
+
+  it("corrects_ordinary_execution_headers_outside_any_verb_list", async () => {
+    const events = messagesToAgentEvents(msg({ by: "policy" }), {
+      formatToolHeader: () => ({ name: "Diffed file.ts" }),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Blocked Diffed file.ts");
+  });
+
+  it("corrects_Ran_even_when_the_formatter_branches_on_refusal", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => ({ name: e.refusal ? "Ran node x" : "Ran node y" }),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Rejected node x");
+    expect(out).not.toContain("Ran");
+  });
+
   it("keeps_the_chronological_order_of_refused_calls_in_an_explored_event", async () => {
     const tool = (id: string, name: string, refusal?: { by: "policy" }) =>
       ({
