@@ -19,9 +19,8 @@
  * permanent.
  */
 import { describe, expect, it } from "vitest";
-
-import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import { DEFAULT_TOOL_HEADERS } from "../../src/agent/messages-to-events.js";
+import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import {
   DEFAULT_TOOL_PRESENTATION,
   KNOWN_TOOL_NAMES,
