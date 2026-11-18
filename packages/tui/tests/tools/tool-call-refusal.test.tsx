@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { AgentTimeline } from "../../src/agent/agent-timeline.js";
 import type { AgentEvent } from "../../src/agent/agent-event.js";
+import { AgentTimeline } from "../../src/agent/agent-timeline.js";
 import { stripAnsi } from "../../src/format/ansi.js";
 import { ToolCall } from "../../src/tools/tool-call.js";
 import { renderFrame } from "../fixtures/helpers.js";

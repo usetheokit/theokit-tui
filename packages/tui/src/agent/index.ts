@@ -37,12 +37,13 @@ export {
   initialAgentStreamState,
 } from "./agent-stream-reducer.js";
 export type { AgentStreamingProps } from "./agent-streaming.js";
-export type { TurnDoneProps } from "./turn-done.js";
 // formatElapsed is public, exported from the format barrel (#199).
 export { AgentStreaming } from "./agent-streaming.js";
-export { TurnDone, WHIMSY_VERBS, whimsyVerb } from "./turn-done.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentTimeline } from "./agent-timeline.js";
+// Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
+export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
+export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";
 export type {
   MessagesToEventsOptions,
   PendingApproval,
@@ -66,6 +67,11 @@ export {
   readTurnUsage,
   resolveApprovalId,
 } from "./messages-to-events.js";
+// Stored session (Claude-style tool_use/tool_result parts) → UIMessageLike[] for `initialMessages`.
+export type { StoredMessage, StoredMessagePart } from "./session-messages-to-thread.js";
+export { sessionMessagesToThread } from "./session-messages-to-thread.js";
+export type { TurnDoneProps } from "./turn-done.js";
+export { TurnDone, WHIMSY_VERBS, whimsyVerb } from "./turn-done.js";
 // UseAgentStreamResult and AssistantContentBlock ship as props-construction
 // accessories (hook return type / block embedded in AgentStreamEvent.message)
 // — the TokenCategory arch-5 precedent (review F-7 rationale).
@@ -83,9 +89,3 @@ export type { UseCoalescedOptions } from "./use-coalesced.js";
 // change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
 // complete and tested and reachable by nobody until this slice exported it.
 export { useCoalesced } from "./use-coalesced.js";
-// Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
-export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
-export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";
-// Stored session (Claude-style tool_use/tool_result parts) → UIMessageLike[] for `initialMessages`.
-export type { StoredMessage, StoredMessagePart } from "./session-messages-to-thread.js";
-export { sessionMessagesToThread } from "./session-messages-to-thread.js";
