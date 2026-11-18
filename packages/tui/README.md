@@ -406,6 +406,22 @@ if (turn) {
 `prime` with an empty list stays closed; `older` stops at the oldest; `newer` from the newest
 returns to `-1`. The overlay's `header` and `hint` props reword its text.
 
+## Renamed tools: `aliases`
+
+`toolPresentation` is keyed by the framework's tool names (`shell_exec`, `edit_file`, ...). An app
+that renames a tool points the new name at the known one instead of copying its presentation:
+
+```ts
+const presentation = toolPresentation(
+  { Bash: { header: () => "Shell" } }, // optional: applied on top of the aliased entry
+  { aliases: { Bash: "shell_exec", Edit: "edit_file" } },
+);
+presentation.get("Bash").approvalLabel?.({ command: "ls" }); // the shell_exec label
+```
+
+An alias resolves before the generic fallback; an override on the alias name wins over the aliased
+entry, field by field. A target outside `KNOWN_TOOL_NAMES` throws a `TypeError` naming both.
+
 ## Development
 
 Node ≥ 22, pnpm 10 (pinned via `packageManager` — use corepack).
