@@ -34,6 +34,12 @@ export interface ToolRefusal {
   reason?: string;
 }
 
+/**
+ * Internal marker set by `messagesToAgentEvents` when a `formatToolResult` callback supplied the body
+ * of a refused call. Without it the timeline renders the default `nothing ran` body for a refused event.
+ */
+export const REFUSAL_BODY_OVERRIDE = Symbol("theokit.refusalBodyOverride");
+
 export const TOOL_REFUSAL_BY = ["human", "policy", "hook", "timeout"] as const;
 
 export interface AgentToolEvent {

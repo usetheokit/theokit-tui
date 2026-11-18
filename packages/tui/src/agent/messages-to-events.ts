@@ -9,7 +9,7 @@
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent, ToolRefusal } from "./agent-event.js";
-import { TOOL_REFUSAL_BY } from "./agent-event.js";
+import { REFUSAL_BODY_OVERRIDE, TOOL_REFUSAL_BY } from "./agent-event.js";
 import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
@@ -243,7 +243,11 @@ function applyResultOverride(
   delete rest.output;
   delete rest.shell;
   delete rest.diff;
-  return { ...rest, ...body };
+  return {
+    ...rest,
+    ...body,
+    ...(event.refusal !== undefined ? { [REFUSAL_BODY_OVERRIDE]: true } : {}),
+  };
 }
 
 function toToolEvent(
@@ -275,7 +279,7 @@ function toToolEvent(
   // has no such gate — fired normally. A consumer could format every successful call and no failed
   // one, with nothing to indicate why.
   const rawResult = tool.state === "output-error" ? tool.errorText : tool.output;
-  if (formatResult !== undefined && rawResult !== undefined) {
+  if (formatResult !== undefined && (rawResult !== undefined || tool.refusal !== undefined)) {
     event = applyResultOverride(event, rawResult, formatResult);
   }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
@@ -457,6 +461,9 @@ export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
  * holds "the file" is exactly the app-specific knowledge the seam exists to keep out.
  */
 export function defaultToolHeader(event: AgentToolEvent): { name?: string } | undefined {
+  // A refused call never ran: "Ran"/"Edited" would be false, so the raw name stays and ToolCall
+  // prefixes Rejected/Blocked.
+  if (event.refusal !== undefined) return undefined;
   const verb = DEFAULT_TOOL_HEADERS[event.name];
   return verb === undefined ? undefined : { name: verb };
 }

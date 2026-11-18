@@ -16,7 +16,7 @@ import {
 import { ToolCallCard } from "../tools/tool-call-card.js";
 import { ToolResult } from "../tools/tool-result.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
-import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
+import { AGENT_EVENT_KINDS, isAgentEventKind, REFUSAL_BODY_OVERRIDE } from "./agent-event.js";
 import { defaultToolHeader } from "./messages-to-events.js";
 import { unionMessage } from "./union-message.js";
 
@@ -306,6 +306,9 @@ function ThinkingRow({ text }: { text: string }) {
 const DEFAULT_DIFF_MAX_LINES = 20;
 
 function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
+  if (event.refusal !== undefined && !(REFUSAL_BODY_OVERRIDE in event)) {
+    return <ToolResult>{refusalBody(event.refusal)}</ToolResult>;
+  }
   const maxLines = event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
   // A unified-diff result (e.g. apply_patch) renders as a Claude-Code-style
   // inline diff (row backgrounds + prose stats + syntax highlight — the card
@@ -319,9 +322,6 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
         maxLines={event.maxLines ?? DEFAULT_DIFF_MAX_LINES}
       />
     );
-  }
-  if (event.refusal !== undefined && event.output === undefined && event.shell === undefined) {
-    return <ToolResult>{refusalBody(event.refusal)}</ToolResult>;
   }
   const hasBody = (event.output !== undefined && event.output !== "") || event.shell !== undefined;
   if (!hasBody) return null;

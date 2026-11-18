@@ -65,6 +65,16 @@ export function refusalBody(refusal: ToolRefusal): string {
     : "nothing ran";
 }
 
+/**
+ * Header of a refused call. A raw identifier gets the verb (`Rejected ShellExec`); a name with
+ * whitespace is an app-supplied header (same convention as {@link formatToolName}) and is the app's
+ * own refusal wording, so it is kept as-is rather than getting a second verb.
+ */
+function refusedHeader(name: string, refusal: ToolRefusal): string {
+  const header = singleLine(name);
+  return /\s/.test(header) ? header : `${refusalVerb(refusal)} ${formatToolName(header)}`;
+}
+
 /** Collapse any newlines so the header stays a single line (EC-8). */
 const singleLine = (value: string): string => value.replace(/\r?\n/g, " ");
 
@@ -139,9 +149,7 @@ export function ToolCall({ name, status, summary, refusal, ...margin }: ToolCall
     <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
-        {refusal !== undefined
-          ? `${refusalVerb(refusal)} ${formatToolName(singleLine(name).replace(/^Ran /, ""))}`
-          : formatToolName(singleLine(name))}
+        {refusal !== undefined ? refusedHeader(name, refusal) : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">

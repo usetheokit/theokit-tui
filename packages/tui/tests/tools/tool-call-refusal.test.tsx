@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AgentEvent } from "../../src/agent/agent-event.js";
+import { messagesToAgentEvents, defaultToolHeader } from "../../src/agent/messages-to-events.js";
 import { AgentTimeline } from "../../src/agent/agent-timeline.js";
 import { stripAnsi } from "../../src/format/ansi.js";
 import { ToolCall } from "../../src/tools/tool-call.js";
@@ -36,19 +37,66 @@ describe("refused tool call (#192)", () => {
     }
   });
 
-  it("does_not_say_Ran_for_a_custom_Ran_header", async () => {
-    const out = stripAnsi(
-      await renderFrame(<ToolCall name="Ran node x" status="failed" refusal={{ by: "human" }} />),
-    );
-    expect(out).toContain("Rejected");
-    expect(out).not.toContain("Ran");
-  });
-
   it("keeps_a_refused_call_visible_when_not_verbose", async () => {
     const out = stripAnsi(
       await renderFrame(<AgentTimeline events={refused({ by: "human" })} verbose={false} />),
     );
     expect(out).toContain("Rejected");
     expect(out).not.toContain("Ran 1");
+  });
+
+  const msg = (refusal: unknown, toolType = "tool-run_shell") => [
+    {
+      id: "m",
+      role: "assistant" as const,
+      parts: [{ type: toolType, toolCallId: "c1", state: "output-error", refusal } as never],
+    },
+  ];
+
+  it("defaultToolHeader_does_not_produce_Ran_for_a_refused_call", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: defaultToolHeader,
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Rejected RunShell");
+    expect(out).not.toContain("Ran");
+  });
+
+  it("keeps_an_app_formatter_wording_without_a_second_verb", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => (e.refusal ? { name: "Declined command" } : undefined),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Declined command");
+    expect(out).not.toContain("Rejected");
+  });
+
+  it("calls_formatToolResult_for_a_refusal_without_a_raw_result", async () => {
+    const events = messagesToAgentEvents(msg({ by: "policy" }), {
+      formatToolResult: (e) => (e.refusal ? { output: "custom wording" } : undefined),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("custom wording");
+    expect(out).not.toContain("nothing ran");
+  });
+
+  it("default_body_wins_over_supplied_output_shell_and_diff", async () => {
+    const base = {
+      id: "t",
+      kind: "tool",
+      name: "shell_exec",
+      status: "failed",
+      refusal: { by: "human" },
+    } as const;
+    for (const extra of [
+      { output: "stale output" },
+      { output: "" },
+      { shell: { stdout: "stale shell", stderr: "", exitCode: 0 } },
+      { diff: "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+stale diff\n" },
+    ]) {
+      const out = stripAnsi(await renderFrame(<AgentTimeline events={[{ ...base, ...extra }]} />));
+      expect(out).toContain("nothing ran");
+      expect(out).not.toContain("stale");
+    }
   });
 });
