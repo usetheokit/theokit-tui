@@ -312,6 +312,10 @@ describe("public entry surface (T0.2)", () => {
     // The Claude Code tool-approval card + its default Yes/No choices.
     expect(typeof mod.PermissionPrompt).toBe("function");
     expect(mod.DEFAULT_PERMISSION_CHOICES.map((c) => c.value)).toEqual(["yes", "no"]);
+    // #197 — workspace trust + hook review.
+    expect(typeof mod.useWorkspaceConsent).toBe("function");
+    expect(typeof mod.WorkspaceTrustPrompt).toBe("function");
+    expect(typeof mod.HookReviewPrompt).toBe("function");
     // The pure oracle + the canonical approval triad (values only — the lib
     // never enumerates policy semantics, ADR D3/D5).
     expect(typeof mod.resolveChoiceKey).toBe("function");

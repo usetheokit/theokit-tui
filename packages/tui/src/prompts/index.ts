@@ -47,3 +47,15 @@ export {
   prune,
   settle,
 } from "./approval-ledger.js";
+
+// #197 — workspace trust and project-hook review: the consent state and the two prompts over it.
+export type { HookReviewPromptProps } from "./hook-review-prompt.js";
+export { HookReviewPrompt } from "./hook-review-prompt.js";
+export type { WorkspaceTrustPromptProps } from "./workspace-trust-prompt.js";
+export { WorkspaceTrustPrompt } from "./workspace-trust-prompt.js";
+export type {
+  ReviewableHook,
+  WorkspaceConsent,
+  WorkspaceConsentDeps,
+} from "./workspace-consent.js";
+export { useWorkspaceConsent } from "./workspace-consent.js";

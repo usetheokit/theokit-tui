@@ -7,6 +7,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `useWorkspaceConsent`, `WorkspaceTrustPrompt`, `HookReviewPrompt` and `ReviewableHook`: the
+  workspace-trust and project-hook-review gates over `PermissionPrompt`. Trust is optimistic and
+  rolled back (the error rethrown) when persisting fails, hooks are reviewed one at a time, a
+  refusal is session-only, and C0/C1 control characters in a hook command are shown as visible
+  escapes (#197)
+
 - `backtrackReducer`, `CLOSED_BACKTRACK` and `BacktrackOverlay` for the Esc-to-edit-a-previous-message
   ladder: `prime` arms and sets the previews in one transition, `older` / `newer` step, `reset`
   closes (#195)
