@@ -20,7 +20,6 @@ import {
   AGENT_EVENT_KINDS,
   isAgentEventKind,
   REFUSAL_BODY_OVERRIDE,
-  REFUSAL_HEADER_OVERRIDE,
 } from "./agent-event.js";
 import { defaultToolHeader } from "./messages-to-events.js";
 import { unionMessage } from "./union-message.js";
@@ -345,7 +344,6 @@ function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
       name={event.name}
       status={event.status}
       {...(event.refusal !== undefined ? { refusal: event.refusal } : {})}
-      {...(REFUSAL_HEADER_OVERRIDE in event ? { refusalWording: true } : {})}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
       {toolBody(event)}

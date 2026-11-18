@@ -9,7 +9,7 @@
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent, ToolRefusal } from "./agent-event.js";
-import { REFUSAL_BODY_OVERRIDE, REFUSAL_HEADER_OVERRIDE, TOOL_REFUSAL_BY } from "./agent-event.js";
+import { REFUSAL_BODY_OVERRIDE, TOOL_REFUSAL_BY } from "./agent-event.js";
 import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
@@ -286,17 +286,8 @@ function toToolEvent(
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
   const header = formatHeader?.(event);
   if (header === undefined) return event;
-  // A header that changes once `refusal` is removed is the app's own refusal wording: keep it verbatim.
-  let ownWording = false;
-  if (event.refusal !== undefined) {
-    const plain = { ...event };
-    delete plain.refusal;
-    const base = formatHeader?.(plain);
-    ownWording = base?.name !== header.name;
-  }
   return {
     ...event,
-    ...(ownWording ? { [REFUSAL_HEADER_OVERRIDE]: true } : {}),
     ...(header.name !== undefined ? { name: header.name } : {}),
     ...(header.summary !== undefined ? { summary: header.summary } : {}),
   };
