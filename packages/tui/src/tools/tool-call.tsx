@@ -161,7 +161,9 @@ export function ToolCall({
     <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
-        {refusal !== undefined ? refusedHeader(name, refusal, refusalWording === true) : formatToolName(singleLine(name))}
+        {refusal !== undefined
+          ? refusedHeader(name, refusal, refusalWording === true)
+          : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">
