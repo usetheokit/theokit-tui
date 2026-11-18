@@ -65,17 +65,19 @@ export function refusalBody(refusal: ToolRefusal): string {
     : "nothing ran";
 }
 
+/** Headers already worded as a refusal (e.g. "Declined command") are kept without a second verb. */
+const REFUSAL_WORDING =
+  /^(Rejected|Blocked|Declined|Denied|Refused|Vetoed|Cancell?ed|Skipped|Not run)\b/i;
+
 /**
  * Header of a refused call: always `Rejected …` / `Blocked …`, never an execution verb. A leading
- * `Ran` from a formatter is dropped (nothing ran); a multi-word header that
- * does not start with `Ran` (e.g. `Blocked …`, `Declined command`) is the app's own wording and is kept.
+ * `Ran` from a formatter is dropped (nothing ran); a header already worded as a
+ * refusal (`Blocked …`, `Declined command`) is the app's own wording and is kept; any other header
+ * (`Read file.ts`, `Edited x`) gets the refusal verb so it never claims an action occurred.
  */
 function refusedHeader(name: string, refusal: ToolRefusal): string {
   const header = singleLine(name);
-  if (/^(Rejected|Blocked)\b/.test(header)) return header;
-  // A multi-word header that does not start with the execution verb is the app's own
-  // refusal wording (e.g. "Declined command"): keep it, no second verb.
-  if (/\s/.test(header) && !/^Ran\b/.test(header)) return header;
+  if (REFUSAL_WORDING.test(header)) return header;
   const target = header.replace(/^Ran\b\s*/, "");
   return `${refusalVerb(refusal)} ${formatToolName(target)}`.trimEnd();
 }

@@ -119,6 +119,16 @@ describe("refused tool call (#192)", () => {
     expect(out).not.toContain("Ran");
   });
 
+  it("labels_ordinary_action_headers_as_refused", async () => {
+    for (const name of ["Read file.ts", "Edited file.ts"]) {
+      const events = messagesToAgentEvents(msg({ by: "policy" }), {
+        formatToolHeader: () => ({ name }),
+      });
+      const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+      expect(out).toContain(`Blocked ${name}`);
+    }
+  });
+
   it("keeps_refused_tools_of_an_explored_event_visible", async () => {
     const tool = (id: string, refusal?: { by: "policy"; reason: string }) =>
       ({
