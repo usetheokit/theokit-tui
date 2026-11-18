@@ -5,16 +5,6 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Added
-
-- `backtrackReducer`, `CLOSED_BACKTRACK` and `BacktrackOverlay` for the Esc-to-edit-a-previous-message
-  ladder: `prime` arms and sets the previews in one transition, `older` / `newer` step, `reset`
-  closes (#195)
-- `copyToClipboard`, `DEFAULT_CLIPBOARD_COMMANDS`, `NoClipboardError` and `ClipboardWriteError` in
-  `@theokit/tui/terminal`: a bounded (5 s) probe over `wl-copy`, `xclip`, `xsel`, `pbcopy` and
-  `clip.exe`, an opt-in OSC 52 fallback on a TTY sink, and typed errors that name every binary tried
-  (#193)
-
 ## [0.83.0] - 2026-11-14
 
 ### Added
