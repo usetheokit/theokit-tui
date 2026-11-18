@@ -431,6 +431,20 @@ export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
   search_text: "Searched",
   glob: "Searched",
   git_diff: "Diffed",
+  // The remaining framework names (KNOWN_TOOL_NAMES), with the done-form verb of the matching
+  // DEFAULT_TOOL_PRESENTATION entry; a test keeps the two tables in step.
+  shell_exec: "Ran",
+  interactive_shell: "Started",
+  glob_files: "Matched",
+  git_status: "Read",
+  run_vitest: "Ran",
+  web_fetch: "Fetched",
+  web_search: "Searched",
+  current_time: "Checked",
+  question: "Asked",
+  plan_mode: "Planned",
+  update_plan: "Updated",
+  todolist: "Updated",
 };
 
 /**
