@@ -16,7 +16,12 @@ import {
 import { ToolCallCard } from "../tools/tool-call-card.js";
 import { ToolResult } from "../tools/tool-result.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
-import { AGENT_EVENT_KINDS, isAgentEventKind, REFUSAL_BODY_OVERRIDE, REFUSAL_HEADER_OVERRIDE } from "./agent-event.js";
+import {
+  AGENT_EVENT_KINDS,
+  isAgentEventKind,
+  REFUSAL_BODY_OVERRIDE,
+  REFUSAL_HEADER_OVERRIDE,
+} from "./agent-event.js";
 import { defaultToolHeader } from "./messages-to-events.js";
 import { unionMessage } from "./union-message.js";
 
