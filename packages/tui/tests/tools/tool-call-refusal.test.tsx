@@ -7,7 +7,13 @@ import { ToolCall } from "../../src/tools/tool-call.js";
 import { renderFrame } from "../fixtures/helpers.js";
 
 const refused = (refusal: Extract<AgentEvent, { kind: "tool" }>["refusal"]): AgentEvent[] => [
-  { id: "t1", kind: "tool", name: "shell_exec", status: "failed", ...(refusal ? { refusal } : {}) },
+  {
+    id: "t1",
+    kind: "tool",
+    name: "shell_exec",
+    status: "failed",
+    ...(refusal ? { refusal } : {}),
+  },
 ];
 
 describe("refused tool call (#192)", () => {
@@ -49,7 +55,14 @@ describe("refused tool call (#192)", () => {
     {
       id: "m",
       role: "assistant" as const,
-      parts: [{ type: toolType, toolCallId: "c1", state: "output-error", refusal } as never],
+      parts: [
+        {
+          type: toolType,
+          toolCallId: "c1",
+          state: "output-error",
+          refusal,
+        } as never,
+      ],
     },
   ];
 
@@ -62,9 +75,9 @@ describe("refused tool call (#192)", () => {
     expect(out).not.toContain("Ran");
   });
 
-  it("keeps_an_app_formatter_wording_without_a_second_verb", async () => {
+  it("keeps_explicit_refusal_wording_without_a_second_verb", async () => {
     const events = messagesToAgentEvents(msg({ by: "human" }), {
-      formatToolHeader: (e) => (e.refusal ? { name: "Blocked by you: command" } : undefined),
+      formatRefusalHeader: () => "Blocked by you: command",
     });
     const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
     expect(out).toContain("Blocked by you: command");
@@ -100,71 +113,63 @@ describe("refused tool call (#192)", () => {
     }
   });
 
-  it("prefixes_an_ordinary_formatted_header_and_drops_Ran", async () => {
-    const events = messagesToAgentEvents(msg({ by: "human" }), {
-      formatToolHeader: () => ({ name: "Ran node x" }),
-    });
-    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Rejected node x");
-    expect(out).not.toContain("Ran");
-  });
-
-  it("keeps_an_explicit_refusal_header_like_Declined_command", async () => {
-    const events = messagesToAgentEvents(msg({ by: "human" }), {
-      formatToolHeader: (e) => (e.refusal ? { name: "Declined command" } : undefined),
-    });
-    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Declined command");
-    expect(out).not.toContain("Rejected");
-    expect(out).not.toContain("Ran");
-  });
-
-  it("labels_ordinary_action_headers_as_refused", async () => {
-    for (const name of ["Read file.ts", "Edited file.ts"]) {
+  it("never_shows_the_execution_header_of_formatToolHeader_on_a_refused_call", async () => {
+    for (const name of ["Ran node x", "Diffed file.ts"]) {
       const events = messagesToAgentEvents(msg({ by: "policy" }), {
         formatToolHeader: () => ({ name }),
       });
       const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-      expect(out).toContain(`Blocked ${name}`);
+      expect(out).toContain("Blocked RunShell");
+      expect(out).not.toContain(name);
+      expect(out).not.toContain("Ran");
     }
   });
 
-  it("keeps_refusal_wording_outside_any_fixed_list", async () => {
+  it("a_formatter_destructuring_every_field_cannot_turn_into_refusal_wording", async () => {
     const events = messagesToAgentEvents(msg({ by: "human" }), {
-      formatToolHeader: (e) => (e.refusal ? { name: "Not permitted: node x" } : undefined),
+      formatToolHeader: ({ id, kind, name, status, input, summary, output, refusal }) => {
+        void [id, kind, status, input, summary, output, refusal];
+        return { name };
+      },
     });
     const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Not permitted: node x");
-    expect(out).not.toContain("Rejected");
+    expect(out).toContain("Rejected RunShell");
   });
 
-  it("keeps_explicit_refusal_wording_even_when_a_single_word_or_action_verb", async () => {
+  it("keeps_explicit_wording_unchanged", async () => {
     for (const name of ["Denied", "Read blocked by policy"]) {
       const events = messagesToAgentEvents(msg({ by: "policy" }), {
-        formatToolHeader: (e) => (e.refusal ? { name } : undefined),
+        formatRefusalHeader: () => name,
       });
       const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
       expect(out).toContain(name);
       expect(out).not.toContain(`Blocked ${name}`);
-      expect(out).not.toContain(`Rejected ${name}`);
+      expect(out).not.toContain("Rejected");
     }
   });
 
-  it("corrects_ordinary_execution_headers_outside_any_verb_list", async () => {
-    const events = messagesToAgentEvents(msg({ by: "policy" }), {
-      formatToolHeader: () => ({ name: "Diffed file.ts" }),
-    });
-    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Blocked Diffed file.ts");
-  });
-
-  it("corrects_Ran_even_when_the_formatter_branches_on_refusal", async () => {
-    const events = messagesToAgentEvents(msg({ by: "human" }), {
-      formatToolHeader: (e) => ({ name: e.refusal ? "Ran node x" : "Ran node y" }),
-    });
-    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Rejected node x");
-    expect(out).not.toContain("Ran");
+  it("calls_the_refusal_formatter_once_on_the_real_event_and_never_for_a_normal_call", () => {
+    const seen: unknown[] = [];
+    const normal = [
+      {
+        id: "m",
+        role: "assistant" as const,
+        parts: [
+          {
+            type: "tool-x",
+            toolCallId: "n",
+            state: "output-available",
+          } as never,
+        ],
+      },
+    ];
+    const opts = { formatRefusalHeader: (e: unknown) => void seen.push(e) };
+    messagesToAgentEvents(normal, opts);
+    expect(seen).toEqual([]);
+    const [event] = messagesToAgentEvents(msg({ by: "human" }), opts);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toMatchObject({ id: "c1", refusal: { by: "human" } });
+    expect(event).toMatchObject({ refusal: { by: "human" } });
   });
 
   it("keeps_the_chronological_order_of_refused_calls_in_an_explored_event", async () => {

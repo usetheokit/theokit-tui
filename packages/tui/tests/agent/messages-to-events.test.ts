@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  defaultToolHeader,
   findPendingApproval,
   messagesToAgentEvents,
   readTurnUsage,
@@ -681,15 +682,22 @@ describe("tool refusal (#192)", () => {
     expect((ev as { refusal: unknown }).refusal).toEqual({ by: "policy" });
   });
 
-  it("passes_the_refusal_to_both_formatters", () => {
+  it("passes_the_refusal_to_the_refusal_header_and_result_formatters", () => {
     const seen: unknown[] = [];
     toolMsg(
       { refusal: { by: "hook" } },
       {
-        formatToolHeader: (e: { refusal?: unknown }) => void seen.push(e.refusal),
+        formatRefusalHeader: (e: { refusal?: unknown }) => void seen.push(e.refusal),
         formatToolResult: (e: { refusal?: unknown }) => void seen.push(e.refusal),
       },
     );
     expect(seen).toEqual([{ by: "hook" }, { by: "hook" }]);
+  });
+});
+
+describe("defaultToolHeader for framework names", () => {
+  it("answers shell_exec with Ran", () => {
+    const event = { name: "shell_exec" } as unknown as Parameters<typeof defaultToolHeader>[0];
+    expect(defaultToolHeader(event)).toEqual({ name: "Ran" });
   });
 });

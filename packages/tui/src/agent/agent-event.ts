@@ -41,8 +41,8 @@ export interface ToolRefusal {
 export const REFUSAL_BODY_OVERRIDE = Symbol("theokit.refusalBodyOverride");
 
 /**
- * Internal marker set by `messagesToAgentEvents` when a `formatToolHeader` callback read `refusal` on
- * the refused event — i.e. it branched on it, so its header is its own refusal wording.
+ * Internal key set by `messagesToAgentEvents` to the string a `formatRefusalHeader` callback returned
+ * for a refused event: the app's own refusal wording, shown verbatim.
  */
 export const REFUSAL_HEADER_OVERRIDE = Symbol("theokit.refusalHeaderOverride");
 

@@ -47,6 +47,7 @@ export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.j
 export type {
   MessagesToEventsOptions,
   PendingApproval,
+  RefusalHeaderFormatter,
   ToolHeaderFormatter,
   ToolResultFormatter,
   TurnUsage,

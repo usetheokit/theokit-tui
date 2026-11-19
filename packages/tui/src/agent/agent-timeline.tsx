@@ -340,12 +340,14 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
 }
 
 function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
+  const wording = (event as { [REFUSAL_HEADER_OVERRIDE]?: unknown })[REFUSAL_HEADER_OVERRIDE];
+  const refusalHeader = typeof wording === "string" ? wording : undefined;
   return (
     <ToolCallCard
       name={event.name}
       status={event.status}
       {...(event.refusal !== undefined ? { refusal: event.refusal } : {})}
-      {...(REFUSAL_HEADER_OVERRIDE in event ? { refusalWording: true } : {})}
+      {...(refusalHeader !== undefined ? { refusalHeader } : {})}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
       {toolBody(event)}

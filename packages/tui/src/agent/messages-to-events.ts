@@ -256,6 +256,7 @@ function toToolEvent(
   index: number,
   formatHeader?: ToolHeaderFormatter,
   formatResult?: ToolResultFormatter,
+  formatRefusalHeader?: RefusalHeaderFormatter,
 ): AgentToolEvent {
   let event: AgentToolEvent = {
     id: tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
@@ -282,25 +283,19 @@ function toToolEvent(
   if (formatResult !== undefined && (rawResult !== undefined || tool.refusal !== undefined)) {
     event = applyResultOverride(event, rawResult, formatResult);
   }
+  // A refused call never ran, so `formatHeader` (an execution header: "Ran x", "Diffed y") is not
+  // consulted. The only app wording is `formatRefusalHeader`, called exactly once on the real event.
+  if (event.refusal !== undefined) {
+    const wording = formatRefusalHeader?.(event);
+    if (typeof wording !== "string" || wording === "") return event;
+    return { ...event, ...{ [REFUSAL_HEADER_OVERRIDE]: wording } };
+  }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
-  // The callback gets the real event (one call, no synthetic copy). A watcher records whether it read
-  // `refusal`: a formatter that branched on it supplied its own refusal wording.
-  let branchedOnRefusal = false;
-  const watched =
-    event.refusal === undefined
-      ? event
-      : new Proxy(event, {
-          get(target, key, receiver) {
-            if (key === "refusal") branchedOnRefusal = true;
-            return Reflect.get(target, key, receiver);
-          },
-        });
-  const header = formatHeader?.(watched);
+  const header = formatHeader?.(event);
   if (header === undefined) return event;
   return {
     ...event,
-    ...(branchedOnRefusal ? { [REFUSAL_HEADER_OVERRIDE]: true } : {}),
     ...(header.name !== undefined ? { name: header.name } : {}),
     ...(header.summary !== undefined ? { summary: header.summary } : {}),
   };
@@ -463,6 +458,20 @@ export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
   search_text: "Searched",
   glob: "Searched",
   git_diff: "Diffed",
+  // The remaining framework names (KNOWN_TOOL_NAMES), with the done-form verb of the matching
+  // DEFAULT_TOOL_PRESENTATION entry; a test keeps the two tables in step.
+  shell_exec: "Ran",
+  interactive_shell: "Started",
+  glob_files: "Matched",
+  git_status: "Read",
+  run_vitest: "Ran",
+  web_fetch: "Fetched",
+  web_search: "Searched",
+  current_time: "Checked",
+  question: "Asked",
+  plan_mode: "Planned",
+  update_plan: "Updated",
+  todolist: "Updated",
 };
 
 /**
@@ -505,6 +514,12 @@ export type ToolResultFormatter = (
   rawResult: unknown,
 ) => ToolResultBody | undefined;
 
+/**
+ * Refusal-only header channel: called once, on the real event, only for a call with `refusal`. The
+ * string it returns is shown verbatim; `undefined` keeps `Rejected <tool>` / `Blocked <tool>`.
+ */
+export type RefusalHeaderFormatter = (event: AgentToolEvent) => string | undefined;
+
 export interface MessagesToEventsOptions {
   /** Tool names whose consecutive runs collapse into an `explored` block.
    * Defaults to {@link DEFAULT_EXPLORE_TOOLS}. Pass `[]` to disable grouping. */
@@ -513,6 +528,11 @@ export interface MessagesToEventsOptions {
   formatToolHeader?: ToolHeaderFormatter;
   /** Map a tool's raw result to a Codex-style result body (see {@link ToolResultFormatter}). */
   formatToolResult?: ToolResultFormatter;
+  /**
+   * Wording for a refused call's header (called only for events with `refusal`). `formatToolHeader`
+   * is never used for a refused call: nothing ran, so an execution header would be false.
+   */
+  formatRefusalHeader?: RefusalHeaderFormatter;
   /**
    * Collapse user turns whose text starts with `marker` into one message event with `label`.
    * Pass GOAL_CONTINUATION_MARKER from @theokit/sdk. `label` defaults to "continuing the goal".
@@ -557,6 +577,7 @@ function eventsOfMessage(
   if (
     opts?.formatToolHeader !== undefined ||
     opts?.formatToolResult !== undefined ||
+    opts?.formatRefusalHeader !== undefined ||
     opts?.collapseUserTurns !== undefined
   ) {
     return derive();
@@ -639,7 +660,14 @@ function deriveOneMessage(
     const tool = toolView(part);
     if (tool !== null)
       events.push(
-        toToolEvent(tool, message.id, index, opts?.formatToolHeader, opts?.formatToolResult),
+        toToolEvent(
+          tool,
+          message.id,
+          index,
+          opts?.formatToolHeader,
+          opts?.formatToolResult,
+          opts?.formatRefusalHeader,
+        ),
       );
   });
   return events;

@@ -51,8 +51,8 @@ export interface ToolCallProps extends LayoutMarginProps {
    * (`human`/`timeout`) or `Blocked <name>` (`policy`/`hook`). `status` stays `failed`.
    */
   refusal?: ToolRefusal;
-  /** The name is the app's own refusal wording (the formatter branched on `refusal`): keep it verbatim. */
-  refusalWording?: boolean;
+  /** The app's own refusal wording (from `formatRefusalHeader`): shown verbatim for a refused call. */
+  refusalHeader?: string;
 }
 
 /** Header verb for a refusal — nothing ran, so never "Ran". */
@@ -68,16 +68,12 @@ export function refusalBody(refusal: ToolRefusal): string {
 }
 
 /**
- * Header of a refused call. `wording` is true when the formatter read `refusal` (it branched on it), so
- * its header is the app's own refusal wording and is kept verbatim — except a leading `Ran`, which
- * would claim the command executed. Every other header (a raw tool name, `Ran node x`, `Diffed a.ts`)
- * is an ordinary execution header and becomes `Rejected …` / `Blocked …`; a leading `Ran` is dropped.
+ * Header of a refused call: the app's explicit refusal wording verbatim, else `Rejected <tool>` /
+ * `Blocked <tool>` built from the tool name — never an execution header.
  */
-function refusedHeader(name: string, refusal: ToolRefusal, wording: boolean): string {
-  const header = singleLine(name);
-  if (wording && !/^Ran\b/.test(header)) return header;
-  const target = header.replace(/^Ran\b\s*/, "");
-  return `${refusalVerb(refusal)} ${formatToolName(target)}`.trimEnd();
+function refusedHeader(name: string, refusal: ToolRefusal, wording: string | undefined): string {
+  if (wording !== undefined && wording !== "") return singleLine(wording);
+  return `${refusalVerb(refusal)} ${formatToolName(singleLine(name))}`.trimEnd();
 }
 
 /** Collapse any newlines so the header stays a single line (EC-8). */
@@ -135,7 +131,7 @@ export function ToolCall({
   status,
   summary,
   refusal,
-  refusalWording,
+  refusalHeader,
   ...margin
 }: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
@@ -162,7 +158,7 @@ export function ToolCall({
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
         {refusal !== undefined
-          ? refusedHeader(name, refusal, refusalWording === true)
+          ? refusedHeader(name, refusal, refusalHeader)
           : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
