@@ -68,12 +68,16 @@ export function refusalBody(refusal: ToolRefusal): string {
 }
 
 /**
- * Header of a refused call: the app's explicit refusal wording verbatim, else `Rejected <tool>` /
- * `Blocked <tool>` built from the tool name — never an execution header.
+ * Header of a refused call: the app's explicit `refusalHeader` verbatim; else the name, with a leading
+ * execution `Ran` dropped, prefixed `Rejected` / `Blocked` (a name already starting with one of those
+ * verbs is kept). Nothing ran, so an execution header is never shown as is.
  */
 function refusedHeader(name: string, refusal: ToolRefusal, wording: string | undefined): string {
   if (wording !== undefined && wording !== "") return singleLine(wording);
-  return `${refusalVerb(refusal)} ${formatToolName(singleLine(name))}`.trimEnd();
+  const header = singleLine(name);
+  if (/^(Rejected|Blocked)\b/.test(header)) return header;
+  const target = header.replace(/^Ran\b\s*/, "");
+  return `${refusalVerb(refusal)} ${formatToolName(target)}`.trimEnd();
 }
 
 /** Collapse any newlines so the header stays a single line (EC-8). */

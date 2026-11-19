@@ -176,13 +176,19 @@ interface ToolPartView {
 
 /** A valid `by` is required; anything else is dropped. A non-string reason is omitted. */
 function readRefusal(value: unknown): ToolRefusal | undefined {
-  if (!isRecord(value)) return undefined;
-  const by = value.by;
-  if (!(TOOL_REFUSAL_BY as readonly unknown[]).includes(by)) return undefined;
-  return {
-    by: by as ToolRefusal["by"],
-    ...(typeof value.reason === "string" ? { reason: value.reason } : {}),
-  };
+  try {
+    if (!isRecord(value)) return undefined;
+    const by = value.by;
+    if (!(TOOL_REFUSAL_BY as readonly unknown[]).includes(by)) return undefined;
+    const reason = value.reason;
+    return {
+      by: by as ToolRefusal["by"],
+      ...(typeof reason === "string" ? { reason } : {}),
+    };
+  } catch {
+    // Hostile input (a throwing getter or proxy) is ignored, never thrown.
+    return undefined;
+  }
 }
 
 /** Read the tool view from a part, or `null` when the part is not a tool invocation. */
@@ -262,7 +268,7 @@ function toToolEvent(
     id: tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
     name: tool.toolName,
-    status: TOOL_STATUS[tool.state] ?? "pending",
+    status: tool.refusal !== undefined ? "failed" : (TOOL_STATUS[tool.state] ?? "pending"),
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
     ...(tool.refusal !== undefined ? { refusal: tool.refusal } : toolResultContent(tool)),
   };
@@ -283,21 +289,20 @@ function toToolEvent(
   if (formatResult !== undefined && (rawResult !== undefined || tool.refusal !== undefined)) {
     event = applyResultOverride(event, rawResult, formatResult);
   }
-  // A refused call never ran, so `formatHeader` (an execution header: "Ran x", "Diffed y") is not
-  // consulted. The only app wording is `formatRefusalHeader`, called exactly once on the real event.
-  if (event.refusal !== undefined) {
-    const wording = formatRefusalHeader?.(event);
-    if (typeof wording !== "string" || wording === "") return event;
-    return { ...event, ...{ [REFUSAL_HEADER_OVERRIDE]: wording } };
-  }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
+  // The callback gets the real event, once — a refused call included (`refusal` set). ToolCall
+  // corrects an execution header ("Ran x") on a refused call; `formatRefusalHeader` is the explicit
+  // channel for verbatim refusal wording and wins over the header name.
   const header = formatHeader?.(event);
-  if (header === undefined) return event;
+  const wording = event.refusal !== undefined ? formatRefusalHeader?.(event) : undefined;
+  const refusalWording = typeof wording === "string" && wording !== "" ? wording : undefined;
+  if (header === undefined && refusalWording === undefined) return event;
   return {
     ...event,
-    ...(header.name !== undefined ? { name: header.name } : {}),
-    ...(header.summary !== undefined ? { summary: header.summary } : {}),
+    ...(refusalWording !== undefined ? { [REFUSAL_HEADER_OVERRIDE]: refusalWording } : {}),
+    ...(header?.name !== undefined ? { name: header.name } : {}),
+    ...(header?.summary !== undefined ? { summary: header.summary } : {}),
   };
 }
 
@@ -516,7 +521,7 @@ export type ToolResultFormatter = (
 
 /**
  * Refusal-only header channel: called once, on the real event, only for a call with `refusal`. The
- * string it returns is shown verbatim; `undefined` keeps `Rejected <tool>` / `Blocked <tool>`.
+ * string it returns is shown verbatim, ahead of any `formatToolHeader` name; `undefined` keeps `Rejected <tool>` / `Blocked <tool>`.
  */
 export type RefusalHeaderFormatter = (event: AgentToolEvent) => string | undefined;
 
@@ -529,8 +534,8 @@ export interface MessagesToEventsOptions {
   /** Map a tool's raw result to a Codex-style result body (see {@link ToolResultFormatter}). */
   formatToolResult?: ToolResultFormatter;
   /**
-   * Wording for a refused call's header (called only for events with `refusal`). `formatToolHeader`
-   * is never used for a refused call: nothing ran, so an execution header would be false.
+   * Verbatim wording for a refused call's header (called only for events with `refusal`). A
+   * `formatToolHeader` name on a refused call is treated as an execution header and corrected.
    */
   formatRefusalHeader?: RefusalHeaderFormatter;
   /**

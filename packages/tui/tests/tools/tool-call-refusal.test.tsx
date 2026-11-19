@@ -113,27 +113,92 @@ describe("refused tool call (#192)", () => {
     }
   });
 
-  it("never_shows_the_execution_header_of_formatToolHeader_on_a_refused_call", async () => {
-    for (const name of ["Ran node x", "Diffed file.ts"]) {
-      const events = messagesToAgentEvents(msg({ by: "policy" }), {
-        formatToolHeader: () => ({ name }),
-      });
-      const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-      expect(out).toContain("Blocked RunShell");
-      expect(out).not.toContain(name);
-      expect(out).not.toContain("Ran");
-    }
+  it("corrects_an_execution_header_from_formatToolHeader_on_a_refused_call", async () => {
+    const seen: unknown[] = [];
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => {
+        seen.push(e);
+        return { name: "Ran node x" };
+      },
+    });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toMatchObject({ refusal: { by: "human" } });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Rejected node x");
+    expect(out).not.toContain("Ran");
   });
 
-  it("a_formatter_destructuring_every_field_cannot_turn_into_refusal_wording", async () => {
+  it("corrects_a_directly_supplied_Ran_name_in_ToolCall_and_AgentTimeline", async () => {
+    const out = stripAnsi(
+      await renderFrame(<ToolCall name="Ran node x" status="failed" refusal={{ by: "policy" }} />),
+    );
+    expect(out).toContain("Blocked node x");
+    expect(out).not.toContain("Ran");
+    const ev: AgentEvent[] = [
+      { id: "t", kind: "tool", name: "Ran node x", status: "failed", refusal: { by: "human" } },
+    ];
+    expect(stripAnsi(await renderFrame(<AgentTimeline events={ev} />))).toContain(
+      "Rejected node x",
+    );
+  });
+
+  it("keeps_a_header_that_already_carries_the_refusal_verb", async () => {
+    const events = messagesToAgentEvents(msg({ by: "human" }), {
+      formatToolHeader: (e) => (e.refusal ? { name: "Rejected node x" } : undefined),
+    });
+    const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(out).toContain("Rejected node x");
+    expect(out).not.toContain("Rejected Rejected");
+  });
+
+  it("a_formatter_destructuring_every_field_still_gets_a_corrected_header", async () => {
     const events = messagesToAgentEvents(msg({ by: "human" }), {
       formatToolHeader: ({ id, kind, name, status, input, summary, output, refusal }) => {
-        void [id, kind, status, input, summary, output, refusal];
-        return { name };
+        void [id, kind, name, status, input, summary, output, refusal];
+        return { name: "Ran node x" };
       },
     });
     const out = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
-    expect(out).toContain("Rejected RunShell");
+    expect(out).toContain("Rejected node x");
+  });
+
+  it("forces_failed_status_when_a_refusal_is_accepted_on_any_state", () => {
+    for (const state of ["output-available", "input-streaming", "input-available"]) {
+      const [ev] = messagesToAgentEvents([
+        {
+          id: "m",
+          role: "assistant" as const,
+          parts: [{ type: "tool-x", toolCallId: "c", state, refusal: { by: "hook" } } as never],
+        },
+      ]);
+      expect(ev).toMatchObject({ status: "failed", refusal: { by: "hook" } });
+    }
+  });
+
+  it("ignores_a_refusal_whose_property_access_throws", () => {
+    const hostile = new Proxy(
+      {},
+      {
+        get: () => {
+          throw new Error("boom");
+        },
+      },
+    );
+    const getter = {
+      get by(): string {
+        throw new Error("boom");
+      },
+    };
+    const reason = {
+      by: "human",
+      get reason(): string {
+        throw new Error("boom");
+      },
+    };
+    for (const refusal of [hostile, getter, reason]) {
+      const [ev] = messagesToAgentEvents(msg(refusal));
+      expect(ev).not.toHaveProperty("refusal");
+    }
   });
 
   it("keeps_explicit_wording_unchanged", async () => {
