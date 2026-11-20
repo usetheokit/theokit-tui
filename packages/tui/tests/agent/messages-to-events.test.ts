@@ -644,6 +644,57 @@ describe("collapseUserTurns", () => {
   });
 });
 
+describe("tool refusal (#192)", () => {
+  const toolMsg = (extra: Record<string, unknown>, formatters = {}) =>
+    messagesToAgentEvents(
+      [
+        {
+          id: "r1",
+          role: "assistant",
+          parts: [
+            {
+              type: "tool-shell_exec",
+              toolCallId: "c1",
+              state: "output-error",
+              errorText: "denied",
+              ...extra,
+            } as never,
+          ],
+        },
+      ],
+      formatters,
+    );
+
+  it("copies_a_valid_refusal_and_keeps_status_failed", () => {
+    const [ev] = toolMsg({ refusal: { by: "human" } });
+    expect(ev).toMatchObject({ kind: "tool", status: "failed", refusal: { by: "human" } });
+  });
+
+  it("drops_an_invalid_refusal", () => {
+    for (const refusal of [{ by: "nope" }, "x", null, 3]) {
+      const [ev] = toolMsg({ refusal });
+      expect(ev).not.toHaveProperty("refusal");
+    }
+  });
+
+  it("omits_a_non_string_reason", () => {
+    const [ev] = toolMsg({ refusal: { by: "policy", reason: 5 } });
+    expect((ev as { refusal: unknown }).refusal).toEqual({ by: "policy" });
+  });
+
+  it("passes_the_refusal_to_the_refusal_header_and_result_formatters", () => {
+    const seen: unknown[] = [];
+    toolMsg(
+      { refusal: { by: "hook" } },
+      {
+        formatRefusalHeader: (e: { refusal?: unknown }) => void seen.push(e.refusal),
+        formatToolResult: (e: { refusal?: unknown }) => void seen.push(e.refusal),
+      },
+    );
+    expect(seen).toEqual([{ by: "hook" }, { by: "hook" }]);
+  });
+});
+
 describe("defaultToolHeader for framework names", () => {
   it("answers shell_exec with Ran", () => {
     const event = { name: "shell_exec" } as unknown as Parameters<typeof defaultToolHeader>[0];
