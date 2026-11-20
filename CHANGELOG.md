@@ -7,6 +7,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `ToolRefusal` and `AgentToolEvent.refusal`: `messagesToAgentEvents` copies a typed `refusal`
+  (`by: "human" | "policy" | "hook" | "timeout"`, optional `reason`) from the tool part; `ToolCall`
+  takes a `refusal` prop and renders `Rejected <tool>` (human, timeout) or `Blocked <tool>` (policy,
+  hook) with the body `nothing ran[: reason]`. Status stays `failed`; invalid refusals are ignored;
+  `formatToolResult` receives the event with `refusal` set, and an optional `formatRefusalHeader`
+  supplies verbatim refusal wording (a `formatToolHeader` name on a refused call is corrected, e.g. `Ran node x` becomes `Rejected node x`); an accepted refusal always yields status `failed` and a throwing refusal object is ignored (#192)
 - `toolPresentation(overrides, { aliases })` and `ToolPresentationOptions`: map an app's renamed tool
   (`{ Bash: "shell_exec" }`) to a known tool's presentation; overrides on the alias apply on top, and
   an unknown target throws a `TypeError` (#191)

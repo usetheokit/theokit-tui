@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
+import type { ToolRefusal } from "../agent/agent-event.js";
 import { unionMessage } from "../agent/union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
@@ -45,6 +46,38 @@ export interface ToolCallProps extends LayoutMarginProps {
    * (M6 plan D1) — still gemini-parity in shape.
    */
   summary?: string;
+  /**
+   * Set when the call was refused before it ran: the header reads `Rejected <name>`
+   * (`human`/`timeout`) or `Blocked <name>` (`policy`/`hook`). `status` stays `failed`.
+   */
+  refusal?: ToolRefusal;
+  /** The app's own refusal wording (from `formatRefusalHeader`): shown verbatim for a refused call. */
+  refusalHeader?: string;
+}
+
+/** Header verb for a refusal — nothing ran, so never "Ran". */
+export function refusalVerb(refusal: ToolRefusal): "Rejected" | "Blocked" {
+  return refusal.by === "human" || refusal.by === "timeout" ? "Rejected" : "Blocked";
+}
+
+/** Default body of a refused call: `nothing ran`, plus `: <reason>` when there is one. */
+export function refusalBody(refusal: ToolRefusal): string {
+  return refusal.reason !== undefined && refusal.reason !== ""
+    ? `nothing ran: ${refusal.reason}`
+    : "nothing ran";
+}
+
+/**
+ * Header of a refused call: the app's explicit `refusalHeader` verbatim; else the name, with a leading
+ * execution `Ran` dropped, prefixed `Rejected` / `Blocked` (a name already starting with one of those
+ * verbs is kept). Nothing ran, so an execution header is never shown as is.
+ */
+function refusedHeader(name: string, refusal: ToolRefusal, wording: string | undefined): string {
+  if (wording !== undefined && wording !== "") return singleLine(wording);
+  const header = singleLine(name);
+  if (/^(Rejected|Blocked)\b/.test(header)) return header;
+  const target = header.replace(/^Ran\b\s*/, "");
+  return `${refusalVerb(refusal)} ${formatToolName(target)}`.trimEnd();
 }
 
 /** Collapse any newlines so the header stays a single line (EC-8). */
@@ -97,7 +130,14 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
  * Inline tool-call row: 3-cell status indicator + bold name + dim summary.
  * Status arrives via props — transitions are plain rerenders (ADR D3).
  */
-export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
+export function ToolCall({
+  name,
+  status,
+  summary,
+  refusal,
+  refusalHeader,
+  ...margin
+}: ToolCallProps) {
   // Boundary validation (rules/error-handling.md § 2): fail fast with a typed
   // error BEFORE any hook — JS consumers get the contract, not a crash.
   // Guards MUST stay above the first hook: tests invoke this component as a
@@ -121,7 +161,9 @@ export function ToolCall({ name, status, summary, ...margin }: ToolCallProps) {
     <Box {...pickMargin(margin)}>
       <Box minWidth={STATUS_INDICATOR_WIDTH}>{statusIndicator(status, theme)}</Box>
       <Text bold wrap="truncate-end">
-        {formatToolName(singleLine(name))}
+        {refusal !== undefined
+          ? refusedHeader(name, refusal, refusalHeader)
+          : formatToolName(singleLine(name))}
       </Text>
       {args !== "" && (
         <Text dimColor wrap="truncate-end">

@@ -131,6 +131,30 @@ returns an idempotent restore).
 Every primitive degrades cleanly under `NO_COLOR`, `TERM=dumb` and bare
 pipes — proven by a subprocess degrade matrix in CI.
 
+
+## Refused tool calls
+
+A tool call refused before it ran (a person rejected it, a policy or hook blocked it) carries a
+typed `refusal` on its event, so the timeline never claims it ran:
+
+```ts
+interface ToolRefusal {
+  by: "human" | "policy" | "hook" | "timeout";
+  reason?: string;
+}
+```
+
+`messagesToAgentEvents` copies `refusal` from the tool part onto `AgentToolEvent.refusal` when it has
+a valid `by`; anything else is ignored. The status stays `"failed"`. `AgentTimeline` passes it to
+`ToolCall`, which renders `Rejected <tool>` (`human`, `timeout`) or `Blocked <tool>` (`policy`,
+`hook`), with the body `nothing ran` plus `: <reason>` when a reason exists. `formatToolHeader` and
+`formatToolResult` receive the real event with `refusal` set. A header
+name from `formatToolHeader` is an execution header: a leading `Ran` is dropped and it becomes
+`Rejected <name>` / `Blocked <name>` (a name already starting with `Rejected`/`Blocked` is kept). For
+verbatim refusal wording pass `formatRefusalHeader(event)`: called once, only for events with `refusal`.
+`defaultToolHeader` leaves refused calls on the raw name, and the default body wins over any `output`/`shell`/`diff` unless `formatToolResult` supplies one. A
+refused call is never folded into a collapsed `Ran N …` line when `verbose` is off.
+
 ## How it works
 
 - **Data-props contract:** components render caller-provided data; no hidden
