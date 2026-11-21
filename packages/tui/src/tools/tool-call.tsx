@@ -1,12 +1,12 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
-import type { ToolRefusal } from "../agent/agent-event.js";
 import { unionMessage } from "../agent/union-message.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { pickMargin } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
 import type { TheoTheme } from "../theme/theme.js";
 import { useTheoTheme } from "../theme/theme.js";
+import type { ToolRefusal } from "./tool-refusal.js";
 
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
