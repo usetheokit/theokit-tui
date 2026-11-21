@@ -5,7 +5,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-## [0.83.3] - 2026-11-21
+## [0.83.4] - 2026-11-21
 
 ### Added
 
