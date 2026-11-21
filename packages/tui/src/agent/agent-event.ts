@@ -1,5 +1,6 @@
 import type { ChatRole } from "../chat/chat-message.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
+import type { ToolRefusal } from "../tools/tool-refusal.js";
 import type { ShellEnvelope } from "../tools/tool-result.js";
 
 // PURE types module (plan ADR D8): no ink/React import — M7 adapters consume
@@ -28,11 +29,7 @@ export interface AgentThinkingEvent {
   text: string;
 }
 
-/** Why a tool call was refused before it ran. */
-export interface ToolRefusal {
-  by: "human" | "policy" | "hook" | "timeout";
-  reason?: string;
-}
+export type { ToolRefusal } from "../tools/tool-refusal.js";
 
 /**
  * Internal marker set by `messagesToAgentEvents` when a `formatToolResult` callback supplied the body
