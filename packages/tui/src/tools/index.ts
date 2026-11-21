@@ -15,7 +15,6 @@ export {
   KNOWN_TOOL_NAMES,
   type KnownToolName,
   type ToolPresentation,
-  type ToolPresentationOptions,
   toolPresentation,
 } from "./tool-presentation.js";
 export type { ShellEnvelope, ToolResultProps } from "./tool-result.js";

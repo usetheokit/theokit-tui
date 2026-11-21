@@ -28,26 +28,6 @@ export interface AgentThinkingEvent {
   text: string;
 }
 
-/** Why a tool call was refused before it ran. */
-export interface ToolRefusal {
-  by: "human" | "policy" | "hook" | "timeout";
-  reason?: string;
-}
-
-/**
- * Internal marker set by `messagesToAgentEvents` when a `formatToolResult` callback supplied the body
- * of a refused call. Without it the timeline renders the default `nothing ran` body for a refused event.
- */
-export const REFUSAL_BODY_OVERRIDE = Symbol("theokit.refusalBodyOverride");
-
-/**
- * Internal key set by `messagesToAgentEvents` to the string a `formatRefusalHeader` callback returned
- * for a refused event: the app's own refusal wording, shown verbatim.
- */
-export const REFUSAL_HEADER_OVERRIDE = Symbol("theokit.refusalHeaderOverride");
-
-export const TOOL_REFUSAL_BY = ["human", "policy", "hook", "timeout"] as const;
-
 export interface AgentToolEvent {
   id: string;
   kind: "tool";
@@ -69,8 +49,6 @@ export interface AgentToolEvent {
    * path (ToolResult) and 20 on the `diff` path (DiffViewer counts the file
    * headers in the same budget, so it needs the extra room). */
   maxLines?: number;
-  /** Set when the call was refused before it ran. The status stays "failed". */
-  refusal?: ToolRefusal;
 }
 
 /**

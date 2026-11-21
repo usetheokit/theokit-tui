@@ -7,21 +7,11 @@ import { DiffViewer } from "../diff/diff-viewer.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
 import { useTheoTheme } from "../theme/theme.js";
-import {
-  formatToolName,
-  refusalBody,
-  STATUS_INDICATOR_WIDTH,
-  TOOL_CALL_STATUSES,
-} from "../tools/tool-call.js";
+import { formatToolName, STATUS_INDICATOR_WIDTH, TOOL_CALL_STATUSES } from "../tools/tool-call.js";
 import { ToolCallCard } from "../tools/tool-call-card.js";
 import { ToolResult } from "../tools/tool-result.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
-import {
-  AGENT_EVENT_KINDS,
-  isAgentEventKind,
-  REFUSAL_BODY_OVERRIDE,
-  REFUSAL_HEADER_OVERRIDE,
-} from "./agent-event.js";
+import { AGENT_EVENT_KINDS, isAgentEventKind } from "./agent-event.js";
 import { defaultToolHeader } from "./messages-to-events.js";
 import { unionMessage } from "./union-message.js";
 
@@ -311,9 +301,6 @@ function ThinkingRow({ text }: { text: string }) {
 const DEFAULT_DIFF_MAX_LINES = 20;
 
 function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
-  if (event.refusal !== undefined && !(REFUSAL_BODY_OVERRIDE in event)) {
-    return <ToolResult>{refusalBody(event.refusal)}</ToolResult>;
-  }
   const maxLines = event.maxLines !== undefined ? { maxLines: event.maxLines } : {};
   // A unified-diff result (e.g. apply_patch) renders as a Claude-Code-style
   // inline diff (row backgrounds + prose stats + syntax highlight — the card
@@ -340,14 +327,10 @@ function toolBody(event: Extract<AgentEvent, { kind: "tool" }>) {
 }
 
 function ToolRow(event: Extract<AgentEvent, { kind: "tool" }>) {
-  const wording = (event as { [REFUSAL_HEADER_OVERRIDE]?: unknown })[REFUSAL_HEADER_OVERRIDE];
-  const refusalHeader = typeof wording === "string" ? wording : undefined;
   return (
     <ToolCallCard
       name={event.name}
       status={event.status}
-      {...(event.refusal !== undefined ? { refusal: event.refusal } : {})}
-      {...(refusalHeader !== undefined ? { refusalHeader } : {})}
       {...(event.summary !== undefined ? { summary: event.summary } : {})}
     >
       {toolBody(event)}
@@ -431,8 +414,7 @@ function collapseTools(tools: readonly AgentToolEvent[]): CollapsedGroup[] {
 
 /** The tool events a timeline event contributes to a collapsed run — none for prose. */
 function collapsibleTools(event: AgentEvent): readonly AgentToolEvent[] | undefined {
-  // A refused call never ran — collapsing it under "Ran N commands" would claim it did.
-  if (event.kind === "tool") return event.refusal === undefined ? [event] : undefined;
+  if (event.kind === "tool") return [event];
   if (event.kind === "explored") return event.tools;
   return undefined;
 }
@@ -444,12 +426,6 @@ function collapsibleTools(event: AgentEvent): readonly AgentToolEvent[] | undefi
  * scrollback that has already been printed, and Ink cannot un-print it. Re-collapsing graduated
  * rows is not a thing this component can offer without lying about what the terminal shows.
  */
-const exploredOf = (tool: AgentToolEvent): AgentEvent => ({
-  id: `explored-${tool.id}`,
-  kind: "explored",
-  tools: [tool],
-});
-
 function collapseTail(tail: readonly AgentEvent[]): TailRow[] {
   const rows: TailRow[] = [];
   let run: AgentToolEvent[] = [];
@@ -460,14 +436,7 @@ function collapseTail(tail: readonly AgentEvent[]): TailRow[] {
     run = [];
     runKey = undefined;
   };
-  // A refused tool inside an `explored` event stays its own row: folding it into a count would hide
-  // that it never ran, and the reason.
-  const units = tail.flatMap((event): AgentEvent[] =>
-    event.kind === "explored" && event.tools.some((tool) => tool.refusal !== undefined)
-      ? event.tools.map((tool) => (tool.refusal !== undefined ? tool : exploredOf(tool)))
-      : [event],
-  );
-  for (const event of units) {
+  for (const event of tail) {
     const tools = collapsibleTools(event);
     if (tools === undefined) {
       flush();
@@ -553,28 +522,6 @@ function ExploredBlock({ tools }: { tools: readonly AgentToolEvent[] }) {
   );
 }
 
-/** Refused tools never explored anything: they render as their own cards, in their original order. */
-function ExploredRows({ tools }: { tools: readonly AgentToolEvent[] }) {
-  const groups: (AgentToolEvent | AgentToolEvent[])[] = [];
-  for (const tool of tools) {
-    const last = groups[groups.length - 1];
-    if (tool.refusal !== undefined) groups.push(tool);
-    else if (Array.isArray(last)) last.push(tool);
-    else groups.push([tool]);
-  }
-  return (
-    <Box flexDirection="column">
-      {groups.map((group) =>
-        Array.isArray(group) ? (
-          <ExploredBlock key={group[0]!.id} tools={group} />
-        ) : (
-          <ToolRow key={group.id} {...group} />
-        ),
-      )}
-    </Box>
-  );
-}
-
 /**
  * The index of the first event that has not reached a terminal state, or `events.length` when
  * every one has (#52).
@@ -593,7 +540,7 @@ export function firstUnsettledIndex(events: readonly AgentEvent[]): number {
 function eventRow(event: AgentEvent) {
   switch (event.kind) {
     case "explored":
-      return <ExploredRows tools={event.tools} />;
+      return <ExploredBlock tools={event.tools} />;
     case "message":
       // Claude Code parity: an assistant turn is Markdown (headings, lists, fenced code → CodeBlock with
       // syntax highlight), so render it through MarkdownText. The user echo stays raw (dim) — a user's typed
