@@ -5,6 +5,8 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.83.3] - 2026-11-21
+
 ### Added
 
 - `ToolRefusal` and `AgentToolEvent.refusal`: `messagesToAgentEvents` copies a typed `refusal`
