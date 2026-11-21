@@ -8,8 +8,7 @@
 
 import type { ChatThreadMessage } from "../chat/chat-thread.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
-import type { AgentEvent, AgentToolEvent, ToolRefusal } from "./agent-event.js";
-import { REFUSAL_BODY_OVERRIDE, REFUSAL_HEADER_OVERRIDE, TOOL_REFUSAL_BY } from "./agent-event.js";
+import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import type { NormalizedShell } from "./agent-stream-event.js";
 import { routeToolResult } from "./agent-stream-event.js";
 
@@ -171,24 +170,6 @@ interface ToolPartView {
   output?: unknown;
   errorText?: string;
   input?: unknown;
-  refusal?: ToolRefusal;
-}
-
-/** A valid `by` is required; anything else is dropped. A non-string reason is omitted. */
-function readRefusal(value: unknown): ToolRefusal | undefined {
-  try {
-    if (!isRecord(value)) return undefined;
-    const by = value.by;
-    if (!(TOOL_REFUSAL_BY as readonly unknown[]).includes(by)) return undefined;
-    const reason = value.reason;
-    return {
-      by: by as ToolRefusal["by"],
-      ...(typeof reason === "string" ? { reason } : {}),
-    };
-  } catch {
-    // Hostile input (a throwing getter or proxy) is ignored, never thrown.
-    return undefined;
-  }
 }
 
 /** Read the tool view from a part, or `null` when the part is not a tool invocation. */
@@ -210,8 +191,6 @@ function toolView(part: UIMessagePartLike): ToolPartView | null {
   };
   if (typeof p.errorText === "string") view.errorText = p.errorText;
   if (p.input !== undefined) view.input = p.input;
-  const refusal = readRefusal(p.refusal);
-  if (refusal !== undefined) view.refusal = refusal;
   return view;
 }
 
@@ -249,11 +228,7 @@ function applyResultOverride(
   delete rest.output;
   delete rest.shell;
   delete rest.diff;
-  return {
-    ...rest,
-    ...body,
-    ...(event.refusal !== undefined ? { [REFUSAL_BODY_OVERRIDE]: true } : {}),
-  };
+  return { ...rest, ...body };
 }
 
 function toToolEvent(
@@ -262,15 +237,14 @@ function toToolEvent(
   index: number,
   formatHeader?: ToolHeaderFormatter,
   formatResult?: ToolResultFormatter,
-  formatRefusalHeader?: RefusalHeaderFormatter,
 ): AgentToolEvent {
   let event: AgentToolEvent = {
     id: tool.toolCallId.length > 0 ? tool.toolCallId : `${messageId}::t${index}`,
     kind: "tool",
     name: tool.toolName,
-    status: tool.refusal !== undefined ? "failed" : (TOOL_STATUS[tool.state] ?? "pending"),
+    status: TOOL_STATUS[tool.state] ?? "pending",
     ...(hasKeys(tool.input) ? { input: tool.input } : {}),
-    ...(tool.refusal !== undefined ? { refusal: tool.refusal } : toolResultContent(tool)),
+    ...toolResultContent(tool),
   };
   // #156 — the value the formatter receives is the one that POPULATED the event, not one fixed
   // source field.
@@ -286,23 +260,17 @@ function toToolEvent(
   // has no such gate — fired normally. A consumer could format every successful call and no failed
   // one, with nothing to indicate why.
   const rawResult = tool.state === "output-error" ? tool.errorText : tool.output;
-  if (formatResult !== undefined && (rawResult !== undefined || tool.refusal !== undefined)) {
+  if (formatResult !== undefined && rawResult !== undefined) {
     event = applyResultOverride(event, rawResult, formatResult);
   }
   // App HEADER override (Codex parity): swap the raw tool name for a human verb+target and drop the
   // JSON args summary. `undefined` leaves the event untouched — so unmapped/explore tools are unchanged.
-  // The callback gets the real event, once — a refused call included (`refusal` set). ToolCall
-  // corrects an execution header ("Ran x") on a refused call; `formatRefusalHeader` is the explicit
-  // channel for verbatim refusal wording and wins over the header name.
   const header = formatHeader?.(event);
-  const wording = event.refusal !== undefined ? formatRefusalHeader?.(event) : undefined;
-  const refusalWording = typeof wording === "string" && wording !== "" ? wording : undefined;
-  if (header === undefined && refusalWording === undefined) return event;
+  if (header === undefined) return event;
   return {
     ...event,
-    ...(refusalWording !== undefined ? { [REFUSAL_HEADER_OVERRIDE]: refusalWording } : {}),
-    ...(header?.name !== undefined ? { name: header.name } : {}),
-    ...(header?.summary !== undefined ? { summary: header.summary } : {}),
+    ...(header.name !== undefined ? { name: header.name } : {}),
+    ...(header.summary !== undefined ? { summary: header.summary } : {}),
   };
 }
 
@@ -463,20 +431,6 @@ export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
   search_text: "Searched",
   glob: "Searched",
   git_diff: "Diffed",
-  // The remaining framework names (KNOWN_TOOL_NAMES), with the done-form verb of the matching
-  // DEFAULT_TOOL_PRESENTATION entry; a test keeps the two tables in step.
-  shell_exec: "Ran",
-  interactive_shell: "Started",
-  glob_files: "Matched",
-  git_status: "Read",
-  run_vitest: "Ran",
-  web_fetch: "Fetched",
-  web_search: "Searched",
-  current_time: "Checked",
-  question: "Asked",
-  plan_mode: "Planned",
-  update_plan: "Updated",
-  todolist: "Updated",
 };
 
 /**
@@ -488,9 +442,6 @@ export const DEFAULT_TOOL_HEADERS: Readonly<Record<string, string>> = {
  * holds "the file" is exactly the app-specific knowledge the seam exists to keep out.
  */
 export function defaultToolHeader(event: AgentToolEvent): { name?: string } | undefined {
-  // A refused call never ran: "Ran"/"Edited" would be false, so the raw name stays and ToolCall
-  // prefixes Rejected/Blocked.
-  if (event.refusal !== undefined) return undefined;
   const verb = DEFAULT_TOOL_HEADERS[event.name];
   return verb === undefined ? undefined : { name: verb };
 }
@@ -519,12 +470,6 @@ export type ToolResultFormatter = (
   rawResult: unknown,
 ) => ToolResultBody | undefined;
 
-/**
- * Refusal-only header channel: called once, on the real event, only for a call with `refusal`. The
- * string it returns is shown verbatim, ahead of any `formatToolHeader` name; `undefined` keeps `Rejected <tool>` / `Blocked <tool>`.
- */
-export type RefusalHeaderFormatter = (event: AgentToolEvent) => string | undefined;
-
 export interface MessagesToEventsOptions {
   /** Tool names whose consecutive runs collapse into an `explored` block.
    * Defaults to {@link DEFAULT_EXPLORE_TOOLS}. Pass `[]` to disable grouping. */
@@ -533,11 +478,6 @@ export interface MessagesToEventsOptions {
   formatToolHeader?: ToolHeaderFormatter;
   /** Map a tool's raw result to a Codex-style result body (see {@link ToolResultFormatter}). */
   formatToolResult?: ToolResultFormatter;
-  /**
-   * Verbatim wording for a refused call's header (called only for events with `refusal`). A
-   * `formatToolHeader` name on a refused call is treated as an execution header and corrected.
-   */
-  formatRefusalHeader?: RefusalHeaderFormatter;
   /**
    * Collapse user turns whose text starts with `marker` into one message event with `label`.
    * Pass GOAL_CONTINUATION_MARKER from @theokit/sdk. `label` defaults to "continuing the goal".
@@ -582,7 +522,6 @@ function eventsOfMessage(
   if (
     opts?.formatToolHeader !== undefined ||
     opts?.formatToolResult !== undefined ||
-    opts?.formatRefusalHeader !== undefined ||
     opts?.collapseUserTurns !== undefined
   ) {
     return derive();
@@ -665,14 +604,7 @@ function deriveOneMessage(
     const tool = toolView(part);
     if (tool !== null)
       events.push(
-        toToolEvent(
-          tool,
-          message.id,
-          index,
-          opts?.formatToolHeader,
-          opts?.formatToolResult,
-          opts?.formatRefusalHeader,
-        ),
+        toToolEvent(tool, message.id, index, opts?.formatToolHeader, opts?.formatToolResult),
       );
   });
   return events;
