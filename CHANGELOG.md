@@ -7,6 +7,15 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- `ToolRefusal` and `AgentToolEvent.refusal`: `messagesToAgentEvents` copies a typed `refusal`
+  (`by: "human" | "policy" | "hook" | "timeout"`, optional `reason`) from the tool part; `ToolCall`
+  takes a `refusal` prop and renders `Rejected <tool>` (human, timeout) or `Blocked <tool>` (policy,
+  hook) with the body `nothing ran[: reason]`. Status stays `failed`; invalid refusals are ignored;
+  `formatToolResult` receives the event with `refusal` set, and an optional `formatRefusalHeader`
+  supplies verbatim refusal wording (a `formatToolHeader` name on a refused call is corrected, e.g. `Ran node x` becomes `Rejected node x`); an accepted refusal always yields status `failed` and a throwing refusal object is ignored (#192)
+- `toolPresentation(overrides, { aliases })` and `ToolPresentationOptions`: map an app's renamed tool
+  (`{ Bash: "shell_exec" }`) to a known tool's presentation; overrides on the alias apply on top, and
+  an unknown target throws a `TypeError` (#191)
 - `useWorkspaceConsent`, `WorkspaceTrustPrompt`, `HookReviewPrompt` and `ReviewableHook`: the
   workspace-trust and project-hook-review gates over `PermissionPrompt`. Trust is optimistic and
   rolled back (the error rethrown) when persisting fails, hooks are reviewed one at a time, a
@@ -20,6 +29,12 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `@theokit/tui/terminal`: a bounded (5 s) probe over `wl-copy`, `xclip`, `xsel`, `pbcopy` and
   `clip.exe`, an opt-in OSC 52 fallback on a TTY sink, and typed errors that name every binary tried
   (#193)
+
+### Changed
+
+- `defaultToolHeader` / `DEFAULT_TOOL_HEADERS` now cover every name in `KNOWN_TOOL_NAMES` (`shell_exec`
+  is "Ran"), and the default tool presentation uses the same words: `apply_patch` without a path is
+  "Edited" (was "Patched"), `git_diff` is "Diffed the changes", `write_stdin` is "Wrote to session" (#191)
 
 ## [0.83.0] - 2026-11-14
 

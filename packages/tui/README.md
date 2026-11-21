@@ -131,6 +131,30 @@ returns an idempotent restore).
 Every primitive degrades cleanly under `NO_COLOR`, `TERM=dumb` and bare
 pipes — proven by a subprocess degrade matrix in CI.
 
+
+## Refused tool calls
+
+A tool call refused before it ran (a person rejected it, a policy or hook blocked it) carries a
+typed `refusal` on its event, so the timeline never claims it ran:
+
+```ts
+interface ToolRefusal {
+  by: "human" | "policy" | "hook" | "timeout";
+  reason?: string;
+}
+```
+
+`messagesToAgentEvents` copies `refusal` from the tool part onto `AgentToolEvent.refusal` when it has
+a valid `by`; anything else is ignored. The status stays `"failed"`. `AgentTimeline` passes it to
+`ToolCall`, which renders `Rejected <tool>` (`human`, `timeout`) or `Blocked <tool>` (`policy`,
+`hook`), with the body `nothing ran` plus `: <reason>` when a reason exists. `formatToolHeader` and
+`formatToolResult` receive the real event with `refusal` set. A header
+name from `formatToolHeader` is an execution header: a leading `Ran` is dropped and it becomes
+`Rejected <name>` / `Blocked <name>` (a name already starting with `Rejected`/`Blocked` is kept). For
+verbatim refusal wording pass `formatRefusalHeader(event)`: called once, only for events with `refusal`.
+`defaultToolHeader` leaves refused calls on the raw name, and the default body wins over any `output`/`shell`/`diff` unless `formatToolResult` supplies one. A
+refused call is never folded into a collapsed `Ran N …` line when `verbose` is off.
+
 ## How it works
 
 - **Data-props contract:** components render caller-provided data; no hidden
@@ -405,6 +429,22 @@ if (turn) {
 
 `prime` with an empty list stays closed; `older` stops at the oldest; `newer` from the newest
 returns to `-1`. The overlay's `header` and `hint` props reword its text.
+
+## Renamed tools: `aliases`
+
+`toolPresentation` is keyed by the framework's tool names (`shell_exec`, `edit_file`, ...). An app
+that renames a tool points the new name at the known one instead of copying its presentation:
+
+```ts
+const presentation = toolPresentation(
+  { Bash: { header: () => "Shell" } }, // optional: applied on top of the aliased entry
+  { aliases: { Bash: "shell_exec", Edit: "edit_file" } },
+);
+presentation.get("Bash").approvalLabel?.({ command: "ls" }); // the shell_exec label
+```
+
+An alias resolves before the generic fallback; an override on the alias name wins over the aliased
+entry, field by field. A target outside `KNOWN_TOOL_NAMES` throws a `TypeError` naming both.
 
 ## Development
 
