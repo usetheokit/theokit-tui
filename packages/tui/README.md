@@ -129,6 +129,19 @@ Seed the history that *precedes* the stream. A tool already in the transcript an
 re-emitted by the live stream renders twice — the projection and the fold mint
 ids in disjoint namespaces and cannot tell they are the same call.
 
+### From the framework's agent
+
+Two entry points bridge the framework's agent output to the timeline:
+
+- `useAgentTimeline(agent, { prefix?, windowMs?, formatToolHeader? })` takes anything with a
+  `thread` (the framework's `useAgent()` result) and returns `{ events, usage }`: `prefix` (e.g. a
+  greeting) then the thread, projected for `<AgentTimeline>` at most once per `windowMs`, and the
+  usage of the last turn that reported any. Keep `prefix` and `formatToolHeader` module-stable.
+- `fromAgentOutputEvents(events)` turns the presenter's canonical `AgentOutputEvent`s (sync or
+  async iterable) into an `AsyncIterable<AgentStreamEvent>` for `useAgentStream`. `status` events,
+  `finish.usage` and a tool result's `refusal` have no stream counterpart and are dropped.
+  `@theokit/presenter` is a type-only dependency.
+
 ## Primitives
 
 | Surface | Components                                                                                                                                                                |

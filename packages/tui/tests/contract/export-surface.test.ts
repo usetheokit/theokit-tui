@@ -286,6 +286,12 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ProgressActivity).toBe("function");
   });
 
+  it("public_entry_exposes_agent_timeline_bridge", async () => {
+    const mod = await import("../../src/index.js");
+    expect(typeof mod.fromAgentOutputEvents).toBe("function");
+    expect(typeof mod.useAgentTimeline).toBe("function");
+  });
+
   it("public_entry_exposes_stream_adapter", async () => {
     const mod = await import("../../src/index.js");
     // M7 (plan ADR D8): hook + reducer + initial state are the public trio.
