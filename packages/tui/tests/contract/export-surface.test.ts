@@ -18,6 +18,8 @@ describe("public entry surface (T0.2)", () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.TheoTUIProvider).toBe("function");
     expect(typeof mod.useTheoTheme).toBe("function");
+    expect(typeof mod.createThemeController).toBe("function");
+    expect(typeof mod.resolveThemeFromEnv).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("❯ ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("⏺  ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
