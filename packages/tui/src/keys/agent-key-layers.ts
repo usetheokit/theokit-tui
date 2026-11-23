@@ -35,7 +35,14 @@ export interface AgentKeyLayersOptions<A = never> {
 export function agentKeyLayers<A = never>(
   options: AgentKeyLayersOptions<A>,
 ): KeyLayer<AgentKeyState, string, A>[] {
-  const { isStreaming, interrupt, exit, overlays = [], exitWindowMs = 2000, now = Date.now } = options;
+  const {
+    isStreaming,
+    interrupt,
+    exit,
+    overlays = [],
+    exitWindowMs = 2000,
+    now = Date.now,
+  } = options;
   let armedAt: number | null = null;
   return [
     ...overlays,
