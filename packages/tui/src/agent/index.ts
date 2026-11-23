@@ -41,12 +41,12 @@ export type { AgentStreamingProps } from "./agent-streaming.js";
 export { AgentStreaming } from "./agent-streaming.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentTimeline } from "./agent-timeline.js";
-// Adapter: the presenter's canonical `AgentOutputEvent` → `AgentStreamEvent` (type-only presenter dependency).
-export type { AgentOutputEventSource } from "./from-agent-output-events.js";
-export { fromAgentOutputEvents } from "./from-agent-output-events.js";
 // Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
 export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
 export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";
+// Adapter: the presenter's canonical `AgentOutputEvent` → `AgentStreamEvent` (type-only presenter dependency).
+export type { AgentOutputEventSource } from "./from-agent-output-events.js";
+export { fromAgentOutputEvents } from "./from-agent-output-events.js";
 export type {
   MessagesToEventsOptions,
   PendingApproval,
@@ -88,11 +88,6 @@ export type {
 // state; the structural event union ships as the source-param type.
 // isShellEnvelope/extractAssistantText stay module-internal (reducer detail).
 export { useAgentStream } from "./use-agent-stream.js";
-export type { UseCoalescedOptions } from "./use-coalesced.js";
-// B-009 — recompute a derivation at most once per window, with a trailing update so the last
-// change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
-// complete and tested and reachable by nobody until this slice exported it.
-export { useCoalesced } from "./use-coalesced.js";
 // A framework `useAgent()` client → the timeline events + last usage, coalesced.
 export type {
   AgentTimelineSource,
@@ -100,3 +95,8 @@ export type {
   UseAgentTimelineResult,
 } from "./use-agent-timeline.js";
 export { useAgentTimeline } from "./use-agent-timeline.js";
+export type { UseCoalescedOptions } from "./use-coalesced.js";
+// B-009 — recompute a derivation at most once per window, with a trailing update so the last
+// change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
+// complete and tested and reachable by nobody until this slice exported it.
+export { useCoalesced } from "./use-coalesced.js";

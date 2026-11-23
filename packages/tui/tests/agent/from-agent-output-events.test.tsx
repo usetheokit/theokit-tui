@@ -1,12 +1,11 @@
 import type { AgentOutputEvent } from "@theokit/presenter";
 import { describe, expect, it } from "vitest";
-
-import { AgentTimeline } from "../../src/agent/agent-timeline.js";
 import type { AgentStreamEvent } from "../../src/agent/agent-stream-event.js";
 import {
   agentStreamReducer,
   initialAgentStreamState,
 } from "../../src/agent/agent-stream-reducer.js";
+import { AgentTimeline } from "../../src/agent/agent-timeline.js";
 import { fromAgentOutputEvents } from "../../src/agent/from-agent-output-events.js";
 import { stripAnsi } from "../../src/format/ansi.js";
 import { renderFrame } from "../fixtures/helpers.js";
