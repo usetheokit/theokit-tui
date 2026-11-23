@@ -534,6 +534,72 @@ describe("theme controller (#271)", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
+  it("holds_each_theme_prop_form_through_initial_and_set_and_renders_like_the_prop", async () => {
+    const override = { accent: "magenta" };
+    const forms = ["light", { base: "light", override }, override] as const;
+    for (const form of forms) {
+      const viaInitial = createThemeController({ initial: form });
+      expect(viaInitial.get()).toBe(form);
+      const viaSet = createThemeController();
+      viaSet.set(form);
+      expect(viaSet.get()).toBe(form);
+
+      resetCaptured();
+      const a = render(
+        <TheoTUIProvider controller={viaSet}>
+          <Probe />
+        </TheoTUIProvider>,
+      );
+      await a.flush();
+      const fromController = captured;
+      resetCaptured();
+      const b = render(
+        <TheoTUIProvider theme={form}>
+          <Probe />
+        </TheoTUIProvider>,
+      );
+      await b.flush();
+      expect(fromController).toEqual(captured);
+    }
+  });
+
+  it("rejects_an_invalid_value_through_initial_and_set", () => {
+    expect(() => createThemeController({ initial: "bogus" as never })).toThrow(TypeError);
+    expect(() => createThemeController({ initial: { base: "bogus" } as never })).toThrow(TypeError);
+    const controller = createThemeController();
+    expect(() => controller.set("bogus" as never)).toThrow(TypeError);
+    expect(() => controller.set(null as never)).toThrow(TypeError);
+    expect(() => controller.set(undefined as never)).toThrow(TypeError);
+    expect(controller.get()).toBe("dark");
+  });
+
+  it("set_with_the_held_name_or_object_notifies_nobody", () => {
+    const override = { accent: "magenta" };
+    const controller = createThemeController({ initial: override });
+    const listener = vi.fn();
+    controller.subscribe(listener);
+    controller.set(override);
+    controller.set("dark");
+    controller.set("dark");
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists_names_only_and_never_a_theme_object", () => {
+    const write = vi.fn();
+    const controller = createThemeController({ persist: { read: () => undefined, write } });
+    controller.set({ accent: "magenta" });
+    controller.set({ base: "light", override: {} });
+    expect(write).not.toHaveBeenCalled();
+    controller.set("light");
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledWith("light");
+    const stored = createThemeController({
+      initial: { accent: "magenta" },
+      persist: { read: () => "light", write },
+    });
+    expect(stored.get()).toBe("light");
+  });
+
   it("resolve_theme_from_env_applies_no_color_and_dumb_term", () => {
     expect(resolveThemeFromEnv({ NO_COLOR: "1" })).toBe("no-color");
     expect(resolveThemeFromEnv({ TERM: "dumb" })).toBe("no-color");
