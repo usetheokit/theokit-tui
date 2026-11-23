@@ -18,6 +18,12 @@
  */
 
 export {
+  type AgentKeyLayersOptions,
+  type AgentKeyState,
+  agentKeyLayers,
+} from "./agent-key-layers.js";
+
+export {
   type KeyLayer,
   type RoutedKey,
   routeThroughLayers,
