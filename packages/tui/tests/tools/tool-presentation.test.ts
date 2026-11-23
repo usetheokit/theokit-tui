@@ -19,11 +19,13 @@
  * permanent.
  */
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TOOL_HEADERS } from "../../src/agent/messages-to-events.js";
+import type { AgentToolEvent } from "../../src/agent/agent-event.js";
+import { DEFAULT_TOOL_HEADERS, messagesToAgentEvents } from "../../src/agent/messages-to-events.js";
 import { routeToolResult } from "../../src/agent/tool-result-routing.js";
 import {
   DEFAULT_TOOL_PRESENTATION,
   KNOWN_TOOL_NAMES,
+  toolFormatters,
   toolPresentation,
 } from "../../src/tools/tool-presentation.js";
 
@@ -285,5 +287,73 @@ describe("one vocabulary across both default tables", () => {
     expect(verb).toBeDefined();
     // `write_stdin` is the one multi-word verb ("Wrote to session"), pinned by default-tool-header.test.ts.
     expect(header === verb || header.startsWith(`${verb} `)).toBe(true);
+  });
+});
+
+describe("toolFormatters", () => {
+  const toolMsg = (toolName: string, input: unknown, output: unknown) => [
+    {
+      id: "m1",
+      role: "assistant" as const,
+      parts: [
+        {
+          type: "dynamic-tool",
+          toolName,
+          toolCallId: `c-${toolName}`,
+          state: "output-available",
+          input,
+          output,
+        },
+      ],
+    },
+  ];
+  const run = (
+    presentation: ReturnType<typeof toolPresentation>,
+    name: string,
+    input: unknown,
+    output: unknown,
+  ) => {
+    const events = messagesToAgentEvents(
+      toolMsg(name, input, output) as never,
+      toolFormatters(presentation),
+    );
+    return events.find((e) => e.kind === "tool") as AgentToolEvent;
+  };
+
+  it("renders an aliased tool with the aliased header and body", () => {
+    const p = toolPresentation({}, { aliases: { Bash: "shell_exec" } });
+    const ev = run(p, "Bash", { command: "ls" }, { stdout: "a", stderr: "", exitCode: 0 });
+    expect(ev.name).toBe("Ran ls");
+    expect(ev.shell).toEqual({ stdout: "a", stderr: "", exitCode: 0 });
+  });
+
+  it("renders an overridden tool with the override", () => {
+    const p = toolPresentation({
+      read_file: { header: () => "Custom", body: () => ({ kind: "preview", text: "hi" }) },
+    });
+    const ev = run(p, "read_file", { path: "x" }, "raw");
+    expect(ev.name).toBe("Custom");
+    expect(ev.output).toBe("hi");
+  });
+
+  it("gives an unknown tool the generic header and keeps default routing", () => {
+    const ev = run(toolPresentation(), "mystery", {}, "plain");
+    expect(ev.name).toBe("Ran mystery");
+    expect(ev.output).toBe("plain");
+  });
+
+  it("maps a diff body and uses the active header while running", () => {
+    const p = toolPresentation();
+    const patch = "--- a/f\n+++ b/f\n@@ -1 +1 @@\n-a\n+b\n";
+    expect(run(p, "edit_file", { path: "f" }, { patch }).diff).toBe(patch);
+    const { formatToolHeader } = toolFormatters(p);
+    const running = formatToolHeader({
+      id: "1",
+      kind: "tool",
+      name: "edit_file",
+      status: "running",
+      input: { path: "f" },
+    });
+    expect(running?.name).toBe("Editing f");
   });
 });
