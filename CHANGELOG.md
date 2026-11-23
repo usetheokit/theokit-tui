@@ -5,6 +5,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Changed
+
+- tui: explored grouping now matches the tool's original name, so `formatToolHeader` (incl. `defaultToolHeader`) relabels calls inside an explored block instead of splitting it; a formatter opts a call out with `explore: false` rather than by renaming (#268)
+
 ## [0.83.4] - 2026-11-21
 
 ### Added
