@@ -137,6 +137,7 @@ describe("public entry surface (T0.2)", () => {
     expect(typeof mod.ToolCall).toBe("function");
     expect(typeof mod.ToolCallCard).toBe("function");
     expect(typeof mod.ToolResult).toBe("function");
+    expect(typeof mod.toolFormatters).toBe("function");
     // Module-internal by ADR: D1 (indicator width), D7 (truncation helper).
     expect(mod).not.toHaveProperty("STATUS_INDICATOR_WIDTH");
     expect(mod).not.toHaveProperty("truncateLines");

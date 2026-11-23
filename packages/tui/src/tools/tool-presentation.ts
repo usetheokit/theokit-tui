@@ -24,6 +24,8 @@
  * unexpected shape takes down the session over a string the model got wrong, so every reader below
  * narrows before it reads and every branch has a fallback.
  */
+import type { NormalizedShell } from "../agent/agent-stream-event.js";
+import type { ToolHeaderFormatter, ToolResultFormatter } from "../agent/messages-to-events.js";
 import { routeToolResult } from "../agent/tool-result-routing.js";
 import type { ToolCardResult } from "./tool-card-result.js";
 import { parseV4APatchFiles } from "./v4a-patch.js";
@@ -321,4 +323,38 @@ export function toolPresentation(
     },
     [Symbol.iterator]: () => merged[Symbol.iterator](),
   } as ReadonlyMap<string, ToolPresentation>;
+}
+
+/**
+ * The formatter pair `messagesToAgentEvents` takes, derived from a {@link toolPresentation} map, so
+ * an app describes a tool once. Aliases and overrides are already in the map; a name the map does
+ * not know gets the generic entry (also when `presentation` is a plain `Map` that answers
+ * `undefined`).
+ *
+ * The header becomes the event `name` (the full header line) and the JSON args summary is dropped. A refused call keeps its own header.
+ * The body maps `diff`/`output`/`preview` to the event's `diff`/`shell`/`output`; display options
+ * of {@link ToolCardResult} (`maxLines`, `language`, ...) have no event equivalent and are dropped.
+ * A presentation without `body` returns `undefined`, which keeps the default result routing.
+ */
+export function toolFormatters(presentation: ReadonlyMap<string, ToolPresentation>): {
+  formatToolHeader: ToolHeaderFormatter;
+  formatToolResult: ToolResultFormatter;
+} {
+  const lookup = (name: string): ToolPresentation =>
+    presentation.get(name) ?? genericPresentation(name);
+  return {
+    formatToolHeader: (event) => {
+      if (event.refusal !== undefined) return undefined;
+      const active = event.status === "pending" || event.status === "running";
+      return { name: lookup(event.name).header(event.input, active), summary: "" };
+    },
+    formatToolResult: (event, rawResult) => {
+      const body = lookup(event.name).body;
+      if (body === undefined) return undefined;
+      const card = body(rawResult);
+      if (card.kind === "diff") return { diff: card.patch };
+      if (card.kind === "output") return { shell: { ...card.shell } as NormalizedShell };
+      return { output: card.text };
+    },
+  };
 }
