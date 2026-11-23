@@ -67,6 +67,7 @@
     "depcruise": "depcruise src tests --config ../../.dependency-cruiser.cjs"
   },
   "peerDependencies": {
+    "@theokit/presenter": "^0.18.0",
     "figlet": "^1.7.0",
     "lowlight": "^3.0.0",
     "react": "^19.2.0"
@@ -108,6 +109,9 @@
     "vitest": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "@theokit/presenter": {
+      "optional": true
+    },
     "figlet": {
       "optional": true
     },

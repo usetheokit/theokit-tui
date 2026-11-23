@@ -72,6 +72,11 @@ jobs:
       - name: typecheck
         run: pnpm typecheck
 
+      # The release gates run depcruise; CI did not, so an import of a devDependency from src/
+      # merged green and was refused only when v0.83.7 was tagged.
+      - name: dependency rules
+        run: pnpm depcruise
+
       # B-122 — build BEFORE test. `dist/` is gitignored, and `publint --strict`
       # (via tests/package-contract.test.ts) resolves every `exports` entry against
       # the built artifact. With the old order it reported EVERY entry as missing,
