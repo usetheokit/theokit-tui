@@ -5,6 +5,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Fixed
+
+- tui: `@theokit/presenter`, whose types `fromAgentOutputEvents` exports, is declared as an optional peer dependency; it was only a devDependency, so a consumer type-checking the adapter could not resolve it, and the release gates refused v0.83.7 (#267)
+
 ### Added
 
 - tui: `fromAgentOutputEvents` adapts the presenter's `AgentOutputEvent` to `AgentStreamEvent` (type-only presenter dependency), and `useAgentTimeline(agent, { prefix, windowMs, formatToolHeader })` returns the coalesced timeline events and last usage of a `useAgent()` client (#267)
