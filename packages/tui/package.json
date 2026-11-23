@@ -53,6 +53,7 @@
     "example:code": "tsx examples/components/code.tsx",
     "example:metrics": "tsx examples/components/metrics.tsx",
     "example:themes": "tsx examples/components/themes.tsx",
+    "example:session": "tsx examples/scenes/session.tsx",
     "example:stream": "tsx examples/scenes/stream.tsx",
     "example:banner": "tsx examples/components/banner.tsx",
     "example:margin": "tsx examples/renderer/margin.tsx",

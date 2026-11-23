@@ -226,6 +226,10 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_agent_surface", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.AgentTimeline).toBe("function");
+    expect(typeof mod.AgentSession).toBe("function");
+    // The props type is part of the surface: this line fails typecheck if it is not exported.
+    const _props: import("../../src/index.js").AgentSessionProps | undefined = undefined;
+    expect(_props).toBeUndefined();
     expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored", "notice"]);
     // Review M1: the explored-grouping default is part of the public contract
     // (the CHANGELOG names it — consumers extend it via [...DEFAULT_EXPLORE_TOOLS, ...]).
