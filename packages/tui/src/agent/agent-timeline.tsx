@@ -22,7 +22,7 @@ import {
   REFUSAL_BODY_OVERRIDE,
   REFUSAL_HEADER_OVERRIDE,
 } from "./agent-event.js";
-import { defaultToolHeader } from "./messages-to-events.js";
+import { defaultToolHeader, originalToolName } from "./messages-to-events.js";
 import { unionMessage } from "./union-message.js";
 
 const KIND_UNION_MESSAGE = unionMessage(AGENT_EVENT_KINDS);
@@ -514,6 +514,15 @@ function exploreSummary(tool: AgentToolEvent): string {
     path: str("path") ?? str("file") ?? str("dir"),
     pattern: str("pattern") ?? str("query") ?? str("regex"),
   };
+  const original = originalToolName(tool);
+  if (original !== tool.name) {
+    // A header formatter renamed the call: its name is the label; add the input target unless the
+    // formatter already supplied a summary or put the target in the name.
+    const target = tool.summary ?? args.path ?? args.pattern;
+    return target === undefined || tool.name.includes(target)
+      ? tool.name
+      : `${tool.name} ${target}`;
+  }
   const label = EXPLORE_LABELS[tool.name];
   if (label !== undefined) return label(args);
   // PascalCase display standard for the raw-name fallback (same rule as the
