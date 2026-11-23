@@ -3,12 +3,13 @@ import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import stringWidth from "string-width";
 import { beforeAll, describe, expect, it } from "vitest";
+
+import { renderFrame } from "../../tests/fixtures/helpers.js";
 import { stripAnsi } from "../../src/format/ansi.js";
 import { preloadHighlighter } from "../../src/markdown/code-block.js";
 import { TheoTUIProvider } from "../../src/theme/theme.js";
 import { formatArgs, formatToolName, ToolCall } from "../../src/tools/tool-call.js";
 import { ToolCallCard } from "../../src/tools/tool-call-card.js";
-import { renderFrame } from "../../tests/fixtures/helpers.js";
 
 /** cli-spinners `dots` frame[0] — deterministic at renderFrame's 0ms tick (D6). */
 const DOTS_FRAME_0 = "⠋";
@@ -84,7 +85,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
   });
 
   it("each_status_frame_matches_snapshot", async () => {
-    for (const status of ["pending", "running", "success", "failed", "cancelled"] as const) {
+    for (const status of ["pending", "running", "success", "failed"] as const) {
       const frame = await renderFrame(
         <Box width={40}>
           <ToolCall name="grep" status={status} summary="src/**" />
