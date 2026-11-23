@@ -132,23 +132,26 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      # A tag and a manifest that disagree publish one version under another's name, and
-      # the registry keeps whichever number won. Checked before anything is uploaded.
-      - name: The tag and the manifest must agree
+      # The factory releases by pushing a tag one step past the highest `v` tag; it never
+      # commits a version bump to the release branch. So on a tag push the tag IS the version,
+      # and the manifest is set from it before anything is packed: the registry, the git tag and
+      # the provenance then carry one number. A tag that is not a plain semver is refused.
+      - name: The tag sets the manifest's version
         shell: bash
         run: |
           set -euo pipefail
           manifest="$(node -p "require('./packages/tui/package.json').version")"
           if [ "${GITHUB_EVENT_NAME}" = 'workflow_dispatch' ]; then
-            echo "manual run — version in tree is $manifest"
-          else
-            tag="${GITHUB_REF_NAME#v}"
-            if [ "$tag" != "$manifest" ]; then
-              echo "::error::tag v$tag does not match packages/tui/package.json $manifest."
-              exit 1
-            fi
-            echo "tag and manifest agree on $manifest"
+            echo "manual run, version in tree is $manifest"
+            exit 0
           fi
+          tag="${GITHUB_REF_NAME#v}"
+          if ! [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::tag ${GITHUB_REF_NAME} is not a semver version."
+            exit 1
+          fi
+          (cd packages/tui && npm pkg set version="$tag")
+          echo "manifest $manifest set to the tag's $tag"
 
       - name: Publish
         env:
