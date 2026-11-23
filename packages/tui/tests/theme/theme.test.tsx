@@ -1,18 +1,17 @@
 import { Text } from "ink";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { renderFrame } from "../../tests/fixtures/helpers.js";
 import type { TheoTheme } from "../../src/theme/theme.js";
-import { render } from "../../tests/renderer/itl-adapter.js";
 import {
   createThemeController,
-  resolveThemeFromEnv,
   defaultTheme,
   isMonochrome,
+  resolveThemeFromEnv,
   TheoTUIProvider,
   themes,
   useTheoTheme,
 } from "../../src/theme/theme.js";
+import { renderFrame } from "../../tests/fixtures/helpers.js";
+import { render } from "../../tests/renderer/itl-adapter.js";
 
 let captured: TheoTheme | undefined;
 

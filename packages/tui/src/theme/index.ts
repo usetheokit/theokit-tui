@@ -6,12 +6,12 @@ export type {
   CodeTokens,
   GlyphToken,
   RoleTokens,
+  ThemeController,
+  ThemePersistence,
   TheoBuiltinThemeName,
   TheoTheme,
   TheoThemeOverride,
   TheoThemeProp,
-  ThemeController,
-  ThemePersistence,
   ToolStatusTokens,
 } from "./theme.js";
 export {
