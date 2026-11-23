@@ -6,7 +6,7 @@ import { HEADER_SENTINEL_KEY } from "../chat/chat-thread.js";
 import { DiffViewer } from "../diff/diff-viewer.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
-import { Notice, NOTICE_VARIANTS } from "../status/notice.js";
+import { NOTICE_VARIANTS, Notice } from "../status/notice.js";
 import { useTheoTheme } from "../theme/theme.js";
 import {
   formatToolName,
