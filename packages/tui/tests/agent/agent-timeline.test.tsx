@@ -1,10 +1,9 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
-
-import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { stripAnsi } from "../../src/format/ansi.js";
 import type { AgentEvent, AgentMessageEvent } from "../../src/agent/agent-event.js";
+import { stripAnsi } from "../../src/format/ansi.js";
+import { renderFrame } from "../../tests/fixtures/helpers.js";
 
 // Row-render spy (M1 idiom): wrap the real ChatMessage so repaint-scope
 // assertions can count message-row renders (plan T1.2, D2).

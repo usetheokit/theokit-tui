@@ -519,7 +519,9 @@ function exploreSummary(tool: AgentToolEvent): string {
     // A header formatter renamed the call: its name is the label; add the input target unless the
     // formatter already supplied a summary or put the target in the name.
     const target = tool.summary ?? args.path ?? args.pattern;
-    return target === undefined || tool.name.includes(target) ? tool.name : `${tool.name} ${target}`;
+    return target === undefined || tool.name.includes(target)
+      ? tool.name
+      : `${tool.name} ${target}`;
   }
   const label = EXPLORE_LABELS[tool.name];
   if (label !== undefined) return label(args);
