@@ -105,10 +105,18 @@ describe("package manifest contract (T0.1)", () => {
     // optional peer was REMOVED with the `./ai-sdk` shim — the root-entry
     // projections are structural (`UIMessageLike`), no `ai` types anywhere.
     // react stays the only REQUIRED peer.
-    expect(Object.keys(pkg.peerDependencies).sort()).toEqual(["figlet", "lowlight", "react"]);
+    expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "@theokit/presenter",
+      "figlet",
+      "lowlight",
+      "react",
+    ]);
     expect(pkg.peerDependencies).not.toHaveProperty("ai");
     expect(pkg.peerDependenciesMeta).not.toHaveProperty("ai");
     expect(pkg.peerDependenciesMeta.figlet?.optional).toBe(true);
+    // `@theokit/presenter` is an OPTIONAL peer too: only types cross from it (the timeline adapter),
+    // so a consumer that never uses the adapter does not install it.
+    expect(pkg.peerDependenciesMeta["@theokit/presenter"]?.optional).toBe(true);
     // ^19.2.0 — mirrors ink7's exact floor (react >=19.2.0, blueprint M10
     // Corner 2); the 0.10.x line remains the ink5/react18 track.
     expect(pkg.peerDependencies.react).toBe("^19.2.0");

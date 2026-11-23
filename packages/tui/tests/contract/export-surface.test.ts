@@ -198,10 +198,18 @@ describe("public entry surface (T0.2)", () => {
       peerDependencies: Record<string, string>;
       peerDependenciesMeta: Record<string, { optional?: boolean }>;
     };
-    expect(Object.keys(pkg.peerDependencies).sort()).toEqual(["figlet", "lowlight", "react"]);
+    expect(Object.keys(pkg.peerDependencies).sort()).toEqual([
+      "@theokit/presenter",
+      "figlet",
+      "lowlight",
+      "react",
+    ]);
     expect(pkg.peerDependenciesMeta.lowlight?.optional).toBe(true);
     // M27: figlet is also an OPTIONAL peer (renderFigletArt degrades to null).
     expect(pkg.peerDependenciesMeta.figlet?.optional).toBe(true);
+    // `@theokit/presenter` is an OPTIONAL peer too: only types cross from it (the timeline adapter),
+    // so a consumer that never uses the adapter does not install it.
+    expect(pkg.peerDependenciesMeta["@theokit/presenter"]?.optional).toBe(true);
     // The `ai` optional peer left with the `./ai-sdk` shim removal — the
     // root-entry projections are structural (`UIMessageLike`), no `ai` types.
     expect(pkg.peerDependencies).not.toHaveProperty("ai");
