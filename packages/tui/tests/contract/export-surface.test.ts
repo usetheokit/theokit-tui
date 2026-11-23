@@ -92,7 +92,12 @@ describe("public entry surface (T0.2)", () => {
 
   it("keys_subpath_exposes_chord_helpers_and_keybindings_parser", async () => {
     const keys = await import("../../src/keys/index.js");
-    for (const name of ["parseKeybindings", "chordOf", "resolveAction"] as const) {
+    for (const name of [
+      "parseKeybindings",
+      "chordOf",
+      "resolveAction",
+      "agentKeyLayers",
+    ] as const) {
       expect(typeof keys[name]).toBe("function");
     }
     expect(keys.defaultKeymap).toBeInstanceOf(Map);
