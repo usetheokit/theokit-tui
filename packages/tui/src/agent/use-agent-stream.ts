@@ -31,7 +31,7 @@ export type AgentStreamSource =
   | (() => AsyncIterable<AgentStreamEvent>);
 
 export interface UseAgentStreamResult extends AgentStreamState {
-  /** Stops consumption (iterator.return) and folds the terminal done. */
+  /** Stops consumption (iterator.return) and folds the terminal interrupted. */
   cancel: () => void;
 }
 
@@ -169,7 +169,7 @@ export function useAgentStream(
     }
     control.cancelled = true;
     swallowTeardown(control.iterator?.return?.());
-    dispatch({ kind: "fold", event: { type: "done" } });
+    dispatch({ kind: "fold", event: { type: "interrupted" } });
   }, []);
 
   return { ...state, events, cancel };

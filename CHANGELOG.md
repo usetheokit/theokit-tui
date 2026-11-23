@@ -5,6 +5,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- tui: stream events `interrupted` (unfinished tools render as `cancelled`, an "Interrupted by user" notice follows the partial text; status `interrupted`) and `notice` (`{variant, text}`, rendered in place inside the turn); **BREAKING:** `useAgentStream().cancel()` now ends in status `interrupted` (it was `done`) and appends an "Interrupted by user" notice event; code that checks `status === "done"` after `cancel()` must also handle `interrupted` (#266)
+
 ### Changed
 
 - tui: explored grouping now matches the tool's original name, so `formatToolHeader` (incl. `defaultToolHeader`) relabels calls inside an explored block instead of splitting it; a formatter opts a call out with `explore: false` rather than by renaming (#268)

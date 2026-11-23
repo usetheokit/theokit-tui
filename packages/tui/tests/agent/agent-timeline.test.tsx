@@ -207,6 +207,49 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     );
   });
 
+  it("notice_event_renders_in_order_between_messages", async () => {
+    const frame = stripAnsi(
+      await renderFrame(
+        <AgentTimeline
+          events={[
+            message("m1", "before"),
+            { id: "n1", kind: "notice", variant: "warning", text: "heads up" },
+            message("m2", "after"),
+          ]}
+        />,
+      ),
+    );
+    expect(frame).toContain("!!");
+    expect(frame.indexOf("before")).toBeLessThan(frame.indexOf("heads up"));
+    expect(frame.indexOf("heads up")).toBeLessThan(frame.indexOf("after"));
+  });
+
+  it("notice_event_with_invalid_variant_throws_typed_error", () => {
+    const call = () =>
+      AgentTimeline({
+        events: [{ id: "n1", kind: "notice", variant: "loud", text: "x" } as never],
+      });
+    expect(call).toThrow(TypeError);
+    expect(call).toThrow('notice event "n1" — invalid variant "loud"');
+  });
+
+  it("cancelled_tool_then_interrupted_marker_render", async () => {
+    const frame = stripAnsi(
+      await renderFrame(
+        <AgentTimeline
+          events={[
+            message("m1", "partial"),
+            { id: "t1", kind: "tool", name: "bash", status: "cancelled" },
+            { id: "i1", kind: "notice", variant: "warning", text: "Interrupted by user" },
+          ]}
+        />,
+      ),
+    );
+    expect(frame).toContain("⊘");
+    expect(frame).not.toContain("✗");
+    expect(frame.indexOf("partial")).toBeLessThan(frame.indexOf("Interrupted by user"));
+  });
+
   it("shell_tool_event_renders_envelope", async () => {
     const frame = await renderFrame(
       <AgentTimeline
