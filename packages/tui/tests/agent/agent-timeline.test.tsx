@@ -1,10 +1,9 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import { describe, expect, it, vi } from "vitest";
-
-import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { stripAnsi } from "../../src/format/ansi.js";
 import type { AgentEvent, AgentMessageEvent } from "../../src/agent/agent-event.js";
+import { stripAnsi } from "../../src/format/ansi.js";
+import { renderFrame } from "../../tests/fixtures/helpers.js";
 
 // Row-render spy (M1 idiom): wrap the real ChatMessage so repaint-scope
 // assertions can count message-row renders (plan T1.2, D2).
@@ -21,6 +20,9 @@ vi.mock("../../src/chat/chat-message.js", async (importOriginal) => {
 });
 
 const { AgentTimeline } = await import("../../src/agent/agent-timeline.js");
+const { messagesToAgentEvents, defaultToolHeader } = await import(
+  "../../src/agent/messages-to-events.js"
+);
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -107,6 +109,30 @@ describe("AgentTimeline — event dispatch (T1.1)", () => {
     expect(stripAnsi(frame)).toContain("new line");
     // NOT the raw unified-diff plumbing dumped as text.
     expect(stripAnsi(frame)).not.toContain("@@ -1 +1 @@");
+  });
+
+  it("explored block with defaultToolHeader shows verb + input target (#268)", async () => {
+    const part = (id: string, path: string) => ({
+      type: "tool-read_file",
+      toolCallId: id,
+      state: "output-available",
+      input: { path },
+      output: "x",
+    });
+    const events = messagesToAgentEvents(
+      [
+        {
+          id: "m1",
+          role: "assistant",
+          parts: [part("c1", "src/a.ts"), part("c2", "src/b.ts"), part("c3", "src/c.ts")],
+        } as never,
+      ],
+      { formatToolHeader: defaultToolHeader },
+    );
+    const text = stripAnsi(await renderFrame(<AgentTimeline events={events} />));
+    expect(text).toContain("Explored");
+    expect(text).toContain("Read src/a.ts");
+    expect(text).toContain("Read src/c.ts");
   });
 
   it("explored_event_renders_grouped_codex_block", async () => {

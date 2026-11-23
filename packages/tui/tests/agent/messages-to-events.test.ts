@@ -576,22 +576,30 @@ describe("messagesToAgentEvents — formatToolHeader (header seam)", () => {
     expect(seen).toEqual(["c9:success"]);
   });
 
-  // Documented contract (review F-tui-6): grouping matches the (possibly
-  // overridden) event name — renaming an explore tool opts it OUT of the
-  // explored collapse; unmapped explore tools still group.
-  it("renaming an explore tool via the header opts it out of explored grouping", () => {
-    const msgs = [toolMsg("read_file", "c1"), toolMsg("read_file", "c2")];
-    // Unmapped: two consecutive reads collapse into one explored group.
-    const grouped = messagesToAgentEvents([
-      { id: "m1", role: "assistant", parts: msgs.flatMap((m) => m.parts) },
-    ]);
-    expect(grouped.map((e) => e.kind)).toEqual(["explored"]);
-    // Mapped (renamed): the overridden name no longer matches exploreTools.
-    const renamed = messagesToAgentEvents(
-      [{ id: "m1", role: "assistant", parts: msgs.flatMap((m) => m.parts) }],
-      { formatToolHeader: () => ({ name: "Read config" }) },
-    );
-    expect(renamed.map((e) => e.kind)).toEqual(["tool", "tool"]);
+  // #268: grouping decides on the ORIGINAL name; a header override only relabels.
+  const reads = (n: number) => [
+    {
+      id: "m1",
+      role: "assistant" as const,
+      parts: Array.from({ length: n }, (_, i) => toolMsg("read_file", `c${i + 1}`).parts[0]!),
+    },
+  ];
+  it("groups three reads into one explored block with and without defaultToolHeader", () => {
+    expect(messagesToAgentEvents(reads(3)).map((e) => e.kind)).toEqual(["explored"]);
+    const withHeader = messagesToAgentEvents(reads(3), { formatToolHeader: defaultToolHeader });
+    expect(withHeader.map((e) => e.kind)).toEqual(["explored"]);
+    const custom = messagesToAgentEvents(reads(3), {
+      formatToolHeader: () => ({ name: "Read config" }),
+    });
+    expect(custom.map((e) => e.kind)).toEqual(["explored"]);
+  });
+
+  it("a formatter opts one call out explicitly with explore: false", () => {
+    const events = messagesToAgentEvents(reads(3), {
+      formatToolHeader: (event) =>
+        event.id === "c2" ? { name: "Read", explore: false } : { name: "Read" },
+    });
+    expect(events.map((e) => e.kind)).toEqual(["tool", "tool", "tool"]);
   });
 });
 
