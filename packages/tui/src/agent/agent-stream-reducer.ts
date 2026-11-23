@@ -1,3 +1,4 @@
+import type { NoticeVariant } from "../status/notice.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { AgentEvent, AgentToolEvent } from "./agent-event.js";
 import type { AgentStreamEvent } from "./agent-stream-event.js";
@@ -10,7 +11,7 @@ import { extractAssistantText, routeToolResult } from "./agent-stream-event.js";
 // <Static> graduation immutability) — see the blueprint's D2 table.
 // No ink/react import — the fold is testable and reusable without a renderer.
 
-export type AgentStreamStatus = "idle" | "streaming" | "done" | "error";
+export type AgentStreamStatus = "idle" | "streaming" | "done" | "error" | "interrupted";
 
 export interface AgentStreamState {
   /** AgentTimeline's exact input — folded, boundary-safe. */
@@ -261,6 +262,53 @@ function failNonTerminalTools(events: AgentEvent[]): AgentEvent[] {
   );
 }
 
+/** The user stopped the turn: unfinished tools are cancelled, not failed. */
+function cancelNonTerminalTools(events: AgentEvent[]): AgentEvent[] {
+  return events.map((item) =>
+    item.kind === "tool" && (item.status === "pending" || item.status === "running")
+      ? { ...item, status: "cancelled" as const }
+      : item,
+  );
+}
+
+function foldInterrupted(state: AgentStreamState): AgentStreamState {
+  const next = withoutTurnMarkers(withoutLiveMessage(graduateThought(state)));
+  const seq = next.seq + 1;
+  return {
+    ...next,
+    seq,
+    events: [
+      ...cancelNonTerminalTools(next.events),
+      {
+        id: `interrupted-${seq}`,
+        kind: "notice",
+        variant: "warning",
+        text: "Interrupted by user",
+      },
+    ],
+    status: "interrupted",
+    streaming: { active: false },
+  };
+}
+
+/** An app notice lands in order: it closes the live message so the next delta opens a new one. */
+function foldNotice(state: AgentStreamState, event: AgentStreamEvent): AgentStreamState {
+  const next = withoutLiveMessage(graduateThought(state));
+  const seq = next.seq + 1;
+  // An unknown variant is kept as supplied so the timeline boundary reports it.
+  const variant = (event.variant ?? "info") as NoticeVariant;
+  return {
+    ...next,
+    seq,
+    events: [
+      ...next.events,
+      { id: `notice-${seq}`, kind: "notice", variant, text: event.text ?? "" },
+    ],
+    status: "streaming",
+    streaming: { active: true },
+  };
+}
+
 function toError(payload: AgentStreamEvent["error"]): Error {
   if (typeof payload === "string" && payload !== "") {
     return new Error(payload);
@@ -298,6 +346,8 @@ const HANDLERS: Record<
   tool_call: foldToolCall,
   error: (state, event) => foldTerminal(state, "error", toError(event.error)),
   done: (state) => foldTerminal(state, "done"),
+  interrupted: foldInterrupted,
+  notice: foldNotice,
 };
 
 /**
@@ -310,7 +360,7 @@ export function agentStreamReducer(
   state: AgentStreamState,
   event: AgentStreamEvent,
 ): AgentStreamState {
-  if (state.status === "done" || state.status === "error") {
+  if (state.status === "done" || state.status === "error" || state.status === "interrupted") {
     return state;
   }
   const handler = HANDLERS[event.type];

@@ -18,16 +18,6 @@
  */
 
 export {
-  type KeyLayer,
-  type RoutedKey,
-  routeThroughLayers,
-} from "./layer-router.js";
-
-export {
-  type ParseKeybindingsOptions,
-  parseKeybindings,
-} from "./keybindings-file.js";
-export {
   type Action,
   type Chord,
   chordOf,
@@ -35,3 +25,18 @@ export {
   type Keymap,
   resolveAction,
 } from "../renderer/input/keybindings.js";
+export {
+  type AgentKeyLayersOptions,
+  type AgentKeyState,
+  agentKeyLayers,
+} from "./agent-key-layers.js";
+
+export {
+  type ParseKeybindingsOptions,
+  parseKeybindings,
+} from "./keybindings-file.js";
+export {
+  type KeyLayer,
+  type RoutedKey,
+  routeThroughLayers,
+} from "./layer-router.js";

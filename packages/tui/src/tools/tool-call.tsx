@@ -11,7 +11,7 @@ import type { ToolRefusal } from "./tool-refusal.js";
 // Single source for the status union (SEPA phase-1 F6): the type, the runtime
 // guard, and the error message all derive from this array — an M3 additive
 // status touches it (plus a glyph/spinner branch) exactly once.
-export const TOOL_CALL_STATUSES = ["pending", "running", "success", "failed"] as const;
+export const TOOL_CALL_STATUSES = ["pending", "running", "success", "failed", "cancelled"] as const;
 const VALID_STATUSES = TOOL_CALL_STATUSES;
 
 /** Tool-call lifecycle states (M2 — plan ADR D1; M3 may extend additively). */
@@ -117,6 +117,12 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
         <Spinner type="dots" />
       </Text>
     );
+  }
+  if (status === "cancelled") {
+    // Stopped by the user: neither a spinner nor a failure. There is deliberately NO theme token yet
+    // (that would grow TheoTheme + its override type for one glyph): it reuses the dim `pending`
+    // color and a fixed `⊘`, which stays distinguishable from `failed` without color.
+    return <Text color={theme.toolStatus.pending.color}>⊘</Text>;
   }
   const token = theme.toolStatus[status];
   return (

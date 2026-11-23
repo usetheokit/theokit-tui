@@ -1,4 +1,5 @@
 import type { ChatRole } from "../chat/chat-message.js";
+import type { NoticeVariant } from "../status/notice.js";
 import type { ToolCallStatus } from "../tools/tool-call.js";
 import type { ToolRefusal } from "../tools/tool-refusal.js";
 import type { ShellEnvelope } from "../tools/tool-result.js";
@@ -10,7 +11,7 @@ import type { ShellEnvelope } from "../tools/tool-result.js";
 // guard and AgentTimeline's error message all derive from this array. The
 // discriminant is `kind`, NOT `type` — a deliberate divergence from all three
 // analogs (reserved-word-ambiguous naming; recorded in ADR D1).
-export const AGENT_EVENT_KINDS = ["message", "thinking", "tool", "explored"] as const;
+export const AGENT_EVENT_KINDS = ["message", "thinking", "tool", "explored", "notice"] as const;
 
 export type AgentEventKind = (typeof AGENT_EVENT_KINDS)[number];
 
@@ -84,6 +85,14 @@ export interface AgentExploredEvent {
   tools: AgentToolEvent[];
 }
 
+/** An app notice placed in order inside the turn (also the interrupted marker). */
+export interface AgentNoticeEvent {
+  id: string;
+  kind: "notice";
+  variant: NoticeVariant;
+  text: string;
+}
+
 /**
  * One item of the agent timeline. Ordering contract (plan ADR D2): the array
  * is caller-ordered; ids are unique (duplicates throw); graduated events are
@@ -95,7 +104,8 @@ export type AgentEvent =
   | AgentMessageEvent
   | AgentThinkingEvent
   | AgentToolEvent
-  | AgentExploredEvent;
+  | AgentExploredEvent
+  | AgentNoticeEvent;
 
 export function isAgentEventKind(value: unknown): value is AgentEventKind {
   return (AGENT_EVENT_KINDS as readonly unknown[]).includes(value);

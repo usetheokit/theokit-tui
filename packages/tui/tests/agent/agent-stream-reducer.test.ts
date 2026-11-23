@@ -463,4 +463,43 @@ describe("agentStreamReducer", () => {
       ]);
     });
   });
+
+  describe("interrupted and notice (#266)", () => {
+    it("interrupted_cancels_running_tools_and_marks_after_partial_text", () => {
+      const state = fold(delta("partial"), toolRunning("c1", "bash"), {
+        type: "interrupted",
+      });
+      expect(state.status).toBe("interrupted");
+      expect(state.streaming.active).toBe(false);
+      expect(find(state, "tool-c1")).toMatchObject({ status: "cancelled" });
+      const last = state.events[state.events.length - 1];
+      expect(last).toMatchObject({
+        kind: "notice",
+        text: "Interrupted by user",
+      });
+      expect(passesBoundary(state)).toBe(true);
+    });
+
+    it("interrupted_is_terminal", () => {
+      const state = fold({ type: "interrupted" }, delta("late"));
+      expect(state.events).toHaveLength(1);
+    });
+
+    it("done_still_fails_running_tools", () => {
+      const state = fold(toolRunning("c1", "bash"), doneEvt());
+      expect(find(state, "tool-c1")).toMatchObject({ status: "failed" });
+    });
+
+    it("notice_lands_between_two_text_deltas", () => {
+      const state = fold(delta("a"), { type: "notice", variant: "warning", text: "n" }, delta("b"));
+      expect(state.events.map((e) => e.kind)).toEqual(["message", "notice", "message"]);
+      expect(state.events[1]).toMatchObject({ variant: "warning", text: "n" });
+      expect(passesBoundary(state)).toBe(true);
+    });
+
+    it("notice_variant_defaults_to_info", () => {
+      const state = fold({ type: "notice", text: "n" });
+      expect(state.events[0]).toMatchObject({ variant: "info" });
+    });
+  });
 });
