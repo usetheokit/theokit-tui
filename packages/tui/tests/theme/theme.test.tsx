@@ -1,17 +1,15 @@
 import { Text } from "ink";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderFrame } from "../../tests/fixtures/helpers.js";
 import type { TheoTheme } from "../../src/theme/theme.js";
 import {
-  createThemeController,
   defaultTheme,
   isMonochrome,
-  resolveThemeFromEnv,
   TheoTUIProvider,
   themes,
   useTheoTheme,
 } from "../../src/theme/theme.js";
-import { renderFrame } from "../../tests/fixtures/helpers.js";
-import { render } from "../../tests/renderer/itl-adapter.js";
 
 let captured: TheoTheme | undefined;
 
@@ -485,58 +483,5 @@ describe("built-in themes + provider resolution (M6 T1.2)", () => {
     expect(captures.length).toBeGreaterThanOrEqual(2);
     expect(captures[0]).toBe(captures[captures.length - 1]);
     expect(captures[0]).toBe(themes.dark);
-  });
-});
-
-describe("theme controller (#271)", () => {
-  beforeEach(() => {
-    resetCaptured();
-  });
-
-  it("set_rerenders_a_mounted_tree_with_the_new_theme", async () => {
-    const controller = createThemeController({ initial: "dark" });
-    const app = render(
-      <TheoTUIProvider controller={controller}>
-        <Probe />
-      </TheoTUIProvider>,
-    );
-    await app.flush();
-    expect(captured).toBe(themes.dark);
-    controller.set("light");
-    await app.flush();
-    expect(captured).toBe(themes.light);
-  });
-
-  it("persist_writes_once_per_change_and_restores_on_next_start", () => {
-    let stored: string | undefined;
-    const write = vi.fn((name: string) => {
-      stored = name;
-    });
-    const persist = { read: () => stored, write };
-    const first = createThemeController({ initial: "dark", persist });
-    first.set("light");
-    first.set("light");
-    expect(write).toHaveBeenCalledTimes(1);
-    expect(createThemeController({ initial: "dark", persist }).get()).toBe("light");
-  });
-
-  it("ignores_an_invalid_stored_name_and_notifies_subscribers", () => {
-    const controller = createThemeController({
-      initial: "light",
-      persist: { read: () => "bogus", write: () => {} },
-    });
-    expect(controller.get()).toBe("light");
-    const listener = vi.fn();
-    const off = controller.subscribe(listener);
-    controller.set("no-color");
-    off();
-    controller.set("dark");
-    expect(listener).toHaveBeenCalledTimes(1);
-  });
-
-  it("resolve_theme_from_env_applies_no_color_and_dumb_term", () => {
-    expect(resolveThemeFromEnv({ NO_COLOR: "1" })).toBe("no-color");
-    expect(resolveThemeFromEnv({ TERM: "dumb" })).toBe("no-color");
-    expect(resolveThemeFromEnv({ NO_COLOR: "", TERM: "xterm" })).toBeUndefined();
   });
 });

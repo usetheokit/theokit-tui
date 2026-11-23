@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 import { unionMessage } from "../agent/union-message.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
@@ -357,79 +357,6 @@ function resolveTheme(theme: TheoThemeProp | undefined): TheoTheme {
   return mergeTheme(defaultTheme, theme);
 }
 
-/** Synchronous storage for the chosen theme name. */
-export interface ThemePersistence {
-  /** Stored name, or `undefined` when nothing is stored. Invalid names are ignored. */
-  read(): string | undefined;
-  /** Called once per actual change. Errors propagate to the `set` caller. */
-  write(name: TheoBuiltinThemeName): void;
-}
-
-export interface ThemeController {
-  get(): TheoBuiltinThemeName;
-  set(name: TheoBuiltinThemeName): void;
-  subscribe(listener: () => void): () => void;
-}
-
-/**
- * Runtime-switchable theme name. With `persist`, a valid stored name wins
- * over `initial` (an invalid or missing one is ignored); `set` writes once
- * per change and is a no-op when the name is unchanged.
- */
-export function createThemeController({
-  initial = "dark",
-  persist,
-}: {
-  initial?: TheoBuiltinThemeName;
-  persist?: ThemePersistence;
-} = {}): ThemeController {
-  if (!isBuiltinName(initial)) {
-    throw new TypeError(
-      `createThemeController: unknown theme "${String(initial)}" — expected ${BUILTIN_UNION_MESSAGE}`,
-    );
-  }
-  const stored = persist?.read();
-  let current: TheoBuiltinThemeName =
-    stored !== undefined && isBuiltinName(stored) ? stored : initial;
-  const listeners = new Set<() => void>();
-  return {
-    get: () => current,
-    set(name) {
-      if (!isBuiltinName(name)) {
-        throw new TypeError(
-          `ThemeController.set: unknown theme "${String(name)}" — expected ${BUILTIN_UNION_MESSAGE}`,
-        );
-      }
-      if (name === current) {
-        return;
-      }
-      persist?.write(name);
-      current = name;
-      for (const listener of [...listeners]) {
-        listener();
-      }
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-  };
-}
-
-/**
- * The kit's environment precedence: non-empty `NO_COLOR` or `TERM=dumb`
- * yields "no-color"; otherwise `undefined` (the caller's choice stands).
- */
-export function resolveThemeFromEnv(
-  env: Readonly<Record<string, string | undefined>>,
-): "no-color" | undefined {
-  return env.NO_COLOR || env.TERM === "dumb" ? "no-color" : undefined;
-}
-
-const noopSubscribe = (): (() => void) => () => {};
-
 /**
  * Nesting note (SETTLED — M6 plan D2): a nested provider RESETS to its OWN
  * resolved base + override; it never composes with ancestor providers (the
@@ -442,12 +369,9 @@ const noopSubscribe = (): (() => void) => () => {};
  */
 export function TheoTUIProvider({
   theme,
-  controller,
   children,
 }: {
   theme?: TheoThemeProp | undefined;
-  /** When given, its current name selects the theme (wins over `theme`). */
-  controller?: ThemeController | undefined;
   children: ReactNode;
 }) {
   // Shape guards FIRST, before hooks (F10 idiom — EC-5 typed errors).
@@ -456,13 +380,7 @@ export function TheoTUIProvider({
   // re-render every consumer on each provider render (review F-dom-1).
   // resolveTheme reads NO_COLOR here (once per mount/prop-change — never
   // per frame; the swap is testable in-process via a fresh mount).
-  const controlled = useSyncExternalStore(
-    controller?.subscribe ?? noopSubscribe,
-    () => controller?.get(),
-    () => controller?.get(),
-  );
-  const effective = controlled ?? theme;
-  const value = useMemo(() => resolveTheme(effective), [effective]);
+  const value = useMemo(() => resolveTheme(theme), [theme]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
