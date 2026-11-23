@@ -256,6 +256,18 @@ function applyResultOverride(
   };
 }
 
+/**
+ * Grouping metadata kept OFF the public event shape (#268): the tool's original name, and whether the
+ * header formatter opted the call out of the explored block. A side table keyed by the event object, so
+ * the event identity the caches rely on is untouched.
+ */
+const exploreMeta = new WeakMap<object, { originalName: string; optOut: boolean }>();
+
+/** The name the model called the tool by, before any `formatToolHeader` rename. */
+export function originalToolName(event: AgentToolEvent): string {
+  return exploreMeta.get(event)?.originalName ?? event.name;
+}
+
 function toToolEvent(
   tool: ToolPartView,
   messageId: string,
@@ -298,12 +310,14 @@ function toToolEvent(
   const wording = event.refusal !== undefined ? formatRefusalHeader?.(event) : undefined;
   const refusalWording = typeof wording === "string" && wording !== "" ? wording : undefined;
   if (header === undefined && refusalWording === undefined) return event;
-  return {
+  const renamed: AgentToolEvent = {
     ...event,
     ...(refusalWording !== undefined ? { [REFUSAL_HEADER_OVERRIDE]: refusalWording } : {}),
     ...(header?.name !== undefined ? { name: header.name } : {}),
     ...(header?.summary !== undefined ? { summary: header.summary } : {}),
   };
+  exploreMeta.set(renamed, { originalName: event.name, optOut: header?.explore === false });
+  return renamed;
 }
 
 /** A non-empty object input worth keeping for the explore summary (an empty
@@ -388,7 +402,8 @@ function groupExploration(
   for (const ev of events) {
     const explorable =
       ev.kind === "tool" &&
-      explore.has(ev.name) &&
+      explore.has(originalToolName(ev)) &&
+      exploreMeta.get(ev)?.optOut !== true &&
       (ev.status === "success" || ev.status === "running");
     if (explorable) {
       run.push(ev);
@@ -425,12 +440,13 @@ export function messagesToChatThread(messages: readonly UIMessageLike[]): ChatTh
  * incl. the read-only ones that collapse into an `explored` block — are unaffected). The generic TUI
  * stays tool-agnostic; the app owns the verb+target vocabulary of its own tools.
  *
- * NOTE: explored grouping matches on the (possibly overridden) `name` — returning a `name` for a tool
- * listed in `exploreTools` opts that call OUT of the explored collapse (it renders as a normal card).
+ * Explored grouping matches on the tool's ORIGINAL name, so a `name` override only changes the label
+ * shown inside the block. To keep one call out of the explored collapse (a normal card), return
+ * `explore: false`.
  */
 export type ToolHeaderFormatter = (
   event: AgentToolEvent,
-) => { name?: string; summary?: string } | undefined;
+) => { name?: string; summary?: string; explore?: false } | undefined;
 
 /**
  * The conventional tool names, humanised — the batteries-included default this seam was missing
