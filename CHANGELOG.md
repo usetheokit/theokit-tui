@@ -19,6 +19,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Changed
 
+- tui: `createThemeController({ initial })` and `ThemeController.set(theme)` accept every form of the provider's `theme` prop (name, `{ base, override }`, plain override), validated like the prop; **BREAKING (types):** `ThemeController.get()` now returns `TheoThemeProp` instead of `TheoBuiltinThemeName`, so callers that used it as a name must narrow. Only names are persisted; a theme object is not written (#294)
 - tui: explored grouping now matches the tool's original name, so `formatToolHeader` (incl. `defaultToolHeader`) relabels calls inside an explored block instead of splitting it; a formatter opts a call out with `explore: false` rather than by renaming (#268)
 
 ## [0.83.4] - 2026-11-21

@@ -366,45 +366,48 @@ export interface ThemePersistence {
 }
 
 export interface ThemeController {
-  get(): TheoBuiltinThemeName;
-  set(name: TheoBuiltinThemeName): void;
+  /** What was last set (or `initial`): a name, `{ base, override }` or a plain override. */
+  get(): TheoThemeProp;
+  set(theme: TheoThemeProp): void;
   subscribe(listener: () => void): () => void;
 }
 
 /**
- * Runtime-switchable theme name. With `persist`, a valid stored name wins
- * over `initial` (an invalid or missing one is ignored); `set` writes once
- * per change and is a no-op when the name is unchanged.
+ * Runtime-switchable theme: holds any value the provider's `theme` prop
+ * accepts (validated the same way). With `persist`, a valid stored name wins
+ * over `initial` (an invalid or missing one is ignored); only built-in NAMES
+ * are written — a theme object is held in memory, never persisted. `set`
+ * writes once per change and is a no-op when the value (same name, or the
+ * same object) is already held.
  */
 export function createThemeController({
   initial = "dark",
   persist,
 }: {
-  initial?: TheoBuiltinThemeName;
+  initial?: TheoThemeProp;
   persist?: ThemePersistence;
 } = {}): ThemeController {
-  if (!isBuiltinName(initial)) {
-    throw new TypeError(
-      `createThemeController: unknown theme "${String(initial)}" — expected ${BUILTIN_UNION_MESSAGE}`,
-    );
-  }
+  assertThemeProp(initial);
   const stored = persist?.read();
-  let current: TheoBuiltinThemeName =
-    stored !== undefined && isBuiltinName(stored) ? stored : initial;
+  let current: TheoThemeProp = stored !== undefined && isBuiltinName(stored) ? stored : initial;
   const listeners = new Set<() => void>();
   return {
     get: () => current,
-    set(name) {
-      if (!isBuiltinName(name)) {
-        throw new TypeError(
-          `ThemeController.set: unknown theme "${String(name)}" — expected ${BUILTIN_UNION_MESSAGE}`,
+    set(theme) {
+      if (theme === undefined) {
+        reportGuardFailure(
+          "TheoTUIProvider",
+          new TypeError("TheoTUIProvider: theme must be a built-in name or an override object"),
         );
       }
-      if (name === current) {
+      assertThemeProp(theme);
+      if (theme === current) {
         return;
       }
-      persist?.write(name);
-      current = name;
+      if (typeof theme === "string") {
+        persist?.write(theme);
+      }
+      current = theme;
       for (const listener of [...listeners]) {
         listener();
       }
@@ -446,7 +449,7 @@ export function TheoTUIProvider({
   children,
 }: {
   theme?: TheoThemeProp | undefined;
-  /** When given, its current name selects the theme (wins over `theme`). */
+  /** When given, its current theme selects the theme (wins over `theme`). */
   controller?: ThemeController | undefined;
   children: ReactNode;
 }) {
