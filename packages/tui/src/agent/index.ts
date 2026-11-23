@@ -26,6 +26,13 @@ export type {
 } from "./agent-event.js";
 export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {
+  AgentSessionCommand,
+  AgentSessionControls,
+  AgentSessionFooterInfo,
+  AgentSessionProps,
+} from "./agent-session.js";
+export { AgentSession } from "./agent-session.js";
+export type {
   AgentStreamEvent,
   AssistantContentBlock,
 } from "./agent-stream-event.js";

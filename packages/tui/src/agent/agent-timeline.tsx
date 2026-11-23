@@ -81,6 +81,13 @@ export interface AgentTimelineProps extends LayoutMarginProps {
    * which is what a note about the CURRENT mode has to do.
    */
   footer?: ReactElement;
+  /**
+   * Replaces how one event renders. Receives the event and the default row element the timeline
+   * would have drawn, so an override can wrap it or return something else. Applies to the live
+   * tail and to rows graduating into `<Static>` alike; like `header`, it cannot repaint rows
+   * that already graduated. Keep the function identity stable: rows are memoized on it.
+   */
+  renderItem?: (event: AgentEvent, defaultRow: ReactElement) => ReactElement;
 }
 
 const HEADER_SENTINEL = Symbol("theokit-tui-header");
@@ -642,15 +649,26 @@ function eventRow(event: AgentEvent) {
   }
 }
 
+type RenderItem = NonNullable<AgentTimelineProps["renderItem"]>;
+
 const Row = memo(
-  ({ event, spaced }: { event: AgentEvent; spaced: boolean }) => (
+  ({
+    event,
+    spaced,
+    renderItem,
+  }: {
+    event: AgentEvent;
+    spaced: boolean;
+    renderItem?: RenderItem | undefined;
+  }) => (
     // Claude Code cadence: one blank line above every block EXCEPT the first
     // rendered one — the transcript breathes (mirrors ChatThread's spacing).
     <Box marginTop={spaced ? 1 : 0} flexDirection="column">
-      {eventRow(event)}
+      {renderItem === undefined ? eventRow(event) : renderItem(event, <>{eventRow(event)}</>)}
     </Box>
   ),
-  (prev, next) => prev.event === next.event && prev.spaced === next.spaced,
+  (prev, next) =>
+    prev.event === next.event && prev.spaced === next.spaced && prev.renderItem === next.renderItem,
 );
 Row.displayName = "AgentTimeline.Row";
 
@@ -671,6 +689,7 @@ export function AgentTimeline({
   header,
   verbose = true,
   footer,
+  renderItem,
   ...margin
 }: AgentTimelineProps) {
   // Boundary validation FIRST, before any hook (F10 — tests invoke this as a
@@ -729,7 +748,7 @@ export function AgentTimeline({
               </Box>
             ) : (
               // Space every block except the first rendered element (index 0).
-              <Row key={item.id} event={item} spaced={index > 0} />
+              <Row key={item.id} event={item} spaced={index > 0} renderItem={renderItem} />
             )
           }
         </Static>
@@ -747,7 +766,7 @@ export function AgentTimeline({
               <CollapsedToolRun groups={row.groups} />
             </Box>
           ) : (
-            <Row key={row.key} event={row.event} spaced={spaced} />
+            <Row key={row.key} event={row.event} spaced={spaced} renderItem={renderItem} />
           );
         })}
         {footer !== undefined && (
