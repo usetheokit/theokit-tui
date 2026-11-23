@@ -1,10 +1,9 @@
 import { Text } from "ink";
+import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
-
 import type { AgentSessionCommand } from "../../src/agent/agent-session.js";
 import { AgentSession } from "../../src/agent/agent-session.js";
 import type { AgentStreamEvent } from "../../src/agent/agent-stream-event.js";
-import { render } from "ink-testing-library";
 
 // A scripted agent: each turn is a gate the test opens, so "streaming" is a state the test holds.
 function scriptedAgent() {

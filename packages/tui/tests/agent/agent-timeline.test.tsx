@@ -1,8 +1,8 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { AgentEvent, AgentMessageEvent } from "../../src/agent/agent-event.js";
-import type { ReactElement } from "react";
 import { stripAnsi } from "../../src/format/ansi.js";
 import { renderFrame } from "../../tests/fixtures/helpers.js";
 

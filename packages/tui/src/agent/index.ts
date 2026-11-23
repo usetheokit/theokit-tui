@@ -26,6 +26,13 @@ export type {
 } from "./agent-event.js";
 export { AGENT_EVENT_KINDS } from "./agent-event.js";
 export type {
+  AgentSessionCommand,
+  AgentSessionControls,
+  AgentSessionFooterInfo,
+  AgentSessionProps,
+} from "./agent-session.js";
+export { AgentSession } from "./agent-session.js";
+export type {
   AgentStreamEvent,
   AssistantContentBlock,
 } from "./agent-stream-event.js";
@@ -37,13 +44,6 @@ export {
   agentStreamReducer,
   initialAgentStreamState,
 } from "./agent-stream-reducer.js";
-export type {
-  AgentSessionCommand,
-  AgentSessionControls,
-  AgentSessionFooterInfo,
-  AgentSessionProps,
-} from "./agent-session.js";
-export { AgentSession } from "./agent-session.js";
 export type { AgentStreamingProps } from "./agent-streaming.js";
 // formatElapsed is public, exported from the format barrel (#199).
 export { AgentStreaming } from "./agent-streaming.js";
