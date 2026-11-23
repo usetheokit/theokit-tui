@@ -59,3 +59,7 @@ export type {
   WorkspaceConsentDeps,
 } from "./workspace-consent.js";
 export { useWorkspaceConsent } from "./workspace-consent.js";
+
+// #269 — resume a session by choosing it, not by typing its id.
+export type { SessionPickerItem, SessionPickerProps } from "./session-picker.js";
+export { SessionPicker } from "./session-picker.js";

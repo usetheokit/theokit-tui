@@ -50,6 +50,8 @@ describe("public entry surface (T0.2)", () => {
     // B-003 — the presentational sibling. Pinned here so the pair stays visible: SelectList takes
     // the keys, WindowedList does not.
     expect(typeof mod.WindowedList).toBe("function");
+    // #269 — the session picker over SelectList.
+    expect(typeof mod.SessionPicker).toBe("function");
   });
 
   it("terminal_subpath_exposes_the_scrollback_clearing_sequence", async () => {
