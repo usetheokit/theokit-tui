@@ -92,12 +92,7 @@ describe("public entry surface (T0.2)", () => {
 
   it("keys_subpath_exposes_chord_helpers_and_keybindings_parser", async () => {
     const keys = await import("../../src/keys/index.js");
-    for (const name of [
-      "parseKeybindings",
-      "chordOf",
-      "resolveAction",
-      "agentKeyLayers",
-    ] as const) {
+    for (const name of ["parseKeybindings", "chordOf", "resolveAction"] as const) {
       expect(typeof keys[name]).toBe("function");
     }
     expect(keys.defaultKeymap).toBeInstanceOf(Map);
@@ -214,7 +209,7 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_agent_surface", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.AgentTimeline).toBe("function");
-    expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored", "notice"]);
+    expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored"]);
     // Review M1: the explored-grouping default is part of the public contract
     // (the CHANGELOG names it — consumers extend it via [...DEFAULT_EXPLORE_TOOLS, ...]).
     expect(mod.DEFAULT_EXPLORE_TOOLS).toContain("read_file");
@@ -224,13 +219,7 @@ describe("public entry surface (T0.2)", () => {
     // AgentExploredEvent is type-only — presence pinned by typecheck.
     // Runtime union arrays exported for D8 boundary validation (M3):
     expect(mod.CHAT_ROLES).toEqual(["user", "assistant", "system"]);
-    expect(mod.TOOL_CALL_STATUSES).toEqual([
-      "pending",
-      "running",
-      "success",
-      "failed",
-      "cancelled",
-    ]);
+    expect(mod.TOOL_CALL_STATUSES).toEqual(["pending", "running", "success", "failed"]);
     expect(typeof mod.AgentStreaming).toBe("function");
   });
 

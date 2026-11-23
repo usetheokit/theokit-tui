@@ -19,7 +19,6 @@ export type {
   AgentEventKind,
   AgentExploredEvent,
   AgentMessageEvent,
-  AgentNoticeEvent,
   AgentThinkingEvent,
   AgentToolEvent,
   ToolRefusal,

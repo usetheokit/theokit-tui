@@ -11,9 +11,7 @@
 // lifecycle arrives via `tool_call` events); the fine camelCase
 // `tool-call-*` updates no-op in v0 — coarse `tool_call` is the lifecycle
 // surface. `"done"`/`"error"` are OUR hook synthetics — no SDK stream emits
-// them (stream end = generator completion; failures throw). `"interrupted"` ends a turn the user
-// stopped (unfinished tools become cancelled); `"notice"` ({variant, text}) is an app notice
-// folded in place inside the running turn.
+// them (stream end = generator completion; failures throw).
 
 /** One block of an assistant message's content array (TextBlock subset). */
 export interface AssistantContentBlock {
@@ -48,8 +46,6 @@ export interface AgentStreamEvent {
   args?: unknown;
   /** Tool result — {stdout, stderr, exitCode} today, declared unstable. */
   result?: unknown;
-  /** On `notice`: the severity ("info" | "warning" | "success" | "error"); default "info". */
-  variant?: string;
   /** OUR synthetic `error` payload (client-side — no SDK stream carries it). */
   error?: string | { message?: string };
 }
