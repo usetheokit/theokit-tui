@@ -6,6 +6,7 @@ import { HEADER_SENTINEL_KEY } from "../chat/chat-thread.js";
 import { DiffViewer } from "../diff/diff-viewer.js";
 import type { LayoutMarginProps } from "../layout/layout-props.js";
 import { reportGuardFailure } from "../status/guard-sink.js";
+import { Notice, NOTICE_VARIANTS } from "../status/notice.js";
 import { useTheoTheme } from "../theme/theme.js";
 import {
   formatToolName,
@@ -214,6 +215,14 @@ function validateEvent(event: AgentEvent, seen: Set<string>): void {
   }
   if (event.kind === "explored") {
     validateExploredEvent(event, seen);
+  }
+  if (event.kind === "notice" && !NOTICE_VARIANTS.includes(event.variant)) {
+    reportGuardFailure(
+      "AgentTimeline",
+      new TypeError(
+        `AgentTimeline: notice event "${event.id}" — invalid variant "${String(event.variant)}" — expected ${unionMessage(NOTICE_VARIANTS)}`,
+      ),
+    );
   }
 }
 
@@ -612,6 +621,8 @@ function eventRow(event: AgentEvent) {
           {event.text}
         </ChatMessage>
       );
+    case "notice":
+      return <Notice variant={event.variant}>{event.text}</Notice>;
     case "thinking":
       return <ThinkingRow text={event.text} />;
     case "tool":

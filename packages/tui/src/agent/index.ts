@@ -19,6 +19,7 @@ export type {
   AgentEventKind,
   AgentExploredEvent,
   AgentMessageEvent,
+  AgentNoticeEvent,
   AgentThinkingEvent,
   AgentToolEvent,
   ToolRefusal,
@@ -43,7 +44,10 @@ export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentTimeline } from "./agent-timeline.js";
 // Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
 export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
-export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";
+export {
+  agentEventsToMarkdown,
+  lastAssistantText,
+} from "./events-to-markdown.js";
 export type {
   MessagesToEventsOptions,
   PendingApproval,
@@ -69,7 +73,10 @@ export {
   resolveApprovalId,
 } from "./messages-to-events.js";
 // Stored session (Claude-style tool_use/tool_result parts) → UIMessageLike[] for `initialMessages`.
-export type { StoredMessage, StoredMessagePart } from "./session-messages-to-thread.js";
+export type {
+  StoredMessage,
+  StoredMessagePart,
+} from "./session-messages-to-thread.js";
 export { sessionMessagesToThread } from "./session-messages-to-thread.js";
 export type { TurnDoneProps } from "./turn-done.js";
 export { TurnDone, WHIMSY_VERBS, whimsyVerb } from "./turn-done.js";

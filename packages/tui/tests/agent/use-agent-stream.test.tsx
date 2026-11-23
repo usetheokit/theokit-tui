@@ -222,7 +222,7 @@ describe("useAgentStream", () => {
     unmount();
   });
 
-  it("cancel_stops_consumption_and_marks_done", async () => {
+  it("cancel_stops_consumption_and_marks_interrupted", async () => {
     const fake = deferredStream();
     const captured: Captured = {};
     const { unmount } = render(<Probe source={fake.iterable} captured={captured} />);
@@ -233,7 +233,7 @@ describe("useAgentStream", () => {
     await ticks(3);
     const returned = fake.wasReturned();
     expect(returned).toBe(true);
-    expect(captured.current?.status).toBe("done");
+    expect(captured.current?.status).toBe("interrupted");
     expect(captured.current?.events[0]).toMatchObject({ text: "a" });
     unmount();
   });
@@ -250,7 +250,7 @@ describe("useAgentStream", () => {
     await ticks(1);
     captured.current?.cancel();
     await ticks(1);
-    expect(captured.current?.status).toBe("done");
+    expect(captured.current?.status).toBe("interrupted");
     unmount();
   });
 
@@ -266,7 +266,7 @@ describe("useAgentStream", () => {
     await ticks(1);
     fake.emit(delta("ZOMBIE"));
     await ticks(3);
-    expect(captured.current?.status).toBe("done");
+    expect(captured.current?.status).toBe("interrupted");
     expect(captured.current?.events[0]).toMatchObject({ text: "a" });
     unmount();
   });

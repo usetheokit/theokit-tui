@@ -85,7 +85,7 @@ describe("ToolCall — status lifecycle (T1.1)", () => {
   });
 
   it("each_status_frame_matches_snapshot", async () => {
-    for (const status of ["pending", "running", "success", "failed"] as const) {
+    for (const status of ["pending", "running", "success", "failed", "cancelled"] as const) {
       const frame = await renderFrame(
         <Box width={40}>
           <ToolCall name="grep" status={status} summary="src/**" />
