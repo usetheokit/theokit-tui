@@ -18,6 +18,8 @@ describe("public entry surface (T0.2)", () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.TheoTUIProvider).toBe("function");
     expect(typeof mod.useTheoTheme).toBe("function");
+    expect(typeof mod.createThemeController).toBe("function");
+    expect(typeof mod.resolveThemeFromEnv).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("❯ ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("⏺  ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
@@ -50,6 +52,8 @@ describe("public entry surface (T0.2)", () => {
     // B-003 — the presentational sibling. Pinned here so the pair stays visible: SelectList takes
     // the keys, WindowedList does not.
     expect(typeof mod.WindowedList).toBe("function");
+    // #269 — the session picker over SelectList.
+    expect(typeof mod.SessionPicker).toBe("function");
   });
 
   it("terminal_subpath_exposes_the_scrollback_clearing_sequence", async () => {
@@ -280,6 +284,12 @@ describe("public entry surface (T0.2)", () => {
     // Determinate progress: bar + compaction-style activity.
     expect(typeof mod.ProgressBar).toBe("function");
     expect(typeof mod.ProgressActivity).toBe("function");
+  });
+
+  it("public_entry_exposes_agent_timeline_bridge", async () => {
+    const mod = await import("../../src/index.js");
+    expect(typeof mod.fromAgentOutputEvents).toBe("function");
+    expect(typeof mod.useAgentTimeline).toBe("function");
   });
 
   it("public_entry_exposes_stream_adapter", async () => {

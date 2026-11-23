@@ -6,6 +6,8 @@ export type {
   CodeTokens,
   GlyphToken,
   RoleTokens,
+  ThemeController,
+  ThemePersistence,
   TheoBuiltinThemeName,
   TheoTheme,
   TheoThemeOverride,
@@ -13,7 +15,9 @@ export type {
   ToolStatusTokens,
 } from "./theme.js";
 export {
+  createThemeController,
   defaultTheme,
+  resolveThemeFromEnv,
   TheoTUIProvider,
   themes,
   useTheoTheme,

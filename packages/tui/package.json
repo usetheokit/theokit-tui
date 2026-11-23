@@ -88,6 +88,7 @@
     "yoga-layout": "3.2.1"
   },
   "devDependencies": {
+    "@theokit/presenter": "^0.18.0",
     "@theokit/sdk": "^2.19.0",
     "@types/node": "^22.20.0",
     "@types/react": "^19.2.17",

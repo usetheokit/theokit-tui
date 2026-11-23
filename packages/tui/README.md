@@ -81,6 +81,22 @@ Swap `demoTurn` for your real stream: `useAgentStream` consumes any
 `AsyncIterable<AgentStreamEvent>` (or a factory) — SDK streams, SSE, fixtures.
 See `examples/scenes/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
 
+### Switching and remembering a theme
+
+```tsx
+const controller = createThemeController({
+  initial: "dark",
+  persist: { read: () => loadName(), write: (name) => saveName(name) }, // sync; optional
+});
+<TheoTUIProvider controller={controller}>…</TheoTUIProvider>;
+controller.set("light"); // re-renders the tree; `write` runs once per change
+```
+
+A valid stored name wins over `initial`; an invalid one is ignored. Errors thrown
+by `write` propagate from `set`. A `controller` wins over the `theme` prop, and a
+non-empty `NO_COLOR` still forces `no-color`. `resolveThemeFromEnv(process.env)`
+returns `"no-color"` for `NO_COLOR` or `TERM=dumb`, else `undefined`.
+
 ### Resuming a session
 
 A stream only carries what happens next, so a surface that repoints itself at an
@@ -112,6 +128,19 @@ stream only: seeding a hook that has not started leaves it `idle`.
 Seed the history that *precedes* the stream. A tool already in the transcript and
 re-emitted by the live stream renders twice — the projection and the fold mint
 ids in disjoint namespaces and cannot tell they are the same call.
+
+### From the framework's agent
+
+Two entry points bridge the framework's agent output to the timeline:
+
+- `useAgentTimeline(agent, { prefix?, windowMs?, formatToolHeader? })` takes anything with a
+  `thread` (the framework's `useAgent()` result) and returns `{ events, usage }`: `prefix` (e.g. a
+  greeting) then the thread, projected for `<AgentTimeline>` at most once per `windowMs`, and the
+  usage of the last turn that reported any. Keep `prefix` and `formatToolHeader` module-stable.
+- `fromAgentOutputEvents(events)` turns the presenter's canonical `AgentOutputEvent`s (sync or
+  async iterable) into an `AsyncIterable<AgentStreamEvent>` for `useAgentStream`. `status` events,
+  `finish.usage` and a tool result's `refusal` have no stream counterpart and are dropped.
+  `@theokit/presenter` is a type-only dependency.
 
 ## Primitives
 
