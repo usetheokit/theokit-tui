@@ -8,6 +8,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Added
 
 - tui: `fromAgentOutputEvents` adapts the presenter's `AgentOutputEvent` to `AgentStreamEvent` (type-only presenter dependency), and `useAgentTimeline(agent, { prefix, windowMs, formatToolHeader })` returns the coalesced timeline events and last usage of a `useAgent()` client (#267)
+- tui: `createThemeController({ initial, persist? })` (`get`/`set`/`subscribe`) accepted by `<TheoTUIProvider controller>` to switch and remember a theme at runtime, and `resolveThemeFromEnv(env)` for the `NO_COLOR` / `TERM=dumb` precedence (#271)
+- tui: `SessionPicker` ({sessions: {id, title, lastActivity}[], onSelect(id)}), a windowed list with type-to-filter for resuming a session without typing its id (#269)
+- tui: `agentKeyLayers({ isStreaming, interrupt, exit, overlays? })` from `@theokit/tui/keys`, a ready layer set for `routeThroughLayers`: Esc interrupts a running turn, Ctrl-C interrupts and arms exit, a second Ctrl-C within 2 s quits (#270)
+- tui: stream events `interrupted` (unfinished tools render as `cancelled`, an "Interrupted by user" notice follows the partial text; status `interrupted`) and `notice` (`{variant, text}`, rendered in place inside the turn); **BREAKING:** `useAgentStream().cancel()` now ends in status `interrupted` (it was `done`) and appends an "Interrupted by user" notice event; code that checks `status === "done"` after `cancel()` must also handle `interrupted` (#266)
 
 ### Changed
 

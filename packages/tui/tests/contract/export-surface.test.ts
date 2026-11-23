@@ -18,6 +18,8 @@ describe("public entry surface (T0.2)", () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.TheoTUIProvider).toBe("function");
     expect(typeof mod.useTheoTheme).toBe("function");
+    expect(typeof mod.createThemeController).toBe("function");
+    expect(typeof mod.resolveThemeFromEnv).toBe("function");
     expect(mod.defaultTheme.role.user.glyph).toBe("❯ ");
     expect(mod.defaultTheme.role.assistant.glyph).toBe("⏺  ");
     expect(mod.defaultTheme.role.system.glyph).toBe("· ");
@@ -50,6 +52,8 @@ describe("public entry surface (T0.2)", () => {
     // B-003 — the presentational sibling. Pinned here so the pair stays visible: SelectList takes
     // the keys, WindowedList does not.
     expect(typeof mod.WindowedList).toBe("function");
+    // #269 — the session picker over SelectList.
+    expect(typeof mod.SessionPicker).toBe("function");
   });
 
   it("terminal_subpath_exposes_the_scrollback_clearing_sequence", async () => {
@@ -92,7 +96,12 @@ describe("public entry surface (T0.2)", () => {
 
   it("keys_subpath_exposes_chord_helpers_and_keybindings_parser", async () => {
     const keys = await import("../../src/keys/index.js");
-    for (const name of ["parseKeybindings", "chordOf", "resolveAction"] as const) {
+    for (const name of [
+      "parseKeybindings",
+      "chordOf",
+      "resolveAction",
+      "agentKeyLayers",
+    ] as const) {
       expect(typeof keys[name]).toBe("function");
     }
     expect(keys.defaultKeymap).toBeInstanceOf(Map);
@@ -209,7 +218,7 @@ describe("public entry surface (T0.2)", () => {
   it("public_entry_exposes_agent_surface", async () => {
     const mod = await import("../../src/index.js");
     expect(typeof mod.AgentTimeline).toBe("function");
-    expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored"]);
+    expect(mod.AGENT_EVENT_KINDS).toEqual(["message", "thinking", "tool", "explored", "notice"]);
     // Review M1: the explored-grouping default is part of the public contract
     // (the CHANGELOG names it — consumers extend it via [...DEFAULT_EXPLORE_TOOLS, ...]).
     expect(mod.DEFAULT_EXPLORE_TOOLS).toContain("read_file");
@@ -219,7 +228,13 @@ describe("public entry surface (T0.2)", () => {
     // AgentExploredEvent is type-only — presence pinned by typecheck.
     // Runtime union arrays exported for D8 boundary validation (M3):
     expect(mod.CHAT_ROLES).toEqual(["user", "assistant", "system"]);
-    expect(mod.TOOL_CALL_STATUSES).toEqual(["pending", "running", "success", "failed"]);
+    expect(mod.TOOL_CALL_STATUSES).toEqual([
+      "pending",
+      "running",
+      "success",
+      "failed",
+      "cancelled",
+    ]);
     expect(typeof mod.AgentStreaming).toBe("function");
   });
 

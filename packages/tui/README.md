@@ -81,6 +81,22 @@ Swap `demoTurn` for your real stream: `useAgentStream` consumes any
 `AsyncIterable<AgentStreamEvent>` (or a factory) — SDK streams, SSE, fixtures.
 See `examples/scenes/live-agent-tui.tsx` for a real-LLM turn via OpenRouter.
 
+### Switching and remembering a theme
+
+```tsx
+const controller = createThemeController({
+  initial: "dark",
+  persist: { read: () => loadName(), write: (name) => saveName(name) }, // sync; optional
+});
+<TheoTUIProvider controller={controller}>…</TheoTUIProvider>;
+controller.set("light"); // re-renders the tree; `write` runs once per change
+```
+
+A valid stored name wins over `initial`; an invalid one is ignored. Errors thrown
+by `write` propagate from `set`. A `controller` wins over the `theme` prop, and a
+non-empty `NO_COLOR` still forces `no-color`. `resolveThemeFromEnv(process.env)`
+returns `"no-color"` for `NO_COLOR` or `TERM=dumb`, else `undefined`.
+
 ### Resuming a session
 
 A stream only carries what happens next, so a surface that repoints itself at an
