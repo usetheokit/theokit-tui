@@ -92,6 +92,13 @@ const controller = createThemeController({
 controller.set("light"); // re-renders the tree; `write` runs once per change
 ```
 
+`initial` and `set` accept everything the provider's `theme` prop does: a built-in
+name, `{ base, override }` or a plain override (an invalid value throws the same
+`TypeError`), and `get()` returns that value (`TheoThemeProp`, not only a name).
+`set` with the value already held (same name or same object) notifies nobody.
+Only built-in names are persisted: a theme object is held in memory and never
+passed to `write`, which keeps taking a name.
+
 A valid stored name wins over `initial`; an invalid one is ignored. Errors thrown
 by `write` propagate from `set`. A `controller` wins over the `theme` prop, and a
 non-empty `NO_COLOR` still forces `no-color`. `resolveThemeFromEnv(process.env)`
