@@ -11,6 +11,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
+- tui: `toolFormatters(toolPresentation(...))` returns the `{ formatToolHeader, formatToolResult }` pair `messagesToAgentEvents` takes, so a tool's header and body render as its presentation describes them, aliases included (#295)
 - tui: `AgentSession`, a ready-made agent session screen (transcript, composer, streaming indicator, footer): takes a per-message `stream(message, signal)`, a slash `commands` registry and `renderItem` / `renderFooter` overrides; Esc interrupts a running turn and messages sent meanwhile are queued and sent in order. `AgentTimeline` gains `renderItem` (#296)
 - tui: `fromAgentOutputEvents` adapts the presenter's `AgentOutputEvent` to `AgentStreamEvent` (type-only presenter dependency), and `useAgentTimeline(agent, { prefix, windowMs, formatToolHeader })` returns the coalesced timeline events and last usage of a `useAgent()` client (#267)
 - tui: `createThemeController({ initial, persist? })` (`get`/`set`/`subscribe`) accepted by `<TheoTUIProvider controller>` to switch and remember a theme at runtime, and `resolveThemeFromEnv(env)` for the `NO_COLOR` / `TERM=dumb` precedence (#271)
