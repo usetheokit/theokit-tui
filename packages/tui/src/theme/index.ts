@@ -10,10 +10,14 @@ export type {
   TheoTheme,
   TheoThemeOverride,
   TheoThemeProp,
+  ThemeController,
+  ThemePersistence,
   ToolStatusTokens,
 } from "./theme.js";
 export {
+  createThemeController,
   defaultTheme,
+  resolveThemeFromEnv,
   TheoTUIProvider,
   themes,
   useTheoTheme,
