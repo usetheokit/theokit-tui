@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { AgentEvent, AgentMessageEvent } from "../../src/agent/agent-event.js";
 import { stripAnsi } from "../../src/format/ansi.js";
@@ -814,5 +815,31 @@ describe("issue #59 item 5 — Explored rows keep their indentation when wrappin
     // Byte-level non-regression: the common path must not change.
     const frame = stripAnsi(await narrowFrame());
     expect(frame).toContain("  └ List src");
+  });
+});
+
+describe("AgentTimeline renderItem", () => {
+  it("replaces_live_and_graduated_rows_and_keeps_the_default_available", async () => {
+    const { Text: InkText } = await import("ink");
+    const { render: itlRender } = await import("../renderer/itl-adapter.js");
+    const events: AgentEvent[] = Array.from({ length: 4 }, (_, i) => ({
+      id: `m${i}`,
+      kind: "message" as const,
+      role: "assistant" as const,
+      text: `body${i}`,
+    }));
+    const renderItem = (event: AgentEvent, row: ReactElement) =>
+      event.id === "m3" ? row : <InkText>{`X:${event.id}`}</InkText>;
+    const app = itlRender(
+      <AgentTimeline events={events} windowSize={1} windowOverscan={0} renderItem={renderItem} />,
+      { columns: 60, rows: 20 },
+    );
+    await app.flush();
+    const frame = app.lastFrame() ?? "";
+    expect(frame).toContain("X:m0");
+    expect(frame).toContain("X:m2");
+    expect(frame).toContain("body3");
+    expect(frame).not.toContain("body0");
+    app.unmount();
   });
 });
