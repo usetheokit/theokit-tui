@@ -5,6 +5,10 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added
+
+- tui: `fromAgentOutputEvents` adapts the presenter's `AgentOutputEvent` to `AgentStreamEvent` (type-only presenter dependency), and `useAgentTimeline(agent, { prefix, windowMs, formatToolHeader })` returns the coalesced timeline events and last usage of a `useAgent()` client (#267)
+
 ### Changed
 
 - tui: explored grouping now matches the tool's original name, so `formatToolHeader` (incl. `defaultToolHeader`) relabels calls inside an explored block instead of splitting it; a formatter opts a call out with `explore: false` rather than by renaming (#268)

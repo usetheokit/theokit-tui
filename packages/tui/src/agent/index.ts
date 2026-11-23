@@ -41,6 +41,9 @@ export type { AgentStreamingProps } from "./agent-streaming.js";
 export { AgentStreaming } from "./agent-streaming.js";
 export type { AgentTimelineProps } from "./agent-timeline.js";
 export { AgentTimeline } from "./agent-timeline.js";
+// Adapter: the presenter's canonical `AgentOutputEvent` → `AgentStreamEvent` (type-only presenter dependency).
+export type { AgentOutputEventSource } from "./from-agent-output-events.js";
+export { fromAgentOutputEvents } from "./from-agent-output-events.js";
 // Conversation export: Markdown of the messages (and optionally tool lines) + the last assistant reply.
 export type { AgentEventsToMarkdownOptions } from "./events-to-markdown.js";
 export { agentEventsToMarkdown, lastAssistantText } from "./events-to-markdown.js";
@@ -90,3 +93,10 @@ export type { UseCoalescedOptions } from "./use-coalesced.js";
 // change is never dropped. Built on `createFrameBudget` (`@theokit/tui/renderer`), which was
 // complete and tested and reachable by nobody until this slice exported it.
 export { useCoalesced } from "./use-coalesced.js";
+// A framework `useAgent()` client → the timeline events + last usage, coalesced.
+export type {
+  AgentTimelineSource,
+  UseAgentTimelineOptions,
+  UseAgentTimelineResult,
+} from "./use-agent-timeline.js";
+export { useAgentTimeline } from "./use-agent-timeline.js";
