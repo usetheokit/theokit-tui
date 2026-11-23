@@ -412,10 +412,7 @@ describe("agentStreamReducer", () => {
   });
 
   describe("SDK event order (#203)", () => {
-    const coarse = (text: string): AgentStreamEvent => ({
-      type: "thinking",
-      text,
-    });
+    const coarse = (text: string): AgentStreamEvent => ({ type: "thinking", text });
     const shape = (state: ReturnType<typeof fold>) =>
       state.events.map((e) => [e.kind, (e as { text?: string }).text]);
 

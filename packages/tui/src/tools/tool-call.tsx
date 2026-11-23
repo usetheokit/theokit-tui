@@ -119,7 +119,9 @@ function statusIndicator(status: ToolCallStatus, theme: TheoTheme) {
     );
   }
   if (status === "cancelled") {
-    // Stopped by the user: neither a spinner nor a failure — dim, color-independent glyph.
+    // Stopped by the user: neither a spinner nor a failure. There is deliberately NO theme token yet
+    // (that would grow TheoTheme + its override type for one glyph): it reuses the dim `pending`
+    // color and a fixed `⊘`, which stays distinguishable from `failed` without color.
     return <Text color={theme.toolStatus.pending.color}>⊘</Text>;
   }
   const token = theme.toolStatus[status];

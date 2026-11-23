@@ -140,11 +140,7 @@ function foldAssistant(state: AgentStreamState, event: AgentStreamEvent): AgentS
         ? { ...item, text: text === "" ? item.text : text }
         : item,
     );
-    return withoutTurnMarkers({
-      ...withoutLiveMessage(next),
-      events,
-      status: "streaming",
-    });
+    return withoutTurnMarkers({ ...withoutLiveMessage(next), events, status: "streaming" });
   }
   if (event.textAlreadyStreamed === true && next.lastMessageId !== undefined) {
     // The text already streamed and the live anchor closed (a tool_call or

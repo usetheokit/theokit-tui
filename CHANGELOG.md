@@ -7,7 +7,7 @@ versionamento: [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Added
 
-- tui: stream events `interrupted` (unfinished tools render as `cancelled`, an "Interrupted by user" notice follows the partial text; status `interrupted`) and `notice` (`{variant, text}`, rendered in place inside the turn); `useAgentStream().cancel()` now folds `interrupted` instead of `done` (#266)
+- tui: stream events `interrupted` (unfinished tools render as `cancelled`, an "Interrupted by user" notice follows the partial text; status `interrupted`) and `notice` (`{variant, text}`, rendered in place inside the turn); **BREAKING:** `useAgentStream().cancel()` now ends in status `interrupted` (it was `done`) and appends an "Interrupted by user" notice event; code that checks `status === "done"` after `cancel()` must also handle `interrupted` (#266)
 
 ### Changed
 

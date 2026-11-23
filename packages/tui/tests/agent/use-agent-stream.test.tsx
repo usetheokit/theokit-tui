@@ -235,6 +235,10 @@ describe("useAgentStream", () => {
     expect(returned).toBe(true);
     expect(captured.current?.status).toBe("interrupted");
     expect(captured.current?.events[0]).toMatchObject({ text: "a" });
+    expect(captured.current?.events.at(-1)).toMatchObject({
+      kind: "notice",
+      text: "Interrupted by user",
+    });
     unmount();
   });
 
